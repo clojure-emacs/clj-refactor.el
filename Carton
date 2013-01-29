@@ -1,0 +1,11 @@
+(source "melpa" "http://melpa.milkbox.net/packages/")
+
+(package "clj-refactor" "0.1.0" "A collection of refactoring functions for clojure.")
+
+(depends-on "dash")
+(depends-on "s")
+
+(development
+  (depends-on "ecukes")
+  (depends-on "espuds")
+  (depends-on "clojure-mode"))
