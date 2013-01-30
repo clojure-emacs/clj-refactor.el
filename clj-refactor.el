@@ -93,8 +93,8 @@
 
 (defun cljr--add-keybindings (key-fn)
   (define-key clj-refactor-map (funcall key-fn "rf") 'cljr-rename-file)
-  (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use)
-  (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require))
+  (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use-to-ns)
+  (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -151,7 +151,7 @@
     (error "No namespace declaration found")))
 
 ;;;###autoload
-(defun cljr-add-require ()
+(defun cljr-add-require-to-ns ()
   (interactive)
   (push-mark)
   (cljr--goto-ns)
@@ -160,7 +160,7 @@
   (forward-char -2))
 
 ;;;###autoload
-(defun cljr-add-use ()
+(defun cljr-add-use-to-ns ()
   (interactive)
   (push-mark)
   (cljr--goto-ns)
