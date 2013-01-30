@@ -4,7 +4,7 @@ A tiny, but growing, collection of clojure refactoring functions.
 
 ## Installation
 
-It is highly recommended to install it through elpa.
+I highly recommended installing clj-refactor through elpa.
 
 It's available on [marmalade](http://marmalade-repo.org/):
 
@@ -15,7 +15,7 @@ clj-refactor in your path somewhere:
 
  - <a href="https://github.com/magnars/s.el">s.el</a>
  - <a href="https://github.com/magnars/dash.el">dash.el</a>
-
+ - <a href="https://github.com/capitaomorte/yasnippet">yasnippet</a>
 
 ## Setup
 

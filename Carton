@@ -4,6 +4,7 @@
 
 (depends-on "dash")
 (depends-on "s")
+(depends-on "yasnippet")
 
 (development
   (depends-on "ecukes")

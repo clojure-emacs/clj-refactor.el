@@ -24,7 +24,7 @@
 
 ;; ## Installation
 ;;
-;; It is highly recommended to install it through elpa.
+;; I highly recommended installing clj-refactor through elpa.
 ;;
 ;; It's available on [marmalade](http://marmalade-repo.org/):
 ;;
@@ -79,6 +79,7 @@
 
 (require 'dash)
 (require 's)
+(require 'yasnippet)
 
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
@@ -156,8 +157,8 @@
   (push-mark)
   (cljr--goto-ns)
   (newline-and-indent)
-  (insert "(:require [])")
-  (forward-char -2))
+  (cljr--pop-mark-after-yasnippet)
+  (yas/expand-snippet "(:require [$1 :as $2])$0"))
 
 ;;;###autoload
 (defun cljr-add-use-to-ns ()
@@ -165,8 +166,15 @@
   (push-mark)
   (cljr--goto-ns)
   (newline-and-indent)
-  (insert "(:use [ :only ()])")
-  (forward-char -11))
+  (cljr--pop-mark-after-yasnippet)
+  (yas/expand-snippet "(:use ${1:[$2 :only ($3)]})$0"))
+
+(defun cljr--pop-mark-after-yasnippet ()
+  (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-mark-after-yasnippet-1 nil t))
+
+(defun cljr--pop-mark-after-yasnippet-1 (&rest ignore)
+  (pop-to-mark-command)
+  (remove-hook 'yas/after-exit-snippet-hook 'cljr--pop-mark-after-yasnippet-1 t))
 
 ;;;###autoload
 (define-minor-mode clj-refactor-mode
