@@ -21,6 +21,32 @@
 
 ;;; Commentary:
 
+;; ## Installation
+;;
+;; It is highly recommended to install it through elpa.
+;;
+;; It's available on [marmalade](http://marmalade-repo.org/):
+;;
+;; M-x package-install clj-refactor
+;;
+;; You can also install the dependencies on your own, and just dump
+;; clj-refactor in your path somewhere:
+;;
+;; - <a href="https://github.com/magnars/s.el">s.el</a>
+;; - <a href="https://github.com/magnars/dash.el">dash.el</a>
+;;
+
+;; ## Setup
+;;
+;; (require 'clj-refactor)
+;; (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode 1)))
+
+;; ## Use
+;;
+;; Right now, there's only this:
+;;
+;; - `C-x C-r`: rename file, update ns-declaration, and then query-replace new ns in project.
+
 ;;; Code:
 
 (require 'dash)
