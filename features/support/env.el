@@ -18,6 +18,15 @@
 (require 'ert)
 (require 's)
 
+(defun clojure-expected-ns ()
+  "Returns the namespace name that the file should have."
+  (let* ((project-dir (file-truename
+                       (locate-dominating-file default-directory
+                                               "project.clj")))
+         (relative (substring (file-truename (buffer-file-name)) (length project-dir) -4)))
+    (replace-regexp-in-string
+     "_" "-" (mapconcat 'identity (cdr (split-string relative "/")) "."))))
+
 (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode)))
 
 (Setup
