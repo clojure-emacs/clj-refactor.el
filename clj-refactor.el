@@ -28,25 +28,52 @@
 ;;
 ;; It's available on [marmalade](http://marmalade-repo.org/):
 ;;
-;; M-x package-install clj-refactor
+;;     M-x package-install clj-refactor
 ;;
 ;; You can also install the dependencies on your own, and just dump
 ;; clj-refactor in your path somewhere:
 ;;
-;; - <a href="https://github.com/magnars/s.el">s.el</a>
-;; - <a href="https://github.com/magnars/dash.el">dash.el</a>
+;;  - <a href="https://github.com/magnars/s.el">s.el</a>
+;;  - <a href="https://github.com/magnars/dash.el">dash.el</a>
 ;;
 
 ;; ## Setup
 ;;
-;; (require 'clj-refactor)
-;; (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode 1)))
+;;     (require 'clj-refactor)
+;;     (add-hook 'clojure-mode-hook (lambda ()
+;;                                    (clj-refactor-mode 1)
+;;                                    ;; insert keybinding setup here
+;;                                    ))
+;;
+;; You'll also have to set up the keybindings in the lambda. Read on.
+
+;; ## Setup keybindings
+;;
+;; All functions in clj-refactor have a two-letter mnemonic shortcut. You
+;; get to choose how those are bound. Here's how:
+;;
+;;     (cljr-add-keybindings-with-prefix "C-c C-m")
+;;     ;; eg. rename files with `C-c C-m rf`.
+;;
+;; If you would rather have a modifier key, instead of a prefix, do:
+;;
+;;     (cljr-add-keybindings-with-modifier "C-s-")
+;;     ;; eg. rename files with `C-s-r C-s-f`.
+;;
+;; If neither of these appeal to your sense of keyboard layout aesthetics, feel free
+;; to pick and choose your own keybindings with a smattering of:
+;;
+;;     (define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
 
 ;; ## Use
 ;;
-;; Right now, there's only this:
+;; This is it so far:
 ;;
-;; - `C-x C-r`: rename file, update ns-declaration, and then query-replace new ns in project.
+;;  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
+;;  - `ar`: add :require to namespace declaration
+;;  - `au`: add :use to namespace declaration
+;;
+;; Combine with your keybinding prefix/modifier.
 
 ;;; Code:
 
@@ -55,7 +82,27 @@
 
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
-(define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
+(defun cljr--key-pairs-with-modifier (modifier keys)
+  (->> (string-to-list keys)
+    (--map (concat modifier (char-to-string it)))
+    (s-join " ")
+    (read-kbd-macro)))
+
+(defun cljr--key-pairs-with-prefix (prefix keys)
+  (read-kbd-macro (concat prefix " " keys)))
+
+(defun cljr--add-keybindings (key-fn)
+  (define-key clj-refactor-map (funcall key-fn "rf") 'cljr-rename-file)
+  (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use)
+  (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require))
+
+;;;###autoload
+(defun cljr-add-keybindings-with-prefix (prefix)
+  (cljr--add-keybindings (-partial 'cljr--key-pairs-with-prefix prefix)))
+
+;;;###autoload
+(defun cljr-add-keybindings-with-modifier (modifier)
+  (cljr--add-keybindings (-partial 'cljr--key-pairs-with-modifier modifier)))
 
 (defun cljr--project-dir ()
   (file-truename
@@ -97,6 +144,29 @@
           (cljr--rename-file filename new-name)
           (message "File '%s' successfully renamed to '%s'"
                    name (file-name-nondirectory new-name)))))))
+
+(defun cljr--goto-ns ()
+  (goto-char (point-min))
+  (unless (re-search-forward clojure-namespace-name-regex nil t)
+    (error "No namespace declaration found")))
+
+;;;###autoload
+(defun cljr-add-require ()
+  (interactive)
+  (push-mark)
+  (cljr--goto-ns)
+  (newline-and-indent)
+  (insert "(:require [])")
+  (forward-char -2))
+
+;;;###autoload
+(defun cljr-add-use ()
+  (interactive)
+  (push-mark)
+  (cljr--goto-ns)
+  (newline-and-indent)
+  (insert "(:use [ :only ()])")
+  (forward-char -11))
 
 ;;;###autoload
 (define-minor-mode clj-refactor-mode

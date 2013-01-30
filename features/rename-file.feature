@@ -16,7 +16,7 @@ Feature: Rename a file, update namespaces
 
     And I open file "tmp/src/cljr/dependency.clj"
     And I start an action chain
-    And I press "C-x C-r"
+    And I press "C-! rf"
     And I press "C-2 M-b"
     And I press "M-d"
     And I type "renamed"

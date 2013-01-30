@@ -20,13 +20,40 @@ clj-refactor in your path somewhere:
 ## Setup
 
     (require 'clj-refactor)
-    (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode 1)))
+    (add-hook 'clojure-mode-hook (lambda ()
+                                   (clj-refactor-mode 1)
+                                   ;; insert keybinding setup here
+                                   ))
+
+You'll also have to set up the keybindings in the lambda. Read on.
+
+## Setup keybindings
+
+All functions in clj-refactor have a two-letter mnemonic shortcut. You
+get to choose how those are bound. Here's how:
+
+    (cljr-add-keybindings-with-prefix "C-c C-m")
+    ;; eg. rename files with `C-c C-m rf`.
+
+If you would rather have a modifier key, instead of a prefix, do:
+
+    (cljr-add-keybindings-with-modifier "C-s-")
+    ;; eg. rename files with `C-s-r C-s-f`.
+
+If neither of these appeal to your sense of keyboard layout aesthetics, feel free
+to pick and choose your own keybindings with a smattering of:
+
+    (define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
 
 ## Use
 
-Right now, there's only this:
+This is it so far:
 
- - `C-x C-r`: rename file, update ns-declaration, and then query-replace new ns in project.
+ - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
+ - `ar`: add :require to namespace declaration
+ - `au`: add :use to namespace declaration
+
+Combine with your keybinding prefix/modifier.
 
 ## License
 

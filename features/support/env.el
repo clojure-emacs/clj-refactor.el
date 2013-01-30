@@ -27,6 +27,8 @@
     (replace-regexp-in-string
      "_" "-" (mapconcat 'identity (cdr (split-string relative "/")) "."))))
 
+(cljr-add-keybindings-with-prefix "C-!")
+
 (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode)))
 
 (Setup
