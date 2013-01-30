@@ -27,21 +27,33 @@
     (replace-regexp-in-string
      "_" "-" (mapconcat 'identity (cdr (split-string relative "/")) "."))))
 
-(cljr-add-keybindings-with-prefix "C-!")
-
-(add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode)))
-
 (Setup
- ;; Before anything has run
- )
+ (cljr-add-keybindings-with-prefix "C-!")
+ (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode))))
 
 (Before
  ;; Before each scenario is run
  )
 
+(defun save-all-buffers-dont-ask ()
+  (dolist (buffer (buffer-list))
+    (with-current-buffer buffer
+      (let ((filename (buffer-file-name)))
+        (when (and filename (file-exists-p filename))
+          (save-buffer))))))
+
+(defun kill-matching-buffers-dont-ask (regexp &optional internal-too)
+  (dolist (buffer (buffer-list))
+    (let ((name (buffer-name buffer)))
+      (when (and name (not (string-equal name ""))
+                 (or internal-too (/= (aref name 0) ?\s))
+                 (string-match regexp name))
+        (kill-buffer buffer)))))
+
 (After
- ;; After each scenario is run
- )
+ (save-all-buffers-dont-ask)
+ (kill-matching-buffers-dont-ask "clj")
+ (delete-directory (expand-file-name "tmp" clj-refactor-root-path) t))
 
 (Teardown
  ;; After when everything has been run

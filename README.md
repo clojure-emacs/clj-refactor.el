@@ -29,8 +29,9 @@ You'll also have to set up the keybindings in the lambda. Read on.
 
 ## Setup keybindings
 
-All functions in clj-refactor have a two-letter mnemonic shortcut. You
-get to choose how those are bound. Here's how:
+All functions in clj-refactor have a two-letter mnemonic shortcut. For
+instance, rename-file is `rf`. You get to choose how those are bound.
+Here's how:
 
     (cljr-add-keybindings-with-prefix "C-c C-m")
     ;; eg. rename files with `C-c C-m rf`.
