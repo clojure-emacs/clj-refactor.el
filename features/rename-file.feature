@@ -22,9 +22,9 @@ Feature: Rename a file, update namespaces
     And I type "renamed"
     And I press "RET"
     And I press "y"
+    And I press "y"
     And I execute the action chain
 
-    When I open file "tmp/src/cljr/renamed.clj"
     Then I should see "(ns cljr.renamed)"
 
     When I open file "tmp/src/cljr/dependent_file.clj"

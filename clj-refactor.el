@@ -1,3 +1,28 @@
+;;; clj-refactor.el --- A collection of clojure refactoring functions
+
+;; Copyright (C) 2012 Magnar Sveen <magnars@gmail.com>
+
+;; Author: Magnar Sveen <magnars@gmail.com>
+;; Version: 0.1.0
+;; Keywords: convenience
+
+;; This program is free software; you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License
+;; as published by the Free Software Foundation; either version 3
+;; of the License, or (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;;; Code:
+
 (require 'dash)
 (require 's)
 
@@ -23,12 +48,15 @@
     (rename-buffer new-name)
     (set-visited-file-name new-name)
     (clojure-update-ns)
-    (save-excursion
-      (ignore-errors
-        (tags-query-replace old-ns (clojure-expected-ns) nil
-                            '(cljr--project-files))))
-    (save-buffer)))
+    (save-window-excursion
+      (save-excursion
+        (ignore-errors
+          (tags-query-replace old-ns (clojure-expected-ns) nil
+                              '(cljr--project-files)))))
+    (save-buffer)
+    (save-some-buffers)))
 
+;;;###autoload
 (defun cljr-rename-file ()
   "Renames current buffer and file it is visiting."
   (interactive)
@@ -43,6 +71,7 @@
           (message "File '%s' successfully renamed to '%s'"
                    name (file-name-nondirectory new-name)))))))
 
+;;;###autoload
 (define-minor-mode clj-refactor-mode
   "A mode to keep the clj-refactor keybindings."
   nil " cljr" clj-refactor-map)
