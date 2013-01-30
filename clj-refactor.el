@@ -5,7 +5,7 @@
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; Version: 0.1.0
 ;; Keywords: convenience
-;; Package-Requires: ((s "") (dash ""))
+;; Package-Requires: ((s "1.3.1") (dash "1.0.3"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -70,7 +70,7 @@
                          1000))))
 
 (defun cljr--rename-file (filename new-name)
-  (let ((old-ns (clojure-expected-ns)))
+  (let ((old-ns (clojure-find-ns)))
     (rename-file filename new-name 1)
     (rename-buffer new-name)
     (set-visited-file-name new-name)
