@@ -1,9 +1,11 @@
 (Given "^I open file \"\\(.+\\)\"$"
        (lambda (filename)
+         (setq default-directory clj-refactor-root-path)
          (find-file filename)))
 
 (Given "^I have a project \"\\([^\"]+\\)\" in \"\\([^\"]+\\)\"$"
        (lambda (project-name dir-name)
+         (setq default-directory clj-refactor-root-path)
 
          ;; delete old directory
          (when (file-exists-p dir-name)
@@ -18,6 +20,7 @@
 
 (Given "^I have a clojure-file \"\\([^\"]+\\)\"$"
      (lambda (file-name)
+       (setq default-directory clj-refactor-root-path)
        (find-file file-name)
        (clojure-insert-ns-form)
        (save-buffer)
