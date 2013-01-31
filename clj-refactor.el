@@ -149,26 +149,40 @@
 
 (defun cljr--goto-ns ()
   (goto-char (point-min))
-  (unless (re-search-forward clojure-namespace-name-regex nil t)
+  (if (re-search-forward clojure-namespace-name-regex nil t)
+      (search-backward "(")
     (error "No namespace declaration found")))
+
+(defun cljr--insert-in-ns (type)
+  (cljr--goto-ns)
+  (let ((bound (save-excursion (forward-list 1) (point))))
+    (if (search-forward (concat "(" type " ") bound t)
+        (progn
+          (search-backward "(")
+          (forward-list 1)
+          (forward-char -1)
+          (newline-and-indent))
+      (forward-list 1)
+      (forward-char -1)
+      (newline-and-indent)
+      (insert "(" type " )")
+      (forward-char -1))))
 
 ;;;###autoload
 (defun cljr-add-require-to-ns ()
   (interactive)
   (push-mark)
-  (cljr--goto-ns)
-  (newline-and-indent)
+  (cljr--insert-in-ns ":require")
   (cljr--pop-mark-after-yasnippet)
-  (yas/expand-snippet "(:require [$1 :as $2])$0"))
+  (yas/expand-snippet "[$1 :as $2]"))
 
 ;;;###autoload
 (defun cljr-add-use-to-ns ()
   (interactive)
   (push-mark)
-  (cljr--goto-ns)
-  (newline-and-indent)
+  (cljr--insert-in-ns ":use")
   (cljr--pop-mark-after-yasnippet)
-  (yas/expand-snippet "(:use ${1:[$2 :only ($3)]})$0"))
+  (yas/expand-snippet "${1:[$2 :only ($3)]}"))
 
 (defun cljr--pop-mark-after-yasnippet ()
   (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-mark-after-yasnippet-1 nil t))

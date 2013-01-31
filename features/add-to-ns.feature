@@ -11,10 +11,17 @@ Feature: Add to namespace
     And I type "clojure.strings"
     And I press "TAB"
     And I type "s"
+    And I press "TAB"
+    And I press "C-! ar"
+    And I type "clj-time.core"
+    And I press "TAB"
+    And I type "time"
+    And I press "TAB"
     Then I should see:
     """
     (ns cljr.core
-      (:require [clojure.strings :as s]))
+      (:require [clojure.strings :as s]
+                [clj-time.core :as time]))
     """
 
   Scenario: Add use to namespace
@@ -30,6 +37,6 @@ Feature: Add to namespace
     Then I should see:
     """
     (ns cljr.core
-      (:use [clojure.strings :only (join)])
-      (:use clj-time.core))
+      (:use clj-time.core
+            [clojure.strings :only (join)]))
     """
