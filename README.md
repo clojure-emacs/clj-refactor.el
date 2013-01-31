@@ -6,7 +6,8 @@ A tiny, but growing, collection of clojure refactoring functions.
 
 I highly recommended installing clj-refactor through elpa.
 
-It's available on [marmalade](http://marmalade-repo.org/):
+It's available on [marmalade](http://marmalade-repo.org/) and
+[melpa](http://melpa.milkbox.net/):
 
     M-x package-install clj-refactor
 
