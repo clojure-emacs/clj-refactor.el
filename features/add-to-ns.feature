@@ -25,7 +25,6 @@ Feature: Add to namespace
     """
 
   Scenario: Add use to namespace
-    Then the cursor should be at point "1"
     When I press "C-! au"
     And I type "clj-time.core"
     And I press "TAB"
@@ -39,4 +38,17 @@ Feature: Add to namespace
     (ns cljr.core
       (:use clj-time.core
             [clojure.strings :only (join)]))
+    """
+
+  Scenario: Add import to namespace
+    When I press "C-! ai"
+    And I type "java.io.File"
+    And I press "TAB"
+    And I press "C-! ai"
+    And I type "[java.util Date]"
+    Then I should see:
+    """
+    (ns cljr.core
+      (:import java.io.File
+               [java.util Date]))
     """

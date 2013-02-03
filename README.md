@@ -54,6 +54,7 @@ This is it so far:
  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
  - `ar`: add :require to namespace declaration
  - `au`: add :use to namespace declaration
+ - `ai`: add :import to namespace declaration
 
 Combine with your keybinding prefix/modifier.
 

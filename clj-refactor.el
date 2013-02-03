@@ -73,6 +73,7 @@
 ;;  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
 ;;  - `ar`: add :require to namespace declaration
 ;;  - `au`: add :use to namespace declaration
+;;  - `ai`: add :import to namespace declaration
 ;;
 ;; Combine with your keybinding prefix/modifier.
 
@@ -84,9 +85,16 @@
 
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
+(defun cljr--fix-special-modifier-combinations (key)
+  (case key
+    ("C-s-i" "s-TAB")
+    ("C-s-m" "s-RET")
+    (otherwise key)))
+
 (defun cljr--key-pairs-with-modifier (modifier keys)
   (->> (string-to-list keys)
-    (--map (concat modifier (char-to-string it)))
+    (--map (cljr--fix-special-modifier-combinations
+            (concat modifier (char-to-string it))))
     (s-join " ")
     (read-kbd-macro)))
 
@@ -96,7 +104,8 @@
 (defun cljr--add-keybindings (key-fn)
   (define-key clj-refactor-map (funcall key-fn "rf") 'cljr-rename-file)
   (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use-to-ns)
-  (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns))
+  (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
+  (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -183,6 +192,14 @@
   (cljr--insert-in-ns ":use")
   (cljr--pop-mark-after-yasnippet)
   (yas/expand-snippet "${1:[$2 :only ($3)]}"))
+
+;;;###autoload
+(defun cljr-add-import-to-ns ()
+  (interactive)
+  (push-mark)
+  (cljr--insert-in-ns ":import")
+  (cljr--pop-mark-after-yasnippet)
+  (yas/expand-snippet "$1"))
 
 (defun cljr--pop-mark-after-yasnippet ()
   (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-mark-after-yasnippet-1 nil t))
