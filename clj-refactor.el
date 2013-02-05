@@ -224,36 +224,39 @@
 
 (add-hook 'find-file-hook 'cljr--add-ns-if-blank-clj-file)
 
+(defvar cljr--tmp-marker (make-marker))
+
 ;;;###autoload
 (defun cljr-add-require-to-ns ()
   (interactive)
-  (push-mark)
+  (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require")
-  (cljr--pop-mark-after-yasnippet)
+  (cljr--pop-tmp-marker-after-yasnippet)
   (yas/expand-snippet "[$1 :as $2]"))
 
 ;;;###autoload
 (defun cljr-add-use-to-ns ()
   (interactive)
-  (push-mark)
+  (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":use")
-  (cljr--pop-mark-after-yasnippet)
+  (cljr--pop-tmp-marker-after-yasnippet)
   (yas/expand-snippet "${1:[$2 :only ($3)]}"))
 
 ;;;###autoload
 (defun cljr-add-import-to-ns ()
   (interactive)
-  (push-mark)
+  (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":import")
-  (cljr--pop-mark-after-yasnippet)
+  (cljr--pop-tmp-marker-after-yasnippet)
   (yas/expand-snippet "$1"))
 
-(defun cljr--pop-mark-after-yasnippet ()
-  (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-mark-after-yasnippet-1 nil t))
+(defun cljr--pop-tmp-marker-after-yasnippet ()
+  (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 nil t))
 
-(defun cljr--pop-mark-after-yasnippet-1 (&rest ignore)
-  (pop-to-mark-command)
-  (remove-hook 'yas/after-exit-snippet-hook 'cljr--pop-mark-after-yasnippet-1 t))
+(defun cljr--pop-tmp-marker-after-yasnippet-1 (&rest ignore)
+  (goto-char cljr--tmp-marker)
+  (set-marker cljr--tmp-marker nil)
+  (remove-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 t))
 
 ;;;###autoload
 (define-minor-mode clj-refactor-mode
