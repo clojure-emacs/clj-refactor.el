@@ -13,6 +13,7 @@
 
          ;; create directory structure
          (mkdir (expand-file-name project-name (expand-file-name "src" dir-name)) t)
+         (mkdir (expand-file-name project-name (expand-file-name "test" dir-name)) t)
 
          ;; add project.clj
          (with-temp-file (expand-file-name "project.clj" dir-name)
@@ -22,7 +23,6 @@
      (lambda (file-name)
        (setq default-directory clj-refactor-root-path)
        (find-file file-name)
-       (clojure-insert-ns-form)
        (save-buffer)
        (kill-buffer)))
 

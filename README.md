@@ -52,11 +52,27 @@ to pick and choose your own keybindings with a smattering of:
 This is it so far:
 
  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
- - `ar`: add :require to namespace declaration
- - `au`: add :use to namespace declaration
- - `ai`: add :import to namespace declaration
+ - `ar`: add :require to namespace declaration, then jump back
+ - `au`: add :use to namespace declaration, then jump back
+ - `ai`: add :import to namespace declaration, then jump back
 
 Combine with your keybinding prefix/modifier.
+
+## Automatic insertion of namespace declaration
+
+When you open a blank `.clj`-file, clj-refactor inserts the namespace
+declaration for you.
+
+It will also add the relevant `:use` clauses in test files, normally
+using `clojure.test`, but if you're depending on midje in your
+`project.clj` it uses that instead.
+
+Like clojure-mode, clj-refactor presumes that you are postfixing your
+test files with `_test`.
+
+Prefer to insert your own ns-declarations? Then:
+
+    (setq clj-add-ns-to-blank-clj-files nil)
 
 ## License
 

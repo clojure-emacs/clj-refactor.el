@@ -39,7 +39,9 @@
   (dolist (buffer (buffer-list))
     (with-current-buffer buffer
       (let ((filename (buffer-file-name)))
-        (when (and filename (file-exists-p filename))
+        (when (and filename
+                   (or (file-exists-p filename)
+                       (s-ends-with? ".clj" filename)))
           (save-buffer))))))
 
 (defun kill-matching-buffers-dont-ask (regexp &optional internal-too)

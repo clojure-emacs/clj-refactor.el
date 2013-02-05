@@ -71,17 +71,35 @@
 ;; This is it so far:
 ;;
 ;;  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
-;;  - `ar`: add :require to namespace declaration
-;;  - `au`: add :use to namespace declaration
-;;  - `ai`: add :import to namespace declaration
+;;  - `ar`: add :require to namespace declaration, then jump back
+;;  - `au`: add :use to namespace declaration, then jump back
+;;  - `ai`: add :import to namespace declaration, then jump back
 ;;
 ;; Combine with your keybinding prefix/modifier.
+
+;; ## Automatic insertion of namespace declaration
+;;
+;; When you open a blank `.clj`-file, clj-refactor inserts the namespace
+;; declaration for you.
+;;
+;; It will also add the relevant `:use` clauses in test files, normally
+;; using `clojure.test`, but if you're depending on midje in your
+;; `project.clj` it uses that instead.
+;;
+;; Like clojure-mode, clj-refactor presumes that you are postfixing your
+;; test files with `_test`.
+;;
+;; Prefer to insert your own ns-declarations? Then:
+;;
+;; (setq clj-add-ns-to-blank-clj-files nil)
 
 ;;; Code:
 
 (require 'dash)
 (require 's)
 (require 'yasnippet)
+
+(defvar cljr-add-ns-to-blank-clj-files t)
 
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
@@ -118,6 +136,9 @@
 (defun cljr--project-dir ()
   (file-truename
    (locate-dominating-file default-directory "project.clj")))
+
+(defun cljr--project-file ()
+  (expand-file-name "project.clj" (cljr--project-dir)))
 
 (defun cljr--project-files ()
   (split-string (shell-command-to-string
@@ -176,6 +197,32 @@
       (newline-and-indent)
       (insert "(" type " )")
       (forward-char -1))))
+
+(defun cljr--project-depends-on (package)
+  (save-window-excursion
+    (find-file (cljr--project-file))
+    (goto-char (point-min))
+    (search-forward package nil t)))
+
+(defun cljr--add-test-use-declarations ()
+  (save-excursion
+    (let ((ns (clojure-find-ns)))
+      (cljr--insert-in-ns ":use")
+      (insert (s-chop-suffix "-test" ns))
+      (cljr--insert-in-ns ":use")
+      (insert (if (cljr--project-depends-on "midje") "midje.sweet" "clojure.test")))))
+
+(defun cljr--add-ns-if-blank-clj-file ()
+  (ignore-errors
+    (when (and cljr-add-ns-to-blank-clj-files
+               (s-ends-with? ".clj" (buffer-file-name))
+               (= (point-min) (point-max)))
+      (clojure-insert-ns-form)
+      (newline 2)
+      (when (clojure-in-tests-p)
+        (cljr--add-test-use-declarations)))))
+
+(add-hook 'find-file-hook 'cljr--add-ns-if-blank-clj-file)
 
 ;;;###autoload
 (defun cljr-add-require-to-ns ()
