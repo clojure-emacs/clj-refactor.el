@@ -52,11 +52,28 @@ to pick and choose your own keybindings with a smattering of:
 This is it so far:
 
  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
- - `ar`: add :require to namespace declaration, then jump back
+ - `ar`: add :require to namespace declaration, then jump back (see optional setup)
  - `au`: add :use to namespace declaration, then jump back
  - `ai`: add :import to namespace declaration, then jump back
 
 Combine with your keybinding prefix/modifier.
+
+## Optional setup
+
+If you're not using yasnippet, then the "jumping back"-part of adding to
+namespace won't work. To remedy that, enable the mode with either:
+
+    (yas/global-mode 1)
+
+or
+
+    (add-hook 'clojure-mode-hook (lambda () (yas/minor-mode 1)))
+
+It is an excellent package, so I recommend looking into it. Here are
+some snippet packages for Clojure:
+
+ - David Nolen has created some [clojure-snippets](https://github.com/swannodette/clojure-snippets)
+ - I've made some [datomic-snippets](https://github.com/magnars/datomic-snippets)
 
 ## Automatic insertion of namespace declaration
 
