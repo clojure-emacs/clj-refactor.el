@@ -148,7 +148,7 @@ Run the tests with:
 
 ## License
 
-Copyright (C) 2012-2013 Magnar Sveen
+Copyright © 2012-2013 Magnar Sveen
 
 Authors: Magnar Sveen <magnars@gmail.com>
 Keywords: clojure convenience
