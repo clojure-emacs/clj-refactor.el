@@ -51,12 +51,46 @@ to pick and choose your own keybindings with a smattering of:
 
 This is it so far:
 
+ - `th`: thread another expression
+ - `uw`: unwind a threaded expression
  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
  - `ar`: add :require to namespace declaration, then jump back (see optional setup)
  - `au`: add :use to namespace declaration, then jump back
  - `ai`: add :import to namespace declaration, then jump back
 
 Combine with your keybinding prefix/modifier.
+
+## Thread / unwind example
+
+Given this:
+
+```cl
+(map square (filter even? [1 2 3 4 5]))
+```
+
+Start by wrapping it in a threading macro:
+
+```cl
+(->> (map square (filter even? [1 2 3 4 5])))
+```
+
+And start threading away, using `cljr-thread`:
+
+```cl
+(->> (filter even? [1 2 3 4 5])
+     (map square))
+```
+
+And again:
+
+```cl
+(->> [1 2 3 4 5]
+     (filter even?)
+     (map square))
+```
+
+To revert this, there's `cljr-unwind`. Just read the examples in the
+other direction.
 
 ## Optional setup
 

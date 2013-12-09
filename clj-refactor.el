@@ -74,6 +74,8 @@
 ;;  - `ar`: add :require to namespace declaration, then jump back
 ;;  - `au`: add :use to namespace declaration, then jump back
 ;;  - `ai`: add :import to namespace declaration, then jump back
+;;  - `th`: thread another expression
+;;  - `uw`: unwind a threaded expression
 ;;
 ;; Combine with your keybinding prefix/modifier.
 
@@ -98,6 +100,7 @@
 (require 'dash)
 (require 's)
 (require 'yasnippet)
+(require 'paredit)
 
 (defvar cljr-add-ns-to-blank-clj-files t)
 
@@ -123,7 +126,9 @@
   (define-key clj-refactor-map (funcall key-fn "rf") 'cljr-rename-file)
   (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use-to-ns)
   (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
-  (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns))
+  (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
+  (define-key clj-refactor-map (funcall key-fn "th") 'cljr-thread)
+  (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -260,6 +265,112 @@
   (goto-char cljr--tmp-marker)
   (set-marker cljr--tmp-marker nil)
   (remove-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 t))
+
+;; ------ threading and unwinding -----------
+
+(defun cljr--unwind-first ()
+  (paredit-forward)
+  (save-excursion
+    (let* ((beg (point))
+           (end (progn (paredit-forward)
+                       (point)))
+           (contents (buffer-substring beg end)))
+      (delete-region beg end)
+      (join-line -1)
+      (paredit-forward-down)
+      (paredit-forward)
+      (insert contents)))
+  (forward-char))
+
+(defun cljr--unwind-last ()
+  (paredit-forward)
+  (save-excursion
+    (let* ((beg (point))
+           (end (progn (paredit-forward)
+                       (point)))
+           (contents (buffer-substring beg end)))
+      (delete-region beg end)
+      (join-line -1)
+      (paredit-forward)
+      (paredit-backward-down)
+      (insert contents)))
+  (forward-char))
+
+(defun cljr--nothing-more-to-unwind ()
+  (save-excursion
+    (let ((beg (point)))
+      (paredit-forward)
+      (paredit-backward-down)
+      (paredit-backward 3) ;; the last sexp, the threading macro, and the paren
+      (= beg (point)))))
+
+(defun cljr--pop-out-of-threading ()
+  (paredit-forward-down)
+  (paredit-forward)
+  (paredit-raise-sexp))
+
+(defun cljr-unwind ()
+  (interactive)
+  (ignore-errors
+    (forward-char 3))
+  (search-backward "(->")
+  (if (cljr--nothing-more-to-unwind)
+      (cljr--pop-out-of-threading)
+    (paredit-forward-down)
+    (cond
+     ((looking-at "->\\s ") (cljr--unwind-first))
+     ((looking-at "->>\\s ") (cljr--unwind-last)))))
+
+(defun cljr--thread-first ()
+  (paredit-forward-down)
+  (paredit-forward)
+  (let* ((beg (point))
+         (end (progn (paredit-forward)
+                     (point)))
+         (contents (buffer-substring beg end)))
+    (if (string= contents ")")
+        (message "Nothing more to thread.")
+      (delete-region beg end)
+      (paredit-backward-up)
+      (just-one-space 0)
+      (insert contents)
+      (newline-and-indent))))
+
+(defun cljr--thread-last ()
+  (paredit-forward 2)
+  (paredit-backward-down)
+  (let* ((end (point))
+         (beg (progn (paredit-backward)
+                     (point)))
+         (contents (buffer-substring beg end)))
+    (if (looking-back "(" 1)
+        (message "Nothing more to thread.")
+      (delete-region beg end)
+      (just-one-space 0)
+      (paredit-backward-up)
+      (insert contents)
+      (newline-and-indent))))
+
+(defun cljr--thread-guard ()
+  (save-excursion
+    (paredit-forward)
+    (if (looking-at "\\s ?(")
+        t
+      (message "Can only thread into lists.")
+      nil)))
+
+(defun cljr-thread ()
+  (interactive)
+  (ignore-errors
+      (forward-char 3))
+  (search-backward "(->")
+  (paredit-forward-down)
+  (when (cljr--thread-guard)
+    (cond
+     ((looking-at "->\\s ") (cljr--thread-first))
+     ((looking-at "->>\\s ") (cljr--thread-last)))))
+
+;; ------ minor mode -----------
 
 ;;;###autoload
 (define-minor-mode clj-refactor-mode
