@@ -207,10 +207,13 @@
 (defun cljr--add-test-use-declarations ()
   (save-excursion
     (let ((ns (clojure-find-ns)))
-      (cljr--insert-in-ns ":use")
-      (insert (s-chop-suffix "-test" ns))
-      (cljr--insert-in-ns ":use")
-      (insert (if (cljr--project-depends-on "midje") "midje.sweet" "clojure.test")))))
+      (cljr--insert-in-ns ":require")
+      (insert "[" (s-chop-suffix "-test" ns) " :refer :all]")
+      (cljr--insert-in-ns ":require")
+      (insert "[" (if (cljr--project-depends-on "midje")
+                      "midje.sweet"
+                    "clojure.test")
+              " :refer :all]"))))
 
 (defun cljr--add-ns-if-blank-clj-file ()
   (ignore-errors

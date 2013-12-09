@@ -12,8 +12,8 @@ Feature: Add namespace to blank .clj files
     Then I should see:
     """
     (ns cljr.core-test
-      (:use cljr.core
-            clojure.test))
+      (:require [cljr.core :refer :all]
+                [clojure.test :refer :all]))
     """
 
   Scenario: Midje
@@ -27,6 +27,6 @@ Feature: Add namespace to blank .clj files
     Then I should see:
     """
     (ns cljr.core-test
-      (:use cljr.core
-            midje.sweet))
+      (:require [cljr.core :refer :all]
+                [midje.sweet :refer :all]))
     """
