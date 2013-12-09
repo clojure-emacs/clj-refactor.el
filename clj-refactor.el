@@ -309,6 +309,7 @@
   (paredit-forward)
   (paredit-raise-sexp))
 
+;;;###autoload
 (defun cljr-unwind ()
   (interactive)
   (ignore-errors
@@ -359,6 +360,7 @@
       (message "Can only thread into lists.")
       nil)))
 
+;;;###autoload
 (defun cljr-thread ()
   (interactive)
   (ignore-errors
