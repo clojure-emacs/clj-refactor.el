@@ -3,7 +3,7 @@
 ;; Copyright (C) 2012 Magnar Sveen <magnars@gmail.com>
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
-;; Version: 0.3.0
+;; Version: 0.3.1
 ;; Keywords: convenience
 ;; Package-Requires: ((s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24"))
 
