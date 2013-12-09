@@ -171,3 +171,27 @@ Feature: Threading and unwinding of macros
     Then I should see "(map square (filter even? [1 2 3 4 5]))"
     And I should not see "->>"
 
+  Scenario: Unwind function name, part 1
+    When I insert:
+    """
+    (->> [1 2 3 4 5]
+         sum
+         square)
+    """
+    And I press "C-! uw"
+    Then I should see:
+    """
+    (->> (sum [1 2 3 4 5])
+         square)
+    """
+
+  Scenario: Unwind function name, part 2
+    When I insert:
+    """
+    (-> [1 2 3 4 5]
+        sum
+        square)
+    """
+    And I press "C-! uw"
+    And I press "C-! uw"
+    Then I should see "(-> (square (sum [1 2 3 4 5])))"
