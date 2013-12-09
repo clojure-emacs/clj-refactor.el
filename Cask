@@ -1,10 +1,11 @@
-(source "melpa" "http://melpa.milkbox.net/packages/")
+(source melpa)
 
-(package "clj-refactor" "0.1.0" "A collection of refactoring functions for clojure.")
+(package-file "clj-refactor.el")
 
 (depends-on "dash")
 (depends-on "s")
 (depends-on "yasnippet")
+(depends-on "paredit")
 
 (development
   (depends-on "ecukes")

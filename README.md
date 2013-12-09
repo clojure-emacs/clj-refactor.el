@@ -91,9 +91,29 @@ Prefer to insert your own ns-declarations? Then:
 
     (setq clj-add-ns-to-blank-clj-files nil)
 
+## Contribute
+
+Yes, please do. There's a suite of tests, so remember to add tests for your
+specific feature, or I might break it later.
+
+You'll find the repo at:
+
+    https://github.com/magnars/clj-refactor.el
+
+To fetch the test dependencies, install
+[cask](https://github.com/rejeep/cask.el) if you haven't already,
+then:
+
+    $ cd /path/to/clj-refactor
+    $ cask
+
+Run the tests with:
+
+    $ ./run-tests.sh
+
 ## License
 
-Copyright (C) 2012 Magnar Sveen
+Copyright (C) 2012-2013 Magnar Sveen
 
 Authors: Magnar Sveen <magnars@gmail.com>
 Keywords: clojure convenience
