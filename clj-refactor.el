@@ -397,6 +397,8 @@
   (newline-and-indent)
   (mc/maybe-multiple-cursors-mode))
 
+(add-to-list 'mc--default-cmds-to-run-once 'cljr-introduce-let)
+
 (defun cljr-expand-let ()
   (interactive)
   (ignore-errors
