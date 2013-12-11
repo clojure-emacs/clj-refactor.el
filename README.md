@@ -22,11 +22,13 @@ clj-refactor in your path somewhere:
 
 ## Setup
 
-    (require 'clj-refactor)
-    (add-hook 'clojure-mode-hook (lambda ()
-                                   (clj-refactor-mode 1)
-                                   ;; insert keybinding setup here
-                                   ))
+```cl
+(require 'clj-refactor)
+(add-hook 'clojure-mode-hook (lambda ()
+                               (clj-refactor-mode 1)
+                               ;; insert keybinding setup here
+                               ))
+```
 
 You'll also have to set up the keybindings in the lambda. Read on.
 
@@ -36,18 +38,24 @@ All functions in clj-refactor have a two-letter mnemonic shortcut. For
 instance, rename-file is `rf`. You get to choose how those are bound.
 Here's how:
 
-    (cljr-add-keybindings-with-prefix "C-c C-m")
-    ;; eg. rename files with `C-c C-m rf`.
+```cl
+(cljr-add-keybindings-with-prefix "C-c C-m")
+;; eg. rename files with `C-c C-m rf`.
+```
 
 If you would rather have a modifier key, instead of a prefix, do:
 
-    (cljr-add-keybindings-with-modifier "C-s-")
-    ;; eg. rename files with `C-s-r C-s-f`.
+```cl
+(cljr-add-keybindings-with-modifier "C-s-")
+;; eg. rename files with `C-s-r C-s-f`.
+```
 
 If neither of these appeal to your sense of keyboard layout aesthetics, feel free
 to pick and choose your own keybindings with a smattering of:
 
-    (define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
+```cl
+(define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
+```
 
 ## Use
 
@@ -133,11 +141,15 @@ Yay.
 If you're not using yasnippet, then the "jumping back"-part of adding to
 namespace won't work. To remedy that, enable the mode with either:
 
-    (yas/global-mode 1)
+```cl
+(yas/global-mode 1)
+```
 
 or
 
-    (add-hook 'clojure-mode-hook (lambda () (yas/minor-mode 1)))
+```cl
+(add-hook 'clojure-mode-hook (lambda () (yas/minor-mode 1)))
+```
 
 It is an excellent package, so I recommend looking into it. Here are
 some snippet packages for Clojure:
@@ -159,7 +171,9 @@ test files with `_test`.
 
 Prefer to insert your own ns-declarations? Then:
 
-    (setq clj-add-ns-to-blank-clj-files nil)
+```cl
+(setq clj-add-ns-to-blank-clj-files nil)
+```
 
 ## Contribute
 
