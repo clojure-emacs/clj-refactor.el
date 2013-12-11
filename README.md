@@ -18,6 +18,7 @@ clj-refactor in your path somewhere:
  - <a href="https://github.com/magnars/dash.el">dash.el</a>
  - <a href="https://github.com/capitaomorte/yasnippet">yasnippet</a>
  - <a href="http://mumble.net/~campbell/emacs/paredit.el">paredit</a>
+ - <a href="https://github.com/magnars/multiple-cursors.el">multiple-cursors</a>
 
 ## Setup
 
