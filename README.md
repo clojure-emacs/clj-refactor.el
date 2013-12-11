@@ -54,6 +54,8 @@ This is it so far:
 
  - `th`: thread another expression
  - `uw`: unwind a threaded expression
+ - `il`: introduce let
+ - `el`: expand let
  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
  - `ar`: add :require to namespace declaration, then jump back (see optional setup)
  - `au`: add :use to namespace declaration, then jump back
@@ -92,6 +94,38 @@ And again:
 
 To revert this, there's `cljr-unwind`. Just read the examples in the
 other direction.
+
+## Introduce / expand let example
+
+Given this:
+
+```cl
+(defn handle-request
+  {:status 200
+   :body (find-body abc)})
+```
+
+With the cursor in front of `(find-body abc)`, I do `cljr-introduce-let`:
+
+```cl
+(defn handle-request
+  {:status 200
+   :body (let [X (find-body abc)]
+           X)})
+```
+
+Now I have two cursors where the `X`es are. Just type out the name,
+and press enter. Of course, that's not where I wanted the let
+statement. So I do `cljr-expand-let`:
+
+```cl
+(defn handle-request
+  (let [body (find-body abc)]
+    {:status 200
+     :body body}))
+```
+
+Yay.
 
 ## Optional setup
 

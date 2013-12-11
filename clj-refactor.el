@@ -5,7 +5,7 @@
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; Version: 0.3.2
 ;; Keywords: convenience
-;; Package-Requires: ((s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24"))
+;; Package-Requires: ((s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -101,6 +101,7 @@
 (require 's)
 (require 'yasnippet)
 (require 'paredit)
+(require 'multiple-cursors)
 
 (defvar cljr-add-ns-to-blank-clj-files t)
 
@@ -128,7 +129,9 @@
   (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
   (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
   (define-key clj-refactor-map (funcall key-fn "th") 'cljr-thread)
-  (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind))
+  (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind)
+  (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
+  (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -379,6 +382,30 @@
     (cond
      ((looking-at "->\\s ") (cljr--thread-first))
      ((looking-at "->>\\s ") (cljr--thread-last)))))
+
+;; ------ let binding ----------
+
+(defun cljr-introduce-let ()
+  (interactive)
+  (paredit-wrap-round)
+  (insert "let ")
+  (paredit-wrap-square)
+  (insert " ")
+  (backward-char)
+  (mc/create-fake-cursor-at-point)
+  (paredit-forward-up)
+  (newline-and-indent)
+  (mc/maybe-multiple-cursors-mode))
+
+(defun cljr-expand-let ()
+  (interactive)
+  (ignore-errors
+    (forward-char 4))
+  (search-backward "(let")
+  (paredit-forward-down 2)
+  (paredit-forward-up)
+  (skip-syntax-forward " >")
+  (paredit-convolute-sexp))
 
 ;; ------ minor mode -----------
 
