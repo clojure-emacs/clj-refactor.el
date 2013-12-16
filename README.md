@@ -57,7 +57,7 @@ to pick and choose your own keybindings with a smattering of:
 (define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
 ```
 
-## Use
+## Usage
 
 This is it so far:
 
@@ -66,9 +66,9 @@ This is it so far:
  - `il`: introduce let
  - `el`: expand let
  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
- - `ar`: add :require to namespace declaration, then jump back (see optional setup)
- - `au`: add :use to namespace declaration, then jump back
- - `ai`: add :import to namespace declaration, then jump back
+ - `ar`: add require to namespace declaration, then jump back (see optional setup)
+ - `au`: add "use" (ie require refer all) to namespace declaration, then jump back
+ - `ai`: add import to namespace declaration, then jump back
 
 Combine with your keybinding prefix/modifier.
 

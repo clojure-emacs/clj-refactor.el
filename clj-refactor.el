@@ -243,15 +243,15 @@
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require")
   (cljr--pop-tmp-marker-after-yasnippet)
-  (yas/expand-snippet "[$1 :as $2]"))
+  (yas/expand-snippet "${1:[${2:$3 :as $4}]}$0"))
 
 ;;;###autoload
 (defun cljr-add-use-to-ns ()
   (interactive)
   (set-marker cljr--tmp-marker (point))
-  (cljr--insert-in-ns ":use")
+  (cljr--insert-in-ns ":require")
   (cljr--pop-tmp-marker-after-yasnippet)
-  (yas/expand-snippet "${1:[$2 :only ($3)]}"))
+  (yas/expand-snippet "[$1 :refer ${2::all}]$0"))
 
 ;;;###autoload
 (defun cljr-add-import-to-ns ()

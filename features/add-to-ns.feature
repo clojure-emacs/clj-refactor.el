@@ -8,36 +8,36 @@ Feature: Add to namespace
 
   Scenario: Add require to namespace
     And I press "C-! ar"
+    And I press "TAB"
+    And I press "TAB"
     And I type "clojure.strings"
     And I press "TAB"
     And I type "s"
     And I press "TAB"
     And I press "C-! ar"
-    And I type "clj-time.core"
-    And I press "TAB"
-    And I type "time"
+    And I type "[clj-time.core :refer :all]"
     And I press "TAB"
     Then I should see:
     """
     (ns cljr.core
       (:require [clojure.strings :as s]
-                [clj-time.core :as time]))
+                [clj-time.core :refer :all]))
     """
 
   Scenario: Add use to namespace
     When I press "C-! au"
     And I type "clj-time.core"
     And I press "TAB"
-    And I press "C-! au"
     And I press "TAB"
+    And I press "C-! au"
     And I type "clojure.strings"
     And I press "TAB"
-    And I type "join"
+    And I type "[join]"
     Then I should see:
     """
     (ns cljr.core
-      (:use clj-time.core
-            [clojure.strings :only (join)]))
+      (:require [clj-time.core :refer :all]
+                [clojure.strings :refer [join]]))
     """
 
   Scenario: Add import to namespace
