@@ -195,3 +195,29 @@ Feature: Threading and unwinding of macros
     And I press "C-! uw"
     And I press "C-! uw"
     Then I should see "(-> (square (sum [1 2 3 4 5])))"
+
+  Scenario: Unwind, issue #6, part 1 - formatting
+    When I insert:
+    """
+    (defn plus [a b]
+      (-> a (+ b)))
+    """
+    And I press "C-! uw"
+    Then I should see:
+    """
+    (defn plus [a b]
+      (-> (+ a b)))
+    """
+
+  Scenario: Unwind, issue #6, part 2 - formatting
+    When I insert:
+    """
+    (defn plus [a b]
+      (->> a (+ b)))
+    """
+    And I press "C-! uw"
+    Then I should see:
+    """
+    (defn plus [a b]
+      (->> (+ b a)))
+    """
