@@ -327,13 +327,15 @@
   (interactive)
   (ignore-errors
     (forward-char 3))
-  (search-backward "(->")
+  (search-backward-regexp "\\((some->\\)\\|\\((->\\)")
   (if (cljr--nothing-more-to-unwind)
       (cljr--pop-out-of-threading)
     (paredit-forward-down)
     (cond
-     ((looking-at "->\\s ") (cljr--unwind-first))
-     ((looking-at "->>\\s ") (cljr--unwind-last)))))
+     ((looking-at "->\\s ")     (cljr--unwind-first))
+     ((looking-at "some->\\s ") (cljr--unwind-first))
+     ((looking-at "->>\\s ")     (cljr--unwind-last))
+     ((looking-at "some->>\\s ") (cljr--unwind-last)))))
 
 (defun cljr--thread-first ()
   (paredit-forward-down)
@@ -377,13 +379,16 @@
 (defun cljr-thread ()
   (interactive)
   (ignore-errors
-    (forward-char 3))
-  (search-backward "(->")
+    (forward-char 7))
+  (search-backward-regexp "\\((some->\\)\\|\\((->\\)")
   (paredit-forward-down)
   (when (cljr--thread-guard)
     (cond
-     ((looking-at "->\\s ") (cljr--thread-first))
-     ((looking-at "->>\\s ") (cljr--thread-last)))))
+     ((looking-at "->\\s ")     (cljr--thread-first))
+     ((looking-at "some->\\s ") (cljr--thread-first))
+     ((looking-at "->>\\s ")     (cljr--thread-last))
+     ((looking-at "some->>\\s ") (cljr--thread-last)))))
+
 
 ;; ------ let binding ----------
 
