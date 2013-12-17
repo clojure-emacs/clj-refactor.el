@@ -65,6 +65,7 @@ This is it so far:
  - `uw`: unwind a threaded expression
  - `il`: introduce let
  - `el`: expand let
+ - `ml`: move to let
  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
  - `ar`: add require to namespace declaration, then jump back (see optional setup)
  - `au`: add "use" (ie require refer all) to namespace declaration, then jump back
@@ -76,26 +77,26 @@ Combine with your keybinding prefix/modifier.
 
 Given this:
 
-```cl
+```clj
 (map square (filter even? [1 2 3 4 5]))
 ```
 
 Start by wrapping it in a threading macro:
 
-```cl
+```clj
 (->> (map square (filter even? [1 2 3 4 5])))
 ```
 
 And start threading away, using `cljr-thread`:
 
-```cl
+```clj
 (->> (filter even? [1 2 3 4 5])
      (map square))
 ```
 
 And again:
 
-```cl
+```clj
 (->> [1 2 3 4 5]
      (filter even?)
      (map square))
@@ -104,11 +105,11 @@ And again:
 To revert this, there's `cljr-unwind`. Just read the examples in the
 other direction.
 
-## Introduce / expand let example
+## Introduce / expand / move to let example
 
 Given this:
 
-```cl
+```clj
 (defn handle-request
   {:status 200
    :body (find-body abc)})
@@ -116,7 +117,7 @@ Given this:
 
 With the cursor in front of `(find-body abc)`, I do `cljr-introduce-let`:
 
-```cl
+```clj
 (defn handle-request
   {:status 200
    :body (let [X (find-body abc)]
@@ -127,14 +128,34 @@ Now I have two cursors where the `X`es are. Just type out the name,
 and press enter. Of course, that's not where I wanted the let
 statement. So I do `cljr-expand-let`:
 
-```cl
+```clj
 (defn handle-request
   (let [body (find-body abc)]
     {:status 200
      :body body}))
 ```
 
-Yay.
+Now, with the cursor in front of `200`, I do `cljr-move-to-let`:
+
+```clj
+(defn handle-request
+  (let [body (find-body abc)]
+    {:status 200
+     :body body}))
+```
+
+Now I have two cursors where the `X`es are. Just type out the name,
+and press enter.
+
+```clj
+(defn handle-request
+  (let [body (find-body abc)
+        X 200]
+    {:status X
+     :body body}))
+```
+
+Yay. And it even works with `if-let` and `when-let`.
 
 ## Optional setup
 

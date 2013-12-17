@@ -57,3 +57,62 @@ Feature: Let bindings
         {:status 200
          :body body}))
     """
+
+  Scenario: Move s-expression to let
+    When I insert:
+    """
+    (defn handle-request
+      (let [body (find-body abc)]
+        {:status (or status 500)
+         :body body}))
+    """
+    And I place the cursor before "(or status 500)"
+    And I press "C-! ml"
+    And I type "status"
+    Then I should see:
+    """
+    (defn handle-request
+      (let [body (find-body abc)
+            status (or status 500)]
+        {:status status
+         :body body}))
+    """
+
+  Scenario: Move constant to when-let
+    When I insert:
+    """
+    (defn handle-request
+      (when-let[body (find-body abc)]
+        {:status 42
+         :body body}))
+    """
+    And I place the cursor before "42"
+    And I press "C-! ml"
+    And I type "status"
+    Then I should see:
+    """
+    (defn handle-request
+      (when-let[body (find-body abc)
+                status 42]
+        {:status status
+         :body body}))
+    """
+
+  Scenario: Move to empty if-let
+    When I insert:
+    """
+    (defn handle-request
+      (if-let []
+        {:status (or status 500)
+         :body body}))
+    """
+    And I place the cursor before "(or status 500)"
+    And I press "C-! ml"
+    And I type "status"
+    Then I should see:
+    """
+    (defn handle-request
+      (if-let [status (or status 500)]
+        {:status status
+         :body body}))
+    """
