@@ -195,6 +195,12 @@ Run the tests with:
 
     $ ./run-tests.sh
 
+## Contributors
+
+- [AlexBaranosky](https://github.com/AlexBaranosky) added support `some->` in thread and unwind.
+
+Thanks!
+
 ## License
 
 Copyright © 2012-2013 Magnar Sveen
