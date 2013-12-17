@@ -314,7 +314,9 @@
     (let ((beg (point)))
       (paredit-forward)
       (paredit-backward-down)
-      (paredit-backward 3) ;; the last sexp, the threading macro, and the paren
+      (paredit-backward) ;; the last sexp
+      (paredit-backward) ;; the threading macro
+      (paredit-backward) ;; and the paren
       (= beg (point)))))
 
 (defun cljr--pop-out-of-threading ()
