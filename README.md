@@ -197,7 +197,7 @@ Run the tests with:
 
 ## Contributors
 
-- [AlexBaranosky](https://github.com/AlexBaranosky) added support `some->` in thread and unwind.
+- [AlexBaranosky](https://github.com/AlexBaranosky) added support for `some->` in thread and unwind.
 
 Thanks!
 
