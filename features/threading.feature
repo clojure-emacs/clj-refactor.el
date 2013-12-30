@@ -50,6 +50,19 @@ Feature: Threading and unwinding of macros
         (dissoc :lock))
     """
 
+  Scenario: Thread first (->), part 5 - don't be a stickler for white space
+    When I insert:
+    """
+    (->
+     (dissoc (assoc {} :key "value") :lock))
+    """
+    And I press "C-! th"
+    Then I should see:
+    """
+    (->
+     (assoc {} :key "value")
+     (dissoc :lock))
+    """
 
   Scenario: Unwind first (->), part 1
     When I insert:

@@ -288,7 +288,7 @@
   (forward-char))
 
 (defun cljr--ensure-parens-around-function-names ()
-  (unless (looking-at "\\s ?(")
+  (unless (looking-at "[\n\r\t ]?(")
     (skip-syntax-forward " ")
     (paredit-wrap-round)
     (paredit-backward-up)))
@@ -334,10 +334,10 @@
       (cljr--pop-out-of-threading)
     (paredit-forward-down)
     (cond
-     ((looking-at "->\\s ")     (cljr--unwind-first))
-     ((looking-at "some->\\s ") (cljr--unwind-first))
-     ((looking-at "->>\\s ")     (cljr--unwind-last))
-     ((looking-at "some->>\\s ") (cljr--unwind-last)))))
+     ((looking-at "->[\n\r\t ]")     (cljr--unwind-first))
+     ((looking-at "some->[\n\r\t ]") (cljr--unwind-first))
+     ((looking-at "->>[\n\r\t ]")     (cljr--unwind-last))
+     ((looking-at "some->>[\n\r\t ]") (cljr--unwind-last)))))
 
 (defun cljr--thread-first ()
   (paredit-forward-down)
@@ -372,7 +372,7 @@
 (defun cljr--thread-guard ()
   (save-excursion
     (paredit-forward)
-    (if (looking-at "\\s ?(")
+    (if (looking-at "[\n\r\t ]*(")
         t
       (message "Can only thread into lists.")
       nil)))
@@ -386,10 +386,10 @@
   (paredit-forward-down)
   (when (cljr--thread-guard)
     (cond
-     ((looking-at "->\\s ")     (cljr--thread-first))
-     ((looking-at "some->\\s ") (cljr--thread-first))
-     ((looking-at "->>\\s ")     (cljr--thread-last))
-     ((looking-at "some->>\\s ") (cljr--thread-last)))))
+     ((looking-at "->[\n\r\t ]")     (cljr--thread-first))
+     ((looking-at "some->[\n\r\t ]") (cljr--thread-first))
+     ((looking-at "->>[\n\r\t ]")     (cljr--thread-last))
+     ((looking-at "some->>[\n\r\t ]") (cljr--thread-last)))))
 
 
 ;; ------ let binding ----------
