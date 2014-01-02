@@ -175,6 +175,12 @@ Prefer to insert your own ns-declarations? Then:
 (setq clj-add-ns-to-blank-clj-files nil)
 ```
 
+## More stuff to check out
+
+You might also like
+
+- [align-cljlet](https://github.com/gstamp/align-cljlet) - which is an Emacs package for aligning let-like forms.
+
 ## Contribute
 
 Yes, please do. There's a suite of tests, so remember to add tests for your
