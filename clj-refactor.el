@@ -162,11 +162,15 @@
     (rename-buffer new-name)
     (set-visited-file-name new-name)
     (clojure-update-ns)
-    (save-window-excursion
-      (save-excursion
-        (ignore-errors
-          (tags-query-replace old-ns (clojure-expected-ns) nil
-                              '(cljr--project-files)))))
+    (let ((old-syntax (char-to-string (char-syntax ?/))))
+      (modify-syntax-entry ?/ " ")
+      (save-window-excursion
+        (save-excursion
+          (ignore-errors
+            (tags-query-replace (concat (regexp-quote old-ns) "\\_>")
+                                (clojure-expected-ns) nil
+                                '(cljr--project-files)))))
+      (modify-syntax-entry ?/ old-syntax))
     (save-buffer)
     (save-some-buffers)))
 
