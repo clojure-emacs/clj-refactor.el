@@ -64,6 +64,17 @@ Feature: Threading and unwinding of macros
      (dissoc :lock))
     """
 
+  Scenario: Thread first, part 6 - remove superfluous parens
+    When I insert "(-> (square (sum [1 2 3 4 5])))"
+    And I press "C-! th"
+    And I press "C-! th"
+    Then I should see:
+    """
+    (-> [1 2 3 4 5]
+        sum
+        square)
+    """
+
   Scenario: Unwind first (->), part 1
     When I insert:
     """
@@ -244,7 +255,7 @@ Feature: Threading and unwinding of macros
     """
     (some-> {:a 1}
             (find :b)
-            (val)
+            val
             (+ 5))
     """
 
@@ -257,7 +268,7 @@ Feature: Threading and unwinding of macros
     """
     (some->> :b
              (find {:a 1})
-             (val)
+             val
              (+ 5))
     """
 
@@ -266,7 +277,7 @@ Feature: Threading and unwinding of macros
     """
     (some-> {:a 1}
             (find :b)
-            (val)
+            val
             (+ 5))
     """
     And I press "C-! uw"
@@ -282,7 +293,7 @@ Feature: Threading and unwinding of macros
     """
     (some->> :b
              (find {:a 1})
-             (val)
+             val
              (+ 5))
     """
     And I press "C-! uw"

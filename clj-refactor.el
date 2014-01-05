@@ -306,7 +306,7 @@
            (contents (buffer-substring beg end)))
       (delete-region beg end)
       (when (looking-at " *\n")
-       (join-line -1))
+        (join-line -1))
       (cljr--ensure-parens-around-function-names)
       (paredit-forward)
       (paredit-backward-down)
@@ -343,6 +343,11 @@
      ((looking-at "->>[\n\r\t ]")     (cljr--unwind-last))
      ((looking-at "some->>[\n\r\t ]") (cljr--unwind-last)))))
 
+(defun cljr--remove-superfluous-parens ()
+  (when (looking-at "([^ )]+)")
+    (paredit-forward-down)
+    (paredit-raise-sexp)))
+
 (defun cljr--thread-first ()
   (paredit-forward-down)
   (paredit-forward)
@@ -356,7 +361,8 @@
       (paredit-backward-up)
       (just-one-space 0)
       (insert contents)
-      (newline-and-indent))))
+      (newline-and-indent)
+      (cljr--remove-superfluous-parens))))
 
 (defun cljr--thread-last ()
   (paredit-forward 2)
@@ -371,7 +377,8 @@
       (just-one-space 0)
       (paredit-backward-up)
       (insert contents)
-      (newline-and-indent))))
+      (newline-and-indent)
+      (cljr--remove-superfluous-parens))))
 
 (defun cljr--thread-guard ()
   (save-excursion
