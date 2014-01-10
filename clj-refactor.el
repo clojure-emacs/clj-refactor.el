@@ -131,7 +131,8 @@
   (define-key clj-refactor-map (funcall key-fn "th") 'cljr-thread)
   (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind)
   (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
-  (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let))
+  (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
+  (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -405,6 +406,7 @@
 
 ;; ------ let binding ----------
 
+;;;###autoload
 (defun cljr-introduce-let ()
   (interactive)
   (paredit-wrap-round)
@@ -419,15 +421,45 @@
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-introduce-let)
 
+(defun cljr--go-to-let ()
+  (search-backward-regexp "\(\\(when-let\\|if-let\\|let\\)\\( \\|\\[\\)"))
+
+;;;###autoload
 (defun cljr-expand-let ()
   (interactive)
   (ignore-errors
     (forward-char 4))
-  (search-backward "(let")
+  (cljr--go-to-let)
   (paredit-forward-down 2)
   (paredit-forward-up)
   (skip-syntax-forward " >")
   (paredit-convolute-sexp))
+
+;;;###autoload
+(defun cljr-move-to-let ()
+  (interactive)
+  (save-excursion
+    (let* ((beg (point))
+           (end (progn (paredit-forward)
+                       (point)))
+           (contents (buffer-substring beg end)))
+      (delete-region beg end)
+      (cljr--go-to-let)
+      (search-forward "[")
+      (paredit-backward)
+      (paredit-forward)
+      (paredit-backward-down)
+      (backward-char)
+      (if (not (looking-at "\\[ *\\]"))
+          (progn (forward-char)
+                 (newline-and-indent))
+        (forward-char))
+      (insert contents))
+    (backward-sexp)
+    (insert " ")
+    (backward-char)
+    (mc/create-fake-cursor-at-point))
+  (mc/maybe-multiple-cursors-mode))
 
 ;; ------ minor mode -----------
 
