@@ -135,17 +135,9 @@ statement. So I do `cljr-expand-let`:
      :body body}))
 ```
 
-Now, with the cursor in front of `200`, I do `cljr-move-to-let`:
+Yay.
 
-```clj
-(defn handle-request
-  (let [body (find-body abc)]
-    {:status 200
-     :body body}))
-```
-
-Now I have two cursors where the `X`es are. Just type out the name,
-and press enter.
+Next with the cursor in front of `200`, I do `cljr-move-to-let`:
 
 ```clj
 (defn handle-request
@@ -155,7 +147,18 @@ and press enter.
      :body body}))
 ```
 
-Yay. And it even works with `if-let` and `when-let`.
+Again I have two cursors where the `X`es are, so I type out the name,
+and press enter:
+
+```clj
+(defn handle-request
+  (let [body (find-body abc)
+        status 200]
+    {:status status
+     :body body}))
+```
+
+Pretty handy. And it works with `if-let` and `when-let` too.
 
 ## Optional setup
 
@@ -202,6 +205,12 @@ You might also like
 
 - [align-cljlet](https://github.com/gstamp/align-cljlet) - which is an Emacs package for aligning let-like forms.
 
+## Changelog
+
+#### From 0.5 to 0.6
+
+- Add `cljr-move-to-let` (Alex Baranosky)
+
 ## Contribute
 
 Yes, please do. There's a suite of tests, so remember to add tests for your
@@ -224,7 +233,7 @@ Run the tests with:
 
 ## Contributors
 
-- [AlexBaranosky](https://github.com/AlexBaranosky) added support for `some->` in thread and unwind.
+- [AlexBaranosky](https://github.com/AlexBaranosky) added support for `some->` in thread and unwind, and added `cljr-move-to-let`
 
 Thanks!
 
