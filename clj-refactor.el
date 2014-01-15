@@ -130,6 +130,7 @@
   (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
   (define-key clj-refactor-map (funcall key-fn "th") 'cljr-thread)
   (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind)
+  (define-key clj-refactor-map (funcall key-fn "ua") 'cljr-unwind-all)
   (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
   (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
   (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
@@ -338,13 +339,22 @@
     (forward-char 3))
   (search-backward-regexp "\\((some->\\)\\|\\((->\\)")
   (if (cljr--nothing-more-to-unwind)
-      (cljr--pop-out-of-threading)
+      (progn
+        (cljr--pop-out-of-threading)
+        nil)
     (paredit-forward-down)
     (cond
      ((looking-at "->[\n\r\t ]")     (cljr--unwind-first))
      ((looking-at "some->[\n\r\t ]") (cljr--unwind-first))
      ((looking-at "->>[\n\r\t ]")     (cljr--unwind-last))
-     ((looking-at "some->>[\n\r\t ]") (cljr--unwind-last)))))
+     ((looking-at "some->>[\n\r\t ]") (cljr--unwind-last)))
+    t))
+
+;;;###autoload
+(defun cljr-unwind-all ()
+  (interactive)
+  (while (cljr-unwind)
+    t))
 
 (defun cljr--remove-superfluous-parens ()
   (when (looking-at "([^ )]+)")
@@ -362,14 +372,13 @@
         (progn
           (message "Nothing more to thread.")
           nil)
-      (progn
-        (delete-region beg end)
-        (paredit-backward-up)
-        (just-one-space 0)
-        (insert contents)
-        (newline-and-indent)
-        (cljr--remove-superfluous-parens)
-        t))))
+      (delete-region beg end)
+      (paredit-backward-up)
+      (just-one-space 0)
+      (insert contents)
+      (newline-and-indent)
+      (cljr--remove-superfluous-parens)
+      t)))
 
 (defun cljr--thread-last ()
   (paredit-forward)
@@ -383,14 +392,13 @@
         (progn
           (message "Nothing more to thread.")
           nil)
-      (progn
-        (delete-region beg end)
-        (just-one-space 0)
-        (paredit-backward-up)
-        (insert contents)
-        (newline-and-indent)
-        (cljr--remove-superfluous-parens)
-        t))))
+      (delete-region beg end)
+      (just-one-space 0)
+      (paredit-backward-up)
+      (insert contents)
+      (newline-and-indent)
+      (cljr--remove-superfluous-parens)
+      t)))
 
 (defun cljr--thread-guard ()
   (save-excursion
