@@ -325,3 +325,31 @@ Feature: Threading and unwinding of macros
          (filter even?)
          (map square))
     """
+
+  Scenario: Unwind all (->)
+    When I insert:
+    """
+    (-> {}
+        (assoc :key "value")
+        (dissoc :lock))
+    """
+    And I place the cursor before "(-> "
+    And I press "C-! ua"
+    Then I should see:
+    """
+    (dissoc (assoc {} :key "value") :lock)
+    """
+
+  Scenario: Unwind all (->>)
+    When I insert: 
+    """
+    (->> (make-things)
+         (filter even?)
+         (map square))
+    """
+    And I place the cursor before "(->>"
+    And I press "C-! ua"
+    Then I should see:
+    """
+    (map square (filter even? (make-things)))
+    """

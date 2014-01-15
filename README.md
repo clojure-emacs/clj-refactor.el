@@ -63,6 +63,7 @@ This is it so far:
 
  - `th`: thread another expression
  - `uw`: unwind a threaded expression
+ - `ua`: fully unwind a threaded expression
  - `tf`: wrap in thread-first (->) and fully thread
  - `tl`: wrap in thread-last (->>) and fully thread
  - `il`: introduce let
@@ -122,8 +123,7 @@ Put your cursor in front of the s-exp, and call `cljr-thread-last-all`:
 
 There is a corresponding `cljr-thread-last-all` as well.
 
-To revert this, there's `cljr-unwind`. Just read the examples in the
-other direction.
+To revert this, there's `cljr-unwind` to unwind one step at a time. (Just read the examples in the other direction.) Or there's `cljr-unwind-all` to unwind th entire expression at once.
 
 ## Introduce / expand / move to let example
 
