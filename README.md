@@ -121,9 +121,12 @@ Put your cursor in front of the s-exp, and call `cljr-thread-last-all`:
      (map square))
 ```
 
-There is a corresponding `cljr-thread-last-all` as well.
+There is a corresponding `cljr-thread-first-all` as well.
 
-To revert this, there's `cljr-unwind` to unwind one step at a time. (Just read the examples in the other direction.) Or there's `cljr-unwind-all` to unwind th entire expression at once.
+To revert this, there's `cljr-unwind` to unwind one step at a time. Or
+there's `cljr-unwind-all` to unwind the entire expression at once.
+
+To see how that works, just read the examples in the other direction.
 
 ## Introduce / expand / move to let example
 
@@ -226,6 +229,10 @@ You might also like
 - [align-cljlet](https://github.com/gstamp/align-cljlet) - which is an Emacs package for aligning let-like forms.
 
 ## Changelog
+
+#### From 0.6 to 0.7
+
+- Add `cljr-thread-first-all`, `cljr-thread-last-all` and `cljr-unwind-all` (Alex Baranosky)
 
 #### From 0.5 to 0.6
 
