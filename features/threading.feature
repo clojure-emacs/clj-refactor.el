@@ -303,3 +303,25 @@ Feature: Threading and unwinding of macros
     """
     (some->> (+ 5 (val (find {:a 1} :b))))
     """
+
+  Scenario: Thread first all (->)
+    When I insert "(dissoc (assoc {} :key "value") :lock)"
+    And I place the cursor before "(dissoc (assoc"
+    And I press "C-! tf"
+    Then I should see:
+    """
+    (-> {}
+        (assoc :key "value")
+        (dissoc :lock))
+    """
+
+  Scenario: Thread last all (->>)
+    When I insert "(map square (filter even? (make-things)))"
+    And I place the cursor before "(map square"
+    And I press "C-! tl"
+    Then I should see:
+    """
+    (->> (make-things)
+         (filter even?)
+         (map square))
+    """

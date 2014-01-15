@@ -63,6 +63,8 @@ This is it so far:
 
  - `th`: thread another expression
  - `uw`: unwind a threaded expression
+ - `tf`: wrap in thread-first (->) and fully thread
+ - `tl`: wrap in thread-last (->>) and fully thread
  - `il`: introduce let
  - `el`: expand let
  - `ml`: move to let
@@ -101,6 +103,24 @@ And again:
      (filter even?)
      (map square))
 ```
+
+You can also do all of these steps in one go.
+
+Start again with:
+
+```clj
+(map square (filter even? [1 2 3 4 5]))
+```
+
+Put your cursor in front of the s-exp, and call `cljr-thread-last-all`:
+
+```clj
+(->> [1 2 3 4 5]
+     (filter even?)
+     (map square))
+```
+
+There is a corresponding `cljr-thread-last-all` as well.
 
 To revert this, there's `cljr-unwind`. Just read the examples in the
 other direction.
