@@ -132,7 +132,9 @@
   (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind)
   (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
   (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
-  (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let))
+  (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
+  (define-key clj-refactor-map (funcall key-fn "tf") 'cljr-thread-first-all)
+  (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -357,29 +359,38 @@
                      (point)))
          (contents (buffer-substring beg end)))
     (if (string= contents ")")
-        (message "Nothing more to thread.")
-      (delete-region beg end)
-      (paredit-backward-up)
-      (just-one-space 0)
-      (insert contents)
-      (newline-and-indent)
-      (cljr--remove-superfluous-parens))))
+        (progn
+          (message "Nothing more to thread.")
+          nil)
+      (progn
+        (delete-region beg end)
+        (paredit-backward-up)
+        (just-one-space 0)
+        (insert contents)
+        (newline-and-indent)
+        (cljr--remove-superfluous-parens)
+        t))))
 
 (defun cljr--thread-last ()
-  (paredit-forward 2)
+  (paredit-forward)
+  (paredit-forward)
   (paredit-backward-down)
   (let* ((end (point))
          (beg (progn (paredit-backward)
                      (point)))
          (contents (buffer-substring beg end)))
     (if (looking-back "(" 1)
-        (message "Nothing more to thread.")
-      (delete-region beg end)
-      (just-one-space 0)
-      (paredit-backward-up)
-      (insert contents)
-      (newline-and-indent)
-      (cljr--remove-superfluous-parens))))
+        (progn
+          (message "Nothing more to thread.")
+          nil)
+      (progn
+        (delete-region beg end)
+        (just-one-space 0)
+        (paredit-backward-up)
+        (insert contents)
+        (newline-and-indent)
+        (cljr--remove-superfluous-parens)
+        t))))
 
 (defun cljr--thread-guard ()
   (save-excursion
@@ -396,12 +407,30 @@
     (forward-char 7))
   (search-backward-regexp "\\((some->\\)\\|\\((->\\)")
   (paredit-forward-down)
-  (when (cljr--thread-guard)
+  (if (not (cljr--thread-guard))
+      nil
     (cond
      ((looking-at "->[\n\r\t ]")     (cljr--thread-first))
      ((looking-at "some->[\n\r\t ]") (cljr--thread-first))
      ((looking-at "->>[\n\r\t ]")     (cljr--thread-last))
      ((looking-at "some->>[\n\r\t ]") (cljr--thread-last)))))
+
+;;;###autoload
+(defun cljr-thread-first-all ()
+  (interactive)
+  (paredit-wrap-round)
+  (insert "-> ")
+  (while (cljr-thread)
+    t))
+
+;;;###autoload
+(defun cljr-thread-last-all ()
+  (interactive)
+  (paredit-wrap-round)
+  (insert "->> ")
+  (while (cljr-thread)
+    t))
+
 
 
 ;; ------ let binding ----------
