@@ -260,7 +260,7 @@ Run the tests with:
 
 ## Contributors
 
-- [AlexBaranosky](https://github.com/AlexBaranosky) added support for `some->` in thread and unwind, and added `cljr-move-to-let`
+- [AlexBaranosky](https://github.com/AlexBaranosky) added a bunch of features. See the [Changelog](#changelog) for details.
 
 Thanks!
 
