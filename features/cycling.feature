@@ -63,3 +63,51 @@ Feature: Code Cycling
       "docs"
       {:env "staging"})
     """
+
+  Scenario: Cycling Collection Types (1 2) -> {1 2} 
+    When I insert:
+    """
+    (:a 1 :b 2)
+    """
+    And I place the cursor before "(:a 1 :b 2)"
+    And I press "C-! cc"
+    Then I should see:
+    """
+    {:a 1 :b 2}
+    """
+
+  Scenario: Cycling Collection Types {1 2} -> [1 2]
+    When I insert:
+    """
+    {:a 1 :b 2}     
+    """
+    And I place the cursor before ":b 2}"
+    And I press "C-! cc"
+    Then I should see:
+    """
+    [:a 1 :b 2]
+    """
+
+  Scenario: Cycling Collection Types [1 2] -> #{1 2} 
+    When I insert:
+    """
+    [1 2 3]   
+    """
+    And I place the cursor before "[1 2 3]"
+    And I press "C-! cc"
+    Then I should see:
+    """
+    #{1 2 3}
+    """
+
+  Scenario: Cycling Collection Types #{1 2} -> (1 2)
+    When I insert:
+    """
+    #{1 2 3}
+    """
+    And I place the cursor before "3}"
+    And I press "C-! cc"
+    Then I should see:
+    """
+    (1 2 3)
+    """

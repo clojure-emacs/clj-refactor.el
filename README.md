@@ -73,7 +73,8 @@ This is it so far:
  - `ar`: add require to namespace declaration, then jump back (see optional setup)
  - `au`: add "use" (ie require refer all) to namespace declaration, then jump back
  - `ai`: add import to namespace declaration, then jump back
- - `cp`: cycle privacy `defn` -> `defn-`, `defn`- -> `defn`, `def` -> `def ^:private`, `def ^:private` -> `def`
+ - `cc`: cycle surrounding collection type
+ - `cp`: cycle privacy of `defn`s and `def`s
 
 Combine with your keybinding prefix/modifier.
 
@@ -231,6 +232,28 @@ I do `cljr-cycle-privacy` again to return to the original:
   {:env "staging"})
 ```
 
+## Cycling Collection Type
+
+Given this collection:
+
+```clj
+(:a 1 :b 2)
+```
+
+I do `cljr-cycle-coll` to return:
+
+```clj
+{:a 1 :b 2}
+```
+
+... and then 3 more times:
+
+```clj
+[:a 1 :b 2]
+#{:a 1 :b 2}
+(:a 1 :b 2)
+```
+
 ## Optional setup
 
 If you're not using yasnippet, then the "jumping back"-part of adding to
@@ -278,6 +301,7 @@ You might also like
 
 ## Changelog
 
+- Add `cljr-cycle-coll` [AlexBaranosky](https://github.com/AlexBaranosky)
 - Add `cljr-cycle-privacy` [AlexBaranosky](https://github.com/AlexBaranosky)
 
 #### From 0.6 to 0.7

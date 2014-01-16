@@ -136,7 +136,8 @@
   (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
   (define-key clj-refactor-map (funcall key-fn "tf") 'cljr-thread-first-all)
   (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all)
-  (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy))
+  (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
+  (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -517,6 +518,53 @@
      ((looking-at "(def ")
       (forward-char 5)
       (insert "^:private ")))))
+
+(defun cljr--delete-and-extract-sexp ()
+  "Delete the sexp and return it."
+  (interactive)
+  (let* ((beg (point))
+         (end (progn (paredit-forward)
+                     (point)))
+         (contents (buffer-substring beg end)))
+    (delete-region beg end)
+    contents))
+
+;;;###autoload
+(defun cljr-cycle-coll ()
+  "convert the coll at (point) from (x) -> {x} -> [x] -> -> #{x} -> (x) recur"
+  (interactive)
+  (let* ((original-point (point)))
+    (while (and
+            (> (point) 1)
+            (not (equal "(" (buffer-substring-no-properties (point) (+ 1 (point)))))
+            (not (equal "#{" (buffer-substring-no-properties (point) (+ 2 (point)))))
+            (not (equal "{" (buffer-substring-no-properties (point) (+ 1 (point)))))
+            (not (equal "[" (buffer-substring-no-properties (point) (+ 1 (point))))))
+      (backward-char))
+
+    (cond
+     ((equal "(" (buffer-substring-no-properties (point) (+ 1 (point))))
+      (insert "{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
+
+     ((equal "#" (buffer-substring-no-properties (point) (+ 1 (point))))
+      (progn
+        (delete-char 1)
+        (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")")))
+     
+     ((equal "{" (buffer-substring-no-properties (point) (+ 1 (point))))
+      (if (equal ?# (char-before))
+          (progn
+            (backward-char)
+            (delete-char 1)
+            (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")"))
+        (insert "[" (substring (cljr--delete-and-extract-sexp) 1 -1) "]")))
+     
+     ((equal "[" (buffer-substring-no-properties (point) (+ 1 (point))))
+      (insert "#{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
+     
+     ((equal 1 (point))
+      (message "beginning of file reached, this was probably a mistake.")))
+    (goto-char original-point)))
 
 ;; ------ minor mode -----------
 
