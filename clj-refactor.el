@@ -547,21 +547,20 @@
       (insert "{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
 
      ((equal "#" (buffer-substring-no-properties (point) (+ 1 (point))))
-      (progn
-        (delete-char 1)
-        (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")")))
-     
+      (delete-char 1)
+      (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")"))
+
      ((equal "{" (buffer-substring-no-properties (point) (+ 1 (point))))
-      (if (equal ?# (char-before))
-          (progn
-            (backward-char)
-            (delete-char 1)
-            (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")"))
-        (insert "[" (substring (cljr--delete-and-extract-sexp) 1 -1) "]")))
-     
+      (if (not (equal ?# (char-before)))
+          (insert "[" (substring (cljr--delete-and-extract-sexp) 1 -1) "]")
+        (progn
+          (backward-char)
+          (delete-char 1)
+          (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")"))))
+
      ((equal "[" (buffer-substring-no-properties (point) (+ 1 (point))))
       (insert "#{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
-     
+
      ((equal 1 (point))
       (message "beginning of file reached, this was probably a mistake.")))
     (goto-char original-point)))
