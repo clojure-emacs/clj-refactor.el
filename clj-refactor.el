@@ -135,7 +135,8 @@
   (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
   (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
   (define-key clj-refactor-map (funcall key-fn "tf") 'cljr-thread-first-all)
-  (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all))
+  (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all)
+  (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -439,8 +440,6 @@
   (while (cljr-thread)
     t))
 
-
-
 ;; ------ let binding ----------
 
 ;;;###autoload
@@ -497,6 +496,27 @@
     (backward-char)
     (mc/create-fake-cursor-at-point))
   (mc/maybe-multiple-cursors-mode))
+
+;; ------ Cycling ----------
+
+;;;###autoload
+(defun cljr-cycle-privacy ()
+  (interactive)
+  (save-excursion
+    (search-backward-regexp "\\((defn-? \\)\\|\\((def \\)")
+    (cond
+     ((looking-at "(defn-")
+      (forward-char 5)
+      (delete-char 1))
+     ((looking-at "(defn")
+      (forward-char 5)
+      (insert "-"))
+     ((looking-at "(def ^:private")
+      (forward-char 5)
+      (delete-char 10))
+     ((looking-at "(def ")
+      (forward-char 5)
+      (insert "^:private ")))))
 
 ;; ------ minor mode -----------
 

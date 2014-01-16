@@ -73,6 +73,7 @@ This is it so far:
  - `ar`: add require to namespace declaration, then jump back (see optional setup)
  - `au`: add "use" (ie require refer all) to namespace declaration, then jump back
  - `ai`: add import to namespace declaration, then jump back
+ - `cp`: cycle privacy `defn` -> `defn-`, `defn`- -> `defn`, `def` -> `def ^:private`, `def ^:private` -> `def`
 
 Combine with your keybinding prefix/modifier.
 
@@ -183,6 +184,53 @@ and press enter:
 
 Pretty handy. And it works with `if-let` and `when-let` too.
 
+## Cycling Privacy
+
+Given this function:
+
+```clj
+(defn add [a b]
+  (+ a b))
+```
+
+I do `cljr-cycle-privacy`:
+
+```clj
+(defn- add [a b]
+  (+ a b))
+```
+
+I do `cljr-cycle-privacy` again to return to the original:
+
+```clj
+(defn add [a b]
+  (+ a b))
+```
+
+Given this def:
+
+```clj
+(def config
+  "docs"
+  {:env "staging"})
+```
+
+I do `cljr-cycle-privacy`:
+
+```clj
+(def ^:private config
+  "docs"
+  {:env "staging"})
+```
+
+I do `cljr-cycle-privacy` again to return to the original:
+
+```clj
+(def config
+  "docs"
+  {:env "staging"})
+```
+
 ## Optional setup
 
 If you're not using yasnippet, then the "jumping back"-part of adding to
@@ -230,13 +278,15 @@ You might also like
 
 ## Changelog
 
+- Add `cljr-cycle-privacy` [AlexBaranosky](https://github.com/AlexBaranosky)
+
 #### From 0.6 to 0.7
 
-- Add `cljr-thread-first-all`, `cljr-thread-last-all` and `cljr-unwind-all` (Alex Baranosky)
+- Add `cljr-thread-first-all`, `cljr-thread-last-all` and `cljr-unwind-all` [AlexBaranosky](https://github.com/AlexBaranosky)
 
 #### From 0.5 to 0.6
 
-- Add `cljr-move-to-let` (Alex Baranosky)
+- Add `cljr-move-to-let` [AlexBaranosky](https://github.com/AlexBaranosky)
 
 ## Contribute
 
