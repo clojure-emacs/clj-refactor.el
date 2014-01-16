@@ -75,6 +75,7 @@ This is it so far:
  - `ai`: add import to namespace declaration, then jump back
  - `cc`: cycle surrounding collection type
  - `cp`: cycle privacy of `defn`s and `def`s
+ - `cs`: cycle between "string" -> :string -> "string"
 
 Combine with your keybinding prefix/modifier.
 
@@ -254,6 +255,28 @@ I do `cljr-cycle-coll` to return:
 (:a 1 :b 2)
 ```
 
+## Cycling Between Strings and Keywords
+
+Given this string:
+
+```clj
+"refactor"
+```
+
+I do `cljr-cycle-stringlike` to return:
+
+```clj
+:refactor
+```
+
+... and then 3 more times:
+
+```clj
+"refactor"
+:refactor
+"refactor"
+```
+
 ## Optional setup
 
 If you're not using yasnippet, then the "jumping back"-part of adding to
@@ -301,6 +324,7 @@ You might also like
 
 ## Changelog
 
+- Add `cljr-cycle-stringlike` [AlexBaranosky](https://github.com/AlexBaranosky)
 - Add `cljr-cycle-coll` [AlexBaranosky](https://github.com/AlexBaranosky)
 - Add `cljr-cycle-privacy` [AlexBaranosky](https://github.com/AlexBaranosky)
 

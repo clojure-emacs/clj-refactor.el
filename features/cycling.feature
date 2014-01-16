@@ -111,3 +111,27 @@ Feature: Code Cycling
     """
     (1 2 3)
     """
+
+ Scenario: Cycling Strings and Keywords
+    When I insert:
+    """
+    ["abracadabraz"]
+    """
+    And I place the cursor before "abra"
+    And I press "C-! cs"
+    Then I should see:
+    """
+    [:abracadabraz]
+    """
+
+ Scenario: Cycling Keywords and Strings
+    When I insert:
+    """
+    [:abracadabraz]
+    """
+    And I place the cursor before "raz"
+    And I press "C-! cs"
+    Then I should see:
+    """
+    ["abracadabraz"]
+    """

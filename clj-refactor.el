@@ -137,7 +137,8 @@
   (define-key clj-refactor-map (funcall key-fn "tf") 'cljr-thread-first-all)
   (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all)
   (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
-  (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll))
+  (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
+  (define-key clj-refactor-map (funcall key-fn "cs") 'cljr-cycle-stringlike))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -520,14 +521,31 @@
       (insert "^:private ")))))
 
 (defun cljr--delete-and-extract-sexp ()
-  "Delete the sexp and return it."
-  (interactive)
   (let* ((beg (point))
          (end (progn (paredit-forward)
                      (point)))
          (contents (buffer-substring beg end)))
     (delete-region beg end)
     contents))
+
+;;;###autoload
+(defun cljr-cycle-stringlike ()
+  "convert the string or keyword at (point) from string -> keyword or keyword -> string."
+  (interactive)
+  (let* ((original-point (point)))
+    (while (and
+            (> (point) 1)
+            (not (equal "\"" (buffer-substring-no-properties (point) (+ 1 (point)))))
+            (not (equal ":" (buffer-substring-no-properties (point) (+ 1 (point))))))
+      (backward-char))
+    (cond
+     ((equal 1 (point))
+      (message "beginning of file reached, this was probably a mistake."))
+     ((equal "\"" (buffer-substring-no-properties (point) (+ 1 (point))))
+      (insert ":" (substring (cljr--delete-and-extract-sexp) 1 -1)))
+     ((equal ":" (buffer-substring-no-properties (point) (+ 1 (point))))
+      (insert "\"" (substring (cljr--delete-and-extract-sexp) 1) "\"")))
+    (goto-char original-point)))
 
 ;;;###autoload
 (defun cljr-cycle-coll ()
