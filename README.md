@@ -277,6 +277,9 @@ I do `cljr-cycle-stringlike` to return:
 "refactor"
 ```
 
+Thanks to [Jay Fields](https://github.com/jaycfields) and
+[emacs-live](https://github.com/overtone/emacs-live) for these cycling features. Good idea!
+
 ## Optional setup
 
 If you're not using yasnippet, then the "jumping back"-part of adding to
