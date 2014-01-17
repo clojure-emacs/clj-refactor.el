@@ -550,7 +550,7 @@
 (defun cljr-cycle-coll ()
   "convert the coll at (point) from (x) -> {x} -> [x] -> -> #{x} -> (x) recur"
   (interactive)
-  (let* ((original-point (point)))
+  (save-excursion
     (while (and
             (> (point) 1)
             (not (= ?( (char-after)))
@@ -578,8 +578,7 @@
       (insert "#{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
 
      ((equal 1 (point))
-      (message "beginning of file reached, this was probably a mistake.")))
-    (goto-char original-point)))
+      (message "beginning of file reached, this was probably a mistake.")))))
 
 ;; ------ minor mode -----------
 
