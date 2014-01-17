@@ -541,7 +541,7 @@
     (cond
      ((equal 1 (point))
       (message "beginning of file reached, this was probably a mistake."))
-     ((= ?" (char-after))
+     ((= ?\" (char-after))
       (insert ":" (substring (cljr--delete-and-extract-sexp) 1 -1)))
      ((= ?: (char-after))
       (insert "\"" (substring (cljr--delete-and-extract-sexp) 1) "\"")))))
