@@ -532,20 +532,19 @@
 (defun cljr-cycle-stringlike ()
   "convert the string or keyword at (point) from string -> keyword or keyword -> string."
   (interactive)
-  (let* ((original-point (point)))
+  (save-excursion
     (while (and
             (> (point) 1)
-            (not (equal "\"" (buffer-substring-no-properties (point) (+ 1 (point)))))
-            (not (equal ":" (buffer-substring-no-properties (point) (+ 1 (point))))))
+            (not (= ?\" (char-after)))
+            (not (= ?: (char-after))))
       (backward-char))
     (cond
      ((equal 1 (point))
       (message "beginning of file reached, this was probably a mistake."))
-     ((equal "\"" (buffer-substring-no-properties (point) (+ 1 (point))))
+     ((= ?" (char-after))
       (insert ":" (substring (cljr--delete-and-extract-sexp) 1 -1)))
-     ((equal ":" (buffer-substring-no-properties (point) (+ 1 (point))))
-      (insert "\"" (substring (cljr--delete-and-extract-sexp) 1) "\"")))
-    (goto-char original-point)))
+     ((= ?: (char-after))
+      (insert "\"" (substring (cljr--delete-and-extract-sexp) 1) "\"")))))
 
 ;;;###autoload
 (defun cljr-cycle-coll ()
@@ -554,28 +553,28 @@
   (let* ((original-point (point)))
     (while (and
             (> (point) 1)
-            (not (equal "(" (buffer-substring-no-properties (point) (+ 1 (point)))))
-            (not (equal "#{" (buffer-substring-no-properties (point) (+ 2 (point)))))
-            (not (equal "{" (buffer-substring-no-properties (point) (+ 1 (point)))))
-            (not (equal "[" (buffer-substring-no-properties (point) (+ 1 (point))))))
+            (not (= ?( (char-after)))
+            (not (string= "#{" (buffer-substring (point) (+ 2 (point)))))
+            (not (= ?{ (char-after)))
+            (not (= ?[ (char-after))))
       (backward-char))
 
     (cond
-     ((equal "(" (buffer-substring-no-properties (point) (+ 1 (point))))
+     ((= ?( (char-after))
       (insert "{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
 
-     ((equal "#" (buffer-substring-no-properties (point) (+ 1 (point))))
+     ((= ?# (char-after))
       (delete-char 1)
       (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")"))
 
-     ((equal "{" (buffer-substring-no-properties (point) (+ 1 (point))))
+     ((= ?{ (char-after))
       (if (not (equal ?# (char-before)))
           (insert "[" (substring (cljr--delete-and-extract-sexp) 1 -1) "]")
         (backward-char)
         (delete-char 1)
         (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")")))
 
-     ((equal "[" (buffer-substring-no-properties (point) (+ 1 (point))))
+     ((= ?[ (char-after))
       (insert "#{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
 
      ((equal 1 (point))
