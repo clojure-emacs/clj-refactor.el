@@ -293,7 +293,7 @@
 (defun cljr--unwind-first ()
   (paredit-forward)
   (save-excursion
-    (let* ((contents (cljr--delete-and-extract-sexp)))
+    (let ((contents (cljr--delete-and-extract-sexp)))
       (when (looking-at " *\n")
         (join-line -1))
       (cljr--ensure-parens-around-function-names)
@@ -311,7 +311,7 @@
 (defun cljr--unwind-last ()
   (paredit-forward)
   (save-excursion
-    (let* ((contents (cljr--delete-and-extract-sexp)))
+    (let ((contents (cljr--delete-and-extract-sexp)))
       (when (looking-at " *\n")
         (join-line -1))
       (cljr--ensure-parens-around-function-names)
@@ -477,7 +477,7 @@
 (defun cljr-move-to-let ()
   (interactive)
   (save-excursion
-    (let* ((contents (cljr--delete-and-extract-sexp)))
+    (let ((contents (cljr--delete-and-extract-sexp)))
       (cljr--go-to-let)
       (search-forward "[")
       (paredit-backward)
