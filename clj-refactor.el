@@ -282,14 +282,18 @@
 
 ;; ------ threading and unwinding -----------
 
+(defun cljr--delete-and-extract-sexp ()
+  (let* ((beg (point))
+         (end (progn (paredit-forward)
+                     (point)))
+         (contents (buffer-substring beg end)))
+    (delete-region beg end)
+    contents))
+
 (defun cljr--unwind-first ()
   (paredit-forward)
   (save-excursion
-    (let* ((beg (point))
-           (end (progn (paredit-forward)
-                       (point)))
-           (contents (buffer-substring beg end)))
-      (delete-region beg end)
+    (let* ((contents (cljr--delete-and-extract-sexp)))
       (when (looking-at " *\n")
         (join-line -1))
       (cljr--ensure-parens-around-function-names)
@@ -307,11 +311,7 @@
 (defun cljr--unwind-last ()
   (paredit-forward)
   (save-excursion
-    (let* ((beg (point))
-           (end (progn (paredit-forward)
-                       (point)))
-           (contents (buffer-substring beg end)))
-      (delete-region beg end)
+    (let* ((contents (cljr--delete-and-extract-sexp)))
       (when (looking-at " *\n")
         (join-line -1))
       (cljr--ensure-parens-around-function-names)
@@ -477,11 +477,7 @@
 (defun cljr-move-to-let ()
   (interactive)
   (save-excursion
-    (let* ((beg (point))
-           (end (progn (paredit-forward)
-                       (point)))
-           (contents (buffer-substring beg end)))
-      (delete-region beg end)
+    (let* ((contents (cljr--delete-and-extract-sexp)))
       (cljr--go-to-let)
       (search-forward "[")
       (paredit-backward)
@@ -519,14 +515,6 @@
      ((looking-at "(def ")
       (forward-char 5)
       (insert "^:private ")))))
-
-(defun cljr--delete-and-extract-sexp ()
-  (let* ((beg (point))
-         (end (progn (paredit-forward)
-                     (point)))
-         (contents (buffer-substring beg end)))
-    (delete-region beg end)
-    contents))
 
 ;;;###autoload
 (defun cljr-cycle-stringlike ()
