@@ -540,28 +540,28 @@
   (save-excursion
     (while (and
             (> (point) 1)
-            (not (= ?( (char-after)))
+            (not (eq ?( (char-after)))
             (not (string= "#{" (buffer-substring (point) (+ 2 (point)))))
-            (not (= ?{ (char-after)))
-            (not (= ?[ (char-after))))
+            (not (eq ?{ (char-after)))
+            (not (eq ?[ (char-after))))
       (backward-char))
 
     (cond
-     ((= ?( (char-after))
+     ((eq ?( (char-after))
       (insert "{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
 
-     ((= ?# (char-after))
+     ((eq ?# (char-after))
       (delete-char 1)
       (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")"))
 
-     ((= ?{ (char-after))
+     ((eq ?{ (char-after))
       (if (not (equal ?# (char-before)))
           (insert "[" (substring (cljr--delete-and-extract-sexp) 1 -1) "]")
         (backward-char)
         (delete-char 1)
         (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")")))
 
-     ((= ?[ (char-after))
+     ((eq ?[ (char-after))
       (insert "#{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
 
      ((equal 1 (point))
