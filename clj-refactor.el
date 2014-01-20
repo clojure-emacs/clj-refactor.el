@@ -523,10 +523,12 @@
   (save-excursion
     (skip-syntax-backward "_w")
     (cond
-     ((= ?\" (char-before))
+     ((eq ?\" (char-before))
       (backward-char)
       (insert ":" (substring (cljr--delete-and-extract-sexp) 1 -1)))
-     ((= ?: (char-after))
+     ((looking-at "\"")
+      (insert ":" (substring (cljr--delete-and-extract-sexp) 1 -1)))
+     ((looking-at ":")
       (insert "\"" (substring (cljr--delete-and-extract-sexp) 1) "\""))
      (t
       (message "Couldn't cljr-cycle-stringlike")))))

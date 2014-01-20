@@ -115,23 +115,23 @@ Feature: Code Cycling
  Scenario: Cycling Strings and Keywords
     When I insert:
     """
-    ["abracadabraz"]
+    "alice"
     """
-    And I place the cursor before "abra"
+    And I place the cursor before "alice"
     And I press "C-! cs"
     Then I should see:
     """
-    [:abracadabraz]
+    :alice
     """
 
  Scenario: Cycling Keywords and Strings
     When I insert:
     """
-    [:abracadabraz]
+    :alice
     """
-    And I place the cursor before "raz"
+    And I place the cursor before "ice"
     And I press "C-! cs"
     Then I should see:
     """
-    ["abracadabraz"]
+    "alice"
     """
