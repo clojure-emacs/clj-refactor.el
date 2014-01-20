@@ -536,11 +536,14 @@
   "convert the coll at (point) from (x) -> {x} -> [x] -> -> #{x} -> (x) recur"
   (interactive)
   (save-excursion
-    (let ((c (char-after)))
-      (when (not (or (= c ?()
-                     (= c ?[)
-                     (= c ?{)))
-        (paredit-backward-up)))
+    (while (and
+            (> (point) 1)
+            (not (= ?( (char-after)))
+            (not (string= "#{" (buffer-substring (point) (+ 2 (point)))))
+            (not (= ?{ (char-after)))
+            (not (= ?[ (char-after))))
+      (backward-char))
+
     (cond
      ((= ?( (char-after))
       (insert "{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
