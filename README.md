@@ -327,6 +327,8 @@ You might also like
 
 ## Changelog
 
+#### From 0.7 to 0.8
+
 - Add `cljr-cycle-stringlike` [AlexBaranosky](https://github.com/AlexBaranosky)
 - Add `cljr-cycle-coll` [AlexBaranosky](https://github.com/AlexBaranosky)
 - Add `cljr-cycle-privacy` [AlexBaranosky](https://github.com/AlexBaranosky)
