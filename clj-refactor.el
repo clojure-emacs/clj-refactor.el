@@ -521,18 +521,15 @@
   "convert the string or keyword at (point) from string -> keyword or keyword -> string."
   (interactive)
   (save-excursion
-    (while (and
-            (> (point) 1)
-            (not (= ?\" (char-after)))
-            (not (= ?: (char-after))))
-      (backward-char))
+    (skip-syntax-backward "_w")
     (cond
-     ((equal 1 (point))
-      (message "beginning of file reached, this was probably a mistake."))
-     ((= ?\" (char-after))
+     ((= ?\" (char-before))
+      (backward-char)
       (insert ":" (substring (cljr--delete-and-extract-sexp) 1 -1)))
      ((= ?: (char-after))
-      (insert "\"" (substring (cljr--delete-and-extract-sexp) 1) "\"")))))
+      (insert "\"" (substring (cljr--delete-and-extract-sexp) 1) "\""))
+     (t
+      (message "Couldn't cljr-cycle-stringlike")))))
 
 ;;;###autoload
 (defun cljr-cycle-coll ()
