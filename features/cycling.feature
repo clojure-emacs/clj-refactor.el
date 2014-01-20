@@ -36,14 +36,14 @@ Feature: Code Cycling
   Scenario: Cycling Privacy (def -> def ^:private)
     When I insert:
     """
-    (def config
+    (def ^:dynamic config
       "docs"
       {:env "staging"})
     """
     And I press "C-! cp"
     Then I should see:
     """
-    (def ^:private config
+    (def ^:private ^:dynamic config
       "docs"
       {:env "staging"})
     """
