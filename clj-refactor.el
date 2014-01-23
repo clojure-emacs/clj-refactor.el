@@ -540,28 +540,28 @@
   (save-excursion
     (while (and
             (> (point) 1)
-            (not (eq ?( (char-after)))
+            (not (eq (string-to-char "(") (char-after)))
             (not (string= "#{" (buffer-substring (point) (+ 2 (point)))))
-            (not (eq ?{ (char-after)))
-            (not (eq ?[ (char-after))))
+            (not (eq (string-to-char "{") (char-after)))
+            (not (eq (string-to-char "[") (char-after))))
       (backward-char))
 
     (cond
-     ((eq ?( (char-after))
+     ((eq (string-to-char "(") (char-after))
       (insert "{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
 
-     ((eq ?# (char-after))
+     ((eq (string-to-char "#") (char-after))
       (delete-char 1)
       (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")"))
 
-     ((eq ?{ (char-after))
-      (if (not (equal ?# (char-before)))
+     ((eq (string-to-char "{") (char-after))
+      (if (not (equal (string-to-char "#") (char-before)))
           (insert "[" (substring (cljr--delete-and-extract-sexp) 1 -1) "]")
         (backward-char)
         (delete-char 1)
         (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")")))
 
-     ((eq ?[ (char-after))
+     ((eq (string-to-char "[") (char-after))
       (insert "#{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
 
      ((equal 1 (point))
