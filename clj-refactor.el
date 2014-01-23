@@ -565,7 +565,7 @@
       (insert "#{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
 
      ((equal 1 (point))
-      (message "beginning of file reached, this was probably a mistake.")))))
+      (message "beginning of file reached, this was probably a mistake.")))))))))
 
 ;; ------ minor mode -----------
 
