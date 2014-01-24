@@ -125,6 +125,7 @@
 
 (defun cljr--add-keybindings (key-fn)
   (define-key clj-refactor-map (funcall key-fn "rf") 'cljr-rename-file)
+  (define-key clj-refactor-map (funcall key-fn "ru") 'cljr-replace-use)
   (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use-to-ns)
   (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
   (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
@@ -271,6 +272,64 @@
   (cljr--insert-in-ns ":import")
   (cljr--pop-tmp-marker-after-yasnippet)
   (yas/expand-snippet "$1"))
+
+;;;###autoload
+(defun cljr-replace-use ()
+  (interactive)
+  (save-excursion
+    (let ((libs (cljr--extract-used-namespaces)))
+      (when libs
+        (dolist (lib libs)
+          (cljr--insert-in-ns ":require")
+          (insert (format "[%s :refer :all]" lib)))
+        (cljr-replace-use)))))
+
+(defun cljr--extract-used-namespaces ()
+  (let (libs use-start use-end)
+    (cljr--goto-ns)
+    (when (ignore-errors (re-search-forward "(:use "))
+      (save-excursion
+        (paredit-backward-up)
+        (setq use-start (point))
+        (paredit-forward)
+        (setq use-end (1- (point))))
+      (cl-flet ((more-p ()
+                        (goto-char use-start)
+                        (let ((use-end (save-excursion (forward-sexp) (point)) ))
+                          (prog1
+                              (ignore-errors (re-search-forward "[.*]" use-end))
+                            (paredit-backward-up)))))
+        (while (more-p)
+          (push (if (cljr--multiple-namespaces-p (sexp-at-point))
+                    (cljr--extract-multiple-ns-from-use)
+                  (cljr--extract-ns-from-use))
+                libs)))
+      (goto-char use-start)
+      (cljr--delete-and-extract-sexp)
+      (join-line)
+      (delete-char 1)
+      (nreverse (-flatten libs)))))
+
+(defun cljr--multiple-namespaces-p (use-form)
+  "Returns t if the use form looks like [some.lib ns1 ns2 ...]"
+  (s-matches-p "[[A-z0-9.]+ \\(\\([A-z0-9]+ \\)\\|\\([A-z0-9]+\\)\\)+]"
+               (format "%s" use-form)))
+
+(defun cljr--extract-multiple-ns-from-use ()
+  (let ((form (format "%s" (cljr--delete-and-extract-sexp)))
+        (prefix nil)
+        (words nil)
+        (libs nil))
+    (setq form (substring form 1 (1- (length form))))
+    (setq words (s-split " " form))
+    (setq prefix (pop words))
+    (while words
+      (push (pop words) libs))
+    (-map (lambda (lib) (concat prefix "." lib)) libs)))
+
+(defun cljr--extract-ns-from-use ()
+  (let ((form (format "%s" (cljr--delete-and-extract-sexp))))
+    (substring form 1 (1- (length form)))))
 
 (defun cljr--pop-tmp-marker-after-yasnippet ()
   (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 nil t))
