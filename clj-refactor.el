@@ -216,7 +216,7 @@
 (defun cljr--goto-ns ()
   (goto-char (point-min))
   (if (re-search-forward clojure-namespace-name-regex nil t)
-      (search-backward "(ns")
+      (ignore-errors (paredit-backward-up 99))
     (error "No namespace declaration found")))
 
 (defun cljr--insert-in-ns (type)
