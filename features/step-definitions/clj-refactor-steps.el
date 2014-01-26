@@ -29,3 +29,7 @@
 (Then "^the file should be named \"\\([^\"]+\\)\"$"
       (lambda (file-name-postfix)
         (assert (s-ends-with? file-name-postfix (buffer-file-name)) nil "Expected %S to end with %S" (buffer-file-name) file-name-postfix)))
+
+(And "^the cursor is inside the defn form$"
+  (lambda ()
+    (re-search-backward "defn")))

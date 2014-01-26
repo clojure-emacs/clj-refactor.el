@@ -139,7 +139,8 @@
   (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all)
   (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
   (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
-  (define-key clj-refactor-map (funcall key-fn "cs") 'cljr-cycle-stringlike))
+  (define-key clj-refactor-map (funcall key-fn "cs") 'cljr-cycle-stringlike)
+  (define-key clj-refactor-map (funcall key-fn "ad") 'cljr-add-declaration))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -327,6 +328,38 @@
     (prog1
         (re-search-forward "[.*]" use-end t)
       (paredit-backward-up))))
+
+;;;###autoload
+(defun cljr-add-declaration ()
+  (interactive)
+  (save-excursion
+    (-if-let (def (cljr--name-of-current-def))
+        (progn (cljr--goto-declare)
+               (backward-char)
+               (insert " " def))
+      (message "Not inside a def form."))))
+
+(defun cljr--name-of-current-def ()
+  (ignore-errors (paredit-backward-up 99))
+  (ignore-errors (forward-char))
+  (when (looking-at "def")
+    (paredit-forward)
+    (while (looking-at " ^")
+      (paredit-forward))
+    (forward-char)
+    (let ((beg (point))
+          (end (progn (paredit-forward) (point))))
+      (buffer-substring-no-properties beg end))))
+
+(defun cljr--goto-declare ()
+  (goto-char (point-min))
+  (if (re-search-forward "(declare" nil t)
+      (paredit-forward-up)
+    (cljr--goto-ns)
+    (paredit-forward)
+    (open-line 2)
+    (forward-line 2)
+    (insert "(declare)")))
 
 (defun cljr--pop-tmp-marker-after-yasnippet ()
   (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 nil t))
