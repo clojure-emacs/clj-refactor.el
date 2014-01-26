@@ -129,6 +129,7 @@
   (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use-to-ns)
   (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
   (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
+  (define-key clj-refactor-map (funcall key-fn "sn") 'cljr-sort-ns)
   (define-key clj-refactor-map (funcall key-fn "th") 'cljr-thread)
   (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind)
   (define-key clj-refactor-map (funcall key-fn "ua") 'cljr-unwind-all)
@@ -221,8 +222,13 @@
 (defun cljr--insert-in-ns (type)
   (cljr--goto-ns)
   (let ((bound (save-excursion (forward-list 1) (point))))
-    (if (search-forward (concat "(" type " ") bound t)
-        (progn
+    (if (search-forward (concat "(" type) bound t)
+        (if (looking-at " *)")
+            (progn
+              (search-backward "(")
+              (forward-list 1)
+              (forward-char -1)
+              (insert " "))
           (search-backward "(")
           (forward-list 1)
           (forward-char -1)
@@ -345,11 +351,29 @@
 (defun cljr-replace-use ()
   (interactive)
   (save-excursion
-    (let ((libs (cljr--extract-used-namespaces)))
-      (when libs
-        (dolist (lib libs)
-          (cljr--insert-in-ns ":require")
-          (insert (format "[%s :refer :all]" lib)))))))
+    (dolist (used-ns (cljr--extract-used-namespaces))
+      (cljr--insert-in-ns ":require")
+      (insert (format "[%s :refer :all]" used-ns)))))
+
+(defun cljr--extract-ns-statements (statement-type)
+  (cljr--goto-ns)
+  (if (not (re-search-forward (concat "(" statement-type) nil t))
+-      '()
+    (let (statements)
+      (while (not (looking-at " *)"))
+        (push (cljr--delete-and-extract-sexp) statements))
+      statements)))
+
+;;;###autoload
+(defun cljr-sort-ns ()
+  (interactive)
+  (save-excursion
+    (dolist (statement-type '(":require" ":use" ":import"))
+      (dolist (statement (->> (cljr--extract-ns-statements statement-type)
+                           (-map 's-trim)
+                           (-sort 'string<)))
+        (cljr--insert-in-ns statement-type)
+        (insert statement)))))
 
 ;; ------ declare statements -----------
 

@@ -74,6 +74,7 @@ This is it so far:
  - `au`: add "use" (ie require refer all) to namespace declaration, then jump back
  - `ai`: add import to namespace declaration, then jump back
  - `ru`: replace all `:use` in namespace with `:refer :all`
+ - `sn`: sort :use, :require and :import in the ns form
  - `cc`: cycle surrounding collection type
  - `cp`: cycle privacy of `defn`s and `def`s
  - `cs`: cycle between "string" -> :string -> "string"
@@ -328,6 +329,8 @@ You might also like
 - [align-cljlet](https://github.com/gstamp/align-cljlet) - which is an Emacs package for aligning let-like forms.
 
 ## Changelog
+
+- Add `cljr-sort-ns` [AlexBaranosky](https://github.com/AlexBaranosky)
 
 #### From 0.8 to 0.9
 
