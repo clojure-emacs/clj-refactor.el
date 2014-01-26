@@ -328,6 +328,8 @@ You might also like
 
 ## Changelog
 
+- Add `cljr-replace-use` [Lars Andersen](https://github.com/expez)
+
 #### From 0.7 to 0.8
 
 - Add `cljr-cycle-stringlike` [AlexBaranosky](https://github.com/AlexBaranosky)
