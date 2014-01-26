@@ -358,7 +358,7 @@
 (defun cljr--extract-ns-statements (statement-type)
   (cljr--goto-ns)
   (if (not (re-search-forward (concat "(" statement-type) nil t))
--      '()
+      '()
     (let (statements)
       (while (not (looking-at " *)"))
         (push (cljr--delete-and-extract-sexp) statements))
