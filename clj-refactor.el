@@ -150,6 +150,16 @@
 (defun cljr-add-keybindings-with-modifier (modifier)
   (cljr--add-keybindings (-partial 'cljr--key-pairs-with-modifier modifier)))
 
+;; ------ utilities -----------
+
+(defun cljr--delete-and-extract-sexp ()
+  (let* ((beg (point))
+         (end (progn (paredit-forward)
+                     (point)))
+         (contents (buffer-substring beg end)))
+    (delete-region beg end)
+    contents))
+
 ;; ------ file -----------
 
 (defun cljr--project-dir ()
@@ -376,14 +386,6 @@
       (message "Not inside a def form."))))
 
 ;; ------ threading and unwinding -----------
-
-(defun cljr--delete-and-extract-sexp ()
-  (let* ((beg (point))
-         (end (progn (paredit-forward)
-                     (point)))
-         (contents (buffer-substring beg end)))
-    (delete-region beg end)
-    contents))
 
 (defun cljr--unwind-first ()
   (paredit-forward)
