@@ -77,6 +77,7 @@ This is it so far:
  - `cc`: cycle surrounding collection type
  - `cp`: cycle privacy of `defn`s and `def`s
  - `cs`: cycle between "string" -> :string -> "string"
+ - `ad`: add declaration for current top-level form
 
 Combine with your keybinding prefix/modifier.
 
@@ -328,7 +329,10 @@ You might also like
 
 ## Changelog
 
+#### From 0.8 to 0.9
+
 - Add `cljr-replace-use` [Lars Andersen](https://github.com/expez)
+- Add `cljr-add-declaration` [Lars Andersen](https://github.com/expez)
 
 #### From 0.7 to 0.8
 
@@ -367,7 +371,7 @@ Run the tests with:
 ## Contributors
 
 - [AlexBaranosky](https://github.com/AlexBaranosky) added a bunch of features. See the [Changelog](#changelog) for details.
-- [Lars Andersen](https://github.com/expez) added `cljr-replace-use`.
+- [Lars Andersen](https://github.com/expez) added `cljr-replace-use` and `cljr-add-declaration`.
 
 Thanks!
 
