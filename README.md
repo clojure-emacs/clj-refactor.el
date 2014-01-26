@@ -73,6 +73,7 @@ This is it so far:
  - `ar`: add require to namespace declaration, then jump back (see optional setup)
  - `au`: add "use" (ie require refer all) to namespace declaration, then jump back
  - `ai`: add import to namespace declaration, then jump back
+ - `ru`: replace all `:use` in namespace with `:refer :all`
  - `cc`: cycle surrounding collection type
  - `cp`: cycle privacy of `defn`s and `def`s
  - `cs`: cycle between "string" -> :string -> "string"
@@ -364,6 +365,7 @@ Run the tests with:
 ## Contributors
 
 - [AlexBaranosky](https://github.com/AlexBaranosky) added a bunch of features. See the [Changelog](#changelog) for details.
+- [Lars Andersen](https://github.com/expez) added `cljr-replace-use`.
 
 Thanks!
 
