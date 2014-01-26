@@ -17,11 +17,11 @@ Feature: Sort ns form
       (:require [foo.bar :refer :all]
                 [clj-time.core :as clj-time])
       (:import (java.security MessageDigest)
-               (java.util Calendar)
-               (org.joda.time DateTime)
+               java.util.Calendar
+               [org.joda.time DateTime]
                (java.nio.charset Charset)))
     """
-    And I place the cursor before " Calendar"
+    And I place the cursor before "Calendar"
     And I press "C-! sn"
     Then I should see:
     """
@@ -34,6 +34,6 @@ Feature: Sort ns form
                 [foo.bar :refer :all])
       (:import (java.nio.charset Charset)
                (java.security MessageDigest)
-               (java.util Calendar)
-               (org.joda.time DateTime)))
+               java.util.Calendar
+               [org.joda.time DateTime]))
     """

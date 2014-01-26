@@ -371,7 +371,9 @@
     (dolist (statement-type '(":require" ":use" ":import"))
       (dolist (statement (->> (cljr--extract-ns-statements statement-type)
                            (-map 's-trim)
-                           (-sort 'string<)))
+                           (-sort (lambda (s1 s2)
+                                    (string< (s-chop-prefixes '("(" "[") s1)
+                                             (s-chop-prefixes '("(" "[") s2))))))
         (cljr--insert-in-ns statement-type)
         (insert statement)))))
 
