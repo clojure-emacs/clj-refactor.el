@@ -335,11 +335,9 @@
 (defun cljr-replace-use ()
   (interactive)
   (save-excursion
-    (let ((libs (cljr--extract-used-namespaces)))
-      (when libs
-        (dolist (lib libs)
-          (cljr--insert-in-ns ":require")
-          (insert (format "[%s :refer :all]" lib)))))))
+    (dolist (used-ns (cljr--extract-used-namespaces))
+      (cljr--insert-in-ns ":require")
+      (insert (format "[%s :refer :all]" used-ns)))))
 
 ;; ------ declare statements -----------
 
