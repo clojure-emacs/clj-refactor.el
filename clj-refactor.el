@@ -150,6 +150,8 @@
 (defun cljr-add-keybindings-with-modifier (modifier)
   (cljr--add-keybindings (-partial 'cljr--key-pairs-with-modifier modifier)))
 
+;; ------ file -----------
+
 (defun cljr--project-dir ()
   (file-truename
    (locate-dominating-file default-directory "project.clj")))
@@ -197,6 +199,8 @@
           (cljr--rename-file filename new-name)
           (message "File '%s' successfully renamed to '%s'"
                    name (file-name-nondirectory new-name)))))))
+
+;; ------ ns statements -----------
 
 (defun cljr--goto-ns ()
   (goto-char (point-min))
@@ -250,6 +254,14 @@
 
 (defvar cljr--tmp-marker (make-marker))
 
+(defun cljr--pop-tmp-marker-after-yasnippet-1 (&rest ignore)
+  (goto-char cljr--tmp-marker)
+  (set-marker cljr--tmp-marker nil)
+  (remove-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 t))
+
+(defun cljr--pop-tmp-marker-after-yasnippet ()
+  (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 nil t))
+
 ;;;###autoload
 (defun cljr-add-require-to-ns ()
   (interactive)
@@ -274,15 +286,29 @@
   (cljr--pop-tmp-marker-after-yasnippet)
   (yas/expand-snippet "$1"))
 
-;;;###autoload
-(defun cljr-replace-use ()
-  (interactive)
-  (save-excursion
-    (let ((libs (cljr--extract-used-namespaces)))
-      (when libs
-        (dolist (lib libs)
-          (cljr--insert-in-ns ":require")
-          (insert (format "[%s :refer :all]" lib)))))))
+(defun cljr--extract-ns-from-use ()
+  (let ((form (format "%s" (cljr--delete-and-extract-sexp))))
+    (substring form 1 (1- (length form)))))
+
+(defun cljr--extract-multiple-ns-from-use ()
+  (let* ((form (format "%s" (cljr--delete-and-extract-sexp)))
+         (form (substring form 1 (1- (length form))))
+         (words (s-split " " form))
+         (prefix (pop words))
+         (libs (nreverse words)))
+    (-map (lambda (lib) (concat prefix "." lib)) libs)))
+
+(defun cljr--multiple-namespaces-p (use-form)
+  "Returns t if the use form looks like [some.lib ns1 ns2 ...]"
+  (s-matches-p "[[A-z0-9.]+ \\(\\([A-z0-9]+ \\)\\|\\([A-z0-9]+\\)\\)+]"
+               (format "%s" use-form)))
+
+(defun cljr--more-namespaces-in-use-p (use-start)
+  (goto-char use-start)
+  (let ((use-end (save-excursion (forward-sexp) (point)) ))
+    (prog1
+        (re-search-forward "[.*]" use-end t)
+      (paredit-backward-up))))
 
 (defun cljr--extract-used-namespaces ()
   (let (libs use-start use-end)
@@ -305,39 +331,27 @@
       (delete-char 1)
       (nreverse (-flatten libs)))))
 
-(defun cljr--multiple-namespaces-p (use-form)
-  "Returns t if the use form looks like [some.lib ns1 ns2 ...]"
-  (s-matches-p "[[A-z0-9.]+ \\(\\([A-z0-9]+ \\)\\|\\([A-z0-9]+\\)\\)+]"
-               (format "%s" use-form)))
-
-(defun cljr--extract-multiple-ns-from-use ()
-  (let* ((form (format "%s" (cljr--delete-and-extract-sexp)))
-         (form (substring form 1 (1- (length form))))
-         (words (s-split " " form))
-         (prefix (pop words))
-         (libs (nreverse words)))
-    (-map (lambda (lib) (concat prefix "." lib)) libs)))
-
-(defun cljr--extract-ns-from-use ()
-  (let ((form (format "%s" (cljr--delete-and-extract-sexp))))
-    (substring form 1 (1- (length form)))))
-
-(defun cljr--more-namespaces-in-use-p (use-start)
-  (goto-char use-start)
-  (let ((use-end (save-excursion (forward-sexp) (point)) ))
-    (prog1
-        (re-search-forward "[.*]" use-end t)
-      (paredit-backward-up))))
-
 ;;;###autoload
-(defun cljr-add-declaration ()
+(defun cljr-replace-use ()
   (interactive)
   (save-excursion
-    (-if-let (def (cljr--name-of-current-def))
-        (progn (cljr--goto-declare)
-               (backward-char)
-               (insert " " def))
-      (message "Not inside a def form."))))
+    (let ((libs (cljr--extract-used-namespaces)))
+      (when libs
+        (dolist (lib libs)
+          (cljr--insert-in-ns ":require")
+          (insert (format "[%s :refer :all]" lib)))))))
+
+;; ------ declare statements -----------
+
+(defun cljr--goto-declare ()
+  (goto-char (point-min))
+  (if (re-search-forward "(declare" nil t)
+      (paredit-forward-up)
+    (cljr--goto-ns)
+    (paredit-forward)
+    (open-line 2)
+    (forward-line 2)
+    (insert "(declare)")))
 
 (defun cljr--name-of-current-def ()
   (ignore-errors (paredit-backward-up 99))
@@ -351,23 +365,15 @@
           (end (progn (paredit-forward) (point))))
       (buffer-substring-no-properties beg end))))
 
-(defun cljr--goto-declare ()
-  (goto-char (point-min))
-  (if (re-search-forward "(declare" nil t)
-      (paredit-forward-up)
-    (cljr--goto-ns)
-    (paredit-forward)
-    (open-line 2)
-    (forward-line 2)
-    (insert "(declare)")))
-
-(defun cljr--pop-tmp-marker-after-yasnippet ()
-  (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 nil t))
-
-(defun cljr--pop-tmp-marker-after-yasnippet-1 (&rest ignore)
-  (goto-char cljr--tmp-marker)
-  (set-marker cljr--tmp-marker nil)
-  (remove-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 t))
+;;;###autoload
+(defun cljr-add-declaration ()
+  (interactive)
+  (save-excursion
+    (-if-let (def (cljr--name-of-current-def))
+        (progn (cljr--goto-declare)
+               (backward-char)
+               (insert " " def))
+      (message "Not inside a def form."))))
 
 ;; ------ threading and unwinding -----------
 
