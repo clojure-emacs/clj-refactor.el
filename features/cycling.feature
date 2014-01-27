@@ -19,6 +19,21 @@ Feature: Code Cycling
       (+ a b))
     """
 
+  Scenario: Cycling Privacy (defn -> defn ^:private)
+    When I insert:
+    """
+    (defn add [a b]
+      (+ a b))
+    """
+    And I set cljr-use-metadata-for-privacy to t
+    And I press "C-! cp"
+    And I set cljr-use-metadata-for-privacy to nil
+    Then I should see:
+    """
+    (defn ^:private add [a b]
+      (+ a b))
+    """    
+
   Scenario: Cycling Privacy (defn- -> defn)
 
     When I insert:

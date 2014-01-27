@@ -114,6 +114,12 @@
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-use-metadata-for-privacy nil
+  "When nil, `cljr-cycle-privacy` will use (defn- f []).
+   When t, it will use (defn ^:private f [])"
+  :group 'cljr
+  :type 'boolean)
+
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
 (defun cljr--fix-special-modifier-combinations (key)
@@ -654,10 +660,20 @@
   (save-excursion
     (search-backward-regexp "\\((defn-? \\)\\|\\((def \\)")
     (cond
-     ((looking-at "(defn-")
+     ((and cljr-use-metadata-for-privacy
+           (looking-at "(defn ^:private"))
+      (forward-char 5)
+      (delete-char 11))
+     ((and (not cljr-use-metadata-for-privacy)
+           (looking-at "(defn-"))
       (forward-char 5)
       (delete-char 1))
-     ((looking-at "(defn")
+     ((and cljr-use-metadata-for-privacy
+           (looking-at "(defn"))
+      (forward-char 5)
+      (insert " ^:private"))
+     ((and (not cljr-use-metadata-for-privacy)
+           (looking-at "(defn"))
       (forward-char 5)
       (insert "-"))
      ((looking-at "(def ^:private")
