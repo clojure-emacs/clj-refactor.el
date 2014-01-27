@@ -176,6 +176,10 @@
     (delete-region beg end)
     contents))
 
+(defun cljr--re-search-forward-within-sexp (regex)
+  (let ((bound (save-excursion (forward-list 1) (point))))
+    (search-forward regex bound t)))
+
 ;; ------ file -----------
 
 (defun cljr--project-dir ()
@@ -236,23 +240,22 @@
 
 (defun cljr--insert-in-ns (type)
   (cljr--goto-ns)
-  (let ((bound (save-excursion (forward-list 1) (point))))
-    (if (search-forward (concat "(" type) bound t)
-        (if (looking-at " *)")
-            (progn
-              (search-backward "(")
-              (forward-list 1)
-              (forward-char -1)
-              (insert " "))
-          (search-backward "(")
-          (forward-list 1)
-          (forward-char -1)
-          (newline-and-indent))
-      (forward-list 1)
-      (forward-char -1)
-      (newline-and-indent)
-      (insert "(" type " )")
-      (forward-char -1))))
+  (if (cljr--re-search-forward-within-sexp (concat "(" type))
+      (if (looking-at " *)")
+          (progn
+            (search-backward "(")
+            (forward-list 1)
+            (forward-char -1)
+            (insert " "))
+        (search-backward "(")
+        (forward-list 1)
+        (forward-char -1)
+        (newline-and-indent))
+    (forward-list 1)
+    (forward-char -1)
+    (newline-and-indent)
+    (insert "(" type " )")
+    (forward-char -1)))
 
 (defun cljr--project-depends-on (package)
   (save-window-excursion
@@ -285,13 +288,12 @@
 
 (defun cljr--extract-ns-statements (statement-type)
   (cljr--goto-ns)
-  (let ((bound (save-excursion (forward-list 1) (point))))
-    (if (not (re-search-forward (concat "(" statement-type) bound t))
-        '()
-      (let (statements)
-        (while (not (looking-at " *)"))
-          (push (cljr--delete-and-extract-sexp) statements))
-        statements))))
+  (if (not (cljr--re-search-forward-within-sexp (concat "(" statement-type)))
+      '()
+    (let (statements)
+      (while (not (looking-at " *)"))
+        (push (cljr--delete-and-extract-sexp) statements))
+      statements)))
 
 (defun cljr--only-alpha-chars (s)
   (replace-regexp-in-string "[^A-Za-z]" "" s))
@@ -385,7 +387,7 @@
 (defun cljr--extract-used-namespaces ()
   (let (libs use-start use-end)
     (cljr--goto-ns)
-    (if (not (re-search-forward "(:use " nil t))
+    (if (not (cljr--re-search-forward-within-sexp "(:use "))
         (message "There is no :use clause in the ns declaration.")
       (save-excursion
         (paredit-backward-up)
