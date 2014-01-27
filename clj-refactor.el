@@ -365,6 +365,9 @@
           (push (cljr--delete-and-extract-sexp) statements))
         statements))))
 
+(defun cljr--only-alpha-chars (s)
+  (replace-regexp-in-string "[^A-Za-z]" "" s))
+
 ;;;###autoload
 (defun cljr-sort-ns ()
   (interactive)
@@ -374,8 +377,8 @@
         (dolist (statement (->> (cljr--extract-ns-statements statement-type)
                              (-map 's-trim)
                              (-sort (lambda (s1 s2)
-                                      (string< (s-chop-prefixes '("(" "[") s1)
-                                               (s-chop-prefixes '("(" "[") s2))))
+                                      (string< (cljr--only-alpha-chars s1)
+                                               (cljr--only-alpha-chars s2))))
                              (-distinct)))
           (cljr--insert-in-ns statement-type)
           (insert statement))))))
