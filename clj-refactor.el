@@ -620,7 +620,7 @@
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-introduce-let)
 
-(defun cljr--go-to-let ()
+(defun cljr--goto-let ()
   (search-backward-regexp "\(\\(when-let\\|if-let\\|let\\)\\( \\|\\[\\)"))
 
 ;;;###autoload
@@ -628,7 +628,7 @@
   (interactive)
   (ignore-errors
     (forward-char 4))
-  (cljr--go-to-let)
+  (cljr--goto-let)
   (paredit-forward-down 2)
   (paredit-forward-up)
   (skip-syntax-forward " >")
@@ -639,7 +639,7 @@
   (interactive)
   (save-excursion
     (let ((contents (cljr--delete-and-extract-sexp)))
-      (cljr--go-to-let)
+      (cljr--goto-let)
       (search-forward "[")
       (paredit-backward)
       (paredit-forward)
