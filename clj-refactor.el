@@ -108,6 +108,12 @@
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-auto-sort-ns t
+  "When true, sort ns form whenever adding to the form using clj-refactor
+   functions."
+  :group 'cljr
+  :type 'boolean)
+
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
 (defun cljr--fix-special-modifier-combinations (key)
@@ -271,6 +277,34 @@
 
 (add-hook 'find-file-hook 'cljr--add-ns-if-blank-clj-file)
 
+(defun cljr--extract-ns-statements (statement-type)
+  (cljr--goto-ns)
+  (let ((bound (save-excursion (forward-list 1) (point))))
+    (if (not (re-search-forward (concat "(" statement-type) bound t))
+        '()
+      (let (statements)
+        (while (not (looking-at " *)"))
+          (push (cljr--delete-and-extract-sexp) statements))
+        statements))))
+
+(defun cljr--only-alpha-chars (s)
+  (replace-regexp-in-string "[^A-Za-z]" "" s))
+
+;;;###autoload
+(defun cljr-sort-ns ()
+  (interactive)
+  (save-excursion
+    (dolist (statement-type '(":require" ":use" ":import"))
+      (ignore-errors
+        (dolist (statement (->> (cljr--extract-ns-statements statement-type)
+                             (-map 's-trim)
+                             (-sort (lambda (s1 s2)
+                                      (string< (cljr--only-alpha-chars s1)
+                                               (cljr--only-alpha-chars s2))))
+                             (-distinct)))
+          (cljr--insert-in-ns statement-type)
+          (insert statement))))))
+
 (defvar cljr--tmp-marker (make-marker))
 
 (defun cljr--pop-tmp-marker-after-yasnippet-1 (&rest ignore)
@@ -281,12 +315,21 @@
 (defun cljr--pop-tmp-marker-after-yasnippet ()
   (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 nil t))
 
+(defun cljr--sort-and-remove-hook (&rest ignore)
+  (cljr-sort-ns)
+  (remove-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 t))
+
+(defun cljr--add-yas-snippet-sort-ns-hook ()
+  (add-hook 'yas/after-exit-snippet-hook 'cljr--sort-and-remove-hook nil t))
+
 ;;;###autoload
 (defun cljr-add-require-to-ns ()
   (interactive)
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require")
   (cljr--pop-tmp-marker-after-yasnippet)
+  (when cljr-auto-sort-ns
+    (cljr--add-yas-snippet-sort-ns-hook))
   (yas/expand-snippet "${1:[${2:$3 :as $4}]}$0"))
 
 ;;;###autoload
@@ -295,6 +338,8 @@
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require")
   (cljr--pop-tmp-marker-after-yasnippet)
+  (when cljr-auto-sort-ns
+    (cljr--add-yas-snippet-sort-ns-hook))
   (yas/expand-snippet "[$1 :refer ${2::all}]$0"))
 
 ;;;###autoload
@@ -303,6 +348,8 @@
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":import")
   (cljr--pop-tmp-marker-after-yasnippet)
+  (when cljr-auto-sort-ns
+    (cljr--add-yas-snippet-sort-ns-hook))
   (yas/expand-snippet "$1"))
 
 (defun cljr--extract-ns-from-use ()
@@ -357,34 +404,6 @@
     (dolist (used-ns (cljr--extract-used-namespaces))
       (cljr--insert-in-ns ":require")
       (insert (format "[%s :refer :all]" used-ns)))))
-
-(defun cljr--extract-ns-statements (statement-type)
-  (cljr--goto-ns)
-  (let ((bound (save-excursion (forward-list 1) (point))))
-    (if (not (re-search-forward (concat "(" statement-type) bound t))
-        '()
-      (let (statements)
-        (while (not (looking-at " *)"))
-          (push (cljr--delete-and-extract-sexp) statements))
-        statements))))
-
-(defun cljr--only-alpha-chars (s)
-  (replace-regexp-in-string "[^A-Za-z]" "" s))
-
-;;;###autoload
-(defun cljr-sort-ns ()
-  (interactive)
-  (save-excursion
-    (dolist (statement-type '(":require" ":use" ":import"))
-      (ignore-errors
-        (dolist (statement (->> (cljr--extract-ns-statements statement-type)
-                             (-map 's-trim)
-                             (-sort (lambda (s1 s2)
-                                      (string< (cljr--only-alpha-chars s1)
-                                               (cljr--only-alpha-chars s2))))
-                             (-distinct)))
-          (cljr--insert-in-ns statement-type)
-          (insert statement))))))
 
 ;; ------ declare statements -----------
 
