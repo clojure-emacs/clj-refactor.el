@@ -37,3 +37,15 @@ Feature: Sort ns form
                java.util.Calendar
                [org.joda.time DateTime]))
     """
+
+  Scenario: no ns form
+    When I insert:
+    """
+    {:config :file}
+    """
+    And I place the cursor before "file"
+    And I press "C-! sn"
+    Then I should see:
+    """
+    {:config :file}
+    """
