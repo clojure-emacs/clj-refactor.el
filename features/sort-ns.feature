@@ -49,3 +49,24 @@ Feature: Sort ns form
     """
     {:config :file}
     """
+  Scenario: regression 1 (:use in file doesn't confuse)
+    When I insert:
+    """
+    (ns furtive.runtime.session.bucket
+      (:require [foo.bar :refer :all]
+                [clj-time.core :as clj-time]))
+
+      (defn foo [x]
+        (:user-agent x))
+    """
+    And I place the cursor before "foo"
+    And I press "C-! sn"
+    Then I should see:
+    """
+    (ns furtive.runtime.session.bucket
+      (:require [clj-time.core :as clj-time]
+                [foo.bar :refer :all]))
+
+      (defn foo [x]
+        (:user-agent x))
+    """

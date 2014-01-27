@@ -357,12 +357,13 @@
 
 (defun cljr--extract-ns-statements (statement-type)
   (cljr--goto-ns)
-  (if (not (re-search-forward (concat "(" statement-type) nil t))
-      '()
-    (let (statements)
-      (while (not (looking-at " *)"))
-        (push (cljr--delete-and-extract-sexp) statements))
-      statements)))
+  (let ((bound (save-excursion (forward-list 1) (point))))
+    (if (not (re-search-forward (concat "(" statement-type) bound t))
+        '()
+      (let (statements)
+        (while (not (looking-at " *)"))
+          (push (cljr--delete-and-extract-sexp) statements))
+        statements))))
 
 ;;;###autoload
 (defun cljr-sort-ns ()
