@@ -300,7 +300,7 @@
       statements)))
 
 (defun cljr--only-alpha-chars (s)
-  (replace-regexp-in-string "[^A-Za-z]" "" s))
+  (replace-regexp-in-string "[^[:alnum:]]" "" s))
 
 ;;;###autoload
 (defun cljr-sort-ns ()
