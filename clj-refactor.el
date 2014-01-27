@@ -176,9 +176,9 @@
     (delete-region beg end)
     contents))
 
-(defun cljr--re-search-forward-within-sexp (regex)
+(defun cljr--search-forward-within-sexp (s)
   (let ((bound (save-excursion (forward-list 1) (point))))
-    (search-forward regex bound t)))
+    (search-forward s bound t)))
 
 ;; ------ file -----------
 
@@ -240,7 +240,7 @@
 
 (defun cljr--insert-in-ns (type)
   (cljr--goto-ns)
-  (if (cljr--re-search-forward-within-sexp (concat "(" type))
+  (if (cljr--search-forward-within-sexp (concat "(" type))
       (if (looking-at " *)")
           (progn
             (search-backward "(")
@@ -288,7 +288,7 @@
 
 (defun cljr--extract-ns-statements (statement-type)
   (cljr--goto-ns)
-  (if (not (cljr--re-search-forward-within-sexp (concat "(" statement-type)))
+  (if (not (cljr--search-forward-within-sexp (concat "(" statement-type)))
       '()
     (let (statements)
       (while (not (looking-at " *)"))
@@ -387,7 +387,7 @@
 (defun cljr--extract-used-namespaces ()
   (let (libs use-start use-end)
     (cljr--goto-ns)
-    (if (not (cljr--re-search-forward-within-sexp "(:use "))
+    (if (not (cljr--search-forward-within-sexp "(:use "))
         (message "There is no :use clause in the ns declaration.")
       (save-excursion
         (paredit-backward-up)
