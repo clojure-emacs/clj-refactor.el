@@ -176,6 +176,10 @@
     (delete-region beg end)
     contents))
 
+(defun cljr--goto-toplevel ()
+  (let ((depth (first (paredit-current-parse-state))))
+    (paredit-backward-up depth)))
+
 ;; ------ file -----------
 
 (defun cljr--project-dir ()
@@ -231,7 +235,7 @@
 (defun cljr--goto-ns ()
   (goto-char (point-min))
   (if (re-search-forward clojure-namespace-name-regex nil t)
-      (ignore-errors (paredit-backward-up 99))
+      (cljr--goto-toplevel)
     (error "No namespace declaration found")))
 
 (defun cljr--insert-in-ns (type)
@@ -424,7 +428,7 @@
     (insert "(declare)")))
 
 (defun cljr--name-of-current-def ()
-  (ignore-errors (paredit-backward-up 99))
+  (cljr--goto-toplevel)
   (ignore-errors (forward-char))
   (when (looking-at "def")
     (paredit-forward)
@@ -616,7 +620,7 @@
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-introduce-let)
 
-(defun cljr--go-to-let ()
+(defun cljr--goto-let ()
   (search-backward-regexp "\(\\(when-let\\|if-let\\|let\\)\\( \\|\\[\\)"))
 
 ;;;###autoload
@@ -624,7 +628,7 @@
   (interactive)
   (ignore-errors
     (forward-char 4))
-  (cljr--go-to-let)
+  (cljr--goto-let)
   (paredit-forward-down 2)
   (paredit-forward-up)
   (skip-syntax-forward " >")
@@ -635,7 +639,7 @@
   (interactive)
   (save-excursion
     (let ((contents (cljr--delete-and-extract-sexp)))
-      (cljr--go-to-let)
+      (cljr--goto-let)
       (search-forward "[")
       (paredit-backward)
       (paredit-forward)
