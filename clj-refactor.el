@@ -103,7 +103,10 @@
 (require 'paredit)
 (require 'multiple-cursors)
 
-(defvar cljr-add-ns-to-blank-clj-files t)
+(defcustom cljr-add-ns-to-blank-clj-files t
+  "When true, automatically adds a ns form to new clj files."
+  :group 'cljr
+  :type 'boolean)
 
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
