@@ -13,6 +13,7 @@ Feature: Sort ns form
             eiusmod tempor incididunt ut labore (et dolore magna aliqua)."}
       furtive.runtime.session.bucket
       (:use clojure.test 
+            clojure.test
             clojure.string)
       (:require [foo.bar :refer :all]
                 [clj-time.core :as clj-time])
