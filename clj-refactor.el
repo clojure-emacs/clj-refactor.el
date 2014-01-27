@@ -663,7 +663,7 @@
      ((and cljr-use-metadata-for-privacy
            (looking-at "(defn ^:private"))
       (forward-char 5)
-      (delete-char 11))
+      (delete-char 10))
      ((and (not cljr-use-metadata-for-privacy)
            (looking-at "(defn-"))
       (forward-char 5)
