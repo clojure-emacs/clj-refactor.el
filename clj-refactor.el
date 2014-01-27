@@ -180,6 +180,10 @@
   (let ((bound (save-excursion (forward-list 1) (point))))
     (search-forward s bound t)))
 
+(defun cljr--goto-toplevel ()
+  (let ((depth (first (paredit-current-parse-state))))
+    (paredit-backward-up depth)))
+
 ;; ------ file -----------
 
 (defun cljr--project-dir ()
@@ -235,7 +239,7 @@
 (defun cljr--goto-ns ()
   (goto-char (point-min))
   (if (re-search-forward clojure-namespace-name-regex nil t)
-      (ignore-errors (paredit-backward-up 99))
+      (cljr--goto-toplevel)
     (error "No namespace declaration found")))
 
 (defun cljr--insert-in-ns (type)
@@ -426,7 +430,7 @@
     (insert "(declare)")))
 
 (defun cljr--name-of-current-def ()
-  (ignore-errors (paredit-backward-up 99))
+  (cljr--goto-toplevel)
   (ignore-errors (forward-char))
   (when (looking-at "def")
     (paredit-forward)
