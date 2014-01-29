@@ -577,8 +577,6 @@
 ;;;###autoload
 (defun cljr-thread ()
   (interactive)
-  (ignore-errors
-    (forward-char 7))
   (search-backward-regexp "\\((some->\\)\\|\\((->\\)")
   (paredit-forward-down)
   (if (not (cljr--thread-guard))

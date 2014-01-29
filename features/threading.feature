@@ -305,14 +305,14 @@ Feature: Threading and unwinding of macros
     """
 
   Scenario: Thread first all (->)
-    When I insert "(dissoc (assoc {} :key "value") :lock)"
-    And I place the cursor before "(dissoc (assoc"
+    When I insert "(->map (assoc {} :key "value") :lock)"
+    And I place the cursor before "(->map (assoc"
     And I press "C-! tf"
     Then I should see:
     """
     (-> {}
         (assoc :key "value")
-        (dissoc :lock))
+        (->map :lock))
     """
 
   Scenario: Thread last all (->>)
