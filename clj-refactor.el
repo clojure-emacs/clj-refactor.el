@@ -503,17 +503,15 @@
   (interactive)
   (ignore-errors
     (forward-char 3))
-  (search-backward-regexp "\\((some->\\)\\|\\((->\\)")
+  (search-backward-regexp "([^-]*->")
   (if (cljr--nothing-more-to-unwind)
       (progn
         (cljr--pop-out-of-threading)
         nil)
     (paredit-forward-down)
     (cond
-     ((looking-at "->[\n\r\t ]")     (cljr--unwind-first))
-     ((looking-at "some->[\n\r\t ]") (cljr--unwind-first))
-     ((looking-at "->>[\n\r\t ]")     (cljr--unwind-last))
-     ((looking-at "some->>[\n\r\t ]") (cljr--unwind-last)))
+     ((looking-at "[^-]*->[\n\r\t ]")  (cljr--unwind-first))
+     ((looking-at "[^-]*->>[\n\r\t ]") (cljr--unwind-last)))
     t))
 
 ;;;###autoload
@@ -577,15 +575,13 @@
 ;;;###autoload
 (defun cljr-thread ()
   (interactive)
-  (search-backward-regexp "\\((some->\\)\\|\\((->\\)")
+  (search-backward-regexp "([^-]*->")
   (paredit-forward-down)
   (if (not (cljr--thread-guard))
       nil
     (cond
-     ((looking-at "->[\n\r\t ]")     (cljr--thread-first))
-     ((looking-at "some->[\n\r\t ]") (cljr--thread-first))
-     ((looking-at "->>[\n\r\t ]")     (cljr--thread-last))
-     ((looking-at "some->>[\n\r\t ]") (cljr--thread-last)))))
+     ((looking-at "[^-]*->[\n\r\t ]")  (cljr--thread-first))
+     ((looking-at "[^-]*->>[\n\r\t ]") (cljr--thread-last)))))
 
 ;;;###autoload
 (defun cljr-thread-first-all ()
@@ -701,7 +697,7 @@
       (insert ":" (substring (cljr--delete-and-extract-sexp) 1 -1)))
      ((looking-at ":")
       (insert "\"" (substring (cljr--delete-and-extract-sexp) 1) "\""))
-     (t
+     (otherwise
       (message "Couldn't cljr-cycle-stringlike")))))
 
 ;;;###autoload
