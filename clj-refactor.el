@@ -145,6 +145,7 @@
   (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
   (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
   (define-key clj-refactor-map (funcall key-fn "sn") 'cljr-sort-ns)
+  (define-key clj-refactor-map (funcall key-fn "sr") 'cljr-stop-referring)
   (define-key clj-refactor-map (funcall key-fn "th") 'cljr-thread)
   (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind)
   (define-key clj-refactor-map (funcall key-fn "ua") 'cljr-unwind-all)
@@ -417,6 +418,46 @@
     (dolist (used-ns (cljr--extract-used-namespaces))
       (cljr--insert-in-ns ":require")
       (insert (format "[%s :refer :all]" used-ns)))))
+
+;;;###autoload
+(defun cljr-stop-referring ()
+  (interactive)
+  (save-excursion
+    (paredit-backward-up)
+    (unless (looking-at "\\[")
+      (error "Place cursor on the namespace whose vars you want to stop referring to."))
+    (paredit-backward-up)
+    (unless (looking-at "(:require ")
+      (error "Place cursor on the namespace whose vars you want to stop referring to.")))
+  (save-excursion
+    (paredit-backward-up)
+    (let* ((bound (save-excursion
+                    (paredit-forward)
+                    (point)))
+           (ns (save-excursion
+                 (paredit-forward-down)
+                 (search-forward " :as " bound t)
+                 (let ((beg (point)))
+                   (paredit-forward)
+                   (buffer-substring-no-properties beg (point))))))
+      (unless (re-search-forward " :refer " bound t)
+        (error "No :refer clause found."))
+      (when (looking-at ":all")
+        (error "Not smart enough to stop referring to :all unfortunately."))
+      (paredit-forward-down)
+      (let* ((beg (point))
+             (str (progn (paredit-forward-up)
+                         (paredit-backward-down)
+                         (buffer-substring-no-properties beg (point))))
+             (symbols (s-split " " (s-trim str) t)))
+        (paredit-backward-up)
+        (paredit-backward)
+        (kill-sexp 2)
+        (just-one-space 0)
+        (while (re-search-forward (regexp-opt symbols 'symbols) nil t)
+          (paredit-backward)
+          (insert ns "/")
+          (paredit-forward))))))
 
 ;; ------ declare statements -----------
 

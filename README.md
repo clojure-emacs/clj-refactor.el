@@ -75,6 +75,7 @@ This is it so far:
  - `ai`: add import to namespace declaration, then jump back
  - `ru`: replace all `:use` in namespace with `:refer :all`
  - `sn`: sort :use, :require and :import in the ns form
+ - `sr`: stop referring (removes `:refer []` from current require, fixing references)
  - `cc`: cycle surrounding collection type
  - `cp`: cycle privacy of `defn`s and `def`s
  - `cs`: cycle between "string" -> :string -> "string"
@@ -310,6 +311,26 @@ If `rec` had still been in use, it would have added an `:as` clause.
 
 For now this feature is limited to top-level symbols in a let form. PR welcome.
 
+## Stop referring
+
+Given this:
+
+```clj
+(ns cljr.core
+  (:require [my.lib :as lib :refer [a b]]))
+
+(+ (a 1) (b 2))
+```
+
+I place cursor on `my.lib` and do `cljr-stop-referring`:
+
+```clj
+(ns cljr.core
+  (:require [my.lib :as lib]))
+
+(+ (lib/a 1) (lib/b 2))
+```
+
 ## Optional setup
 
 If you're not using yasnippet, then the "jumping back"-part of adding to
@@ -357,6 +378,7 @@ You might also like
 
 ## Changelog
 
+- Add `cljr-stop-referring`
 - Add `cljr-destructure-keys`
 - Add `cljr-sort-ns` [AlexBaranosky](https://github.com/AlexBaranosky)
 
