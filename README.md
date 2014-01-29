@@ -79,6 +79,7 @@ This is it so far:
  - `cp`: cycle privacy of `defn`s and `def`s
  - `cs`: cycle between "string" -> :string -> "string"
  - `ad`: add declaration for current top-level form
+ - `dk`: destructure keys
 
 Combine with your keybinding prefix/modifier.
 
@@ -283,6 +284,32 @@ I do `cljr-cycle-stringlike` to return:
 Thanks to [Jay Fields](https://github.com/jaycfields) and
 [emacs-live](https://github.com/overtone/emacs-live) for these cycling features. Good idea!
 
+## Destructuring keys
+
+Given this:
+
+```clj
+(defn- render-recommendation [rec]
+  (list [:h3 (:title rec)]
+        [:p (:by rec)]
+        [:p (:blurb rec) " "
+         (render-link (:link rec))]))
+```
+
+I place the cursor on `rec` inside `[rec]` and do `cljr-destructure-keys`:
+
+```clj
+(defn- render-recommendation [{:keys [title by blurb link]}]
+  (list [:h3 title]
+        [:p by]
+        [:p blurb " "
+         (render-link link)]))
+```
+
+If `rec` had still been in use, it would have added an `:as` clause.
+
+For now this feature is limited to top-level symbols in a let form. PR welcome.
+
 ## Optional setup
 
 If you're not using yasnippet, then the "jumping back"-part of adding to
@@ -330,6 +357,7 @@ You might also like
 
 ## Changelog
 
+- Add `cljr-destructure-keys`
 - Add `cljr-sort-ns` [AlexBaranosky](https://github.com/AlexBaranosky)
 
 #### From 0.8 to 0.9

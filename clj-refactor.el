@@ -156,7 +156,8 @@
   (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
   (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
   (define-key clj-refactor-map (funcall key-fn "cs") 'cljr-cycle-stringlike)
-  (define-key clj-refactor-map (funcall key-fn "ad") 'cljr-add-declaration))
+  (define-key clj-refactor-map (funcall key-fn "ad") 'cljr-add-declaration)
+  (define-key clj-refactor-map (funcall key-fn "dk") 'cljr-destructure-keys))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -651,6 +652,53 @@
     (backward-char)
     (mc/create-fake-cursor-at-point))
   (mc/maybe-multiple-cursors-mode))
+
+;; ------ Destructuring ----
+
+(defun cljr--find-symbol-at-point ()
+  (save-excursion
+    (when (looking-back "\\s_\\|\\sw" 1)
+      (paredit-backward))
+    (let ((beg (point)))
+      (paredit-forward)
+      (buffer-substring-no-properties beg (point)))))
+
+;;;###autoload
+(defun cljr-destructure-keys ()
+  (interactive)
+  (save-excursion
+    (paredit-backward-up)
+    (unless (looking-at "\\[")
+      (error "Place point on the symbol to destructure inside the [let form]")))
+  (let* ((symbol (cljr--find-symbol-at-point))
+         (re (concat "(:\\(\\sw\\|\\s_\\)+ " (regexp-quote symbol) ")"))
+         (bound (save-excursion
+                  (paredit-backward-up 2)
+                  (paredit-forward)
+                  (point)))
+         symbols include-as)
+    (save-excursion ;; collect all symbols
+      (paredit-backward-up)
+      (paredit-forward)
+      (while (re-search-forward re bound t)
+        (paredit-backward)
+        (paredit-forward-down)
+        (paredit-raise-sexp)
+        (delete-char 1)
+        (!cons (cljr--find-symbol-at-point) symbols)))
+    (save-excursion ;; find new bound
+      (paredit-backward-up 2)
+      (paredit-forward)
+      (setq bound (point)))
+    (save-excursion ;; are there any more usages of symbol?
+      (paredit-forward-up)
+      (when (re-search-forward (regexp-opt (list symbol) 'symbols) bound t)
+        (setq include-as t)))
+    (when (looking-back "\\s_\\|\\sw" 1)
+      (paredit-backward))
+    (kill-sexp)
+    (insert "{:keys [" (s-join " " (-distinct (reverse symbols))) "]"
+            (if include-as (concat " :as " symbol) "") "}")))
 
 ;; ------ Cycling ----------
 
