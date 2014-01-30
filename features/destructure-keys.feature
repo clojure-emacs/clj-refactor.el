@@ -34,6 +34,24 @@ Feature: Destructure keys
       (+ a1 (some-fn o)))
     """
 
+  Scenario: Let statement with ref
+    When I insert:
+    """
+    (let [a (get-obj)
+          b (:p1 a)
+          c (:p2 a)]
+      (+ b c (:p3 a)))
+    """
+    And I place the cursor before "a ("
+    And I press "C-! dk"
+    Then I should see:
+    """
+    (let [{:keys [p1 p2 p3]} (get-obj)
+          b p1
+          c p2]
+      (+ b c p3))
+    """
+
   Scenario: Duplicates
     When I insert:
     """

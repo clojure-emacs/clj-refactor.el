@@ -719,7 +719,6 @@
                   (point)))
          symbols include-as)
     (save-excursion ;; collect all symbols
-      (paredit-backward-up)
       (paredit-forward)
       (while (re-search-forward re bound t)
         (paredit-backward)
