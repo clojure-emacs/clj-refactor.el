@@ -1,6 +1,6 @@
 # clj-refactor.el [![Build Status](https://secure.travis-ci.org/magnars/clj-refactor.el.png)](http://travis-ci.org/magnars/clj-refactor.el)
 
-A tiny collection of clojure refactoring functions. Please send help.
+A collection of simple clojure refactoring functions. Please send help.
 
 ## Installation
 
