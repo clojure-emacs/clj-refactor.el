@@ -378,6 +378,8 @@ You might also like
 
 ## Changelog
 
+#### From 0.9 to 0.10
+
 - Add `cljr-stop-referring`
 - Add `cljr-destructure-keys`
 - Add `cljr-sort-ns` [AlexBaranosky](https://github.com/AlexBaranosky)
