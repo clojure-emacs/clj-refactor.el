@@ -75,6 +75,16 @@ Feature: Threading and unwinding of macros
         square)
     """
 
+  Scenario: Thread first, part 7 - allow cursor placement before threading
+    When I insert "(-> (not (s-acc/mobile? session)))"
+    And I place the cursor before "(->"
+    And I press "C-! th"
+    Then I should see:
+    """
+    (-> (s-acc/mobile? session)
+        not)
+    """
+
   Scenario: Unwind first (->), part 1
     When I insert:
     """

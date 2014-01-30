@@ -617,6 +617,8 @@
 ;;;###autoload
 (defun cljr-thread ()
   (interactive)
+  (when (looking-at "(?[^-]*-?>")
+    (goto-char (match-end 0)))
   (search-backward-regexp "([^-]*->")
   (paredit-forward-down)
   (if (not (cljr--thread-guard))
@@ -628,17 +630,19 @@
 ;;;###autoload
 (defun cljr-thread-first-all ()
   (interactive)
-  (paredit-wrap-round)
-  (insert "-> ")
-  (while (cljr-thread)
+  (save-excursion
+    (paredit-wrap-round)
+    (insert "-> "))
+  (while (save-excursion (cljr-thread))
     t))
 
 ;;;###autoload
 (defun cljr-thread-last-all ()
   (interactive)
-  (paredit-wrap-round)
-  (insert "->> ")
-  (while (cljr-thread)
+  (save-excursion
+    (paredit-wrap-round)
+    (insert "->> "))
+  (while (save-excursion (cljr-thread))
     t))
 
 ;; ------ let binding ----------
