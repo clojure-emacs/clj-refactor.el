@@ -75,6 +75,7 @@ This is it so far:
  - `ai`: add import to namespace declaration, then jump back
  - `ru`: replace all `:use` in namespace with `:refer :all`
  - `sn`: sort :use, :require and :import in the ns form
+ - `rr`: remove unused requires
  - `sr`: stop referring (removes `:refer []` from current require, fixing references)
  - `cc`: cycle surrounding collection type
  - `cp`: cycle privacy of `defn`s and `def`s
