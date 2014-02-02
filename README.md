@@ -81,6 +81,7 @@ This is it so far:
  - `cs`: cycle between "string" -> :string -> "string"
  - `ad`: add declaration for current top-level form
  - `dk`: destructure keys
+ - `md`: move one or more defn forms to another namespace
 
 Combine with your keybinding prefix/modifier.
 
@@ -426,7 +427,7 @@ Run the tests with:
 ## Contributors
 
 - [AlexBaranosky](https://github.com/AlexBaranosky) added a bunch of features. See the [Changelog](#changelog) for details.
-- [Lars Andersen](https://github.com/expez) added `cljr-replace-use` and `cljr-add-declaration`.
+- [Lars Andersen](https://github.com/expez) added `cljr-replace-use`, `cljr-add-declaration` and `cljr-move-defn` .
 
 Thanks!
 
