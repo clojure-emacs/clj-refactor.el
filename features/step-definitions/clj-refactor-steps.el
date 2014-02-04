@@ -30,6 +30,7 @@
       (lambda (file-name-postfix)
         (assert (s-ends-with? file-name-postfix (buffer-file-name)) nil "Expected %S to end with %S" (buffer-file-name) file-name-postfix)))
 
-(And "^the cursor is inside the defn form$"
+(And "^the cursor is inside the first defn form$"
   (lambda ()
-    (re-search-backward "defn")))
+    (goto-char (point-min))
+    (re-search-forward "defn")))

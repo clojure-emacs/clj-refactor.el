@@ -14,7 +14,7 @@ Feature: Declare current top-level form
     (defn- ^:meta add [a b]
       (+ a b))
     """
-    And the cursor is inside the defn form
+    And the cursor is inside the first defn form
     And I press "C-! ad"
     Then I should see:
     """
@@ -37,7 +37,7 @@ Feature: Declare current top-level form
       [a b]
       (+ a b))
     """
-    And the cursor is inside the defn form
+    And the cursor is inside the first defn form
     And I press "C-! ad"
     Then I should see:
     """
