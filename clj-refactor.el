@@ -183,6 +183,8 @@
     (search-forward s bound t)))
 
 (defun cljr--goto-toplevel ()
+  (when (paredit-in-string-p)
+    (paredit-backward-up))
   (let ((depth (first (paredit-current-parse-state))))
     (paredit-backward-up depth)))
 
