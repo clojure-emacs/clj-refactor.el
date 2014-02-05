@@ -370,11 +370,12 @@
   (yas/expand-snippet "$1"))
 
 (defun cljr--extract-ns-from-use ()
-  (let ((form (format "%s" (cljr--delete-and-extract-sexp))))
-    (substring form 1 (1- (length form)))))
+  (let ((form (format "%s" (sexp-at-point))))
+    (substring form 1 (min (or (s-index-of " " form) (1- (length form))
+                               (1- (length form)))))))
 
 (defun cljr--extract-multiple-ns-from-use ()
-  (let* ((form (format "%s" (cljr--delete-and-extract-sexp)))
+  (let* ((form (format "%s" (sexp-at-point)))
          (form (substring form 1 (1- (length form))))
          (words (s-split " " form))
          (prefix (pop words))
@@ -386,32 +387,30 @@
   (s-matches-p "[[A-z0-9.]+ \\(\\([A-z0-9]+ \\)\\|\\([A-z0-9]+\\)\\)+]"
                (format "%s" use-form)))
 
-(defun cljr--more-namespaces-in-use-p (use-start)
+(defun cljr--more-namespaces-in-use-p (use-start count)
   (goto-char use-start)
   (let ((use-end (save-excursion (forward-sexp) (point)) ))
     (prog1
-        (re-search-forward "[.*]" use-end t)
-      (paredit-backward-up))))
+        (re-search-forward "\\(\\( \\)\\{2,\\}\\|:use \\)\\[.*\\]" use-end t count)
+      (paredit-backward))))
 
 (defun cljr--extract-used-namespaces ()
-  (let (libs use-start use-end)
+  (let (libs use-start use-end count)
     (cljr--goto-ns)
     (if (not (cljr--search-forward-within-sexp "(:use "))
         (message "There is no :use clause in the ns declaration.")
       (save-excursion
         (paredit-backward-up)
-        (setq use-start (point))
+        (setq start (point))
         (paredit-forward)
-        (setq use-end (1- (point))))
-      (while (cljr--more-namespaces-in-use-p use-start)
+        (setq use-end (point))
+        (setq count 1))
+      (while (cljr--more-namespaces-in-use-p start count)
         (push (if (cljr--multiple-namespaces-p (sexp-at-point))
                   (cljr--extract-multiple-ns-from-use)
                 (cljr--extract-ns-from-use))
-              libs))
-      (goto-char use-start)
-      (cljr--delete-and-extract-sexp)
-      (join-line)
-      (delete-char 1)
+              libs)
+        (setq count (1+ count)))
       (nreverse (-flatten libs)))))
 
 ;;;###autoload
@@ -419,8 +418,28 @@
   (interactive)
   (save-excursion
     (dolist (used-ns (cljr--extract-used-namespaces))
-      (cljr--insert-in-ns ":require")
-      (insert (format "[%s :refer :all]" used-ns)))))
+      (cljr--goto-ns)
+      (cljr--search-forward-within-sexp used-ns)
+      (if (ignore-errors (cljr--search-forward-within-sexp ":only"))
+          (progn
+            (paredit-forward-down)
+            (let ((names (buffer-substring-no-properties (point)
+                                                         (progn
+                                                           (paredit-forward-up)
+                                                           (1- (point))))))
+              (cljr--insert-in-ns ":require")
+              (insert (format "[%s :refer [%s]]" used-ns names))))
+        (cljr--insert-in-ns ":require")
+        (insert (format "[%s :refer :all]" used-ns))))
+    (cljr--goto-ns)
+    (cljr--search-forward-within-sexp ":use")
+    (paredit-backward-up)
+    (cljr--delete-and-extract-sexp)
+    (join-line)
+    (when (looking-at " ")
+      (delete-char 1)))
+  (when cljr-auto-sort-ns
+    (cljr-sort-ns)))
 
 ;;;###autoload
 (defun cljr-stop-referring ()
