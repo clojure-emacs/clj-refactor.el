@@ -102,6 +102,7 @@
 (require 'yasnippet)
 (require 'paredit)
 (require 'multiple-cursors)
+(require 'clojure-mode)
 
 (defcustom cljr-add-ns-to-blank-clj-files t
   "When true, automatically adds a ns form to new clj files."
