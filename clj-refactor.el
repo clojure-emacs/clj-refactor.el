@@ -153,6 +153,7 @@
   (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
   (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
   (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
+  (define-key clj-refactor-map (funcall key-fn "md") 'cljr-move-defn)
   (define-key clj-refactor-map (funcall key-fn "tf") 'cljr-thread-first-all)
   (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all)
   (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
@@ -179,15 +180,45 @@
     (delete-region beg end)
     contents))
 
-(defun cljr--search-forward-within-sexp (s)
+(defun cljr--search-forward-within-sexp (s &optional save-excursion)
+  "Searches forward for S in the current sexp.
+
+if SAVE-EXCURSION is T POINT does not move."
   (let ((bound (save-excursion (forward-list 1) (point))))
-    (search-forward s bound t)))
+    (if save-excursion
+        (save-excursion
+          (search-forward s bound t))
+      (search-forward s bound t))))
 
 (defun cljr--goto-toplevel ()
   (when (paredit-in-string-p)
     (paredit-backward-up))
   (let ((depth (first (paredit-current-parse-state))))
     (paredit-backward-up depth)))
+
+(defun cljr--cleanup-whitespace (stuff)
+  "Removes blank lines preceding `stuff' as well as trailing whitespace."
+  (with-temp-buffer
+    (insert stuff)
+    (goto-char (point-min))
+    (delete-blank-lines)
+    (when (looking-at "[ \t]*$")
+      (delete-region (point-at-bol) (point-at-eol)))
+    (let ((delete-trailing-lines t))
+      (delete-trailing-whitespace)
+      (buffer-substring-no-properties (point-min) (point-max)))))
+
+(defun cljr--delete-line ()
+  "Deletes the current line without introducing whitespace
+errors."
+  (delete-region (point-at-bol) (line-end-position))
+  (join-line)
+  (paredit-forward-delete 1))
+
+(defun cljr--just-one-blank-line ()
+  (newline 2)
+  (forward-line -1)
+  (delete-blank-lines))
 
 ;; ------ file -----------
 
@@ -370,11 +401,15 @@
   (yas/expand-snippet "$1"))
 
 (defun cljr--extract-ns-from-use ()
+  "Let point be denoted by |.  Then, when called on: |[used.ns ...]
+returns used.ns"
   (let ((form (format "%s" (sexp-at-point))))
     (substring form 1 (min (or (s-index-of " " form) (1- (length form))
                                (1- (length form)))))))
 
 (defun cljr--extract-multiple-ns-from-use ()
+  "Let point be denoted by |.  Then, when called on: |[used.ns lib1 lib2]
+returns (used.ns.lib1 used.ns.lib2)"
   (let* ((form (format "%s" (sexp-at-point)))
          (form (substring form 1 (1- (length form))))
          (words (s-split " " form))
@@ -387,34 +422,40 @@
   (s-matches-p "[[A-z0-9.]+ \\(\\([A-z0-9]+ \\)\\|\\([A-z0-9]+\\)\\)+]"
                (format "%s" use-form)))
 
-(defun cljr--more-namespaces-in-use-p (use-start count)
-  (goto-char use-start)
+(defun cljr--more-namespaces-in-use-p (nth)
+  "Checks for, and moves POINT to, the NTH :use clause."
+  (cljr--goto-ns)
+  (cljr--search-forward-within-sexp "(:use ")
+  (paredit-backward-up)
   (let ((use-end (save-excursion (forward-sexp) (point)) ))
     (prog1
-        (re-search-forward "\\(\\( \\)\\{2,\\}\\|:use \\)\\[.*\\]" use-end t count)
+        (re-search-forward "\\(\\( \\)\\{2,\\}\\|:use \\)\\[.*\\]" use-end t nth)
       (paredit-backward))))
 
 (defun cljr--extract-used-namespaces ()
-  (let (libs use-start use-end count)
+  "Return list of all the namespaces that are :used."
+  (let (libs use-start next-use-clause)
     (cljr--goto-ns)
     (if (not (cljr--search-forward-within-sexp "(:use "))
         (message "There is no :use clause in the ns declaration.")
       (save-excursion
         (paredit-backward-up)
-        (setq start (point))
         (paredit-forward)
         (setq use-end (point))
-        (setq count 1))
-      (while (cljr--more-namespaces-in-use-p start count)
+        (setq next-use-clause 1))
+      (while (cljr--more-namespaces-in-use-p next-use-clause)
         (push (if (cljr--multiple-namespaces-p (sexp-at-point))
                   (cljr--extract-multiple-ns-from-use)
                 (cljr--extract-ns-from-use))
               libs)
-        (setq count (1+ count)))
+        (setq next-use-clause (1+ next-use-clause)))
       (nreverse (-flatten libs)))))
 
 ;;;###autoload
 (defun cljr-replace-use ()
+  "Replace any :use clause with the equivalent :require clause.
+
+Presently, there's no support for :use clauses containing :exclude."
   (interactive)
   (save-excursion
     (dolist (used-ns (cljr--extract-used-namespaces))
@@ -479,6 +520,7 @@
         (cljr--add-ns-prefix ns symbols)))))
 
 (defun cljr--add-ns-prefix (ns symbols)
+  "Adds an NS prefix to every symbol in SYMBOLS."
   (save-excursion
     (cljr--goto-ns)
     (paredit-forward)
@@ -486,6 +528,120 @@
       (paredit-backward)
       (insert ns "/")
       (paredit-forward))))
+
+;;;###autoload
+(defun cljr-move-defn ()
+  "Move the defn containing POINT to a new namespace.
+
+Several defn forms can be moved using a visual selection."
+  (interactive)
+  (let* ((forms (if (region-active-p)
+                    (let ((beg (region-beginning))
+                          (end (region-end)))
+                      (prog2
+                          (paredit-check-region-for-delete beg end)
+                          (buffer-substring-no-properties beg end)
+                        (delete-region beg end)))
+                  (cljr--goto-toplevel)
+                  (prog1 (cljr--delete-and-extract-sexp)
+                    (join-line)
+                    (join-line)
+                    (delete-char 1))))
+         (forms (cljr--cleanup-whitespace forms)))
+    (let (ns names)
+      (save-window-excursion
+        (ido-find-file)
+        (goto-char (point-max))
+        (open-line 2)
+        (forward-line 2)
+        (insert forms)
+        (save-buffer)
+        (setq ns (cljr--current-namespace)
+              names (cljr--name-of-defns forms)))
+      (cljr--update-ns-after-moving-fns ns (nreverse names))))
+    (cljr--just-one-blank-line))
+
+(defun cljr--update-ns-after-moving-fns (ns &optional refer-names)
+  "Updates the current ns declaration after moving defn forms out of the
+  current file and to NS.  Optionally referring the names in REFER-NAMES."
+  (save-excursion
+    (cljr--goto-ns)
+    (paredit-forward)
+    (let* ((end-of-ns-form (prog1 (point) (paredit-backward)))
+           (ns-present-p (cljr--search-forward-within-sexp ns :save-excursion))
+           (refer-present-p (cljr--search-forward-within-sexp ":refer" :save-excursion))
+           (refer-all-p (cljr--search-forward-within-sexp ":refer :all" :save-excursion))
+           (require-present-p (cljr--search-forward-within-sexp
+                               (s-concat ":require [" ns)
+                               :save-excursion)))
+      (if ns-present-p
+          (unless (or refer-all-p (null refer-names))
+            (if refer-present-p
+                (cljr--append-names-to-refer ns refer-names)
+              (when require-present-p
+                (cljr--append-refer-clause ns refer-names))))
+        (cljr--new-require-clause ns refer-names))
+      (when cljr-auto-sort-ns
+        (cljr-sort-ns)))))
+
+(defun cljr--append-refer-clause (ns refer-names)
+  "Appends :refer [REFER-NAMES] to the :require clause for NS."
+  (save-excursion
+    (cljr--goto-ns)
+    (re-search-forward ":require")
+    (re-search-forward ns)
+    (paredit-forward-up)
+    (backward-char)
+    (insert " :refer [" (s-join " " refer-names) "]")))
+
+(defun cljr--append-names-to-refer (ns names)
+  "Append NAMES to the :refer vector for NS"
+  (save-excursion
+    (cljr--goto-ns)
+    (re-search-forward ":require")
+    (re-search-forward ns)
+    (re-search-forward ":refer")
+    (paredit-forward)
+    (backward-char)
+    (apply #'insert " " (-interpose " " names))))
+
+(defun cljr--new-require-clause (ns &optional refer-names)
+  "Creates a new :require clause for NS.
+
+Optionally adds :refer [REFER-NAMES] clause."
+  (cljr--insert-in-ns ":require")
+  (insert "[" ns "]")
+  (when refer-names
+    (cljr--append-refer-clause ns refer-names)))
+
+(defun cljr--name-of-defns (string-with-defns &optional include-private)
+  "Returns a list of the function names in STRING-WITH-DEFNS,
+optionally including those that are declared private."
+  (with-temp-buffer
+    (insert string-with-defns)
+    (goto-char (point-min))
+    (let ((count (paredit-count-sexps-forward))
+          (names '()))
+      (dotimes (_ count)
+        (paredit-forward-down)
+        (cljr--goto-toplevel)
+        (forward-char)
+        (if (looking-at "defn-")
+            (when include-private
+              (push (cljr--name-of-current-def) names))
+          (push (cljr--name-of-current-def) names))
+        (paredit-forward-up))
+      names)))
+
+(defun cljr--current-namespace ()
+  (save-excursion
+    (cljr--goto-ns)
+    (forward-char)
+    (paredit-forward)
+    (forward-char)
+    (let ((beg (point))
+          (end (progn (paredit-forward) (point))))
+      (buffer-substring-no-properties beg end))))
 
 ;; ------ declare statements -----------
 
