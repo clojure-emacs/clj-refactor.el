@@ -160,7 +160,8 @@
   (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
   (define-key clj-refactor-map (funcall key-fn "cs") 'cljr-cycle-stringlike)
   (define-key clj-refactor-map (funcall key-fn "ad") 'cljr-add-declaration)
-  (define-key clj-refactor-map (funcall key-fn "dk") 'cljr-destructure-keys))
+  (define-key clj-refactor-map (funcall key-fn "dk") 'cljr-destructure-keys)
+  (define-key clj-refactor-map (funcall key-fn "?") 'cljr-key-mode-popup-dispatch))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -1019,3 +1020,6 @@ optionally including those that are declared private."
 
 (provide 'clj-refactor)
 ;;; clj-refactor.el ends here
+
+;; interactive help
+(require 'cljr-key-mode)
