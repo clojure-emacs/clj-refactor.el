@@ -26,7 +26,7 @@ Feature: Move forms
     """
     And the cursor is inside the first defn form
     And I start an action chain
-    And I press "C-! md"
+    And I press "C-! mf"
     And I type "dest.clj"
     And I press "RET"
     And I execute the action chain
@@ -69,7 +69,7 @@ Feature: Move forms
     And I press "C-SPC"
     And I press "C-9 C-n"
     And I start an action chain
-    And I press "C-! md"
+    And I press "C-! mf"
     And I type "dest.clj"
     And I press "RET"
     And I execute the action chain
@@ -110,7 +110,7 @@ Feature: Move forms
     """
     And the cursor is inside the first defn form
     And I start an action chain
-    And I press "C-! md"
+    And I press "C-! mf"
     And I type "dest.clj"
     And I press "RET"
     And I execute the action chain
@@ -160,6 +160,9 @@ Feature: Move forms
       [a b]
       (+ a b))
 
+    (defroute create "/*/create")
+    (defroute update "/*/update/:id")
+
     (defn find-doc
       "Prints documentation for any var whose documentation or name
      contains a match for re-string-or-pattern"
@@ -182,9 +185,9 @@ Feature: Move forms
     And I press "M-<"
     And I press "C-u 13 C-n"
     And I press "C-SPC"
-    And I press "C-u 26 C-n"
+    And I press "C-u 29 C-n"
     And I start an action chain
-    And I press "C-! md"
+    And I press "C-! mf"
     And I type "dest.clj"
     And I press "RET"
     And I execute the action chain
@@ -229,6 +232,9 @@ Feature: Move forms
       {:map "with" :random "facts"}
       [a b]
       (+ a b))
+
+    (defroute create "/*/create")
+    (defroute update "/*/update/:id")
 
     (defn find-doc
       "Prints documentation for any var whose documentation or name

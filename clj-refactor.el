@@ -153,7 +153,7 @@
   (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
   (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
   (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
-  (define-key clj-refactor-map (funcall key-fn "md") 'cljr-move-defn)
+  (define-key clj-refactor-map (funcall key-fn "mf") 'cljr-move-form)
   (define-key clj-refactor-map (funcall key-fn "tf") 'cljr-thread-first-all)
   (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all)
   (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
@@ -530,10 +530,10 @@ Presently, there's no support for :use clauses containing :exclude."
       (paredit-forward))))
 
 ;;;###autoload
-(defun cljr-move-defn ()
-  "Move the defn containing POINT to a new namespace.
+(defun cljr-move-form ()
+  "Move the form containing POINT to a new namespace.
 
-Several defn forms can be moved using a visual selection."
+If REGION is active, move all forms contained by region. "
   (interactive)
   (let* ((forms (if (region-active-p)
                     (let ((beg (region-beginning))
@@ -626,10 +626,10 @@ optionally including those that are declared private."
         (paredit-forward-down)
         (cljr--goto-toplevel)
         (forward-char)
-        (if (looking-at "defn-")
-            (when include-private
-              (push (cljr--name-of-current-def) names))
-          (push (cljr--name-of-current-def) names))
+        (if (and include-private (looking-at "defn-"))
+            (push (cljr--name-of-current-def) names)
+          (when (looking-at "defn ")
+              (push (cljr--name-of-current-def) names)))
         (paredit-forward-up))
       names)))
 
