@@ -5,6 +5,7 @@ Feature: remove unused require
     And I have a clojure-file "tmp/src/cljr/core.clj"
     And I open file "tmp/src/cljr/core.clj"
     And I press "M-<"
+    And I switch auto-sort off
 
   Scenario: Removes not used with :as
     When I insert:
@@ -330,5 +331,31 @@ Feature: remove unused require
     (defn use-time []
       (clj-time.core/now)
       (clojure.string/split "foo bar" #" ")
+      (st/difference #{:a :b} #{:a :c}))
+    """
+
+  Scenario: Removes not used with :as
+    When I insert:
+    """
+    (ns cljr.core
+      (:require [clojure.string :as s]
+                [clojure.set :as st]
+                [clj-time.core :as t]))
+
+    (defn use-time []
+      (t/now)
+      (st/difference #{:a :b} #{:a :c}))
+    """
+    And I place the cursor before "now"
+    And I switch auto-sort on
+    And I press "C-! rr"
+    Then I should see:
+    """
+    (ns cljr.core
+      (:require [clj-time.core :as t]
+                [clojure.set :as st]))
+
+    (defn use-time []
+      (t/now)
       (st/difference #{:a :b} #{:a :c}))
     """

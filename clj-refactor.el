@@ -417,7 +417,8 @@
       (setq beg (point))
       (paredit-forward)
       (setq end (point))
-      (indent-region beg end))))
+      (indent-region beg end))
+    (when cljr-auto-sort-ns (cljr-sort-ns))))
 
 (defvar cljr--tmp-marker (make-marker))
 
