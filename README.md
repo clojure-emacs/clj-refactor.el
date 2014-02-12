@@ -82,6 +82,7 @@ This is it so far:
  - `ad`: add declaration for current top-level form
  - `dk`: destructure keys
  - `mf`: move one or more forms to another namespace, `:refer` any functions
+ - `?` : refactor with interactive help
 
 Combine with your keybinding prefix/modifier.
 
