@@ -28,7 +28,7 @@ Feature: Sort ns form
     """
     (ns ^{:doc "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
             eiusmod tempor incididunt ut labore (et dolore magna aliqua)."}
-      furtive.runtime.session.bucket 
+      furtive.runtime.session.bucket
       (:use clojure.string
             clojure.test)
       (:require [clj-time.core :as clj-time]
