@@ -135,6 +135,34 @@ Feature: remove unused require
       (difference #{:a :b} #{:a :c}))
     """
 
+  Scenario: keeps alias too if used even if there is :refer
+    When I insert:
+    """
+    (ns cljr.core
+      (:require [clojure.string :as st :refer [trim]]
+                [clojure.set :as s :refer [difference]]
+                [clj-time.core :as t :refer [ago]]))
+
+    (defn use-time []
+      (t/now)
+      (trim "  foobar ")
+      (s/union #{:d} (difference #{:a :b} #{:a :c})))
+    """
+    And I place the cursor before "now"
+    And I press "C-! rr"
+    Then I should see:
+    """
+    (ns cljr.core
+      (:require [clojure.string :refer [trim]]
+                [clojure.set :as s :refer [difference]]
+                [clj-time.core :as t]))
+
+    (defn use-time []
+      (t/now)
+      (trim "  foobar ")
+      (s/union #{:d} (difference #{:a :b} #{:a :c})))
+    """
+
   Scenario: keeps it if referenced multiple
     When I insert:
     """
@@ -306,7 +334,35 @@ Feature: remove unused require
       (difference #{:a :b} #{:a :c}))
     """
 
-  Scenario: simple after prefix list
+  Scenario: keeps alias even if there is :refer :all
+    When I insert:
+    """
+    (ns cljr.core
+      (:require [clj-time.core :as tc :refer :all]
+                [clojure string walk
+                 [set :as s :refer :all]]))
+
+    (defn use-time []
+      (now)
+      (clojure.string/split "foo bar" #" ")
+      (difference #{:a :b} #{:a :c}))
+    """
+    And I place the cursor before "now"
+    And I press "C-! rr"
+    Then I should see:
+    """
+    (ns cljr.core
+      (:require [clj-time.core :as tc :refer :all]
+                [clojure string 
+                 [set :as s :refer :all]]))
+
+    (defn use-time []
+      (now)
+      (clojure.string/split "foo bar" #" ")
+      (difference #{:a :b} #{:a :c}))
+    """
+
+  Scenario: simple require after prefix list
     When I insert:
     """
     (ns cljr.core
@@ -334,7 +390,7 @@ Feature: remove unused require
       (st/difference #{:a :b} #{:a :c}))
     """
 
-  Scenario: Removes not used with :as
+  Scenario: Also sorts ns if auto-sort is on
     When I insert:
     """
     (ns cljr.core
