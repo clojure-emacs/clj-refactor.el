@@ -372,6 +372,12 @@ Prefer to insert your own ns-declarations? Then:
 (setq clj-add-ns-to-blank-clj-files nil)
 ```
 
+## Miscellaneous
+
+With clj-refactor enabled, any keybindings for `paredit-raise-sexp` is
+replaced by `cljr-raise-sexp` which does the same thing - except it
+also removes any `#` in front of function literals and sets.
+
 ## More stuff to check out
 
 You might also like

@@ -123,6 +123,8 @@
 
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
+(define-key clj-refactor-map [remap paredit-raise-sexp] 'cljr-raise-sexp)
+
 (defun cljr--fix-special-modifier-combinations (key)
   (case key
     ("C-s-i" "s-TAB")
@@ -1128,6 +1130,14 @@ optionally including those that are declared private."
 
      ((equal 1 (point))
       (message "beginning of file reached, this was probably a mistake.")))))
+
+;;;###autoload
+(defun cljr-raise-sexp (&optional argument)
+  "Like paredit-raise-sexp, but removes # in front of function literals and sets."
+  (interactive "P")
+  (paredit-raise-sexp argument)
+  (when (looking-back " #" 2)
+    (delete-char -1)))
 
 ;; ------ minor mode -----------
 

@@ -1,0 +1,14 @@
+Feature: Tests for some minor features
+
+  Background:
+    Given I have a project "cljr" in "tmp"
+    And I have a clojure-file "tmp/src/cljr/core.clj"
+    And I open file "tmp/src/cljr/core.clj"
+    And I clear the buffer
+
+  Scenario: Remove # when raising sexp for function literals
+    Given I turn on paredit-mode
+    When I insert "(map #(partial f) l)"
+    And I place the cursor before "f"
+    And I press "M-r"
+    Then I should see "(map f l)"
