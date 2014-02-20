@@ -146,6 +146,7 @@
   (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
   (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
   (define-key clj-refactor-map (funcall key-fn "sn") 'cljr-sort-ns)
+  (define-key clj-refactor-map (funcall key-fn "rr") 'cljr-remove-unused-requires)
   (define-key clj-refactor-map (funcall key-fn "sr") 'cljr-stop-referring)
   (define-key clj-refactor-map (funcall key-fn "th") 'cljr-thread)
   (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind)
@@ -352,6 +353,124 @@ errors."
                              (-distinct)))
           (cljr--insert-in-ns statement-type)
           (insert statement))))))
+
+(defun cljr--is-require-flag (req-statement)
+  (let ((t-req (s-trim req-statement)))
+    (or (string= t-req ":reload")
+        (string= t-req ":reload-all")
+        (string= t-req ":verbose"))))
+
+(defun cljr--req-element-regexp (refered postfix)
+  (concat "^[[:space:]]*[^;]*"
+          "[^[:word:]^-]"
+          (regexp-quote refered)
+          postfix))
+
+(defun cljr--extract-sexp-content (sexp)
+  (replace-regexp-in-string "\\[?]?" "" sexp))
+
+(defun cljr--is-name-in-use-p (name)
+  (goto-char (point-min))
+  (let ((e (cljr--extract-sexp-content name)))
+    (when (re-search-forward (cljr--req-element-regexp e "[^[:word:]^-]") nil t) e)))
+
+(defun cljr--rectify-refer-type-require (sexp-as-list refer-index as-used)
+  (let ((referred-names (->> sexp-as-list
+                          (nthcdr (1+ refer-index))
+                          (-map 'cljr--is-name-in-use-p)
+                          (delq nil))))
+    (cond (referred-names
+           (format "%s [%s]]"
+                   (s-join " " (if as-used
+                                   (-take (1+ refer-index) sexp-as-list)
+                                 (list (car sexp-as-list) ":refer")))
+                   (s-join " " referred-names)))
+          (as-used
+           (format "%s]" (s-join " " (-take 3 sexp-as-list)))))))
+
+(defun cljr--is-simple-req-statement-in-use (sexp as-list alias-used refer-used)
+  (or (s-match ":refer[[:space:]]+:all" sexp)
+      (cljr--is-require-flag (cljr--extract-sexp-content sexp))
+      (and (= 1 (safe-length as-list))
+           (re-search-forward (cljr--req-element-regexp (cljr--extract-sexp-content (car as-list)) "/") nil t))
+      (and alias-used (not refer-used))))
+
+(defun cljr--rectify-simple-req-statement (req sexp-as-list)
+  (save-excursion
+    (goto-char (point-min))
+    (let ((refer-index (-elem-index ":refer" sexp-as-list))
+          (as-used (and (string= (nth 1 sexp-as-list) ":as")
+                        (re-search-forward (cljr--req-element-regexp (cljr--extract-sexp-content (nth 2 sexp-as-list)) "/") nil t))))
+      (cond ((cljr--is-simple-req-statement-in-use req sexp-as-list as-used refer-index) req)
+            (refer-index
+             (cljr--rectify-refer-type-require sexp-as-list refer-index as-used))))))
+
+(defun cljr--is-prefix-element-in-use (f-elem elem)
+  (goto-char (point-min))
+  (cond ((and (not as-or-refer-buffer)
+              (not (s-starts-with? "[" elem))
+              (re-search-forward (cljr--req-element-regexp (s-join "." (list f-elem (cljr--extract-sexp-content elem))) "/") nil t))
+         (push (cljr--extract-sexp-content elem) prefix-statements))
+        ((and (s-ends-with? "]" elem)
+              as-or-refer-buffer)
+         (push (replace-regexp-in-string "]]]?" "]" elem) as-or-refer-buffer)
+         (let* ((elems (nreverse as-or-refer-buffer))
+                (result (cljr--rectify-simple-req-statement (s-join " " elems) elems)))
+           (push (when result (concat "\n" result))
+                 prefix-statements))
+         (setq as-or-refer-buffer (-remove (lambda (elem) nil) as-or-refer-buffer)))
+        ((or (s-starts-with? "[" elem)
+             as-or-refer-buffer)
+         (push elem as-or-refer-buffer))))
+
+(defun cljr--rectify-prefix-list-elements (sexp-as-list first-element)
+  (let (as-or-refer-buffer prefix-statements)
+    (-map 
+     (apply-partially 'cljr--is-prefix-element-in-use first-element) 
+     (nthcdr 1 sexp-as-list))
+    prefix-statements))
+
+(defun cljr--rectify-prefix-list-req-statement (sexp-as-list)
+  (let* ((first-element (cljr--extract-sexp-content (car sexp-as-list)))
+         (used-elements (delq nil (cljr--rectify-prefix-list-elements sexp-as-list first-element))))
+    (when used-elements
+      (format "[%s %s]" first-element (s-join " " (nreverse used-elements))))))
+
+(defun cljr--rectify-req-statement (statement)
+  (save-excursion
+    (let ((sexp-as-list (split-string statement)))
+      (if (or (= 1 (safe-length sexp-as-list))
+              (string= ":refer" (nth 1 sexp-as-list))
+              (string= ":as" (nth 1 sexp-as-list)))
+          (cljr--rectify-simple-req-statement statement sexp-as-list)
+        (cljr--rectify-prefix-list-req-statement sexp-as-list)))))
+
+(defun cljr--remove-require ()
+  (search-backward "(")
+  (cljr--delete-and-extract-sexp)
+  (join-line))
+
+;;;###autoload
+(defun cljr-remove-unused-requires ()
+  (interactive)
+  (save-excursion
+    (let (req-exists)
+      (dolist (statement (->> (cljr--extract-ns-statements ":require")
+                           (-map 's-trim)
+                           (-map 'cljr--rectify-req-statement)
+                           (delq nil)
+                           (nreverse)))
+        (cljr--insert-in-ns ":require")
+        (insert statement)
+        (setq req-exists t))
+      (when (not req-exists) (cljr--remove-require)))
+    (paredit-backward-up)
+    (setq beg (point))
+    (paredit-forward)
+    (setq end (point))
+    (indent-region beg end)
+    (when cljr-auto-sort-ns 
+      (cljr-sort-ns))))
 
 (defvar cljr--tmp-marker (make-marker))
 

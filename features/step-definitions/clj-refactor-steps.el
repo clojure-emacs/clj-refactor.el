@@ -26,6 +26,14 @@
        (save-buffer)
        (kill-buffer)))
 
+(Given "^I switch auto-sort off$"
+       (lambda ()
+	 (setq cljr-auto-sort-ns nil)))
+
+(Given "^I switch auto-sort on$"
+       (lambda ()
+	 (setq cljr-auto-sort-ns t)))
+
 (Then "^the file should be named \"\\([^\"]+\\)\"$"
       (lambda (file-name-postfix)
         (assert (s-ends-with? file-name-postfix (buffer-file-name)) nil "Expected %S to end with %S" (buffer-file-name) file-name-postfix)))
