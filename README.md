@@ -386,6 +386,12 @@ You might also like
 
 ## Changelog
 
+#### From 0.10 to 0.11
+
+- Add `cljr-raise-sexp`
+- Add `cljr-remove-unused-requires` [benedekfazekas](https://github.com/benedekfazekas)
+- Add `cljr-move-form` [Lars Andersen](https://github.com/expez)
+
 #### From 0.9 to 0.10
 
 - Add `cljr-stop-referring`
@@ -434,7 +440,8 @@ Run the tests with:
 ## Contributors
 
 - [AlexBaranosky](https://github.com/AlexBaranosky) added a bunch of features. See the [Changelog](#changelog) for details.
-- [Lars Andersen](https://github.com/expez) added `cljr-replace-use`, `cljr-add-declaration` and `cljr-move-form` .
+- [Lars Andersen](https://github.com/expez) added `cljr-replace-use`, `cljr-add-declaration` and `cljr-move-form`.
+- [benedekfazekas](https://github.com/benedekfazekas) added `cljr-remove-unused-requires`
 
 Thanks!
 
