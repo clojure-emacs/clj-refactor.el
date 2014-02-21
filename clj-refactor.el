@@ -126,6 +126,8 @@
 (define-key clj-refactor-map [remap paredit-raise-sexp] 'cljr-raise-sexp)
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-backward]
   'cljr-splice-sexp-killing-backward)
+(define-key clj-refactor-map [remap paredit-splice-sexp-killing-forward]
+  'cljr-splice-sexp-killing-forward)
 
 (defun cljr--fix-special-modifier-combinations (key)
   (case key
@@ -1149,6 +1151,17 @@ front of function literals and sets."
   (paredit-splice-sexp-killing-backward argument)
   (when (looking-back " #" 2)
     (delete-char -1)))
+
+;;;###autoload
+(defun cljr-splice-sexp-killing-forward (&optional argument)
+  "Like paredit-splice-sexp-killing-backward, but removes # in
+front of function literals and sets."
+  (interactive "P")
+  (save-excursion
+    (paredit-backward-up)
+    (when (looking-back " #" 2)
+       (delete-char -1)))
+  (paredit-splice-sexp-killing-forward argument))
 ;; ------ minor mode -----------
 
 ;;;###autoload
