@@ -680,7 +680,7 @@ If REGION is active, move all forms contained by region. "
         (setq ns (cljr--current-namespace)
               names (cljr--name-of-defns forms)))
       (cljr--update-ns-after-moving-fns ns (nreverse names))))
-    (cljr--just-one-blank-line))
+  (cljr--just-one-blank-line))
 
 (defun cljr--update-ns-after-moving-fns (ns &optional refer-names)
   "Updates the current ns declaration after moving defn forms out of the
@@ -750,7 +750,7 @@ optionally including those that are declared private."
         (if (and include-private (looking-at "defn-"))
             (push (cljr--name-of-current-def) names)
           (when (looking-at "defn ")
-              (push (cljr--name-of-current-def) names)))
+            (push (cljr--name-of-current-def) names)))
         (paredit-forward-up))
       names)))
 
