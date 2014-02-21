@@ -12,3 +12,10 @@ Feature: Tests for some minor features
     And I place the cursor before "f"
     And I press "M-r"
     Then I should see "(map f l)"
+
+  Scenario: Remove # when splicing sexp killing backward
+    Given I turn on paredit-mode
+    When I insert "(map #(partial f) l)"
+    And I place the cursor before "f"
+    And I press "M-<up>"
+    Then I should see "(map f l)"
