@@ -1007,6 +1007,8 @@ optionally including those that are declared private."
     (mc/create-fake-cursor-at-point))
   (mc/maybe-multiple-cursors-mode))
 
+(add-to-list 'mc--default-cmds-to-run-once 'cljr-move-to-let)
+
 ;; ------ Destructuring ----
 
 (defun cljr--find-symbol-at-point ()
