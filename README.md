@@ -386,10 +386,15 @@ You might also like
 
 ## Changelog
 
+#### From 0.11 to 0.12
+
+- When expanding let, or moving expressions to let, it now replaces
+  duplicates in the let body with the bound name. [Benedek Fazekas](https://github.com/benedekfazekas)
+
 #### From 0.10 to 0.11
 
 - Add `cljr-raise-sexp`
-- Add `cljr-remove-unused-requires` [benedekfazekas](https://github.com/benedekfazekas)
+- Add `cljr-remove-unused-requires` [Benedek Fazekas](https://github.com/benedekfazekas)
 - Add `cljr-move-form` [Lars Andersen](https://github.com/expez)
 
 #### From 0.9 to 0.10
@@ -441,7 +446,7 @@ Run the tests with:
 
 - [AlexBaranosky](https://github.com/AlexBaranosky) added a bunch of features. See the [Changelog](#changelog) for details.
 - [Lars Andersen](https://github.com/expez) added `cljr-replace-use`, `cljr-add-declaration` and `cljr-move-form`.
-- [benedekfazekas](https://github.com/benedekfazekas) added `cljr-remove-unused-requires`
+- [Benedek Fazekas](https://github.com/benedekfazekas) added `cljr-remove-unused-requires` and improved on the let-expanding functions.
 
 Thanks!
 
