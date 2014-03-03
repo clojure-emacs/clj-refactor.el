@@ -58,6 +58,47 @@ Feature: Let bindings
          :body body}))
     """
 
+  Scenario: Expand let, multiple occurance
+    When I insert:
+    """
+    (defn handle-request
+      (when (find-body abc)
+        (println "body: " (find-body	abc) ", params: " ["param1"    "param2"] ", status: " 200)
+        {:status 200
+         :foobar 200000
+         :baz 049403200
+         :body (let [body (find-body abc)
+                     params ["param1" "param2"]
+                     status 200]
+                 body)
+         :params ["param1"
+                  "param2"]}))
+
+    (defn handle-request-other
+       {:status 200})
+    """
+    And I place the cursor before "[body (find-body abc)"
+    And I press "C-! el"
+    And I press "C-! el"
+    Then I should see:
+    """
+    (defn handle-request
+      (let [body (find-body abc)
+            params ["param1" "param2"]
+            status 200]
+        (when body
+          (println "body: " body ", params: " params ", status: " status)
+          {:status status
+           :foobar 200000
+           :baz 049403200
+           :body body
+           :params params})))
+
+    (defn handle-request-other
+       {:status 200})
+    """
+
+
   Scenario: Move s-expression to let
     When I insert:
     """
@@ -113,6 +154,28 @@ Feature: Let bindings
     """
     (defn handle-request
       (if-let [status (or status 500)]
+        {:status status
+         :body body}))
+    """
+
+  Scenario: Move to let, multiple occurance
+    When I insert:
+    """
+    (defn handle-request
+      (let []
+        (println "body: " body ", params: " ", status: " (or status 500))
+        {:status (or status 500)
+         :body body}))
+    """
+    And I place the cursor before "(or status 500)"
+    And I press "C-! ml"
+    And I type "status"
+    And I exit multiple-cursors-mode
+    Then I should see:
+    """
+    (defn handle-request
+      (let [status (or status 500)]
+        (println "body: " body ", params: " ", status: " status)
         {:status status
          :body body}))
     """
