@@ -431,8 +431,8 @@ errors."
 
 (defun cljr--rectify-prefix-list-elements (sexp-as-list first-element)
   (let (as-or-refer-buffer prefix-statements)
-    (-map 
-     (apply-partially 'cljr--is-prefix-element-in-use first-element) 
+    (-map
+     (apply-partially 'cljr--is-prefix-element-in-use first-element)
      (nthcdr 1 sexp-as-list))
     prefix-statements))
 
@@ -475,7 +475,7 @@ errors."
     (paredit-forward)
     (setq end (point))
     (indent-region beg end)
-    (when cljr-auto-sort-ns 
+    (when cljr-auto-sort-ns
       (cljr-sort-ns))))
 
 (defvar cljr--tmp-marker (make-marker))
@@ -974,6 +974,45 @@ optionally including those that are declared private."
 (defun cljr--goto-let ()
   (search-backward-regexp "\(\\(when-let\\|if-let\\|let\\)\\( \\|\\[\\)"))
 
+(defun cljr--extract-let-bindings ()
+  "Returns a list of lists. The inner lists contain two elements first is
+   the binding, second is the init-expr"
+  (cljr--goto-let)
+  (paredit-forward-down 2)
+  (paredit-backward)
+  (let* ((start (point))
+         (sexp-start start)
+         (end (progn (paredit-forward)
+                     (point)))
+         bindings)
+    (paredit-backward)
+    (paredit-forward-down)
+    (while (/= sexp-start end)
+      (paredit-move-forward)
+      (let ((sexp (buffer-substring sexp-start (point))))
+        (push (s-trim
+               (if (= start sexp-start)
+                   (substring sexp 1)
+                 sexp))
+              bindings))
+      (setq sexp-start (point)))
+    (-partition 2 (nreverse bindings))))
+
+(defun cljr--sexp-regexp (sexp)
+  (concat "\\([^[:word:]^-]\\)"
+          (s-join "[[:space:]\n\r]+" (-map 'regexp-quote (s-split " " sexp t)))
+          "\\([^[:word:]^-]\\)"))
+
+(defun cljr--replace-sexp-with-binding (binding)
+  (save-excursion
+    (let ((bind-var (car binding))
+          (init-expr (-last-item binding))
+          (end (save-excursion (progn (cljr--goto-let)
+                                      (paredit-forward)
+                                      (point)))))
+      (while (re-search-forward (cljr--sexp-regexp init-expr) end t)
+        (replace-match (concat "\\1" bind-var "\\2"))))))
+
 ;;;###autoload
 (defun cljr-expand-let ()
   (interactive)
@@ -983,7 +1022,12 @@ optionally including those that are declared private."
   (paredit-forward-down 2)
   (paredit-forward-up)
   (skip-syntax-forward " >")
-  (paredit-convolute-sexp))
+  (paredit-convolute-sexp)
+  (-map 'cljr--replace-sexp-with-binding (cljr--extract-let-bindings)))
+
+(defun cljr--replace-sexp-with-binding-in-let ()
+  (-map 'cljr--replace-sexp-with-binding (cljr--extract-let-bindings))
+  (remove-hook 'multiple-cursors-mode-disabled-hook 'replace-sexp-with-binding-in-let))
 
 ;;;###autoload
 (defun cljr-move-to-let ()
@@ -1005,6 +1049,7 @@ optionally including those that are declared private."
     (insert " ")
     (backward-char)
     (mc/create-fake-cursor-at-point))
+  (add-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
   (mc/maybe-multiple-cursors-mode))
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-move-to-let)

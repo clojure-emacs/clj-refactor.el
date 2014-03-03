@@ -34,6 +34,10 @@
   (lambda ()
     (setq cljr-auto-sort-ns t)))
 
+(Given "^I exit multiple-cursors-mode"
+       (lambda ()
+         (multiple-cursors-mode 0)))
+
 (Then "^the file should be named \"\\([^\"]+\\)\"$"
   (lambda (file-name-postfix)
     (assert (s-ends-with? file-name-postfix (buffer-file-name)) nil "Expected %S to end with %S" (buffer-file-name) file-name-postfix)))
