@@ -380,19 +380,28 @@ errors."
   (let ((e (cljr--extract-sexp-content name)))
     (when (re-search-forward (cljr--req-element-regexp e "[^[:word:]^-]") nil t) e)))
 
-(defun cljr--rectify-refer-type-require (sexp-as-list refer-index as-used)
-  (let ((referred-names (->> sexp-as-list
-                          (nthcdr (1+ refer-index))
-                          (-map 'cljr--is-name-in-use-p)
-                          (delq nil))))
+(defun cljr--rectify-refer-type-require (sexp-as-list refer-index as-used as-index)
+  (let* ((as-after-refer (and as-used (> as-index refer-index)))
+         (sexp-wo-as (if as-after-refer
+                         (-take as-index sexp-as-list)
+                       sexp-as-list))
+         (referred-names (->> sexp-wo-as
+                           (nthcdr (1+ refer-index))
+                           (-map 'cljr--is-name-in-use-p)
+                           (delq nil))))
     (cond (referred-names
-           (format "%s [%s]]"
-                   (s-join " " (if as-used
+           (format "%s [%s]%s"
+                   (s-join " " (if (and as-used (< as-index refer-index))
                                    (-take (1+ refer-index) sexp-as-list)
                                  (list (car sexp-as-list) ":refer")))
-                   (s-join " " referred-names)))
+                   (s-join " " referred-names)
+                   (if as-after-refer
+                       (concat " " (s-join " " (list ":as" (nth (1+ as-index) sexp-as-list))))
+                     "]")))
           (as-used
-           (format "%s]" (s-join " " (-take 3 sexp-as-list)))))))
+           (format "%s]" (s-join " " (list (car sexp-as-list)
+                                           (nth as-index sexp-as-list)
+                                           (cljr--extract-sexp-content (nth (1+ as-index) sexp-as-list)))))))))
 
 (defun cljr--is-simple-req-statement-in-use (sexp as-list alias-used refer-used)
   (or (s-match ":refer[[:space:]]+:all" sexp)
@@ -404,12 +413,13 @@ errors."
 (defun cljr--rectify-simple-req-statement (req sexp-as-list)
   (save-excursion
     (goto-char (point-min))
-    (let ((refer-index (-elem-index ":refer" sexp-as-list))
-          (as-used (and (string= (nth 1 sexp-as-list) ":as")
-                        (re-search-forward (cljr--req-element-regexp (cljr--extract-sexp-content (nth 2 sexp-as-list)) "/") nil t))))
+    (let* ((refer-index (-elem-index ":refer" sexp-as-list))
+           (as-index (-elem-index ":as" sexp-as-list))
+           (as-used (and as-index
+                         (re-search-forward (cljr--req-element-regexp (cljr--extract-sexp-content (nth (1+ as-index) sexp-as-list)) "/") nil t))))
       (cond ((cljr--is-simple-req-statement-in-use req sexp-as-list as-used refer-index) req)
             (refer-index
-             (cljr--rectify-refer-type-require sexp-as-list refer-index as-used))))))
+             (cljr--rectify-refer-type-require sexp-as-list refer-index as-used as-index))))))
 
 (defun cljr--is-prefix-element-in-use (f-elem elem)
   (goto-char (point-min))

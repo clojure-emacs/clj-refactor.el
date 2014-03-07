@@ -390,6 +390,60 @@ Feature: remove unused require
       (st/difference #{:a :b} #{:a :c}))
     """
 
+  Scenario: refer with as, refer first
+    When I insert:
+    """
+    (ns bug
+      (:require [clojure.string :refer [join trim] :as str]))
+
+    (join "+" (map str/upper-case ["a" "b" "c"]))
+    """
+    And I place the cursor before "join"
+    And I press "C-! rr"
+    Then I should see:
+    """
+    (ns bug
+      (:require [clojure.string :refer [join] :as str]))
+
+    (join "+" (map str/upper-case ["a" "b" "c"]))
+    """
+
+  Scenario: refer with as, refer first, as not used
+    When I insert:
+    """
+    (ns bug
+      (:require [clojure.string :refer [join trim] :as str]))
+
+    (join "+" ["a" "b" "c"])
+    """
+    And I place the cursor before "join"
+    And I press "C-! rr"
+    Then I should see:
+    """
+    (ns bug
+      (:require [clojure.string :refer [join]]))
+
+    (join "+" ["a" "b" "c"])
+    """
+
+  Scenario: refer with as, refer first, nothing referred
+    When I insert:
+    """
+    (ns bug
+      (:require [clojure.string :refer [replace trim] :as str]))
+
+    (str/join "+" ["a" "b" "c"])
+    """
+    And I place the cursor before "join"
+    And I press "C-! rr"
+    Then I should see:
+    """
+    (ns bug
+      (:require [clojure.string :as str]))
+
+    (str/join "+" ["a" "b" "c"])
+    """
+
   Scenario: Also sorts ns if auto-sort is on
     When I insert:
     """
