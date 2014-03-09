@@ -372,6 +372,27 @@ Prefer to insert your own ns-declarations? Then:
 (setq clj-add-ns-to-blank-clj-files nil)
 ```
 
+## Magic requires
+
+Common namespace shorthands are automatically required when you type
+them:
+
+For instance, typing `(io/)` adds `[clojure.java.io :as io]` to the requires.
+
+- `io` is `clojure.java.io`
+- `set` is `clojure.set`
+- `str` is `clojure.string`
+- `walk` is `clojure.walk`
+- `zip` is `clojure.zip`
+
+You can turn this off with:
+
+```cl
+(setq cljr-magic-requires nil)
+```
+
+or set it to `:prompt` if you want to confirm before it inserts.
+
 ## Miscellaneous
 
 With clj-refactor enabled, any keybindings for `paredit-raise-sexp` is
@@ -385,6 +406,8 @@ You might also like
 - [align-cljlet](https://github.com/gstamp/align-cljlet) - which is an Emacs package for aligning let-like forms.
 
 ## Changelog
+
+- Common namespace shorthands are (optionally) automatically required when you type it.
 
 #### From 0.11 to 0.12
 

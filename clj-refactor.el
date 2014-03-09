@@ -115,19 +115,33 @@
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-magic-requires t
+  "When true, suggests requiring common namespaces when you type
+  its short form. Set to :prompt to ask before doing anything."
+  :group 'cljr
+  :type '(choice (const :tag "true" t)
+                 (const :tag "prompt" :prompt)
+                 (const :tag "false" nil)))
+
 (defcustom cljr-use-metadata-for-privacy nil
   "When nil, `cljr-cycle-privacy` will use (defn- f []).
    When t, it will use (defn ^:private f [])"
   :group 'cljr
   :type 'boolean)
 
+(defvar cljr-magic-require-namespaces
+  '(("io"   . "clojure.java.io")
+    ("set"  . "clojure.set")
+    ("str"  . "clojure.string")
+    ("walk" . "clojure.walk")
+    ("zip"  . "clojure.zip")))
+
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
 (define-key clj-refactor-map [remap paredit-raise-sexp] 'cljr-raise-sexp)
-(define-key clj-refactor-map [remap paredit-splice-sexp-killing-backward]
-  'cljr-splice-sexp-killing-backward)
-(define-key clj-refactor-map [remap paredit-splice-sexp-killing-forward]
-  'cljr-splice-sexp-killing-forward)
+(define-key clj-refactor-map [remap paredit-splice-sexp-killing-backward] 'cljr-splice-sexp-killing-backward)
+(define-key clj-refactor-map [remap paredit-splice-sexp-killing-forward] 'cljr-splice-sexp-killing-forward)
+(define-key clj-refactor-map (kbd "/") 'cljr-slash)
 
 (defun cljr--fix-special-modifier-combinations (key)
   (case key
@@ -360,7 +374,7 @@ errors."
       (while (not (looking-at " *)"))
         (push (if with-nested
                   (cljr--delete-and-extract-sexp-with-nested-sexps)
-                  (cljr--delete-and-extract-sexp)) statements))
+                (cljr--delete-and-extract-sexp)) statements))
       statements)))
 
 (defun cljr--only-alpha-chars (s)
@@ -1223,8 +1237,40 @@ front of function literals and sets."
   (save-excursion
     (paredit-backward-up)
     (when (looking-back " #" 2)
-       (delete-char -1)))
+      (delete-char -1)))
   (paredit-splice-sexp-killing-forward argument))
+
+;; ------ magic requires -------
+
+(defvar cljr--magic-requires-re
+  (concat "(\\(" (regexp-opt (-map 'car cljr-magic-require-namespaces)) "\\)/"))
+
+;;;###autoload
+(defun cljr-slash ()
+  "Inserts / as normal, but also checks for common namespace shorthands to require."
+  (interactive)
+  (insert "/")
+  (when (and cljr-magic-requires
+             (looking-back cljr--magic-requires-re 6))
+    (let* ((short (match-string-no-properties 1))
+           (long (aget cljr-magic-require-namespaces short)))
+      (if (and (not (cljr--in-namespace-declaration? (concat ":as " short)))
+               (or (not (eq :prompt cljr-magic-requires))
+                   (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
+          (save-excursion
+            (cljr--insert-in-ns ":require")
+            (insert (format "[%s :as %s]" long short))
+            (when cljr-auto-sort-ns
+              (cljr-sort-ns)))))))
+
+(defun aget (map key)
+  (cdr (assoc key map)))
+
+(defun cljr--in-namespace-declaration? (s)
+  (save-excursion
+    (cljr--goto-ns)
+    (cljr--search-forward-within-sexp s)))
+
 ;; ------ minor mode -----------
 
 ;;;###autoload
