@@ -1175,7 +1175,7 @@ optionally including those that are declared private."
       (insert ":" (substring (cljr--delete-and-extract-sexp) 1 -1)))
      ((looking-at ":")
       (insert "\"" (substring (cljr--delete-and-extract-sexp) 1) "\""))
-     (otherwise
+     (t
       (message "Couldn't cljr-cycle-stringlike")))))
 
 ;;;###autoload
