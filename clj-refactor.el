@@ -109,6 +109,14 @@
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-sort-comparator 'cljr--string-natural-comparator
+  "The comparator function to use to sort ns declaration. Set your
+   own if you see fit. Comparator is called with two elements of
+   the sub section of the ns declaration, and should return non-nil
+   if the first element should sort before the second."
+  :group 'cljr
+  :type 'function)
+
 (defcustom cljr-auto-sort-ns t
   "When true, sort ns form whenever adding to the form using clj-refactor
    functions."
@@ -380,6 +388,14 @@ errors."
 (defun cljr--only-alpha-chars (s)
   (replace-regexp-in-string "[^[:alnum:]]" "" s))
 
+(defun cljr--string-natural-comparator (s1 s2)
+  (string< (cljr--only-alpha-chars s1)
+           (cljr--only-alpha-chars s2)))
+
+(defun cljr--string-length-comparator (s1 s2)
+  (> (length s1)
+     (length s2)))
+
 ;;;###autoload
 (defun cljr-sort-ns ()
   (interactive)
@@ -388,9 +404,7 @@ errors."
       (ignore-errors
         (dolist (statement (->> (cljr--extract-ns-statements statement-type nil)
                              (-map 's-trim)
-                             (-sort (lambda (s1 s2)
-                                      (string< (cljr--only-alpha-chars s1)
-                                               (cljr--only-alpha-chars s2))))
+                             (-sort cljr-sort-comparator)
                              (-distinct)))
           (cljr--insert-in-ns statement-type)
           (insert statement))))))

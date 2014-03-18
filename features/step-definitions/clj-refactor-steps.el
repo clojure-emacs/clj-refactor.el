@@ -34,9 +34,17 @@
   (lambda ()
     (setq cljr-auto-sort-ns t)))
 
+(Given "^I set sort comparator to string length$"
+  (lambda ()
+     (setq cljr-sort-comparator 'cljr--string-length-comparator)))
+
+(Given "^I set sort comparator to string natural$"
+  (lambda ()
+     (setq cljr-sort-comparator 'cljr--string-natural-comparator)))
+
 (Given "^I exit multiple-cursors-mode"
-       (lambda ()
-         (multiple-cursors-mode 0)))
+  (lambda ()
+    (multiple-cursors-mode 0)))
 
 (Then "^the file should be named \"\\([^\"]+\\)\"$"
   (lambda (file-name-postfix)
