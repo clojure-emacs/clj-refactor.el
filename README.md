@@ -354,6 +354,16 @@ some snippet packages for Clojure:
  - David Nolen has created some [clojure-snippets](https://github.com/swannodette/clojure-snippets)
  - I've made some [datomic-snippets](https://github.com/magnars/datomic-snippets)
 
+## Changing the way how the ns declaration is sorted
+
+By default sort ns `sn` will sort your ns declaration alphabetically. You can change this by setting `cljr-sort-comparator` in your clj-refactor configuration and sort it longer first:
+
+```emacs-lisp
+(setq cljr-sort-comparator 'cljr--string-length-comparator)
+```
+
+This also means that you can write your own comparator function if you prefer. Comparator is called with two elements of the sub section of the ns declaration, and should return non-nil if the first element should sort before the second.
+
 ## Automatic insertion of namespace declaration
 
 When you open a blank `.clj`-file, clj-refactor inserts the namespace
