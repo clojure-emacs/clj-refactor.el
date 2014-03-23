@@ -359,7 +359,7 @@ some snippet packages for Clojure:
 
 By default sort ns `sn` will sort your ns declaration alphabetically. You can change this by setting `cljr-sort-comparator` in your clj-refactor configuration and sort it longer first:
 
-```emacs-lisp
+```cl
 (setq cljr-sort-comparator 'cljr--string-length-comparator)
 ```
 
@@ -410,13 +410,13 @@ or set it to `:prompt` if you want to confirm before it inserts.
 
 This promting can be switched off by setting `cljr-project-clean-prompt` nil:
 
-```emacs-lisp
+```cl
 (setq cljr-project-clean-prompt nil)
 ```
 
 The list of functions to run with `cljr-project-clean` is also configurable via `cljr-project-clean-functions`. You can add more functions defined in clj-refactor or remove some or even write your own.
 
-`cljr-project-clean` will only work with leiningen managed projects with a project.clj in their root directory. This limitation will very likely be fixed when #27 is done.
+`cljr-project-clean` will only work with leiningen managed projects with a project.clj in their root directory. This limitation will very likely be fixed when [#27](https://github.com/magnars/clj-refactor.el/issues/27) is done.
 
 ## Miscellaneous
 
