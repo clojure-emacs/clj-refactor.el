@@ -76,6 +76,7 @@ This is it so far:
  - `ru`: replace all `:use` in namespace with `:refer :all`
  - `sn`: sort :use, :require and :import in the ns form
  - `rr`: remove unused requires
+ - `pc`: run project cleaner functions on the whole project
  - `sr`: stop referring (removes `:refer []` from current require, fixing references)
  - `cc`: cycle surrounding collection type
  - `cp`: cycle privacy of `defn`s and `def`s
@@ -403,6 +404,20 @@ You can turn this off with:
 
 or set it to `:prompt` if you want to confirm before it inserts.
 
+## Project clean up
+
+`cljr-project-clean` runs some clean up functions on all clj files in a project in bulk. By default these are `cljr-remove-unused-requires` and `cljr-sort-ns`. Before changes are made the function prompts if you really want to proceed as many files in the project can be potentially affected.
+
+This promting can be switched off by setting `cljr-project-clean-prompt` nil:
+
+```emacs-lisp
+(setq cljr-project-clean-prompt nil)
+```
+
+The list of functions to run with `cljr-project-clean` is also configurable via `cljr-project-clean-functions`. You can add more functions defined in clj-refactor or remove some or even write your own.
+
+`cljr-project-clean` will only work with leiningen managed projects with a project.clj in their root directory. This limitation will very likely be fixed when #27 is done.
+
 ## Miscellaneous
 
 With clj-refactor enabled, any keybindings for `paredit-raise-sexp` is
@@ -418,6 +433,8 @@ You might also like
 ## Changelog
 
 - Common namespace shorthands are (optionally) automatically required when you type it.
+- comparator for sort require, use and import is configurable, add optional lenght based comparator to sort longer first
+- add `cljr-project-clean` with configurable clean functions
 
 #### From 0.11 to 0.12
 

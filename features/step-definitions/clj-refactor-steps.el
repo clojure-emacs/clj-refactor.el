@@ -26,6 +26,10 @@
     (save-buffer)
     (kill-buffer)))
 
+(Given "^I switch project-clean-prompt off$"
+  (lambda ()
+    (setq cljr-project-clean-prompt nil)))
+
 (Given "^I switch auto-sort off$"
   (lambda ()
     (setq cljr-auto-sort-ns nil)))

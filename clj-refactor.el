@@ -137,6 +137,18 @@
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-project-clean-prompt t
+  "When true prompts to ask before doing anything if false
+   runs project clean functions without warning."
+  :group 'cljr
+  :type 'boolean)
+
+(defcustom cljr-project-clean-functions (list 'cljr-remove-unused-requires 'cljr-sort-ns)
+  "List of functions to run on all the clj files in the project
+   when you perform project clean."
+  :group 'cljr
+  :type '(repeat function))
+
 (defvar cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
     ("set"  . "clojure.set")
@@ -189,7 +201,8 @@
   (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
   (define-key clj-refactor-map (funcall key-fn "cs") 'cljr-cycle-stringlike)
   (define-key clj-refactor-map (funcall key-fn "ad") 'cljr-add-declaration)
-  (define-key clj-refactor-map (funcall key-fn "dk") 'cljr-destructure-keys))
+  (define-key clj-refactor-map (funcall key-fn "dk") 'cljr-destructure-keys)
+  (define-key clj-refactor-map (funcall key-fn "pc") 'cljr-project-clean))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -1284,6 +1297,25 @@ front of function literals and sets."
   (save-excursion
     (cljr--goto-ns)
     (cljr--search-forward-within-sexp s)))
+
+;; ------ project clean --------
+
+(defun cljr-project-clean ()
+  (interactive)
+  (when (or (not cljr-project-clean-prompt)
+            (yes-or-no-p "Cleaning your project might change many of your clj files. Do you want to proceed?"))
+    (dolist (filename (cljr--project-files))
+      (when (s-ends-with? "clj" filename)
+        (let ((buffer (get-file-buffer filename))
+              find-file-p)
+          (if buffer
+              (set-buffer buffer)
+            (setq find-file-p t)
+            (find-file filename))
+          (ignore-errors (-map 'funcall cljr-project-clean-functions))
+          (save-buffer)
+          (when find-file-p
+            (kill-buffer)))))))
 
 ;; ------ minor mode -----------
 
