@@ -354,6 +354,7 @@ some snippet packages for Clojure:
 
  - David Nolen has created some [clojure-snippets](https://github.com/swannodette/clojure-snippets)
  - I've made some [datomic-snippets](https://github.com/magnars/datomic-snippets)
+ - Max Penet has also created some [clojure-snippets](https://github.com/mpenet/clojure-snippets), early fork of dnolens' with tons of additions and MELPA compatible 
 
 ## Changing the way how the ns declaration is sorted
 
