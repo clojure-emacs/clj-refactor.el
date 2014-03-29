@@ -252,15 +252,18 @@ if SAVE-EXCURSION is T POINT does not move."
       (search-forward s bound t))))
 
 (defun cljr--goto-toplevel ()
-  (when (paredit-in-string-p)
-    (paredit-backward-up))
-  (let ((depth (first (paredit-current-parse-state))))
-    (paredit-backward-up depth)))
+  (paredit-backward-up (cljr--depth-at-point)))
 
 (defun cljr--toplevel-p ()
+  "T unless we're in an s-expression or string."
+  (= (cljr--depth-at-point) 0))
+
+(defun cljr--depth-at-point ()
+  "Returns the depth in s-expressions, or strings, at point."
   (let ((depth (first (paredit-current-parse-state))))
-    (and (not (paredit-in-string-p))
-         (= depth 0))))
+    (if (paredit-in-string-p)
+        (1+ depth)
+      depth)))
 
 (defun cljr--cleanup-whitespace (stuff)
   "Removes blank lines preceding `stuff' as well as trailing whitespace."
