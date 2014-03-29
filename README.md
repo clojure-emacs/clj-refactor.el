@@ -358,13 +358,57 @@ some snippet packages for Clojure:
 
 ## Changing the way how the ns declaration is sorted
 
-By default sort ns `sn` will sort your ns declaration alphabetically. You can change this by setting `cljr-sort-comparator` in your clj-refactor configuration and sort it longer first:
+By default sort ns `sn` will sort your ns declaration alphabetically. You can change this by setting `cljr-sort-comparator` in your clj-refactor configuration.
+
+Sort it longer first:
 
 ```cl
 (setq cljr-sort-comparator 'cljr--string-length-comparator)
 ```
 
-This also means that you can write your own comparator function if you prefer. Comparator is called with two elements of the sub section of the ns declaration, and should return non-nil if the first element should sort before the second.
+Or you can use the semantic comparator:
+
+```cl
+(setq cljr-sort-comparator 'cljr--semantic-comparator)
+```
+
+The semantic comparator sorts used and required namespaces closer to the namespace of the current buffer before the rest. When this is not applicable it falls back to alphabetical sorting.
+
+For example the following namespace:
+
+```clj
+(ns foo.bar.baz.goo
+  (:require [clj-time.bla :as bla]
+            [foo.bar.baz.bam :refer :all]
+            [foo.bar.async :refer :all]
+            [foo [bar.goo :refer :all] [baz :refer :all]]
+            [async.funkage.core :as afc]
+            [clj-time.core :as clj-time]
+            [foo.async :refer :all])
+  (:import (java.security MessageDigest)
+           java.util.Calendar
+           [org.joda.time DateTime]
+           (java.nio.charset Charset)))
+```
+
+will be sorted like this:
+
+```clj
+(ns foo.bar.baz.goo
+  (:require [foo.bar.baz.bam :refer :all]
+            [foo.bar.async :refer :all]
+            [foo.async :refer :all]
+            [foo [bar.goo :refer :all] [baz :refer :all]]
+            [async.funkage.core :as afc]
+            [clj-time.bla :as bla]
+            [clj-time.core :as clj-time])
+  (:import (java.nio.charset Charset)
+           (java.security MessageDigest)
+           java.util.Calendar
+           [org.joda.time DateTime]))
+```
+
+The `cljr-sort-comparator` variable also enables you to write your own comparator function if you prefer. Comparator is called with two elements of the sub section of the ns declaration, and should return non-nil if the first element should sort before the second.
 
 ## Automatic insertion of namespace declaration
 
@@ -435,6 +479,7 @@ You might also like
 
 - Common namespace shorthands are (optionally) automatically required when you type it.
 - comparator for sort require, use and import is configurable, add optional lenght based comparator to sort longer first
+- add semantic comparator to sort items closer to the current namespace first
 - add `cljr-project-clean` with configurable clean functions
 
 #### From 0.11 to 0.12

@@ -409,18 +409,36 @@ errors."
   (> (length s1)
      (length s2)))
 
+(defun cljr--semantic-comparator (ns s1 s2)
+  "Sorts used, required namespaces closer to the ns of the current buffer
+   before the rest.
+   When above is not applicable falls back to natural comparator."
+  (let ((shared-length-s1
+         (length (s-shared-start ns (cljr--extract-sexp-content s1))))
+        (shared-length-s2
+         (length (s-shared-start ns (cljr--extract-sexp-content s2)))))
+    (if (/= shared-length-s1 shared-length-s2)
+        (> shared-length-s1 shared-length-s2)
+      (cljr--string-natural-comparator s1 s2))))
+
+(defun cljr-create-comparator (comparator-fn)
+  (if (eq comparator-fn 'cljr--semantic-comparator)
+      (-partial 'cljr--semantic-comparator (clojure-find-ns))
+    comparator-fn))
+
 ;;;###autoload
 (defun cljr-sort-ns ()
   (interactive)
   (save-excursion
-    (dolist (statement-type '(":require" ":use" ":import"))
-      (ignore-errors
-        (dolist (statement (->> (cljr--extract-ns-statements statement-type nil)
-                             (-map 's-trim)
-                             (-sort cljr-sort-comparator)
-                             (-distinct)))
-          (cljr--insert-in-ns statement-type)
-          (insert statement))))))
+    (let ((comparator (cljr-create-comparator cljr-sort-comparator)))
+      (dolist (statement-type '(":require" ":use" ":import"))
+        (ignore-errors
+          (dolist (statement (->> (cljr--extract-ns-statements statement-type nil)
+                               (-map 's-trim)
+                               (-sort comparator)
+                               (-distinct)))
+            (cljr--insert-in-ns statement-type)
+            (insert statement)))))))
 
 (defun cljr--is-require-flag (req-statement)
   (let ((t-req (s-trim req-statement)))

@@ -40,7 +40,11 @@
 
 (Given "^I set sort comparator to string length$"
   (lambda ()
-     (setq cljr-sort-comparator 'cljr--string-length-comparator)))
+    (setq cljr-sort-comparator 'cljr--string-length-comparator)))
+
+(Given "^I set sort comparator to semantic$"
+  (lambda ()
+    (setq cljr-sort-comparator 'cljr--semantic-comparator)))
 
 (Given "^I set sort comparator to string natural$"
   (lambda ()

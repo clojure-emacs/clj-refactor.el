@@ -105,3 +105,38 @@ Feature: Sort ns form
                [org.joda.time DateTime]
                java.util.Calendar))
     """
+
+  Scenario: Sort ns with semantic comparator
+    When I insert:
+    """
+    (ns foo.bar.baz.goo
+      (:require [clj-time.bla :as bla]
+                [foo.bar.baz.bam :refer :all]
+                [foo.bar.async :refer :all]
+                [foo [bar.goo :refer :all] [baz :refer :all]]
+                [async.funkage.core :as afc]
+                [clj-time.core :as clj-time]
+                [foo.async :refer :all])
+      (:import (java.security MessageDigest)
+               java.util.Calendar
+               [org.joda.time DateTime]
+               (java.nio.charset Charset)))
+    """
+    And I set sort comparator to semantic
+    And I place the cursor before "Calendar"
+    And I press "C-! sn"
+    Then I should see:
+    """
+    (ns foo.bar.baz.goo
+      (:require [foo.bar.baz.bam :refer :all]
+                [foo.bar.async :refer :all]
+                [foo.async :refer :all]
+                [foo [bar.goo :refer :all] [baz :refer :all]]
+                [async.funkage.core :as afc]
+                [clj-time.bla :as bla]
+                [clj-time.core :as clj-time])
+      (:import (java.nio.charset Charset)
+               (java.security MessageDigest)
+               java.util.Calendar
+               [org.joda.time DateTime]))
+    """
