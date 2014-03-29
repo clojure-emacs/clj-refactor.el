@@ -257,6 +257,11 @@ if SAVE-EXCURSION is T POINT does not move."
   (let ((depth (first (paredit-current-parse-state))))
     (paredit-backward-up depth)))
 
+(defun cljr--toplevel-p ()
+  (let ((depth (first (paredit-current-parse-state))))
+    (and (not (paredit-in-string-p))
+         (= depth 0))))
+
 (defun cljr--cleanup-whitespace (stuff)
   "Removes blank lines preceding `stuff' as well as trailing whitespace."
   (with-temp-buffer
@@ -620,8 +625,8 @@ returns (used.ns.lib1 used.ns.lib2)"
 (defun cljr--multiple-namespaces-p (use-form)
   "Returns t if the use form looks like [some.lib ns1 ns2 ...]"
   (unless (s-contains? ":only" (format "%s" use-form))
-   (s-matches-p "[[A-z0-9.]+ \\(\\([A-z0-9]+ \\)\\|\\([A-z0-9]+\\)\\)+]"
-                (format "%s" use-form))))
+    (s-matches-p "[[A-z0-9.]+ \\(\\([A-z0-9]+ \\)\\|\\([A-z0-9]+\\)\\)+]"
+                 (format "%s" use-form))))
 
 (defun cljr--more-namespaces-in-use-p (nth)
   "Checks for, and moves POINT to, the NTH :use clause."
@@ -1053,7 +1058,9 @@ optionally including those that are declared private."
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-introduce-let)
 
 (defun cljr--goto-let ()
-  (search-backward-regexp "\(\\(when-let\\|if-let\\|let\\)\\( \\|\\[\\)"))
+  (while (not (or (cljr--toplevel-p)
+                  (looking-at "\(\\(when-let\\|if-let\\|let\\)\\( \\|\\[\\)")))
+    (paredit-backward-up)))
 
 (defun cljr--extract-let-bindings ()
   "Returns a list of lists. The inner lists contain two elements first is

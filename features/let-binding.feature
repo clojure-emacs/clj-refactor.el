@@ -98,7 +98,6 @@ Feature: Let bindings
        {:status 200})
     """
 
-
   Scenario: Move s-expression to let
     When I insert:
     """
@@ -178,4 +177,27 @@ Feature: Let bindings
         (println "body: " body ", params: " ", status: " status)
         {:status status
          :body body}))
+    """
+
+  Scenario: Move to let, nested scope, issue #41
+    When I insert:
+    """
+    (defn foo []
+      (let [x (range 10)]
+        (doseq [x (range 10)]
+          (let [x2 (* x x)]))
+        (+ 1 1)))
+    """
+    And I place the cursor before "(+ 1 1)"
+    And I press "C-! ml"
+    And I type "something"
+    And I exit multiple-cursors-mode
+    Then I should see:
+    """
+    (defn foo []
+      (let [x (range 10)
+            something (+ 1 1)]
+        (doseq [x x]
+          (let [x2 (* x x)]))
+        something))
     """
