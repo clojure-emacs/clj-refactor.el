@@ -2,6 +2,7 @@ Feature: Remove Use from ns form
 
   Background:
     Given I have a project "cljr" in "tmp"
+    Given I switch auto-sort on
     And I have a clojure-file "tmp/src/cljr/core.clj"
     And I open file "tmp/src/cljr/core.clj"
     And I clear the buffer
@@ -60,4 +61,39 @@ Feature: Remove Use from ns form
                 [payments.exceptions.http :refer [unauthorised bad-request]]
                 [payments.gateways :refer [execute-transaction]]
                 [payments.utils :refer [uuid is-numeric? seq-not-nil?]])
+    """
+
+  Scenario: Replacing :use with :require :refer :all
+    When I insert:
+    """
+    (ns payments.billing.accounts
+      (:require [clojure.data.json :as json]
+                [clojure.tools.logging :refer [fatal]]
+                [org.httpkit.client :as http]
+                [payments.billing.endpoints :as endpoints]
+                [payments.configuration.properties :refer [config]]
+                [payments.configuration.schematables :as tables]
+                [payments.gateways :as gateways])
+      (:use [clojurewerkz.cassaforte.cql]
+            [clojurewerkz.cassaforte.query]
+            [payments.exceptions.http :only [unauthorised not-found
+                                             forbidden internal-server-error]]
+            [payments.utils :only [force-uuid]]))
+   """
+    And I press "C-! ru"
+    Then I should see:
+    """
+    (ns payments.billing.accounts
+      (:require [clojure.data.json :as json]
+                [clojure.tools.logging :refer [fatal]]
+                [clojurewerkz.cassaforte.cql :refer :all]
+                [clojurewerkz.cassaforte.query :refer :all]
+                [org.httpkit.client :as http]
+                [payments.billing.endpoints :as endpoints]
+                [payments.configuration.properties :refer [config]]
+                [payments.configuration.schematables :as tables]
+                [payments.exceptions.http :refer [unauthorised not-found
+                                                  forbidden internal-server-error]]
+                [payments.gateways :as gateways]
+                [payments.utils :refer [force-uuid]]))
     """

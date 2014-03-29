@@ -627,10 +627,12 @@ returns (used.ns.lib1 used.ns.lib2)"
   (cljr--goto-ns)
   (cljr--search-forward-within-sexp "(:use ")
   (paredit-backward-up)
-  (let ((use-end (save-excursion (forward-sexp) (point)) ))
+  (let ((use-end (save-excursion (forward-sexp) (point))))
     (prog1
-        (re-search-forward "\\(\\( \\)\\{2,\\}\\|:use \\)\\[.*\\]" use-end t nth)
-      (paredit-backward))))
+        (re-search-forward "\\(\\( \\)\\{2,\\}\\|:use \\)\\[\\(.\\|\n\\)*?\\]" use-end t nth)
+      (if (and (looking-back "\\]") (looking-at "\\]"))
+          (paredit-backward-up)
+        (paredit-backward)))))
 
 (defun cljr--extract-used-namespaces ()
   "Return list of all the namespaces that are :used."
@@ -678,7 +680,10 @@ Presently, there's no support for :use clauses containing :exclude."
     (cljr--delete-and-extract-sexp)
     (join-line)
     (when (looking-at " ")
-      (delete-char 1)))
+      (delete-char 1))
+    (cljr--goto-ns)
+    (paredit-forward)
+    (indent-region (point-min) (point)))
   (when cljr-auto-sort-ns
     (cljr-sort-ns)))
 
