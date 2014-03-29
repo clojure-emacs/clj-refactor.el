@@ -97,3 +97,70 @@ Feature: Remove Use from ns form
                 [payments.gateways :as gateways]
                 [payments.utils :refer [force-uuid]]))
     """
+
+  Scenario: Replacing :use with :require :refer :all
+    When I insert:
+    """
+    (ns payments.core
+      (:require [clojure.tools.cli :refer [parse-opts]]
+                [clojure.tools.nrepl.server :as nrepl]
+                [compojure.route :as route]
+                [payments.configuration.properties
+                 :refer [config merge-config-from-file! log-configuration]]
+                [payments.db :as db]
+                [payments.version :as version]
+                [ring.adapter.jetty :as jetty])
+      (:use [clojure.java.io]
+            [clojure.tools.logging]
+            [compojure.core :only [defroutes routes GET POST]]
+            [metrics.core :only [report-to-console]]
+            [metrics.ring.instrument :only [instrument]]
+            [payments.configuration.schematables :only [set-keyspace!]]
+            [payments.exceptions.http :only [all-http-exceptions-middleware]]
+            [payments.http.account :only [create-account
+                                          retrieve-account]]
+            [payments.http.transaction :only [payment-request]]
+            [payments.sso.middleware :only [ensure-auth-cookie-middleware
+                                            refresh-cookie-middleware]]
+            [ring.middleware.cookies :only [wrap-cookies]]
+            [ring.middleware.json]
+            [ring.middleware.stacktrace]
+            [ring.util.response])
+      (:import com.yammer.metrics.reporting.GraphiteReporter)
+      (:import [org.apache.commons.daemon DaemonContext Daemon])
+      (:gen-class
+       :implements [org.apache.commons.daemon.Daemon]))
+    """
+    And I press "C-! ru"
+    Then I should see:
+    """
+    (ns payments.core
+      (:require [clojure.java.io :refer :all]
+                [clojure.tools.cli :refer [parse-opts]]
+                [clojure.tools.logging :refer :all]
+                [clojure.tools.nrepl.server :as nrepl]
+                [compojure.core :refer [defroutes routes GET POST]]
+                [compojure.route :as route]
+                [metrics.core :refer [report-to-console]]
+                [metrics.ring.instrument :refer [instrument]]
+                [payments.configuration.properties
+                 :refer [config merge-config-from-file! log-configuration]]
+                [payments.configuration.schematables :refer [set-keyspace!]]
+                [payments.db :as db]
+                [payments.exceptions.http :refer [all-http-exceptions-middleware]]
+                [payments.http.account :refer [create-account
+                                               retrieve-account]]
+                [payments.http.transaction :refer [payment-request]]
+                [payments.sso.middleware :refer [ensure-auth-cookie-middleware
+                                                 refresh-cookie-middleware]]
+                [payments.version :as version]
+                [ring.adapter.jetty :as jetty]
+                [ring.middleware.cookies :refer [wrap-cookies]]
+                [ring.middleware.json :refer :all]
+                [ring.middleware.stacktrace :refer :all]
+                [ring.util.response :refer :all])
+      (:import com.yammer.metrics.reporting.GraphiteReporter)
+      (:import [org.apache.commons.daemon DaemonContext Daemon])
+      (:gen-class
+       :implements [org.apache.commons.daemon.Daemon]))
+    """
