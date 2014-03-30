@@ -185,3 +185,22 @@ Feature: Remove Use from ns form
                 [furtive.riemann.client :as client]
                 [furtive.riemann.driver :as driver]))
     """
+
+  Scenario: Replacing :use with :require :refer :all, issue #50
+    When I insert:
+    """
+    (ns payments.authnet.transactions
+      (:require [payments.authnet.client :refer [create-client]]
+                [payments.utils :refer [uuid]])
+      (:use [clojurewerkz.cassaforte.cql :as cql]
+            [clojurewerkz.cassaforte.query]))
+    """
+    And I press "C-! ru"
+    Then I should see:
+    """
+    (ns payments.authnet.transactions
+      (:require [clojurewerkz.cassaforte.cql :refer :all]
+                [clojurewerkz.cassaforte.query :refer :all]
+                [payments.authnet.client :refer [create-client]]
+                [payments.utils :refer [uuid]]))
+    """

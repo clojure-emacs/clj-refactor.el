@@ -636,7 +636,7 @@ returns (used.ns.lib1 used.ns.lib2)"
 (defun cljr--multiple-namespaces-p (use-form)
   "Returns t if the use form looks like [some.lib ns1 ns2 ...]"
   (unless (s-contains? ":only" (format "%s" use-form))
-    (s-matches-p "[[A-z0-9.]+ \\(\\([A-z0-9]+ \\)\\|\\([A-z0-9]+\\)\\)+]"
+    (s-matches-p "\\[[A-z0-9.]+ \\(\\([A-z0-9]+ \\)\\|\\([A-z0-9]+\\)\\)+\\]"
                  (format "%s" use-form))))
 
 (defun cljr--more-namespaces-in-use-p (nth)
