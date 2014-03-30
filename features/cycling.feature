@@ -166,3 +166,39 @@ Feature: Code Cycling
     """
     "alice"
     """
+
+Scenario: Cycling if to if-not
+   When I insert:
+   """
+   (if (= 1 2)
+     (do
+       (+ 1 2))
+     1)
+   """
+   And I place the cursor after "1)"
+   And I press "C-! ci"
+   Then I should see:
+   """
+   (if-not (= 1 2)
+     1
+     (do
+       (+ 1 2)))
+   """
+
+Scenario: Cycling if-not to if
+   When I insert:
+   """
+   (if-not (= 1 2)
+     (do
+       (+ 1 2))
+     1)
+   """
+   And I place the cursor after "1)"
+   And I press "C-! ci"
+   Then I should see:
+   """
+   (if (= 1 2)
+     1
+     (do
+       (+ 1 2)))
+   """

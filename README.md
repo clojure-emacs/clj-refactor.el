@@ -81,6 +81,7 @@ This is it so far:
  - `cc`: cycle surrounding collection type
  - `cp`: cycle privacy of `defn`s and `def`s
  - `cs`: cycle between "string" -> :string -> "string"
+ - `ci`: refactoring between `if` and `if-not`
  - `ad`: add declaration for current top-level form
  - `dk`: destructure keys
  - `mf`: move one or more forms to another namespace, `:refer` any functions
@@ -477,6 +478,7 @@ You might also like
 
 ## Changelog
 
+- Add `cljr-cycle-if` [AlexBaranosky](https://github.com/AlexBaranosky)
 - Common namespace shorthands are (optionally) automatically required when you type it.
 - comparator for sort require, use and import is configurable, add optional lenght based comparator to sort longer first
 - add semantic comparator to sort items closer to the current namespace first

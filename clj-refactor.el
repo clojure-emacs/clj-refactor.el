@@ -200,6 +200,7 @@
   (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
   (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
   (define-key clj-refactor-map (funcall key-fn "cs") 'cljr-cycle-stringlike)
+  (define-key clj-refactor-map (funcall key-fn "ci") 'cljr-cycle-if)
   (define-key clj-refactor-map (funcall key-fn "ad") 'cljr-add-declaration)
   (define-key clj-refactor-map (funcall key-fn "dk") 'cljr-destructure-keys)
   (define-key clj-refactor-map (funcall key-fn "pc") 'cljr-project-clean))
@@ -1306,6 +1307,26 @@ let are."
 
      ((equal 1 (point))
       (message "beginning of file reached, this was probably a mistake.")))))
+
+;;;###autoload
+(defun cljr-cycle-if ()
+  "Cycle surrounding if or if-not, to if-not or if"
+  (interactive)
+  (save-excursion
+    (search-backward-regexp "\\((if \\)\\|\\((if-not \\)")
+    (cond
+     ((looking-at "(if-not")
+      (forward-char 3)
+      (delete-char 4)
+      (paredit-forward)
+      (paredit-forward)
+      (transpose-sexps 1))
+     ((looking-at "(if")
+      (forward-char 3)
+      (insert "-not")
+      (paredit-forward)
+      (paredit-forward)
+      (transpose-sexps 1)))))
 
 ;;;###autoload
 (defun cljr-raise-sexp (&optional argument)
