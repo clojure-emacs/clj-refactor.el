@@ -1308,12 +1308,17 @@ let are."
      ((equal 1 (point))
       (message "beginning of file reached, this was probably a mistake.")))))
 
+(defun cljr--goto-if ()
+  (while (not (or (cljr--toplevel-p)
+                  (looking-at "\\((if \\)\\|\\((if-not \\)")))
+    (paredit-backward-up)))
+
 ;;;###autoload
 (defun cljr-cycle-if ()
   "Cycle surrounding if or if-not, to if-not or if"
   (interactive)
   (save-excursion
-    (search-backward-regexp "\\((if \\)\\|\\((if-not \\)")
+    (cljr--goto-if)
     (cond
      ((looking-at "(if-not")
       (forward-char 3)
