@@ -1125,16 +1125,7 @@ optionally including those that are declared private."
   (interactive)
   (save-excursion
     (let ((contents (cljr--delete-and-extract-sexp)))
-      (cljr--goto-let)
-      (search-forward "[")
-      (paredit-backward)
-      (paredit-forward)
-      (paredit-backward-down)
-      (backward-char)
-      (if (looking-at "\\[ *\\]")
-          (forward-char)
-        (forward-char)
-        (newline-and-indent))
+      (cljr--prepare-to-insert-new-let-binding)
       (insert contents))
     (backward-sexp)
     (insert " ")
@@ -1142,6 +1133,44 @@ optionally including those that are declared private."
     (mc/create-fake-cursor-at-point))
   (add-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
   (mc/maybe-multiple-cursors-mode))
+
+(defun cljr--prepare-to-insert-new-let-binding ()
+  (if (cljr--inside-let-binding-form-p)
+      (progn
+        (paredit-backward-up (- (cljr--depth-at-point)
+                                (cljr--depth-of-let-bindings)))
+        (paredit-backward)
+        (newline-and-indent)
+        (previous-line)
+        (indent-for-tab-command))
+    (cljr--goto-let)
+    (search-forward "[")
+    (paredit-backward)
+    (paredit-forward)
+    (paredit-backward-down)
+    (backward-char)
+    (if (looking-at "\\[ *\\]")
+        (forward-char)
+      (forward-char)
+      (newline-and-indent))))
+
+(defun cljr--inside-let-binding-form-p ()
+  (save-excursion
+    (let ((pos (point)))
+      (cljr--goto-let)
+      (re-search-forward "\\[")
+      (if (< pos (point))
+          nil
+        (paredit-forward-up)
+        (< pos (point))))))
+
+(defun cljr--depth-of-let-bindings ()
+  "Returns the depth where the variable bindings for the active
+let are."
+  (save-excursion
+    (cljr--goto-let)
+    (re-search-forward "\\[")
+    (cljr--depth-at-point)))
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-move-to-let)
 

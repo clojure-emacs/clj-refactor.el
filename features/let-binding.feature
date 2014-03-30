@@ -201,3 +201,45 @@ Feature: Let bindings
           (let [x2 (* x x)]))
         something))
     """
+
+  Scenario: Move to let, already inside let binding form, issue #30
+    When I insert:
+    """
+    (deftest retrieve-order-body-test
+      (let [item (get-in (retrieve-order-body order-item-response-str))]))
+    """
+    And I place the cursor before "(retrieve"
+    And I press "C-! ml"
+    And I type "something"
+    And I exit multiple-cursors-mode
+    Then I should see:
+    """
+    (deftest retrieve-order-body-test
+      (let [something (retrieve-order-body order-item-response-str)
+            item (get-in something)]))
+    """
+
+  Scenario: Move to let, already inside let binding form, issue #30
+    When I insert:
+    """
+    (let [parent (.getParent (io/file root adrf))
+          builder (string-builder)
+          normalize-path (comp (partial path/relative-to root)
+                               path/->normalized
+                               foobar)]
+      (do-something-spectacular parent builder))
+    """
+    And I place the cursor before "(partial"
+    And I press "C-! ml"
+    And I type "something"
+    And I exit multiple-cursors-mode
+    Then I should see:
+    """
+    (let [parent (.getParent (io/file root adrf))
+          builder (string-builder)
+          something (partial path/relative-to root)
+          normalize-path (comp something
+                               path/->normalized
+                               foobar)]
+      (do-something-spectacular parent builder))
+    """
