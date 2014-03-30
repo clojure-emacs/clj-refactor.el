@@ -366,7 +366,7 @@ errors."
     (insert "(" type " )")
     (forward-char -1)))
 
-(defun cljr--project-depends-on (package)
+(defun cljr--project-depends-on-p (package)
   (save-window-excursion
     (find-file (cljr--project-file))
     (goto-char (point-min))
@@ -378,7 +378,7 @@ errors."
       (cljr--insert-in-ns ":require")
       (insert "[" (s-chop-suffix "-test" ns) " :refer :all]")
       (cljr--insert-in-ns ":require")
-      (insert "[" (if (cljr--project-depends-on "midje")
+      (insert "[" (if (cljr--project-depends-on-p "midje")
                       "midje.sweet"
                     "clojure.test")
               " :refer :all]"))))
