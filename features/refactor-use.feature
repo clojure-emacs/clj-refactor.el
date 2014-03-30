@@ -164,3 +164,24 @@ Feature: Remove Use from ns form
       (:gen-class
        :implements [org.apache.commons.daemon.Daemon]))
     """
+
+  Scenario: Replacing :use with :require :refer :all, issue #52
+    When I insert:
+    """
+    (ns furtive.test.stress.riemann.client-tests
+      (:use clojure.test)
+      (:require [furtive.config :as config]
+                [furtive.dev :refer :all]
+                [furtive.riemann.client :as client]
+                [furtive.riemann.driver :as driver]))
+    """
+    And I press "C-! ru"
+    Then I should see:
+    """
+    (ns furtive.test.stress.riemann.client-tests
+      (:require [clojure.test :refer :all]
+                [furtive.config :as config]
+                [furtive.dev :refer :all]
+                [furtive.riemann.client :as client]
+                [furtive.riemann.driver :as driver]))
+    """

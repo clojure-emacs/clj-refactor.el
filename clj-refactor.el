@@ -616,10 +616,12 @@ errors."
 
 (defun cljr--extract-ns-from-use ()
   "Let point be denoted by |.  Then, when called on: |[used.ns ...]
-returns used.ns"
-  (let ((form (format "%s" (sexp-at-point))))
-    (substring form 1 (min (or (s-index-of " " form) (1- (length form))
-                               (1- (length form)))))))
+returns used.ns, when called on (:use some.ns) returns some.ns"
+  (let* ((form (format "%s" (sexp-at-point))))
+    (if (looking-at "(:use [A-z.0-9-]+)")
+        (s-chop-suffix ")" (second (s-split " " form)))
+      (substring form 1 (min (or (s-index-of " " form) (1- (length form))
+                                 (1- (length form))))))))
 
 (defun cljr--extract-multiple-ns-from-use ()
   "Let point be denoted by |.  Then, when called on: |[used.ns lib1 lib2]
@@ -644,7 +646,7 @@ returns (used.ns.lib1 used.ns.lib2)"
   (paredit-backward-up)
   (let ((use-end (save-excursion (forward-sexp) (point))))
     (prog1
-        (re-search-forward "\\(\\( \\)\\{2,\\}\\|:use \\)\\[\\(.\\|\n\\)*?\\]" use-end t nth)
+        (re-search-forward "\\(\\(\\( \\)\\{2,\\}\\|:use \\)\\(\\[\\(.\\|\n\\)*?\\]\\)\\)\\|\\((:use [^]]+?)\\)" use-end t nth)
       (if (and (looking-back "\\]") (looking-at "\\]"))
           (paredit-backward-up)
         (paredit-backward)))))
