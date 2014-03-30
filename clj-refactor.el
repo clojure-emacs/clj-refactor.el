@@ -292,11 +292,16 @@ errors."
 ;; ------ file -----------
 
 (defun cljr--project-dir ()
-  (file-truename
-   (locate-dominating-file default-directory "project.clj")))
+  (or (ignore-errors
+        (file-truename
+         (locate-dominating-file default-directory "project.clj")))
+      (file-truename
+       (locate-dominating-file default-directory "pom.xml"))))
 
 (defun cljr--project-file ()
-  (expand-file-name "project.clj" (cljr--project-dir)))
+  (or (ignore-errors
+        (expand-file-name "project.clj" (cljr--project-dir)))
+      (expand-file-name "pom.xml" (cljr--project-dir))))
 
 (defun cljr--project-files ()
   (split-string (shell-command-to-string
