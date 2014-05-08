@@ -602,7 +602,7 @@ errors."
   (cljr--pop-tmp-marker-after-yasnippet)
   (when cljr-auto-sort-ns
     (cljr--add-yas-snippet-sort-ns-hook))
-  (yas/expand-snippet "[$1 :refer ${2::all}]$0"))
+  (yas/expand-snippet "[$1 :refer ${2:[$3]}]$0"))
 
 ;;;###autoload
 (defun cljr-add-import-to-ns ()
