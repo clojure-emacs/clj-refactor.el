@@ -345,6 +345,16 @@ errors."
           (message "File '%s' successfully renamed to '%s'"
                    name (file-name-nondirectory new-name)))))))
 
+;;;###autoload
+(defun cljr-rename-dir ()
+  "Renames current buffer and directory of current buffer it is in."
+  (interactive)
+  (dolist (filename (directory-files (file-name-directory (or load-file-name buffer-file-name))))
+    (when (s-ends-with? ".clj" filename)
+      (let ((new-name (read-file-name "New name: " filename))
+	    (buffer (get-file-buffer filename)))
+	(cljr--rename-file filename new-name)))))
+
 ;; ------ ns statements -----------
 
 (defun cljr--goto-ns ()
