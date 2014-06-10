@@ -746,10 +746,11 @@ Presently, there's no support for :use clauses containing :exclude."
   (save-excursion
     (cljr--goto-ns)
     (paredit-forward)
-    (while (re-search-forward (regexp-opt symbols 'symbols) nil t)
-      (paredit-backward)
-      (insert ns "/")
-      (paredit-forward))))
+	(let ((case-fold-search nil))
+	  (while (re-search-forward (regexp-opt symbols 'symbols) nil t)
+		(paredit-backward)
+		(insert ns "/")
+		(paredit-forward)))))
 
 ;;;###autoload
 (defun cljr-move-form ()
