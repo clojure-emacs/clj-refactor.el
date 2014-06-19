@@ -389,6 +389,14 @@ errors."
                     "clojure.test")
               " :refer :all]"))))
 
+(defun cljr--in-tests-p ()
+  "Check whether the current file is a test file.
+
+Two checks are made - whether the namespace of the file has the
+word test in it and whether the file lives under the test/ directory."
+  (or (string-match-p "test\." (clojure-find-ns))
+      (string-match-p "/test" (buffer-file-name))))
+
 (defun cljr--add-ns-if-blank-clj-file ()
   (ignore-errors
     (when (and cljr-add-ns-to-blank-clj-files
@@ -397,7 +405,7 @@ errors."
                (= (point-min) (point-max)))
       (clojure-insert-ns-form)
       (newline 2)
-      (when (clojure-in-tests-p)
+      (when (cljr--in-tests-p)
         (cljr--add-test-use-declarations)))))
 
 (add-hook 'find-file-hook 'cljr--add-ns-if-blank-clj-file)
