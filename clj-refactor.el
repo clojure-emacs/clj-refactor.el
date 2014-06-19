@@ -402,6 +402,23 @@ errors."
 
 (add-hook 'find-file-hook 'cljr--add-ns-if-blank-clj-file)
 
+(defun cljr--verify-underscores-in-filename ()
+  (let ((file-name (buffer-file-name)))
+    (when (and
+           file-name
+           (not (file-exists-p file-name)) ;; only new files
+           (s-matches? "-[^/]+\.clj$" file-name)
+           (yes-or-no-p "The file name contains dashes. Replace with underscores?"))
+      (let ((new-name (concat
+                       (file-name-directory file-name)
+                       (s-replace "-" "_" (file-name-nondirectory file-name)))))
+        (rename-buffer new-name)
+        (set-visited-file-name new-name)
+        (message "Changed file name to '%s'"
+                 (file-name-nondirectory new-name))))))
+
+(add-hook 'find-file-hook 'cljr--verify-underscores-in-filename)
+
 (defun cljr--extract-ns-statements (statement-type with-nested)
   (cljr--goto-ns)
   (if (not (cljr--search-forward-within-sexp (concat "(" statement-type)))
@@ -747,11 +764,11 @@ Presently, there's no support for :use clauses containing :exclude."
   (save-excursion
     (cljr--goto-ns)
     (paredit-forward)
-	(let ((case-fold-search nil))
-	  (while (re-search-forward (regexp-opt symbols 'symbols) nil t)
-		(paredit-backward)
-		(insert ns "/")
-		(paredit-forward)))))
+    (let ((case-fold-search nil))
+      (while (re-search-forward (regexp-opt symbols 'symbols) nil t)
+        (paredit-backward)
+        (insert ns "/")
+        (paredit-forward)))))
 
 ;;;###autoload
 (defun cljr-move-form ()
