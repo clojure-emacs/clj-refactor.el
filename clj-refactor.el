@@ -392,7 +392,8 @@ errors."
 (defun cljr--add-ns-if-blank-clj-file ()
   (ignore-errors
     (when (and cljr-add-ns-to-blank-clj-files
-               (s-ends-with? ".clj" (buffer-file-name))
+               (or (s-ends-with? ".clj" (buffer-file-name))
+                   (s-ends-with? ".cljs" (buffer-file-name)))
                (= (point-min) (point-max)))
       (clojure-insert-ns-form)
       (newline 2)
