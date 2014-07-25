@@ -32,6 +32,31 @@ Feature: remove unused require
       (st/difference #{:a :b} #{:a :c}))
     """
 
+  Scenario: Removes not used with :as with ( brackets
+    When I insert:
+    """
+    (ns cljr.core
+      (:require (clojure.string :as s)
+                (clojure.set :as st)
+                [clj-time.core :as t]))
+
+    (defn use-time []
+      (t/now)
+      (st/difference #{:a :b} #{:a :c}))
+    """
+    And I place the cursor before "now"
+    And I press "C-! rr"
+    Then I should see:
+    """
+    (ns cljr.core
+      (:require (clojure.set :as st)
+                [clj-time.core :as t]))
+
+    (defn use-time []
+      (t/now)
+      (st/difference #{:a :b} #{:a :c}))
+    """
+
   Scenario: Removes not used without :as
     When I insert:
     """
@@ -114,6 +139,33 @@ Feature: remove unused require
     (ns cljr.core
       (:require [clojure.string :refer [trim]]
                 [clojure.set :refer [difference]]
+                [clj-time.core]))
+
+    (defn use-time []
+      (clj-time.core/now)
+      ;;(trim "  foobar ")
+      (difference #{:a :b} #{:a :c}))
+    """
+    And I place the cursor before "now"
+    And I press "C-! rr"
+    Then I should see:
+    """
+    (ns cljr.core
+      (:require [clojure.set :refer [difference]]
+                [clj-time.core]))
+
+    (defn use-time []
+      (clj-time.core/now)
+      ;;(trim "  foobar ")
+      (difference #{:a :b} #{:a :c}))
+    """
+
+  Scenario: keeps it if referenced with ( brackets
+    When I insert:
+    """
+    (ns cljr.core
+      (:require [clojure.string :refer [trim]]
+                [clojure.set :refer (difference)]
                 [clj-time.core]))
 
     (defn use-time []
@@ -285,6 +337,34 @@ Feature: remove unused require
       (:require [clj-time.core]
                 [clojure string walk
                  [set :refer [difference union]]]))
+
+    (defn use-time []
+      (clj-time.core/now)
+      (clojure.string/split "foo bar" #" ")
+      (difference #{:a :b} #{:a :c}))
+    """
+    And I place the cursor before "now"
+    And I press "C-! rr"
+    Then I should see:
+    """
+    (ns cljr.core
+      (:require [clj-time.core]
+                [clojure string 
+                 [set :refer [difference]]]))
+
+    (defn use-time []
+      (clj-time.core/now)
+      (clojure.string/split "foo bar" #" ")
+      (difference #{:a :b} #{:a :c}))
+    """
+
+  Scenario: prefix list with refer with ( brackets
+    When I insert:
+    """
+    (ns cljr.core
+      (:require [clj-time.core]
+                (clojure string walk
+                 [set :refer [difference union]])))
 
     (defn use-time []
       (clj-time.core/now)

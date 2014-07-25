@@ -493,7 +493,7 @@ word test in it and whether the file lives under the test/ directory."
           postfix))
 
 (defun cljr--extract-sexp-content (sexp)
-  (replace-regexp-in-string "\\[?]?" "" sexp))
+  (replace-regexp-in-string "\\[?(?]?)?" "" sexp))
 
 (defun cljr--is-name-in-use-p (name)
   (goto-char (point-min))
@@ -513,7 +513,7 @@ word test in it and whether the file lives under the test/ directory."
            (format "%s [%s]%s"
                    (s-join " " (if (and as-used (< as-index refer-index))
                                    (-take (1+ refer-index) sexp-as-list)
-                                 (list (car sexp-as-list) ":refer")))
+                                 (list (replace-regexp-in-string "(" "[" (car sexp-as-list)) ":refer")))
                    (s-join " " referred-names)
                    (if as-after-refer
                        (concat " " (s-join " " (list ":as" (nth (1+ as-index) sexp-as-list))))
@@ -544,7 +544,7 @@ word test in it and whether the file lives under the test/ directory."
 (defun cljr--is-prefix-element-in-use (f-elem p-elem)
   (goto-char (point-min))
   (let ((elem (replace-regexp-in-string "]]]?" "]" p-elem)))
-    (if (s-starts-with? "[" elem)
+    (if (s-matches? "^\\[\\|(" elem)
         (let ((result (cljr--rectify-simple-req-statement elem (split-string elem))))
           (when result (concat "\n" result)))
       (when (re-search-forward (cljr--req-element-regexp (s-join "." (list f-elem (cljr--extract-sexp-content elem))) "/") nil t) (cljr--extract-sexp-content elem)))))

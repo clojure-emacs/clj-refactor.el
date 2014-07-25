@@ -480,9 +480,9 @@ You might also like
 
 - Add `cljr-cycle-if` [AlexBaranosky](https://github.com/AlexBaranosky)
 - Common namespace shorthands are (optionally) automatically required when you type it.
-- comparator for sort require, use and import is configurable, add optional lenght based comparator to sort longer first
-- add semantic comparator to sort items closer to the current namespace first
-- add `cljr-project-clean` with configurable clean functions
+- Comparator for sort require, use and import is configurable, add optional lenght based comparator to sort longer first [Benedek Fazekas](https://github.com/benedekfazekas)
+- Add semantic comparator to sort items closer to the current namespace first [Benedek Fazekas](https://github.com/benedekfazekas)
+- Add `cljr-project-clean` with configurable clean functions [Benedek Fazekas](https://github.com/benedekfazekas)
 
 #### From 0.11 to 0.12
 
