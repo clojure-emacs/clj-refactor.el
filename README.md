@@ -85,6 +85,7 @@ This is it so far:
  - `ad`: add declaration for current top-level form
  - `dk`: destructure keys
  - `mf`: move one or more forms to another namespace, `:refer` any functions
+ - `ap`: add a dependency to your project
 
 Combine with your keybinding prefix/modifier.
 
@@ -483,6 +484,7 @@ You might also like
 - Comparator for sort require, use and import is configurable, add optional lenght based comparator to sort longer first [Benedek Fazekas](https://github.com/benedekfazekas)
 - Add semantic comparator to sort items closer to the current namespace first [Benedek Fazekas](https://github.com/benedekfazekas)
 - Add `cljr-project-clean` with configurable clean functions [Benedek Fazekas](https://github.com/benedekfazekas)
+- Add `cljr-add-project-dependency` [Lars Andersen](https://github.com/expez)
 
 #### From 0.11 to 0.12
 
@@ -543,7 +545,7 @@ Run the tests with:
 ## Contributors
 
 - [AlexBaranosky](https://github.com/AlexBaranosky) added a bunch of features. See the [Changelog](#changelog) for details.
-- [Lars Andersen](https://github.com/expez) added `cljr-replace-use`, `cljr-add-declaration` and `cljr-move-form`.
+- [Lars Andersen](https://github.com/expez) added `cljr-replace-use`, `cljr-add-declaration`, `cljr-move-form` and `cljr-add-project-dependency`
 - [Benedek Fazekas](https://github.com/benedekfazekas) added `cljr-remove-unused-requires` and improved on the let-expanding functions.
 
 Thanks!
