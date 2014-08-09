@@ -1441,10 +1441,6 @@ front of function literals and sets."
           (when find-file-p
             (kill-buffer)))))))
 
-(defun cljr--middlewere-available-p ()
-  (and (cider-connected-p)
-       (nrepl-op-supported-p "refactor")))
-
 (defun cljr--get-artifacts-from-middlewere (force)
   (message "Retrieving list of available libraries...")
   (let ((nrepl-sync-request-timeout nil))
@@ -1479,14 +1475,23 @@ front of function literals and sets."
     (insert "[" lib-name " \"" version "\"]")
     (save-buffer)))
 
-(defun cljr--leiningen-project-p ()
-  (string= (file-name-nondirectory (or (cljr--project-file) ""))
-           "project.clj"))
+(defun cljr--assert-middlewere ()
+  (unless (featurep 'cider)
+    (error "CIDER isn't installed!"))
+  (unless (cider-connected-p)
+    (error "CIDER isn't connected!"))
+  (unless (nrepl-op-supported-p "refactor")
+    (error "nrepl-refactor middlewere not available!")))
+
+(defun cljr--assert-leiningen-project ()
+  (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
+           "project.clj")
+    (error "Can't find project.clj!")))
 
 (defun cljr-add-project-dependency (force)
   (interactive "P")
-  (cond ((not (cljr--leiningen-project-p)) (error "Can't find project.clj.")
-         (not (cljr--middlewere-available-p) (error "Missing nrepl middlewere!"))))
+  (cljr--assert-leiningen-project)
+  (cljr--assert-middlewere)
   (-when-let* ((lib-name (->> (cljr--get-artifacts-from-middlewere force)
                            (cljr--prompt-user-for "Artifact: ")))
                (version (->> (cljr--get-versions-from-middlewere lib-name)
