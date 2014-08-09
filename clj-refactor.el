@@ -1447,10 +1447,17 @@ front of function literals and sets."
 
 (defun cljr--get-artifacts-from-middlewere (force)
   (message "Retrieving list of available libraries...")
-  (s-split " " (plist-get (nrepl-send-request-sync
-                           (list "op" "artifact-list"
-                                 "force" (if force "true" "false")))
-                          :value)))
+  (let ((nrepl-sync-request-timeout nil))
+    (s-split " " (plist-get (nrepl-send-request-sync
+                             (list "op" "artifact-list"
+                                   "force" (if force "true" "false")))
+                            :value))))
+
+(defun cljr-update-artifact-cache ()
+  (interactive)
+  (nrepl-send-request (list "op" "artifact-list"
+                            "force" "true")
+                      (lambda (_) (message "Artifact cache updated"))))
 
 (defun cljr--get-versions-from-middlewere (artifact)
   (s-split " " (plist-get (nrepl-send-request-sync

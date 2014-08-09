@@ -32,7 +32,7 @@ clj-refactor in your path somewhere:
 
 You'll also have to set up the keybindings in the lambda. Read on.
 
-## Setup keybindings
+### Setup keybindings
 
 All functions in clj-refactor have a two-letter mnemonic shortcut. For
 instance, rename-file is `rf`. You get to choose how those are bound.
@@ -55,6 +55,14 @@ to pick and choose your own keybindings with a smattering of:
 
 ```cl
 (define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
+```
+
+### Populate the artifact cache on startup
+
+The `add-project-dependency` functionality caches the list of available artifacts for one day, instead of hitting the web every time.  If you don't want to wait for the cache to be populated, when you first call `add-projecect-dependency`, you can do the following, to have this happen in the background:
+
+```cl
+(add-hook 'cider-repl-mode-hook #'cljr-update-artifact-cache)
 ```
 
 ## Usage
@@ -464,6 +472,10 @@ This promting can be switched off by setting `cljr-project-clean-prompt` nil:
 The list of functions to run with `cljr-project-clean` is also configurable via `cljr-project-clean-functions`. You can add more functions defined in clj-refactor or remove some or even write your own.
 
 `cljr-project-clean` will only work with leiningen managed projects with a project.clj in their root directory. This limitation will very likely be fixed when [#27](https://github.com/magnars/clj-refactor.el/issues/27) is done.
+
+## Add project dependency
+
+When this function is called with a prefix the artifact cache is invalidated and updated.  This happens synchronously.  If you want to update the artifact cache in the background you can call `cljr-update-artifact-cache`.
 
 ## Miscellaneous
 
