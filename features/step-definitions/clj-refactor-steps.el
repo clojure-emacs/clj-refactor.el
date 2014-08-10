@@ -17,7 +17,8 @@
 
     ;; add project.clj
     (with-temp-file (expand-file-name "project.clj" dir-name)
-      (insert "(defproject " project-name " \"0.1.0-SNAPSHOT\")"))))
+      (insert "(defproject " project-name " \"0.1.0-SNAPSHOT\"
+:dependencies [[org.clojure/clojure \"1.6.0\"]])"))))
 
 (Given "^I have a clojure-file \"\\([^\"]+\\)\"$"
   (lambda (file-name)
@@ -62,3 +63,22 @@
   (lambda ()
     (goto-char (point-min))
     (re-search-forward "defn")))
+
+(Given "^I run \\(cider-jack-in\\)$"
+  (lambda (_ callback)
+    (cider-jack-in)
+    (while (not (cider-connected-p))
+      (sleep-for 1))
+    (funcall callback)))
+
+(Given "^The artifact cache is \\(populated\\)"
+  (lambda (_ callback)
+    (message "Populating artifact cache...")
+    (let ((*done* nil))
+      (nrepl-send-request
+             (list "op" "artifact-list"
+                   "force" "true")
+             (lambda (_) (setq *done* t)))
+      (while (not *done*)
+        (sleep-for 1))
+      (funcall callback))))

@@ -17,6 +17,7 @@
 (require 'espuds)
 (require 'ert)
 (require 's)
+(require 'cider)
 
 (defun clojure-expected-ns ()
   "Returns the namespace name that the file should have."

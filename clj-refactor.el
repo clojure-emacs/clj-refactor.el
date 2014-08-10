@@ -297,8 +297,8 @@ errors."
   (or (ignore-errors
         (file-truename
          (locate-dominating-file default-directory "project.clj")))
-      (file-truename
-       (locate-dominating-file default-directory "pom.xml"))))
+      (ignore-errors (file-truename
+        (locate-dominating-file default-directory "pom.xml")))))
 
 (defun cljr--project-file ()
   (or (ignore-errors
@@ -1464,7 +1464,7 @@ front of function literals and sets."
 (defun cljr--prompt-user-for (prompt choices)
   (completing-read prompt choices))
 
-(defun cljr--add-project-dependency (lib-name version)
+(defun cljr--add-project-dependency (artifact version)
   (save-window-excursion
     (find-file (cljr--project-file))
     (goto-char (point-min))
@@ -1472,8 +1472,9 @@ front of function literals and sets."
     (paredit-forward)
     (paredit-backward-down)
     (newline-and-indent)
-    (insert "[" lib-name " \"" version "\"]")
-    (save-buffer)))
+    (insert "[" artifact " \"" version "\"]")
+    (save-buffer))
+  (message "Added %s version %s as a project dependency" artifact version))
 
 (defun cljr--assert-middlewere ()
   (unless (featurep 'cider)
@@ -1485,7 +1486,7 @@ front of function literals and sets."
 
 (defun cljr--assert-leiningen-project ()
   (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
-           "project.clj")
+                   "project.clj")
     (error "Can't find project.clj!")))
 
 (defun cljr-add-project-dependency (force)

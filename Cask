@@ -6,4 +6,5 @@
 (development
   (depends-on "ecukes")
   (depends-on "espuds")
-  (depends-on "clojure-mode"))
+  (depends-on "clojure-mode")
+  (depends-on "cider"))
