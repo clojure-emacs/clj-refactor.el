@@ -17,7 +17,8 @@ Feature: Add project dependency
     And I execute the action chain
     Then I should see:
     """
-    (defproject tmp "0.1.0-SNAPSHOT"
+    (defproject cljr "0.1.0-SNAPSHOT"
     :dependencies [[org.clojure/clojure "1.6.0"]
-                   [prismatic/schema "0.2.2"]])
+                   [prismatic/schema "0.2.2"]]
+    :plugins [[refactor-nrepl "0.1.0-SNAPSHOT"]])
     """

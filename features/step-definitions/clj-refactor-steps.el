@@ -18,7 +18,8 @@
     ;; add project.clj
     (with-temp-file (expand-file-name "project.clj" dir-name)
       (insert "(defproject " project-name " \"0.1.0-SNAPSHOT\"
-:dependencies [[org.clojure/clojure \"1.6.0\"]])"))))
+:dependencies [[org.clojure/clojure \"1.6.0\"]]
+:plugins [[refactor-nrepl \"0.1.0-SNAPSHOT\"]])"))))
 
 (Given "^I have a clojure-file \"\\([^\"]+\\)\"$"
   (lambda (file-name)

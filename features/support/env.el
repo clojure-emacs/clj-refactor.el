@@ -53,11 +53,17 @@
                  (string-match regexp name))
         (kill-buffer buffer)))))
 
+(defun quit-cider ()
+  (dolist (connection nrepl-connection-list)
+    (when connection
+      (nrepl-close connection))))
+
 (After
  (save-all-buffers-dont-ask)
  (kill-matching-buffers-dont-ask "clj")
- (delete-directory (expand-file-name "tmp" clj-refactor-root-path) t))
+ (delete-directory (expand-file-name "tmp" clj-refactor-root-path) t)
+ (when (cider-connected-p) (quit-cider)))
 
-(Teardown
- ;; After when everything has been run
- )
+ (Teardown
+  ;; After when everything has been run
+  )
