@@ -85,6 +85,7 @@ This is it so far:
  - `ad`: add declaration for current top-level form
  - `dk`: destructure keys
  - `mf`: move one or more forms to another namespace, `:refer` any functions
+ - `sp`: Sort all dependency vectors in project.clj
 
 Combine with your keybinding prefix/modifier.
 
@@ -452,7 +453,7 @@ or set it to `:prompt` if you want to confirm before it inserts.
 
 ## Project clean up
 
-`cljr-project-clean` runs some clean up functions on all clj files in a project in bulk. By default these are `cljr-remove-unused-requires` and `cljr-sort-ns`. Before changes are made the function prompts if you really want to proceed as many files in the project can be potentially affected.
+`cljr-project-clean` runs some clean up functions on all clj files in a project in bulk. By default these are `cljr-remove-unused-requires` and `cljr-sort-ns`. Additionally, `cljr-sort-project-dependencies` is called to put the `project.clj` file in order.  Before any changes are made, the user is prompted for confirmation because this function can touch a large number of files.
 
 This promting can be switched off by setting `cljr-project-clean-prompt` nil:
 
@@ -483,6 +484,7 @@ You might also like
 - Comparator for sort require, use and import is configurable, add optional lenght based comparator to sort longer first [Benedek Fazekas](https://github.com/benedekfazekas)
 - Add semantic comparator to sort items closer to the current namespace first [Benedek Fazekas](https://github.com/benedekfazekas)
 - Add `cljr-project-clean` with configurable clean functions [Benedek Fazekas](https://github.com/benedekfazekas)
+- Add `cljr-sort-project-dependencies` [Lars Andersen](https://github.com/expez)
 
 #### From 0.11 to 0.12
 
@@ -543,7 +545,7 @@ Run the tests with:
 ## Contributors
 
 - [AlexBaranosky](https://github.com/AlexBaranosky) added a bunch of features. See the [Changelog](#changelog) for details.
-- [Lars Andersen](https://github.com/expez) added `cljr-replace-use`, `cljr-add-declaration` and `cljr-move-form`.
+- [Lars Andersen](https://github.com/expez) added `cljr-replace-use`, `cljr-add-declaration` and `cljr-move-form`, `cljr-sort-project-dependencies`.
 - [Benedek Fazekas](https://github.com/benedekfazekas) added `cljr-remove-unused-requires` and improved on the let-expanding functions.
 
 Thanks!
