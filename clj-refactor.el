@@ -180,30 +180,31 @@
   (read-kbd-macro (concat prefix " " keys)))
 
 (defun cljr--add-keybindings (key-fn)
-  (define-key clj-refactor-map (funcall key-fn "rf") 'cljr-rename-file)
-  (define-key clj-refactor-map (funcall key-fn "ru") 'cljr-replace-use)
-  (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use-to-ns)
-  (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
-  (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
-  (define-key clj-refactor-map (funcall key-fn "sn") 'cljr-sort-ns)
-  (define-key clj-refactor-map (funcall key-fn "rr") 'cljr-remove-unused-requires)
-  (define-key clj-refactor-map (funcall key-fn "sr") 'cljr-stop-referring)
-  (define-key clj-refactor-map (funcall key-fn "th") 'cljr-thread)
-  (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind)
-  (define-key clj-refactor-map (funcall key-fn "ua") 'cljr-unwind-all)
-  (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
-  (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
-  (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
-  (define-key clj-refactor-map (funcall key-fn "mf") 'cljr-move-form)
-  (define-key clj-refactor-map (funcall key-fn "tf") 'cljr-thread-first-all)
-  (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all)
-  (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
-  (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
-  (define-key clj-refactor-map (funcall key-fn "cs") 'cljr-cycle-stringlike)
-  (define-key clj-refactor-map (funcall key-fn "ci") 'cljr-cycle-if)
   (define-key clj-refactor-map (funcall key-fn "ad") 'cljr-add-declaration)
+  (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
+  (define-key clj-refactor-map (funcall key-fn "ap") 'cljr-add-project-dependency)
+  (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
+  (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use-to-ns)
+  (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
+  (define-key clj-refactor-map (funcall key-fn "ci") 'cljr-cycle-if)
+  (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
+  (define-key clj-refactor-map (funcall key-fn "cs") 'cljr-cycle-stringlike)
   (define-key clj-refactor-map (funcall key-fn "dk") 'cljr-destructure-keys)
-  (define-key clj-refactor-map (funcall key-fn "pc") 'cljr-project-clean))
+  (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
+  (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
+  (define-key clj-refactor-map (funcall key-fn "mf") 'cljr-move-form)
+  (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
+  (define-key clj-refactor-map (funcall key-fn "pc") 'cljr-project-clean)
+  (define-key clj-refactor-map (funcall key-fn "rf") 'cljr-rename-file)
+  (define-key clj-refactor-map (funcall key-fn "rr") 'cljr-remove-unused-requires)
+  (define-key clj-refactor-map (funcall key-fn "ru") 'cljr-replace-use)
+  (define-key clj-refactor-map (funcall key-fn "sn") 'cljr-sort-ns)
+  (define-key clj-refactor-map (funcall key-fn "sr") 'cljr-stop-referring)
+  (define-key clj-refactor-map (funcall key-fn "tf") 'cljr-thread-first-all)
+  (define-key clj-refactor-map (funcall key-fn "th") 'cljr-thread)
+  (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all)
+  (define-key clj-refactor-map (funcall key-fn "ua") 'cljr-unwind-all)
+  (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -296,13 +297,13 @@ errors."
   (or (ignore-errors
         (file-truename
          (locate-dominating-file default-directory "project.clj")))
-      (file-truename
-       (locate-dominating-file default-directory "pom.xml"))))
+      (ignore-errors (file-truename
+        (locate-dominating-file default-directory "pom.xml")))))
 
 (defun cljr--project-file ()
   (or (ignore-errors
         (expand-file-name "project.clj" (cljr--project-dir)))
-      (expand-file-name "pom.xml" (cljr--project-dir))))
+      (ignore-errors (expand-file-name "pom.xml" (cljr--project-dir)))))
 
 (defun cljr--project-files ()
   (split-string (shell-command-to-string
@@ -1439,6 +1440,64 @@ front of function literals and sets."
           (save-buffer)
           (when find-file-p
             (kill-buffer)))))))
+
+(defun cljr--get-artifacts-from-middlewere (force)
+  (message "Retrieving list of available libraries...")
+  (let ((nrepl-sync-request-timeout nil))
+    (s-split " " (plist-get (nrepl-send-request-sync
+                             (list "op" "artifact-list"
+                                   "force" (if force "true" "false")))
+                            :value))))
+
+(defun cljr-update-artifact-cache ()
+  (interactive)
+  (nrepl-send-request (list "op" "artifact-list"
+                            "force" "true")
+                      (lambda (_) (message "Artifact cache updated"))))
+
+(defun cljr--get-versions-from-middlewere (artifact)
+  (s-split " " (plist-get (nrepl-send-request-sync
+                           (list "op" "artifact-versions"
+                                 "artifact" artifact))
+                          :value)))
+
+(defun cljr--prompt-user-for (prompt choices)
+  (completing-read prompt choices))
+
+(defun cljr--add-project-dependency (artifact version)
+  (save-window-excursion
+    (find-file (cljr--project-file))
+    (goto-char (point-min))
+    (re-search-forward ":dependencies")
+    (paredit-forward)
+    (paredit-backward-down)
+    (newline-and-indent)
+    (insert "[" artifact " \"" version "\"]")
+    (save-buffer))
+  (message "Added %s version %s as a project dependency" artifact version))
+
+(defun cljr--assert-middlewere ()
+  (unless (featurep 'cider)
+    (error "CIDER isn't installed!"))
+  (unless (cider-connected-p)
+    (error "CIDER isn't connected!"))
+  (unless (nrepl-op-supported-p "refactor")
+    (error "nrepl-refactor middlewere not available!")))
+
+(defun cljr--assert-leiningen-project ()
+  (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
+                   "project.clj")
+    (error "Can't find project.clj!")))
+
+(defun cljr-add-project-dependency (force)
+  (interactive "P")
+  (cljr--assert-leiningen-project)
+  (cljr--assert-middlewere)
+  (-when-let* ((lib-name (->> (cljr--get-artifacts-from-middlewere force)
+                           (cljr--prompt-user-for "Artifact: ")))
+               (version (->> (cljr--get-versions-from-middlewere lib-name)
+                          (cljr--prompt-user-for "Version: "))))
+    (cljr--add-project-dependency lib-name version)))
 
 ;; ------ minor mode -----------
 

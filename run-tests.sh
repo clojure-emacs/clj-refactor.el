@@ -1,2 +1,2 @@
 #!/bin/sh -e
-cask exec ecukes "$@" --no-win
+cask exec ecukes "$@" --no-win --timeout 60
