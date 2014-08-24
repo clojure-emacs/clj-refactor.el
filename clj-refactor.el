@@ -143,7 +143,8 @@
   :group 'cljr
   :type 'boolean)
 
-(defcustom cljr-project-clean-functions (list 'cljr-remove-unused-requires 'cljr-sort-ns)
+(defcustom cljr-project-clean-functions
+  (list 'cljr-remove-unused-requires 'cljr-sort-ns)
   "List of functions to run on all the clj files in the project
    when you perform project clean."
   :group 'cljr
@@ -180,30 +181,31 @@
   (read-kbd-macro (concat prefix " " keys)))
 
 (defun cljr--add-keybindings (key-fn)
-  (define-key clj-refactor-map (funcall key-fn "rf") 'cljr-rename-file)
-  (define-key clj-refactor-map (funcall key-fn "ru") 'cljr-replace-use)
-  (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use-to-ns)
-  (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
-  (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
-  (define-key clj-refactor-map (funcall key-fn "sn") 'cljr-sort-ns)
-  (define-key clj-refactor-map (funcall key-fn "rr") 'cljr-remove-unused-requires)
-  (define-key clj-refactor-map (funcall key-fn "sr") 'cljr-stop-referring)
-  (define-key clj-refactor-map (funcall key-fn "th") 'cljr-thread)
-  (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind)
-  (define-key clj-refactor-map (funcall key-fn "ua") 'cljr-unwind-all)
-  (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
-  (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
-  (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
-  (define-key clj-refactor-map (funcall key-fn "mf") 'cljr-move-form)
-  (define-key clj-refactor-map (funcall key-fn "tf") 'cljr-thread-first-all)
-  (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all)
-  (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
-  (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
-  (define-key clj-refactor-map (funcall key-fn "cs") 'cljr-cycle-stringlike)
-  (define-key clj-refactor-map (funcall key-fn "ci") 'cljr-cycle-if)
   (define-key clj-refactor-map (funcall key-fn "ad") 'cljr-add-declaration)
+  (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
+  (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
+  (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use-to-ns)
+  (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
+  (define-key clj-refactor-map (funcall key-fn "ci") 'cljr-cycle-if)
+  (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
+  (define-key clj-refactor-map (funcall key-fn "cs") 'cljr-cycle-stringlike)
   (define-key clj-refactor-map (funcall key-fn "dk") 'cljr-destructure-keys)
-  (define-key clj-refactor-map (funcall key-fn "pc") 'cljr-project-clean))
+  (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
+  (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
+  (define-key clj-refactor-map (funcall key-fn "mf") 'cljr-move-form)
+  (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
+  (define-key clj-refactor-map (funcall key-fn "pc") 'cljr-project-clean)
+  (define-key clj-refactor-map (funcall key-fn "rf") 'cljr-rename-file)
+  (define-key clj-refactor-map (funcall key-fn "rr") 'cljr-remove-unused-requires)
+  (define-key clj-refactor-map (funcall key-fn "ru") 'cljr-replace-use)
+  (define-key clj-refactor-map (funcall key-fn "sn") 'cljr-sort-ns)
+  (define-key clj-refactor-map (funcall key-fn "sp") 'cljr-sort-project-dependencies)
+  (define-key clj-refactor-map (funcall key-fn "sr") 'cljr-stop-referring)
+  (define-key clj-refactor-map (funcall key-fn "tf") 'cljr-thread-first-all)
+  (define-key clj-refactor-map (funcall key-fn "th") 'cljr-thread)
+  (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all)
+  (define-key clj-refactor-map (funcall key-fn "ua") 'cljr-unwind-all)
+  (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -1423,7 +1425,10 @@ front of function literals and sets."
 
 ;; ------ project clean --------
 
+;;;###autoload
 (defun cljr-project-clean ()
+  "Runs `cljr-project-clean-functions' on every clojure file, then
+sorts the project's dependency vectors."
   (interactive)
   (when (or (not cljr-project-clean-prompt)
             (yes-or-no-p "Cleaning your project might change many of your clj files. Do you want to proceed?"))
@@ -1438,7 +1443,30 @@ front of function literals and sets."
           (ignore-errors (-map 'funcall cljr-project-clean-functions))
           (save-buffer)
           (when find-file-p
-            (kill-buffer)))))))
+            (kill-buffer)))))
+    (cljr-sort-project-dependencies)))
+
+;;;###autoload
+(defun cljr-sort-project-dependencies ()
+  (interactive)
+  "Sorts all dependency vectors in project.clj"
+  (save-window-excursion
+    (find-file (cljr--project-file))
+    (goto-char (point-min))
+    (while (re-search-forward ":dependencies" (point-max) t)
+      (forward-char)
+      (when (looking-at "\\[")
+        (->> (cljr--delete-and-extract-sexp)
+          (s-chop-prefix "[")
+          (s-chop-suffix "]")
+          s-lines
+          (-map #'s-trim)
+          (-sort #'string<)
+          (s-join "\n")
+          (insert "["))
+        (insert "]")))
+    (indent-region (point-min) (point-max))
+    (save-buffer)))
 
 ;; ------ minor mode -----------
 
