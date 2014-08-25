@@ -403,7 +403,8 @@ word test in it and whether the file lives under the test/ directory."
   (ignore-errors
     (when (and cljr-add-ns-to-blank-clj-files
                (or (s-ends-with? ".clj" (buffer-file-name))
-                   (s-ends-with? ".cljs" (buffer-file-name)))
+                   (s-ends-with? ".cljs" (buffer-file-name))
+                   (s-ends-with? ".cljx" (buffer-file-name)))
                (= (point-min) (point-max)))
       (clojure-insert-ns-form)
       (newline 2)
