@@ -189,6 +189,7 @@
   (define-key clj-refactor-map (funcall key-fn "ci") 'cljr-cycle-if)
   (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
   (define-key clj-refactor-map (funcall key-fn "cs") 'cljr-cycle-stringlike)
+  (define-key clj-refactor-map (funcall key-fn "ct") 'cljr-cycle-thread)
   (define-key clj-refactor-map (funcall key-fn "dk") 'cljr-destructure-keys)
   (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
   (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
@@ -975,6 +976,36 @@ optionally including those that are declared private."
   (paredit-forward-down)
   (paredit-forward)
   (paredit-raise-sexp))
+
+(defun cljr--goto-thread ()
+  (while (not (or (cljr--toplevel-p)
+                  (looking-at "\(.*->>?[\n\r\t ]")))
+    (paredit-backward-up)))
+
+(defun cljr--reindent-thread ()
+  (cljr--goto-thread)
+  (let ((beg (point))
+	(end (progn (paredit-forward) (point))))
+    (indent-region beg end)))
+
+;;;###autoload
+(defun cljr-cycle-thread ()
+  (interactive)
+  (save-excursion
+    (cljr--goto-thread)
+    (cond
+     ((looking-at ".*->>")
+      (paredit-forward-down)
+      (paredit-forward)
+      (backward-char)
+      (delete-region (point) (+ 1 (point)))
+      (cljr--reindent-thread))
+   
+     ((looking-at ".*->[^>]")
+      (paredit-forward-down)
+      (paredit-forward)
+      (insert ">")
+      (cljr--reindent-thread)))))
 
 ;;;###autoload
 (defun cljr-unwind ()
