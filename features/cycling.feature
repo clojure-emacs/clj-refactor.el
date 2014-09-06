@@ -206,3 +206,35 @@ Scenario: Cycling if-not to if, in outer if-not
        (then AAA)
        (else BBB)))
    """
+
+Scenario: Cycling thread-first to thread-last
+   When I insert:
+   """
+   (defn foo [coll]
+     (-> coll
+         (map inc)))
+   """
+   And I place the cursor after "(map"
+   And I press "C-! ct"
+   Then I should see:
+   """
+   (defn foo [coll]
+     (->> coll
+          (map inc)))
+   """
+
+Scenario: Cycling thread-last to thread-first
+   When I insert:
+   """
+   (defn foo []
+     (-> {}
+         (->> (assoc :bar 1))))
+   """
+   And I place the cursor after "(assoc"
+   And I press "C-! ct"
+   Then I should see:
+   """
+   (defn foo []
+     (-> {}
+         (-> (assoc :bar 1))))
+   """
