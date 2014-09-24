@@ -32,7 +32,7 @@ clj-refactor in your path somewhere:
 
 You'll also have to set up the keybindings in the lambda. Read on.
 
-## Setup keybindings
+### Setup keybindings
 
 All functions in clj-refactor have a two-letter mnemonic shortcut. For
 instance, rename-file is `rf`. You get to choose how those are bound.
@@ -55,6 +55,28 @@ to pick and choose your own keybindings with a smattering of:
 
 ```cl
 (define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
+```
+
+### Refactor nREPL middleware
+
+The project is going forward towards smarter refactorings. To achieve this we need our library to better understand clojure code. Therefore we are investing into an nREPL middleware called [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). This middleware working together with an embedded cider backed REPL in your Emacs can do some smart refactorings.
+
+Certain features are only available with the middleware added: please see these marked in our list of features.
+
+To set it up you need to add the middleware as you add the middleware for cider. Add the following, either in your project's `project.clj`,  or in the `:user` profile found at `~/.lein/profiles.clj`:
+
+```clojure
+:plugins [[refactor-nrepl "0.1.0"]]
+```
+
+For more details see [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
+
+### Populate the artifact cache on startup
+
+The `add-project-dependency` functionality caches the list of available artifacts for one day, instead of hitting the web every time.  If you don't want to wait for the cache to be populated, when you first call `add-projecect-dependency`, you can do the following, to have this happen in the background:
+
+```cl
+(add-hook 'cider-repl-mode-hook #'cljr-update-artifact-cache)
 ```
 
 ## Usage
@@ -86,6 +108,8 @@ This is it so far:
  - `dk`: destructure keys
  - `mf`: move one or more forms to another namespace, `:refer` any functions
  - `sp`: Sort all dependency vectors in project.clj
+ - `rd`: Remove (debug) function invocations **depends on refactor-nrepl**
+ - `ap`: add a dependency to your project **depends on refactor-nrepl**
 
 Combine with your keybinding prefix/modifier.
 
@@ -356,7 +380,7 @@ some snippet packages for Clojure:
 
  - David Nolen has created some [clojure-snippets](https://github.com/swannodette/clojure-snippets)
  - I've made some [datomic-snippets](https://github.com/magnars/datomic-snippets)
- - Max Penet has also created some [clojure-snippets](https://github.com/mpenet/clojure-snippets), early fork of dnolens' with tons of additions and MELPA compatible 
+ - Max Penet has also created some [clojure-snippets](https://github.com/mpenet/clojure-snippets), early fork of dnolens' with tons of additions and MELPA compatible
 
 ## Changing the way how the ns declaration is sorted
 
@@ -465,6 +489,14 @@ The list of functions to run with `cljr-project-clean` is also configurable via 
 
 `cljr-project-clean` will only work with leiningen managed projects with a project.clj in their root directory. This limitation will very likely be fixed when [#27](https://github.com/magnars/clj-refactor.el/issues/27) is done.
 
+## Add project dependency
+
+When this function is called with a prefix the artifact cache is invalidated and updated.  This happens synchronously.  If you want to update the artifact cache in the background you can call `cljr-update-artifact-cache`.
+
+## Remove (debug) function invocations
+
+Removes invocations of a predefined set of functions from the namespace. Remove function invocations are configurable `cljr-debug-functions`; default value is `"println,pr,prn"`.
+
 ## Miscellaneous
 
 With clj-refactor enabled, any keybindings for `paredit-raise-sexp` is
@@ -485,6 +517,9 @@ You might also like
 - Add semantic comparator to sort items closer to the current namespace first [Benedek Fazekas](https://github.com/benedekfazekas)
 - Add `cljr-project-clean` with configurable clean functions [Benedek Fazekas](https://github.com/benedekfazekas)
 - Add `cljr-sort-project-dependencies` [Lars Andersen](https://github.com/expez)
+- Add `cljr-add-project-dependency` [Lars Andersen](https://github.com/expez)
+- Add `cljr-remove-debug-fns` [Benedek Fazekas](https://github.com/benedekfazekas)
+- performance tweak for `cljr-remove-unused-requires` if `refactor-nrepl` is used [Benedek Fazekas](https://github.com/benedekfazekas)
 
 #### From 0.11 to 0.12
 
@@ -545,8 +580,8 @@ Run the tests with:
 ## Contributors
 
 - [AlexBaranosky](https://github.com/AlexBaranosky) added a bunch of features. See the [Changelog](#changelog) for details.
-- [Lars Andersen](https://github.com/expez) added `cljr-replace-use`, `cljr-add-declaration` and `cljr-move-form`, `cljr-sort-project-dependencies`.
-- [Benedek Fazekas](https://github.com/benedekfazekas) added `cljr-remove-unused-requires` and improved on the let-expanding functions.
+- [Lars Andersen](https://github.com/expez) added `cljr-replace-use`, `cljr-add-declaration` and `cljr-move-form`, `cljr-sort-project-dependencies`  and `cljr-add-project-dependency`.
+- [Benedek Fazekas](https://github.com/benedekfazekas) added `cljr-remove-unused-requires` and improved on the let-expanding functions, `cljr-project-clean`, `cljr-remove-debug-fns` and `refactor-nrepl` integration.
 
 Thanks!
 

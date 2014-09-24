@@ -5,7 +5,7 @@
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; Version: 0.12.0
 ;; Keywords: convenience
-;; Package-Requires: ((s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "22") (multiple-cursors "1.2.2"))
+;; Package-Requires: ((s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "22") (multiple-cursors "1.2.2") (cider "0.6.0"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -103,6 +103,7 @@
 (require 'paredit)
 (require 'multiple-cursors)
 (require 'clojure-mode)
+(require 'cider)
 
 (defcustom cljr-add-ns-to-blank-clj-files t
   "When true, automatically adds a ns form to new clj files."
@@ -150,6 +151,11 @@
   :group 'cljr
   :type '(repeat function))
 
+(defcustom cljr-debug-functions "println,pr,prn"
+  "List of functions used for debug purposes. Used in cljr-remove-debug-fns feature."
+  :group 'cljr
+  :type 'string)
+
 (defvar cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
     ("set"  . "clojure.set")
@@ -183,6 +189,7 @@
 (defun cljr--add-keybindings (key-fn)
   (define-key clj-refactor-map (funcall key-fn "ad") 'cljr-add-declaration)
   (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
+  (define-key clj-refactor-map (funcall key-fn "ap") 'cljr-add-project-dependency)
   (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
   (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use-to-ns)
   (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
@@ -206,7 +213,8 @@
   (define-key clj-refactor-map (funcall key-fn "th") 'cljr-thread)
   (define-key clj-refactor-map (funcall key-fn "tl") 'cljr-thread-last-all)
   (define-key clj-refactor-map (funcall key-fn "ua") 'cljr-unwind-all)
-  (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind))
+  (define-key clj-refactor-map (funcall key-fn "uw") 'cljr-unwind)
+  (define-key clj-refactor-map (funcall key-fn "rd") 'cljr-remove-debug-fns))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
@@ -299,13 +307,13 @@ errors."
   (or (ignore-errors
         (file-truename
          (locate-dominating-file default-directory "project.clj")))
-      (file-truename
-       (locate-dominating-file default-directory "pom.xml"))))
+      (ignore-errors (file-truename
+        (locate-dominating-file default-directory "pom.xml")))))
 
 (defun cljr--project-file ()
   (or (ignore-errors
         (expand-file-name "project.clj" (cljr--project-dir)))
-      (expand-file-name "pom.xml" (cljr--project-dir))))
+      (ignore-errors (expand-file-name "pom.xml" (cljr--project-dir)))))
 
 (defun cljr--project-files ()
   (split-string (shell-command-to-string
@@ -499,10 +507,60 @@ word test in it and whether the file lives under the test/ directory."
 (defun cljr--extract-sexp-content (sexp)
   (replace-regexp-in-string "\\[?(?]?)?" "" sexp))
 
-(defun cljr--is-name-in-use-p (name)
+(defun cljr--is-name-in-use-ast-p (name)
+  (cljr--goto-ns)
+  (paredit-forward)
+  (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
+         (e (cljr--extract-sexp-content name))
+         (result (plist-get (nrepl-send-request-sync
+                             (list "op" "refactor"
+                                   "ns-string" body
+                                   "refactor-fn" "find-referred"
+                                   "referred" e))
+                            :value)))
+    (when result e)))
+
+(defun cljr--is-name-in-use-vanilla-p (name)
   (goto-char (point-min))
   (let ((e (cljr--extract-sexp-content name)))
     (when (re-search-forward (cljr--req-element-regexp e "[^[:word:]^-]") nil t) e)))
+
+(defun cljr--is-name-in-use-p (name)
+  (if (and (cider-connected-p) (nrepl-op-supported-p "refactor"))
+      (progn
+        (message "refactor-nrepl is used")
+        (cljr--is-name-in-use-ast-p name))
+    (progn
+      (message "clj-refactor middleware is not found. Failing back to vanilla elisp impl")
+      (cljr--is-name-in-use-vanilla-p name))))
+
+(defun cljr-remove-debug-fns ()
+  (interactive)
+  (cljr--assert-middleware)
+  (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
+         (result (plist-get (nrepl-send-request-sync
+                             (list "op" "refactor"
+                                   "ns-string" body
+                                   "refactor-fn" "find-debug-fns"
+                                   "debug-fns" cljr-debug-functions))
+                            :value))
+         (debug-fn-tuples (pop result))
+         (removed-lines 0))
+    (while debug-fn-tuples
+      (let ((line (- (1- (car debug-fn-tuples)) removed-lines))
+            (end-line (nth 1 debug-fn-tuples))
+            (column (nth 2 debug-fn-tuples)))
+        (message "removing %s at line %s [%s] column %s (end-line %s end-column %s)" (-last-item debug-fn-tuples) line (car debug-fn-tuples) column end-line (nth 3 debug-fn-tuples))
+        (save-excursion
+          (goto-char (point-min))
+          (forward-line line)
+          (move-to-column column)
+          (paredit-backward)
+          (cljr--delete-and-extract-sexp)
+          (join-line))
+        (setq removed-lines (+ removed-lines (1+ (- end-line (car debug-fn-tuples))))))
+      (setq debug-fn-tuples (pop result)))))
+
 
 (defun cljr--rectify-refer-type-require (sexp-as-list refer-index as-used as-index)
   (let* ((as-after-refer (and as-used (> as-index refer-index)))
@@ -1000,7 +1058,7 @@ optionally including those that are declared private."
       (backward-char)
       (delete-region (point) (+ 1 (point)))
       (cljr--reindent-thread))
-   
+
      ((looking-at ".*->[^>]")
       (paredit-forward-down)
       (paredit-forward)
@@ -1476,7 +1534,8 @@ sorts the project's dependency vectors."
           (save-buffer)
           (when find-file-p
             (kill-buffer)))))
-    (cljr-sort-project-dependencies)))
+    (cljr-sort-project-dependencies)
+    (message "Project clean done.")))
 
 ;;;###autoload
 (defun cljr-sort-project-dependencies ()
@@ -1500,8 +1559,65 @@ sorts the project's dependency vectors."
     (indent-region (point-min) (point-max))
     (save-buffer)))
 
-;; ------ minor mode -----------
+(defun cljr--get-artifacts-from-middlewere (force)
+  (message "Retrieving list of available libraries...")
+  (let ((nrepl-sync-request-timeout nil))
+    (s-split " " (plist-get (nrepl-send-request-sync
+                             (list "op" "artifact-list"
+                                   "force" (if force "true" "false")))
+                            :value))))
 
+(defun cljr-update-artifact-cache ()
+  (interactive)
+  (nrepl-send-request (list "op" "artifact-list"
+                            "force" "true")
+                      (lambda (_) (message "Artifact cache updated"))))
+
+(defun cljr--get-versions-from-middlewere (artifact)
+  (s-split " " (plist-get (nrepl-send-request-sync
+                           (list "op" "artifact-versions"
+                                 "artifact" artifact))
+                          :value)))
+
+(defun cljr--prompt-user-for (prompt choices)
+  (completing-read prompt choices))
+
+(defun cljr--add-project-dependency (artifact version)
+  (save-window-excursion
+    (find-file (cljr--project-file))
+    (goto-char (point-min))
+    (re-search-forward ":dependencies")
+    (paredit-forward)
+    (paredit-backward-down)
+    (newline-and-indent)
+    (insert "[" artifact " \"" version "\"]")
+    (save-buffer))
+  (message "Added %s version %s as a project dependency" artifact version))
+
+(defun cljr--assert-middleware ()
+  (unless (featurep 'cider)
+    (error "CIDER isn't installed!"))
+  (unless (cider-connected-p)
+    (error "CIDER isn't connected!"))
+  (unless (nrepl-op-supported-p "refactor")
+    (error "nrepl-refactor middlewere not available!")))
+
+(defun cljr--assert-leiningen-project ()
+  (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
+                   "project.clj")
+    (error "Can't find project.clj!")))
+
+(defun cljr-add-project-dependency (force)
+  (interactive "P")
+  (cljr--assert-leiningen-project)
+  (cljr--assert-middleware)
+  (-when-let* ((lib-name (->> (cljr--get-artifacts-from-middlewere force)
+                           (cljr--prompt-user-for "Artifact: ")))
+               (version (->> (cljr--get-versions-from-middlewere lib-name)
+                          (cljr--prompt-user-for "Version: "))))
+    (cljr--add-project-dependency lib-name version)))
+
+;; ------ minor mode -----------
 ;;;###autoload
 (define-minor-mode clj-refactor-mode
   "A mode to keep the clj-refactor keybindings."
