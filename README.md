@@ -71,6 +71,10 @@ To set it up you need to add the middleware as you add the middleware for cider.
 
 For more details see [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
 
+For most of the `refactor-nrepl` middleware supported refactorings we need to build an AST representation of the code. [tools.analyzer](https://github.com/clojure/tools.analyzer) and [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm) is used for this. (Thanks for @Bronsa's good work.)
+
+**WARNING** The analyzer for some (not all) cases need to eval the code too in order to be able to build the AST we can work with. That means your namespace will be loaded as side effect. If loading your code (particularly test files) causes side effects like writing files, opening connections to servers, modifying databases, etc. performing certain refactoring functions on your code will do that, too.
+
 ### Populate the artifact cache on startup
 
 The `add-project-dependency` functionality caches the list of available artifacts for one day, instead of hitting the web every time.  If you don't want to wait for the cache to be populated, when you first call `add-projecect-dependency`, you can do the following, to have this happen in the background:
