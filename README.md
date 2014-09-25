@@ -77,10 +77,10 @@ For most of the `refactor-nrepl` middleware supported refactorings we need to bu
 
 ### Populate the artifact cache on startup
 
-The `add-project-dependency` functionality caches the list of available artifacts for one day, instead of hitting the web every time.  If you don't want to wait for the cache to be populated, when you first call `add-projecect-dependency`, you can do the following, to have this happen in the background:
+The `add-project-dependency` functionality caches the list of available artifacts for one day, instead of hitting the web every time.  If you don't want to wait for the cache to be populated, when you first call `add-project-dependency`, you can do the following, to have this happen in the background:
 
 ```cl
-(add-hook 'cider-repl-mode-hook #'cljr-update-artifact-cache)
+(add-hook 'nrepl-connected-hook #'cljr-update-artifact-cache)
 ```
 
 ## Usage
