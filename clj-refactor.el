@@ -648,12 +648,11 @@ word test in it and whether the file lives under the test/ directory."
         (setq req-exists t))
       (when (not req-exists) (cljr--remove-require)))
     (paredit-backward-up)
-    (setq beg (point))
-    (paredit-forward)
-    (setq end (point))
-    (indent-region beg end)
-    (when cljr-auto-sort-ns
-      (cljr-sort-ns))))
+    (let ((beg (point))
+          (end (progn (paredit-forward) (point))))
+      (indent-region beg end)
+      (when cljr-auto-sort-ns
+        (cljr-sort-ns)))))
 
 (defvar cljr--tmp-marker (make-marker))
 
@@ -680,7 +679,7 @@ word test in it and whether the file lives under the test/ directory."
   (cljr--pop-tmp-marker-after-yasnippet)
   (when cljr-auto-sort-ns
     (cljr--add-yas-snippet-sort-ns-hook))
-  (yas/expand-snippet "${1:[${2:$3 :as $4}]}$0"))
+  (yas-expand-snippet "${1:[${2:$3 :as $4}]}$0"))
 
 ;;;###autoload
 (defun cljr-add-use-to-ns ()
@@ -690,7 +689,7 @@ word test in it and whether the file lives under the test/ directory."
   (cljr--pop-tmp-marker-after-yasnippet)
   (when cljr-auto-sort-ns
     (cljr--add-yas-snippet-sort-ns-hook))
-  (yas/expand-snippet "[$1 :refer ${2:[$3]}]$0"))
+  (yas-expand-snippet "[$1 :refer ${2:[$3]}]$0"))
 
 ;;;###autoload
 (defun cljr-add-import-to-ns ()
@@ -700,7 +699,7 @@ word test in it and whether the file lives under the test/ directory."
   (cljr--pop-tmp-marker-after-yasnippet)
   (when cljr-auto-sort-ns
     (cljr--add-yas-snippet-sort-ns-hook))
-  (yas/expand-snippet "$1"))
+  (yas-expand-snippet "$1"))
 
 (defun cljr--extract-ns-from-use ()
   "Let point be denoted by |.  Then, when called on: |[used.ns ...]
@@ -747,16 +746,15 @@ returns (used.ns.lib1 used.ns.lib2)"
         (message "There is no :use clause in the ns declaration.")
       (save-excursion
         (paredit-backward-up)
-        (paredit-forward)
-        (setq use-end (point))
-        (setq next-use-clause 1))
-      (while (cljr--more-namespaces-in-use-p next-use-clause)
-        (push (if (cljr--multiple-namespaces-p (sexp-at-point))
-                  (cljr--extract-multiple-ns-from-use)
-                (cljr--extract-ns-from-use))
-              libs)
-        (setq next-use-clause (1+ next-use-clause)))
-      (nreverse (-flatten libs)))))
+        (paredit-forward))
+      (let ((next-use-clause 1))
+        (while (cljr--more-namespaces-in-use-p next-use-clause)
+          (push (if (cljr--multiple-namespaces-p (sexp-at-point))
+                    (cljr--extract-multiple-ns-from-use)
+                  (cljr--extract-ns-from-use))
+                libs)
+          (setq next-use-clause (1+ next-use-clause)))
+        (nreverse (-flatten libs))))))
 
 ;;;###autoload
 (defun cljr-replace-use ()
