@@ -308,7 +308,7 @@ errors."
         (file-truename
          (locate-dominating-file default-directory "project.clj")))
       (ignore-errors (file-truename
-        (locate-dominating-file default-directory "pom.xml")))))
+                      (locate-dominating-file default-directory "pom.xml")))))
 
 (defun cljr--project-file ()
   (or (ignore-errors
@@ -1557,25 +1557,41 @@ sorts the project's dependency vectors."
     (indent-region (point-min) (point-max))
     (save-buffer)))
 
+(eval-after-load 'cider
+  '(if (string<  cider-version "0.8")
+       (defun cljr--call-middlewere-sync (request)
+         (let ((nrepl-sync-request-timeout 25))
+           (plist-get (nrepl-send-request-sync request)
+                      :value)))
+     (defun cljr--call-middlewere-sync (request)
+       (let ((nrepl-sync-request-timeout 25))
+         (nrepl-dict-get (nrepl-send-sync-request request)
+                         "value")))))
+
+(defun cljr--call-middlewere-async (request &optional callback)
+  (nrepl-send-request request callback))
+
 (defun cljr--get-artifacts-from-middlewere (force)
   (message "Retrieving list of available libraries...")
-  (let ((nrepl-sync-request-timeout nil))
-    (s-split " " (plist-get (nrepl-send-request-sync
-                             (list "op" "artifact-list"
-                                   "force" (if force "true" "false")))
-                            :value))))
+  (let (
+        (request (list "op" "artifact-list" "force" (if force "true" "false"))))
+    (->> request
+      (cljr--call-middlewere-sync)
+      (s-split " "))))
 
 (defun cljr-update-artifact-cache ()
   (interactive)
-  (nrepl-send-request (list "op" "artifact-list"
-                            "force" "true")
-                      (lambda (_) (message "Artifact cache updated"))))
+  (cljr--call-middlewere-async (list "op" "artifact-list"
+                                     "force" "true")
+                               (lambda (_) (message "Artifact cache updated"))))
 
 (defun cljr--get-versions-from-middlewere (artifact)
-  (s-split " " (plist-get (nrepl-send-request-sync
-                           (list "op" "artifact-versions"
-                                 "artifact" artifact))
-                          :value)))
+  (let ((request (nrepl-send-request-sync
+                  (list "op" "artifact-versions"
+                        "artifact" artifact))))
+    (->> request
+      (cljr--call-middlewere-sync)
+      (s-split " "))))
 
 (defun cljr--prompt-user-for (prompt choices)
   (completing-read prompt choices))
@@ -1614,6 +1630,50 @@ sorts the project's dependency vectors."
                (version (->> (cljr--get-versions-from-middlewere lib-name)
                           (cljr--prompt-user-for "Version: "))))
     (cljr--add-project-dependency lib-name version)))
+
+(defun cljr--format-symbol-occurrences (occurrences)
+  (->> occurrences
+    (-partition 6)
+    (-map (lambda (symbol-meta)
+            (apply (lambda (line _ col _ _ file)
+                     (format "%s:%s:%s" file line col))
+                   symbol-meta)))
+    (s-join "\n")))
+
+(defun cljr--find-symbol (ns symbol)
+  (let ((find-symbol-request (list "op" "refactor"
+                                   "ns" ns
+                                   "refactor-fn" "find-symbol"
+                                   "name" symbol)))
+    (-> find-symbol-request
+      cljr--call-middlewere-sync)))
+
+(defun cljr--setup-find-symbol-buffer (symbol-name)
+  (save-window-excursion
+    (when (get-buffer cljr--find-symbol-buffer)
+      (kill-buffer cljr--find-symbol-buffer))
+    (pop-to-buffer cljr--find-symbol-buffer)
+    (with-current-buffer "*cljr-find-symbol*"
+      (insert (format "The symbol '%s' occurs in the following places:\n\n"
+                      symbol-name)))))
+
+(defun cljr--populate-find-symbol-buffer (occurrences)
+  (pop-to-buffer cljr--find-symbol-buffer)
+  (insert occurrences)
+  (goto-char (point-min))
+  (forward-line 2)
+  (compilation-mode "cljr-find-symbol"))
+
+(defun cljr-find-symbol ()
+  (interactive)
+  (cljr--assert-middleware)
+  (let ((cljr--find-symbol-buffer "*cljr-find-symbol*")
+        (symbol (thing-at-point 'symbol)))
+    (cljr--setup-find-symbol-buffer symbol)
+    (->> symbol
+      (cljr--find-symbol (cljr--current-namespace))
+      cljr--format-symbol-occurrences
+      cljr--populate-find-symbol-buffer)))
 
 ;; ------ minor mode -----------
 ;;;###autoload
