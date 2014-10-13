@@ -101,7 +101,7 @@
 (require 's)
 (require 'yasnippet)
 (require 'paredit)
-(require 'multiple-cursors)
+(require 'multiple-cursors-core)
 (require 'clojure-mode)
 (require 'cider)
 
