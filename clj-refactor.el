@@ -1586,9 +1586,8 @@ sorts the project's dependency vectors."
                                (lambda (_) (message "Artifact cache updated"))))
 
 (defun cljr--get-versions-from-middlewere (artifact)
-  (let ((request (nrepl-send-request-sync
-                  (list "op" "artifact-versions"
-                        "artifact" artifact))))
+  (let ((request (list "op" "artifact-versions"
+                       "artifact" artifact)))
     (->> request
       (cljr--call-middlewere-sync)
       (s-split " "))))
@@ -1667,6 +1666,7 @@ sorts the project's dependency vectors."
 (defun cljr-find-symbol ()
   (interactive)
   (cljr--assert-middleware)
+  (save-buffer)
   (let ((cljr--find-symbol-buffer "*cljr-find-symbol*")
         (symbol (thing-at-point 'symbol)))
     (cljr--setup-find-symbol-buffer symbol)
@@ -1674,6 +1674,48 @@ sorts the project's dependency vectors."
       (cljr--find-symbol (cljr--current-namespace))
       cljr--format-symbol-occurrences
       cljr--populate-find-symbol-buffer)))
+
+(defun cljr--read-symbol-metadata (occurrences)
+  (->> occurrences
+    (-partition 6)
+    (-map (lambda (symbol-meta)
+            (apply (lambda (line-start line-end col-start col-end name file)
+                     (list :line-start line-start
+                           :line-end line-end
+                           :col-start col-start
+                           :col-end col-end
+                           :name (first (last (s-split "/" name)))
+                           :file file))
+                   symbol-meta)))))
+
+(defun cljr--point-at (line column)
+  (save-restriction
+    (widen)
+    (save-excursion
+      (goto-char (point-min))
+      (forward-line (1- line))
+      (1- (+ (point) column)))))
+
+(defun cljr--rename-symbol (occurrences new-name)
+  (save-excursion
+    (dolist (symbol-meta occurrences)
+      (find-file (plist-get symbol-meta :file))
+      (let ((start (cljr--point-at (plist-get symbol-meta :line-start)
+                                   (plist-get symbol-meta :col-start)))
+            (end (cljr--point-at (plist-get symbol-meta :line-end)
+                                 (plist-get symbol-meta :col-end))))
+        (replace-regexp (plist-get symbol-meta :name) new-name nil start end)
+        (save-buffer)))))
+
+(defun cljr-rename-symbol (new-name)
+  (interactive "sRename to: ")
+  (cljr--assert-middleware)
+  (save-buffer)
+  (let* ((symbol (thing-at-point 'symbol))
+         (occurrences (cljr--read-symbol-metadata
+                       (cljr--find-symbol (cljr--current-namespace) symbol))))
+    (cljr--rename-symbol occurrences new-name)
+    (message "Renamed %s occurrences of %s" (length occurrences) symbol)))
 
 ;; ------ minor mode -----------
 ;;;###autoload
