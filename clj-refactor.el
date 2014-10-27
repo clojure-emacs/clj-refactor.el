@@ -165,6 +165,15 @@
 
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
+;;; Buffer Local Declarations
+
+;; tracking state of find-symbol buffer
+
+(defvar-local occurrence-count 0 "Counts occurrences of found symbols")
+
+(defvar-local num-of-syms -1 "Keeps track of overall number of symbol occurrences")
+
+
 (define-key clj-refactor-map [remap paredit-raise-sexp] 'cljr-raise-sexp)
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-backward] 'cljr-splice-sexp-killing-backward)
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-forward] 'cljr-splice-sexp-killing-forward)
@@ -1625,38 +1634,51 @@ sorts the project's dependency vectors."
                           (cljr--prompt-user-for "Version: "))))
     (cljr--add-project-dependency lib-name version)))
 
-(defun cljr--format-symbol-occurrences (occurrences)
-  (->> occurrences
-    (-partition 6)
-    (-map (lambda (symbol-meta)
-            (apply (lambda (line _ col _ _ file)
-                     (format "%s:%s:%s" file line col))
-                   symbol-meta)))
-    (s-join "\n")))
+(defun cljr--populate-find-symbol-buffer (occurrence)
+  (save-excursion
+    (pop-to-buffer cljr--find-symbol-buffer)
+    (end-of-buffer)
+    (insert occurrence)))
 
-(defun cljr--find-symbol (symbol ns)
+(defun cljr--find-symbol (symbol ns callback)
   (let ((find-symbol-request (list "op" "refactor"
                                    "ns" ns
                                    "refactor-fn" "find-symbol"
                                    "name" symbol)))
-    (-> find-symbol-request
-      cljr--call-middleware-sync)))
+    (with-current-buffer (nrepl-current-connection-buffer)
+      (setq occurrence-count 0)
+      (setq num-of-syms -1))
+    (cljr--call-middleware-async find-symbol-request callback)))
 
-(defun cljr--setup-find-symbol-buffer (symbol-name)
+(defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
+  (let ((occurrence (nrepl-dict-get occurrence-resp "value"))
+        (syms-count (nrepl-dict-get occurrence-resp "syms-count"))
+        (cljr--find-symbol-buffer  "*cljr-find-symbol*"))
+    (when syms-count
+        (setq num-of-syms syms-count))
+    (when occurrence
+        (setq occurrence-count (1+ occurrence-count)))
+    (when occurrence
+      (->> occurrence
+        (apply (lambda (line _ col _ _ file match) (format "%s:%s: %s\n" file line match)))
+        (cljr--populate-find-symbol-buffer)))
+    (when (= occurrence-count num-of-syms)
+      (cljr--finalise-find-symbol-buffer num-of-syms))))
+
+(defun cljr--finalise-find-symbol-buffer (num-of-symbols)
+  (with-current-buffer "*cljr-find-symbol*"
+    (insert (format "\nFind symbol finished: %d occurrance%s found"  num-of-symbols (if (> num-of-symbols 1) "s" "")))
+    (grep-mode)))
+
+(defun cljr--setup-find-symbol-buffer (ns symbol-name)
   (save-window-excursion
     (when (get-buffer cljr--find-symbol-buffer)
       (kill-buffer cljr--find-symbol-buffer))
     (pop-to-buffer cljr--find-symbol-buffer)
     (with-current-buffer "*cljr-find-symbol*"
-      (insert (format "The symbol '%s' occurs in the following places:\n\n"
+      (insert (format "-*- mode: grep; The symbol '%s/%s' occurs in the following places:  -*-\n\n"
+                      ns
                       symbol-name)))))
-
-(defun cljr--populate-find-symbol-buffer (occurrences)
-  (pop-to-buffer cljr--find-symbol-buffer)
-  (insert occurrences)
-  (goto-char (point-min))
-  (forward-line 2)
-  (compilation-mode "cljr-find-symbol"))
 
 (defun cljr-find-symbol ()
   (interactive)
@@ -1665,23 +1687,21 @@ sorts the project's dependency vectors."
   (let* ((cljr--find-symbol-buffer "*cljr-find-symbol*")
          (symbol-name (cider-symbol-at-point))
          (ns (nrepl-dict-get (cider-var-info symbol-name) "ns")))
-    (cljr--setup-find-symbol-buffer symbol-name)
-    (-> symbol-name
-      (cljr--find-symbol ns)
-      cljr--format-symbol-occurrences
-      cljr--populate-find-symbol-buffer)))
+    (cljr--setup-find-symbol-buffer ns symbol-name)
+    (cljr--find-symbol symbol-name ns 'cljr--format-and-insert-symbol-occurrence)))
 
 (defun cljr--read-symbol-metadata (occurrences)
   (->> occurrences
-    (-partition 6)
+    (-partition 7)
     (-map (lambda (symbol-meta)
-            (apply (lambda (line-start line-end col-start col-end name file)
+            (apply (lambda (line-start line-end col-start col-end name file match)
                      (list :line-start line-start
                            :line-end line-end
                            :col-start col-start
                            :col-end col-end
                            :name (first (last (s-split "/" name)))
-                           :file file))
+                           :file file
+                           :match match))
                    symbol-meta)))))
 
 (defun cljr--point-at (line column)
@@ -1695,26 +1715,34 @@ sorts the project's dependency vectors."
 (defun cljr--rename-symbol (occurrences new-name)
   (save-excursion
     (dolist (symbol-meta occurrences)
+      (message "symbol-meta: %s" symbol-meta)
       (find-file (plist-get symbol-meta :file))
-      (let ((start (cljr--point-at (plist-get symbol-meta :line-start)
-                                   (plist-get symbol-meta :col-start)))
-            (end (cljr--point-at (plist-get symbol-meta :line-end)
-                                 (plist-get symbol-meta :col-end))))
+      (let ((start (cljr--point-at (plist-get symbol-meta :line-start) 0))
+            (end (cljr--point-at (plist-get symbol-meta :line-start) (line-end-position))))
         (replace-regexp (plist-get symbol-meta :name) new-name nil start end)
         (save-buffer)))))
+
+(defun cljr--rename-symbol-occurance (new-name occurrence-resp)
+  (-when-let (occurrence (nrepl-dict-get occurrence-resp "value"))
+    (cljr--rename-symbol (cljr--read-symbol-metadata occurrence) new-name)))
+
+(defun cljr--find-symbol-sync (symbol ns)
+  (let ((find-symbol-request (list "op" "refactor"
+                                   "ns" ns
+                                   "refactor-fn" "find-symbol"
+                                   "name" symbol)))
+    (-> find-symbol-request
+      cljr--call-middleware-sync)))
 
 (defun cljr-rename-symbol (new-name)
   (interactive "sRename to: ")
   (cljr--assert-middleware)
   (save-buffer)
   (let* ((symbol-name (cider-symbol-at-point))
-         (ns (nrepl-dict-get (cider-var-info symbol-name) "ns"))
-         (occurrences (-> symbol-name
-                        (cljr--find-symbol ns)
-                        cljr--read-symbol-metadata)))
-    (-> occurrences
-      (cljr--rename-symbol new-name))
-    (message "Renamed %s occurrences of %s" (length occurrences) symbol-name)))
+         (ns (nrepl-dict-get (cider-var-info symbol-name) "ns")))
+    (cljr--find-symbol symbol-name ns (-partial 'cljr--rename-symbol-occurance new-name))
+    ;;(message "Renamed %s occurrences of %s" (length occurrences) symbol-name)
+    ))
 
 ;; ------ minor mode -----------
 ;;;###autoload
