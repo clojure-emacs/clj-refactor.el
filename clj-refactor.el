@@ -523,12 +523,11 @@ word test in it and whether the file lives under the test/ directory."
   (paredit-forward)
   (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
          (e (cljr--extract-sexp-content name))
-         (result (plist-get (nrepl-send-request-sync
-                             (list "op" "refactor"
-                                   "ns-string" body
-                                   "refactor-fn" "find-referred"
-                                   "referred" e))
-                            :value)))
+         (result (cljr--call-middleware-sync
+                  (list "op" "refactor"
+                        "ns-string" body
+                        "refactor-fn" "find-referred"
+                        "referred" e))))
     (when result e)))
 
 (defun cljr--is-name-in-use-vanilla-p (name)
@@ -549,12 +548,11 @@ word test in it and whether the file lives under the test/ directory."
   (interactive)
   (cljr--assert-middleware)
   (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
-         (result (plist-get (nrepl-send-request-sync
-                             (list "op" "refactor"
-                                   "ns-string" body
-                                   "refactor-fn" "find-debug-fns"
-                                   "debug-fns" cljr-debug-functions))
-                            :value))
+         (result (cljr--call-middleware-sync
+                  (list "op" "refactor"
+                        "ns-string" body
+                        "refactor-fn" "find-debug-fns"
+                        "debug-fns" cljr-debug-functions)))
          (debug-fn-tuples (pop result))
          (removed-lines 0))
     (while debug-fn-tuples
@@ -1651,7 +1649,7 @@ sorts the project's dependency vectors."
     (cljr--call-middleware-async find-symbol-request callback)))
 
 (defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
-  (let ((occurrence (nrepl-dict-get occurrence-resp "value"))
+  (let ((occurrence (nrepl-dict-get occurrence-resp "occurrence"))
         (syms-count (nrepl-dict-get occurrence-resp "syms-count"))
         (cljr--find-symbol-buffer  "*cljr-find-symbol*"))
     (when syms-count
@@ -1667,7 +1665,7 @@ sorts the project's dependency vectors."
 
 (defun cljr--finalise-find-symbol-buffer (num-of-symbols)
   (with-current-buffer "*cljr-find-symbol*"
-    (insert (format "\nFind symbol finished: %d occurrance%s found"  num-of-symbols (if (> num-of-symbols 1) "s" "")))
+    (insert (format "\nFind symbol finished: %d occurrence%s found"  num-of-symbols (if (> num-of-symbols 1) "s" "")))
     (grep-mode)))
 
 (defun cljr--setup-find-symbol-buffer (ns symbol-name)
@@ -1685,8 +1683,9 @@ sorts the project's dependency vectors."
   (cljr--assert-middleware)
   (save-buffer)
   (let* ((cljr--find-symbol-buffer "*cljr-find-symbol*")
-         (symbol-name (cider-symbol-at-point))
-         (ns (nrepl-dict-get (cider-var-info symbol-name) "ns")))
+         (var-info (cider-var-info (cider-symbol-at-point)))
+         (ns (nrepl-dict-get var-info "ns"))
+         (symbol-name (nrepl-dict-get var-info "name")))
     (cljr--setup-find-symbol-buffer ns symbol-name)
     (cljr--find-symbol symbol-name ns 'cljr--format-and-insert-symbol-occurrence)))
 
@@ -1722,8 +1721,8 @@ sorts the project's dependency vectors."
         (replace-regexp (plist-get symbol-meta :name) new-name nil start end)
         (save-buffer)))))
 
-(defun cljr--rename-symbol-occurance (new-name occurrence-resp)
-  (-when-let (occurrence (nrepl-dict-get occurrence-resp "value"))
+(defun cljr--rename-symbol-occurrence (new-name occurrence-resp)
+  (-when-let (occurrence (nrepl-dict-get occurrence-resp "occurrence"))
     (cljr--rename-symbol (cljr--read-symbol-metadata occurrence) new-name)))
 
 (defun cljr--find-symbol-sync (symbol ns)
@@ -1738,11 +1737,10 @@ sorts the project's dependency vectors."
   (interactive "sRename to: ")
   (cljr--assert-middleware)
   (save-buffer)
+  ;; TODO symbol name resolution is broken but then renaming 3rd parties does not make sense; needs clean up; works for renaming inproject symbol from where it is used
   (let* ((symbol-name (cider-symbol-at-point))
          (ns (nrepl-dict-get (cider-var-info symbol-name) "ns")))
-    (cljr--find-symbol symbol-name ns (-partial 'cljr--rename-symbol-occurance new-name))
-    ;;(message "Renamed %s occurrences of %s" (length occurrences) symbol-name)
-    ))
+    (cljr--find-symbol symbol-name ns (-partial 'cljr--rename-symbol-occurrence new-name))))
 
 ;; ------ minor mode -----------
 ;;;###autoload
