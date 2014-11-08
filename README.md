@@ -57,6 +57,10 @@ to pick and choose your own keybindings with a smattering of:
 (define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
 ```
 
+**The keybindings suggested here might be conflicting with keybindings in
+either clojure-mode or cider. Ideally, you should pick keybindings that don't
+interfere with both.**
+
 ### Refactor nREPL middleware
 
 The project is going forward towards smarter refactorings. To achieve this we need our library to better understand clojure code. Therefore we are investing into an nREPL middleware called [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). This middleware working together with an embedded cider backed REPL in your Emacs can do some smart refactorings.
