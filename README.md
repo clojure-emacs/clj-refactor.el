@@ -67,7 +67,7 @@ interfere with both.**
 
 ### Refactor nREPL middleware
 
-The project is going forward towards smarter refactorings. To achieve this we need our library to better understand clojure code. Therefore we are investing into an nREPL middleware called [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). This middleware working together with an embedded cider backed REPL in your Emacs can do some smart refactorings.
+The project is going forward towards smarter refactorings. To achieve this we need our library to better understand clojure code. Therefore we are investing into an nREPL middleware called [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). This middleware working together with an embedded [cider](https://github.com/clojure-emacs/cider) backed REPL in your Emacs can do some smart refactorings.
 
 Certain features are only available with the middleware added: please see these marked in our list of features.
 
