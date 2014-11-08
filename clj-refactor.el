@@ -152,7 +152,8 @@
   :type '(repeat function))
 
 (defcustom cljr-debug-functions "println,pr,prn"
-  "List of functions used for debug purposes. Used in cljr-remove-debug-fns feature."
+  "List of functions used for debug purposes.
+Used in `cljr-remove-debug-fns' feature."
   :group 'cljr
   :type 'string)
 
