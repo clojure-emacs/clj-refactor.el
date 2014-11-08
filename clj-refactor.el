@@ -1557,7 +1557,7 @@ sorts the project's dependency vectors."
     (indent-region (point-min) (point-max))
     (save-buffer)))
 
-(defun cljr--get-artifacts-from-middlewere (force)
+(defun cljr--get-artifacts-from-middleware (force)
   (message "Retrieving list of available libraries...")
   (let ((nrepl-sync-request-timeout nil))
     (s-split " " (plist-get (nrepl-send-request-sync
@@ -1571,7 +1571,7 @@ sorts the project's dependency vectors."
                             "force" "true")
                       (lambda (_) (message "Artifact cache updated"))))
 
-(defun cljr--get-versions-from-middlewere (artifact)
+(defun cljr--get-versions-from-middleware (artifact)
   (s-split " " (plist-get (nrepl-send-request-sync
                            (list "op" "artifact-versions"
                                  "artifact" artifact))
@@ -1598,7 +1598,7 @@ sorts the project's dependency vectors."
   (unless (cider-connected-p)
     (error "CIDER isn't connected!"))
   (unless (nrepl-op-supported-p "refactor")
-    (error "nrepl-refactor middlewere not available!")))
+    (error "nrepl-refactor middleware not available!")))
 
 (defun cljr--assert-leiningen-project ()
   (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
@@ -1609,9 +1609,9 @@ sorts the project's dependency vectors."
   (interactive "P")
   (cljr--assert-leiningen-project)
   (cljr--assert-middleware)
-  (-when-let* ((lib-name (->> (cljr--get-artifacts-from-middlewere force)
+  (-when-let* ((lib-name (->> (cljr--get-artifacts-from-middleware force)
                            (cljr--prompt-user-for "Artifact: ")))
-               (version (->> (cljr--get-versions-from-middlewere lib-name)
+               (version (->> (cljr--get-versions-from-middleware lib-name)
                           (cljr--prompt-user-for "Version: "))))
     (cljr--add-project-dependency lib-name version)))
 
