@@ -133,7 +133,7 @@
                  (const :tag "false" nil)))
 
 (defcustom cljr-use-metadata-for-privacy nil
-  "When nil, `cljr-cycle-privacy` will use (defn- f []).
+  "When nil, `cljr-cycle-privacy' will use (defn- f []).
    When t, it will use (defn ^:private f [])"
   :group 'cljr
   :type 'boolean)
