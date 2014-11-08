@@ -26,7 +26,7 @@ clj-refactor in your path somewhere:
 
 ## Setup
 
-```cl
+```el
 (require 'clj-refactor)
 (add-hook 'clojure-mode-hook (lambda ()
                                (clj-refactor-mode 1)
@@ -42,14 +42,14 @@ All functions in clj-refactor have a two-letter mnemonic shortcut. For
 instance, rename-file is `rf`. You get to choose how those are bound.
 Here's how:
 
-```cl
+```el
 (cljr-add-keybindings-with-prefix "C-c C-m")
 ;; eg. rename files with `C-c C-m rf`.
 ```
 
 If you would rather have a modifier key, instead of a prefix, do:
 
-```cl
+```el
 (cljr-add-keybindings-with-modifier "C-s-")
 ;; eg. rename files with `C-s-r C-s-f`.
 ```
@@ -57,7 +57,7 @@ If you would rather have a modifier key, instead of a prefix, do:
 If neither of these appeal to your sense of keyboard layout aesthetics, feel free
 to pick and choose your own keybindings with a smattering of:
 
-```cl
+```el
 (define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
 ```
 
@@ -87,7 +87,7 @@ For most of the `refactor-nrepl` middleware supported refactorings we need to bu
 
 The `add-project-dependency` functionality caches the list of available artifacts for one day, instead of hitting the web every time.  If you don't want to wait for the cache to be populated, when you first call `add-project-dependency`, you can do the following, to have this happen in the background:
 
-```cl
+```el
 (add-hook 'nrepl-connected-hook #'cljr-update-artifact-cache)
 ```
 
@@ -377,13 +377,13 @@ I place cursor on `my.lib` and do `cljr-stop-referring`:
 If you're not using yasnippet, then the "jumping back"-part of adding to
 namespace won't work. To remedy that, enable the mode with either:
 
-```cl
+```el
 (yas/global-mode 1)
 ```
 
 or
 
-```cl
+```el
 (add-hook 'clojure-mode-hook (lambda () (yas/minor-mode 1)))
 ```
 
@@ -400,13 +400,13 @@ By default sort ns `sn` will sort your ns declaration alphabetically. You can ch
 
 Sort it longer first:
 
-```cl
+```el
 (setq cljr-sort-comparator 'cljr--string-length-comparator)
 ```
 
 Or you can use the semantic comparator:
 
-```cl
+```el
 (setq cljr-sort-comparator 'cljr--semantic-comparator)
 ```
 
@@ -462,7 +462,7 @@ test files with `_test`.
 
 Prefer to insert your own ns-declarations? Then:
 
-```cl
+```el
 (setq clj-add-ns-to-blank-clj-files nil)
 ```
 
@@ -481,7 +481,7 @@ For instance, typing `(io/)` adds `[clojure.java.io :as io]` to the requires.
 
 You can turn this off with:
 
-```cl
+```el
 (setq cljr-magic-requires nil)
 ```
 
@@ -493,7 +493,7 @@ or set it to `:prompt` if you want to confirm before it inserts.
 
 This promting can be switched off by setting `cljr-project-clean-prompt` nil:
 
-```cl
+```el
 (setq cljr-project-clean-prompt nil)
 ```
 
