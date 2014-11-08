@@ -568,10 +568,10 @@ specific feature, or I might break it later.
 
 You'll find the repo at:
 
-    https://github.com/magnars/clj-refactor.el
+    https://github.com/clojure-emacs/clj-refactor.el
 
 To fetch the test dependencies, install
-[cask](https://github.com/rejeep/cask.el) if you haven't already,
+[cask](https://github.com/cask/cask) if you haven't already,
 then:
 
     $ cd /path/to/clj-refactor
