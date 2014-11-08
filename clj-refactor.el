@@ -308,7 +308,7 @@ errors."
         (file-truename
          (locate-dominating-file default-directory "project.clj")))
       (ignore-errors (file-truename
-        (locate-dominating-file default-directory "pom.xml")))))
+                      (locate-dominating-file default-directory "pom.xml")))))
 
 (defun cljr--project-file ()
   (or (ignore-errors
@@ -1041,7 +1041,7 @@ optionally including those that are declared private."
 (defun cljr--reindent-thread ()
   (cljr--goto-thread)
   (let ((beg (point))
-	(end (progn (paredit-forward) (point))))
+        (end (progn (paredit-forward) (point))))
     (indent-region beg end)))
 
 ;;;###autoload
