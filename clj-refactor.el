@@ -1379,24 +1379,13 @@ let are."
 
 ;;;###autoload
 (defun cljr-cycle-stringlike ()
-  "convert the string or keyword at (point) from string -> keyword or keyword -> string."
+  "Removed, use `clojure-toggle-keyword-string'"
   (interactive)
-  (save-excursion
-    (skip-syntax-backward "_w")
-    (cond
-     ((eq ?\" (char-before))
-      (backward-char)
-      (insert ":" (substring (cljr--delete-and-extract-sexp) 1 -1)))
-     ((looking-at "\"")
-      (insert ":" (substring (cljr--delete-and-extract-sexp) 1 -1)))
-     ((looking-at ":")
-      (insert "\"" (substring (cljr--delete-and-extract-sexp) 1) "\""))
-     (t
-      (message "Couldn't cljr-cycle-stringlike")))))
+  (message "Removed, use `clojure-toggle-keyword-string'"))
 
 ;;;###autoload
 (defun cljr-cycle-coll ()
-  "convert the coll at (point) from (x) -> {x} -> [x] -> -> #{x} -> (x) recur"
+  "Convert the coll at (point) from (x) -> {x} -> [x] -> -> #{x} -> (x) recur"
   (interactive)
   (save-excursion
     (while (and

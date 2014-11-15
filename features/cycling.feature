@@ -143,30 +143,6 @@ Feature: Code Cycling
     (1 2 3)
     """
 
- Scenario: Cycling Strings and Keywords
-    When I insert:
-    """
-    "alice"
-    """
-    And I place the cursor before "alice"
-    And I press "C-! cs"
-    Then I should see:
-    """
-    :alice
-    """
-
- Scenario: Cycling Keywords and Strings
-    When I insert:
-    """
-    :alice
-    """
-    And I place the cursor before "ice"
-    And I press "C-! cs"
-    Then I should see:
-    """
-    "alice"
-    """
-
 Scenario: Cycling if to if-not, in inner if
    When I insert:
    """

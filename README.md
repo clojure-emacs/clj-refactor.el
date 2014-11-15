@@ -301,31 +301,6 @@ I do `cljr-cycle-coll` to return:
 (:a 1 :b 2)
 ```
 
-## Cycling Between Strings and Keywords
-
-Given this string:
-
-```clj
-"refactor"
-```
-
-I do `cljr-cycle-stringlike` to return:
-
-```clj
-:refactor
-```
-
-... and then 3 more times:
-
-```clj
-"refactor"
-:refactor
-"refactor"
-```
-
-Thanks to [Jay Fields](https://github.com/jaycfields) and
-[emacs-live](https://github.com/overtone/emacs-live) for these cycling features. Good idea!
-
 ## Destructuring keys
 
 Given this:
@@ -523,6 +498,7 @@ You might also like
 
 ## Changelog
 
+- Removed `cljr-cycle-stringlike`.  This function was duplicating the functionality of [clojure-mode's](https://github.com/clojure-emacs/clojure-mode) `clojure-toggle-keyword-string`
 - Add `cljr-cycle-if` [AlexBaranosky](https://github.com/AlexBaranosky)
 - Common namespace shorthands are (optionally) automatically required when you type it.
 - Comparator for sort require, use and import is configurable, add optional lenght based comparator to sort longer first [Benedek Fazekas](https://github.com/benedekfazekas)
