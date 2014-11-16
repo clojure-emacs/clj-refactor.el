@@ -208,7 +208,7 @@
   (define-key clj-refactor-map (funcall key-fn "ct") 'cljr-cycle-thread)
   (define-key clj-refactor-map (funcall key-fn "dk") 'cljr-destructure-keys)
   (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
-  (define-key clj-refactor-map (funcall key-fn "fs") 'cljr-find-symbol)
+  (define-key clj-refactor-map (funcall key-fn "fu") 'cljr-find-usages)
   (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
   (define-key clj-refactor-map (funcall key-fn "mf") 'cljr-move-form)
   (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
@@ -1651,7 +1651,7 @@ sorts the project's dependency vectors."
 (defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
   (let ((occurrence (nrepl-dict-get occurrence-resp "occurrence"))
         (syms-count (nrepl-dict-get occurrence-resp "syms-count"))
-        (cljr--find-symbol-buffer  "*cljr-find-symbol*"))
+        (cljr--find-symbol-buffer  "*cljr-find-usages*"))
     (when syms-count
         (setq num-of-syms syms-count))
     (when occurrence
@@ -1664,7 +1664,7 @@ sorts the project's dependency vectors."
       (cljr--finalise-find-symbol-buffer num-of-syms))))
 
 (defun cljr--finalise-find-symbol-buffer (num-of-symbols)
-  (with-current-buffer "*cljr-find-symbol*"
+  (with-current-buffer "*cljr-find-usages*"
     (insert (format "\nFind symbol finished: %d occurrence%s found"  num-of-symbols (if (> num-of-symbols 1) "s" "")))
     (grep-mode)))
 
@@ -1673,16 +1673,16 @@ sorts the project's dependency vectors."
     (when (get-buffer cljr--find-symbol-buffer)
       (kill-buffer cljr--find-symbol-buffer))
     (pop-to-buffer cljr--find-symbol-buffer)
-    (with-current-buffer "*cljr-find-symbol*"
+    (with-current-buffer "*cljr-find-usages*"
       (insert (format "-*- mode: grep; The symbol '%s/%s' occurs in the following places:  -*-\n\n"
                       ns
                       symbol-name)))))
 
-(defun cljr-find-symbol ()
+(defun cljr-find-usages ()
   (interactive)
   (cljr--assert-middleware)
   (save-buffer)
-  (let* ((cljr--find-symbol-buffer "*cljr-find-symbol*")
+  (let* ((cljr--find-symbol-buffer "*cljr-find-usages*")
          (var-info (cider-var-info (cider-symbol-at-point)))
          (ns (nrepl-dict-get var-info "ns"))
          (symbol-name (nrepl-dict-get var-info "name")))

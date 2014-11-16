@@ -75,6 +75,8 @@ For most of the `refactor-nrepl` middleware supported refactorings we need to bu
 
 **WARNING** The analyzer for some (not all) cases need to eval the code too in order to be able to build the AST we can work with. That means your namespace will be loaded as side effect. If loading your code (particularly test files) causes side effects like writing files, opening connections to servers, modifying databases, etc. performing certain refactoring functions on your code will do that, too.
 
+**FURTHER** **WARNING** As with cider you need load your code into your repl for certain features to work to their full potential. People as far as I am aware tend to use some flavour of the reloaded workflow: if you do that and you refresh your code regularly into your repl, you are good to go with the refactor-nrepl too.
+
 ### Populate the artifact cache on startup
 
 The `add-project-dependency` functionality caches the list of available artifacts for one day, instead of hitting the web every time.  If you don't want to wait for the cache to be populated, when you first call `add-project-dependency`, you can do the following, to have this happen in the background:
