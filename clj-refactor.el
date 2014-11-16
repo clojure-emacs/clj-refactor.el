@@ -1703,22 +1703,26 @@ sorts the project's dependency vectors."
                            :match match))
                    symbol-meta)))))
 
-(defun cljr--point-at (line column)
-  (save-restriction
-    (widen)
-    (save-excursion
-      (goto-char (point-min))
-      (forward-line (1- line))
-      (1- (+ (point) column)))))
-
 (defun cljr--rename-symbol (occurrences new-name)
   (save-excursion
     (dolist (symbol-meta occurrences)
-      (message "symbol-meta: %s" symbol-meta)
       (find-file (plist-get symbol-meta :file))
-      (let ((start (cljr--point-at (plist-get symbol-meta :line-start) 0))
-            (end (cljr--point-at (plist-get symbol-meta :line-start) (line-end-position))))
-        (replace-regexp (plist-get symbol-meta :name) new-name nil start end)
+      (goto-char (point-min))
+      (let* ((line-start (plist-get symbol-meta :line-start))
+             (line-e (or (plist-get symbol-meta :line-end) line-start))
+             (line-end line-start)
+             (column-start (1- (or (plist-get symbol-meta :col-start) 1)))
+             (start (progn (forward-line (1- line-start))
+                           (move-to-column column-start)
+                           (point)))
+             (column-end (if (not (= line-start line-e))
+                             (line-end-position)
+                           (or (plist-get symbol-meta :col-end) (line-end-position))))
+             (end (progn (goto-char (point-min))
+                         (forward-line (1- line-end))
+                         (move-to-column column-end)
+                         (point))))
+        (replace-regexp (regexp-quote (plist-get symbol-meta :name)) new-name nil start end)
         (save-buffer)))))
 
 (defun cljr--rename-symbol-occurrence (new-name occurrence-resp)
