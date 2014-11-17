@@ -1706,36 +1706,37 @@ sorts the project's dependency vectors."
 (defun cljr--rename-symbol (occurrences new-name)
   (save-excursion
     (dolist (symbol-meta occurrences)
-      (find-file (plist-get symbol-meta :file))
-      (goto-char (point-min))
-      (let* ((line-start (plist-get symbol-meta :line-start))
-             (line-e (or (plist-get symbol-meta :line-end) line-start))
-             (line-end line-start)
-             (column-start (1- (or (plist-get symbol-meta :col-start) 1)))
-             (start (progn (forward-line (1- line-start))
-                           (move-to-column column-start)
-                           (point)))
-             (column-end (if (not (= line-start line-e))
-                             (line-end-position)
-                           (or (plist-get symbol-meta :col-end) (line-end-position))))
-             (end (progn (goto-char (point-min))
-                         (forward-line (1- line-end))
-                         (move-to-column column-end)
-                         (point))))
-        (replace-regexp (regexp-quote (plist-get symbol-meta :name)) new-name nil start end)
-        (save-buffer)))))
+      (with-current-buffer
+          (find-file-noselect (plist-get symbol-meta :file))
+        (goto-char (point-min))
+        (let* ((line-start (plist-get symbol-meta :line-start))
+               (line-e (or (plist-get symbol-meta :line-end) line-start))
+               (line-end line-start)
+               (column-start (1- (or (plist-get symbol-meta :col-start) 1)))
+               (start (progn (forward-line (1- line-start))
+                             (move-to-column column-start)
+                             (point)))
+               (column-end (if (not (= line-start line-e))
+                               (line-end-position)
+                             (or (plist-get symbol-meta :col-end) (line-end-position))))
+               (end (progn (goto-char (point-min))
+                           (forward-line (1- line-end))
+                           (move-to-column column-end)
+                           (point))))
+          (replace-regexp (regexp-quote (plist-get symbol-meta :name)) new-name nil start end)
+          (save-buffer))))))
 
-(defun cljr--rename-symbol-occurrence (new-name occurrence-resp)
-  (-when-let (occurrence (nrepl-dict-get occurrence-resp "occurrence"))
-    (cljr--rename-symbol (cljr--read-symbol-metadata occurrence) new-name)))
-
-(defun cljr--find-symbol-sync (symbol ns)
-  (let ((find-symbol-request (list "op" "refactor"
-                                   "ns" ns
-                                   "refactor-fn" "find-symbol"
-                                   "name" symbol)))
-    (-> find-symbol-request
-      cljr--call-middleware-sync)))
+(defun cljr--rename-symbol-occurrence (name new-name occurrence-resp)
+  (let ((syms-count (nrepl-dict-get occurrence-resp "syms-count"))
+        (occurrence (nrepl-dict-get occurrence-resp "occurrence")))
+    (when syms-count
+      (setq num-of-syms syms-count))
+    (when occurrence
+      (setq occurrence-count (1+ occurrence-count)))
+    (when occurrence
+      (cljr--rename-symbol (cljr--read-symbol-metadata occurrence) new-name)))
+  (when (= occurrence-count num-of-syms)
+    (message "Rename finished: %d occurrences of %s renamed to %s" occurrence-count name new-name)))
 
 (defun cljr-rename-symbol (new-name)
   (interactive "sRename to: ")
@@ -1744,7 +1745,7 @@ sorts the project's dependency vectors."
   ;; TODO symbol name resolution is broken but then renaming 3rd parties does not make sense; needs clean up; works for renaming inproject symbol from where it is used
   (let* ((symbol-name (cider-symbol-at-point))
          (ns (nrepl-dict-get (cider-var-info symbol-name) "ns")))
-    (cljr--find-symbol symbol-name ns (-partial 'cljr--rename-symbol-occurrence new-name))))
+    (cljr--find-symbol symbol-name ns (-partial 'cljr--rename-symbol-occurrence symbol-name new-name))))
 
 ;; ------ minor mode -----------
 ;;;###autoload

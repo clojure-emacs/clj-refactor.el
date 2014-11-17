@@ -56,7 +56,7 @@
 
 (Given "^I call the rename callback directly with mock data for foo->baz"
   (lambda ()
-    (-map (-partial 'cljr--rename-symbol-occurrence "baz")
+    (-map (-partial 'cljr--rename-symbol-occurrence "foo" "baz")
           (list (list 'dict
                       "occurrence"
                       '(3 4 1 9 "foo" "tmp/src/example/two.clj" ""))
@@ -66,7 +66,7 @@
 
 (Given "^I call the rename callback directly with mock data for star->asterisk"
   (lambda ()
-    (-map (-partial 'cljr--rename-symbol-occurrence "asterisk*")
+    (-map (-partial 'cljr--rename-symbol-occurrence "star*" "asterisk*")
           (list (list 'dict
                       "occurrence"
                       '(6 7 1 10 "star*" "tmp/src/example/two.clj" ""))

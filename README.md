@@ -114,8 +114,10 @@ This is it so far:
  - `dk`: destructure keys
  - `mf`: move one or more forms to another namespace, `:refer` any functions
  - `sp`: Sort all dependency vectors in project.clj
- - `rd`: Remove (debug) function invocations **depends on refactor-nrepl**
- - `ap`: add a dependency to your project **depends on refactor-nrepl**
+ - `fu`: Find usages **depends on refactor-nrepl 0.2.0 and above**
+ - `rs`: Rename symbol  **depends on refactor-nrepl 0.2.0 and above**
+ - `rd`: Remove (debug) function invocations **depends on refactor-nrepl 0.1.0 and above**
+ - `ap`: add a dependency to your project **depends on refactor-nrepl 0.1.0 and above**
 
 Combine with your keybinding prefix/modifier.
 
