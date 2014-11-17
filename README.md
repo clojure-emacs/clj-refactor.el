@@ -109,6 +109,7 @@ This is it so far:
 [Using refactor-nrepl](#refactor-nrepl-middleware), you also get:
 
  - `ap`: add a dependency to your project
+ - `cn`: Perform various cleanups on the ns form
  - `fu`: Find usages
  - `rd`: Remove (debug) function invocations
  - `rs`: Rename symbol
@@ -509,6 +510,23 @@ Removes invocations of a predefined set of functions from the namespace. Remove
 function invocations are configurable `cljr-debug-functions`; default value is
 `"println,pr,prn"`.
 
+## Clean ns
+
+This op performs the following cleanups of the ns form:
+
+* Eliminate :use clauses
+* Sort required libraries, imports and vectors of referred symbols
+* Rewrite to favor prefix form, e.g. [clojure [string test]] instead
+  of two separate libspecs
+* Raise errors if any inconsistencies are found (e.g. a libspec with more than
+  one alias.
+* Remove any duplication in the :require and :import form.
+* Remove any unused libspec vectors
+* Remove unused symbols from the :refer vector, or remove it completely.
+* Remove any unused imports
+
+Note that we have to build an AST in order to do this, so if the current file is in a bad state this op won't work.
+
 ## Miscellaneous
 
 With clj-refactor enabled, any keybindings for `paredit-raise-sexp` is
@@ -523,6 +541,7 @@ You might also like
 
 ## Changelog
 
+- Add `cljr-clean-ns` [Lars Andersen](https://github.com/expez)
 - Add `cljr-add-missing-libspec` [Lars Andersen](https://github.com/expez)
 - Add `cljr-promote-function` [Lars Andersen](https://github.com/expez)
 - Add `cljr-find-usages` [Lars Andersen](https://github.com/expez) and  [Benedek Fazekas](https://github.com/benedekfazekas)

@@ -210,6 +210,7 @@ Used in `cljr-remove-debug-fns' feature."
   (define-key clj-refactor-map (funcall key-fn "am") 'cljr-add-missing-libspec)
   (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
   (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use-to-ns)
+  (define-key clj-refactor-map (funcall key-fn "cn") 'cljr-clean-ns)
   (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
   (define-key clj-refactor-map (funcall key-fn "ci") 'cljr-cycle-if)
   (define-key clj-refactor-map (funcall key-fn "cp") 'cljr-cycle-privacy)
@@ -321,6 +322,18 @@ errors."
   (newline 2)
   (forward-line -1)
   (delete-blank-lines))
+
+(defun cljr--point-after (&rest actions)
+  "Returns POINT after performing ACTIONS.
+
+An action is either the symbol of a function or a two element
+list of (fn args) to pass to `apply''"
+  (save-excursion
+    (dolist (fn-and-args actions)
+      (let ((f (if (listp fn-and-args) (car fn-and-args) fn-and-args))
+            (args (if (listp fn-and-args) (cdr fn-and-args) nil)))
+        (apply f args)))
+    (point)))
 
 ;; ------ file -----------
 
@@ -1826,6 +1839,27 @@ sorts the project's dependency vectors."
   (interactive)
   (cljr--find-symbol "join" "clojure.string" (lambda (_))))
 
+(defun cljr--replace-ns (new-ns)
+  (save-excursion
+    (cljr--goto-ns)
+    (cljr--delete-and-extract-sexp)
+    (insert new-ns)
+    (cljr--goto-ns)
+    (indent-region (point) (cljr--point-after 'paredit-forward))
+    (paredit-forward)
+    (cljr--just-one-blank-line)))
+
+(defun cljr-clean-ns ()
+  (interactive)
+  (cljr--assert-leiningen-project)
+  (cljr--assert-middleware)
+  (let ((result (nrepl-send-sync-request
+                 (list "op" "clean-ns"
+                       "path" (buffer-file-name)))))
+    (-when-let (error-msg (nrepl-dict-get result "error"))
+      (error error-msg))
+    (-when-let (new-ns (nrepl-dict-get result "ns"))
+      (cljr--replace-ns new-ns))))
 
 (defun cljr--narrow-candidates (candidates)
   (cond ((= (length candidates) 0)
