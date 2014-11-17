@@ -204,6 +204,7 @@ Used in `cljr-remove-debug-fns' feature."
   (define-key clj-refactor-map (funcall key-fn "mf") 'cljr-move-form)
   (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
   (define-key clj-refactor-map (funcall key-fn "pc") 'cljr-project-clean)
+  (define-key clj-refactor-map (funcall key-fn "pf") 'cljr-promote-function)
   (define-key clj-refactor-map (funcall key-fn "rf") 'cljr-rename-file)
   (define-key clj-refactor-map (funcall key-fn "rr") 'cljr-remove-unused-requires)
   (define-key clj-refactor-map (funcall key-fn "ru") 'cljr-replace-use)
@@ -1604,6 +1605,72 @@ sorts the project's dependency vectors."
                (version (->> (cljr--get-versions-from-middleware lib-name)
                           (cljr--prompt-user-for "Version: "))))
     (cljr--add-project-dependency lib-name version)))
+
+(defun cljr--goto-fn-definition ()
+  (if (or
+       (re-search-backward "#("
+                           (save-excursion (cljr--goto-toplevel) (point)) t)
+       (re-search-backward "(fn \\["
+                           (save-excursion (cljr--goto-toplevel) (point)) t))
+      (when (looking-back "#")
+        (backward-char))
+    (error "Can't find definition of anonymous function!")))
+
+(defun cljr--promote-fn ()
+  (save-excursion
+    (let ((fn (cljr--delete-and-extract-sexp))
+          (name (read-string "Name: "))
+          fn-start)
+      (insert name)
+      (cljr--goto-toplevel)
+      (open-line 2)
+      (insert fn)
+      (paredit-backward-down)
+      (cljr--goto-fn-definition)
+      (setq fn-start (point))
+      (forward-char)
+      (insert "de")
+      (paredit-forward)
+      (insert " " name "\n")
+      (re-search-forward "\\[")
+      (paredit-forward-up)
+      (unless (looking-at "\s*?$")
+        (newline))
+      (indent-region fn-start (progn (paredit-forward-up) (point))))))
+
+(defun cljr--append-fn-parameter (param)
+  (cljr--goto-fn-definition)
+  (paredit-forward-down)
+  (paredit-forward 2)
+  (paredit-backward-down)
+  (if (looking-back "\\[")
+      (insert param)
+    (insert " " param)))
+
+(defun cljr--promote-function-literal ()
+  (delete-char 1)
+  (let ((body (cljr--delete-and-extract-sexp)))
+    (insert "(fn [] " body ")"))
+  (cljr--goto-fn-definition)
+  (let ((fn-start (point))
+        var replacement)
+    (while (re-search-forward "%[1-9]?" (save-excursion (paredit-forward) (point)) t)
+      (setq var (buffer-substring (point) (progn (paredit-backward) (point))))
+      (setq replacement (read-string (format "%s => " var)))
+      (cljr--append-fn-parameter replacement)
+      (replace-regexp (format "\s%s\\(\s\\|)\\)" var) (format " %s\\1" replacement)
+                      nil fn-start (save-excursion (paredit-forward-up 2) (point))))))
+
+(defun cljr-promote-function (promote-to-defn)
+  (interactive "P")
+  (save-excursion
+    (cljr--goto-fn-definition)
+    (if (looking-at "#(")
+        (cljr--promote-function-literal)
+      (cljr--promote-fn)))
+  (when current-prefix-arg
+    (cljr--promote-fn)))
+
 
 ;; ------ minor mode -----------
 ;;;###autoload
