@@ -144,6 +144,13 @@
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-find-symbols-in-dir-prompt t
+  "When true prompts for directory to search for symbols in when
+   finding usages and renaming symbols, when false defaults to project
+   dir"
+  :group 'cljr
+  :type 'boolean)
+
 (defcustom cljr-project-clean-functions
   (list 'cljr-remove-unused-requires 'cljr-sort-ns)
   "List of functions to run on all the clj files in the project
@@ -1639,10 +1646,15 @@ sorts the project's dependency vectors."
     (insert occurrence)))
 
 (defun cljr--find-symbol (symbol ns callback)
-  (let ((find-symbol-request (list "op" "refactor"
-                                   "ns" ns
-                                   "refactor-fn" "find-symbol"
-                                   "name" symbol)))
+  (let* ((dir (file-truename
+               (if cljr-find-symbols-in-dir-prompt
+                   (read-directory-name "Base directory: " (cljr--project-dir))
+                 (cljr--project-dir))))
+         (find-symbol-request (list "op" "refactor"
+                                    "ns" ns
+                                    "clj-dir" dir
+                                    "refactor-fn" "find-symbol"
+                                    "name" symbol)))
     (with-current-buffer (nrepl-current-connection-buffer)
       (setq occurrence-count 0)
       (setq num-of-syms -1))
