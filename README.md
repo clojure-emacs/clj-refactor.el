@@ -498,6 +498,8 @@ You might also like
 
 ## Changelog
 
+#### From 0.12 to 0.13
+
 - Removed `cljr-cycle-stringlike`.  This function was duplicating the functionality of [clojure-mode's](https://github.com/clojure-emacs/clojure-mode) `clojure-toggle-keyword-string`
 - Add `cljr-cycle-if` [AlexBaranosky](https://github.com/AlexBaranosky)
 - Common namespace shorthands are (optionally) automatically required when you type it.
