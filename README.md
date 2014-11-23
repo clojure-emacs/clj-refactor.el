@@ -95,33 +95,34 @@ The `add-project-dependency` functionality caches the list of available artifact
 
 This is it so far:
 
- - `th`: thread another expression
- - `uw`: unwind a threaded expression
- - `ua`: fully unwind a threaded expression
- - `tf`: wrap in thread-first (->) and fully thread
- - `tl`: wrap in thread-last (->>) and fully thread
- - `il`: introduce let
- - `el`: expand let
- - `ml`: move to let
- - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
+ - `ad`: add declaration for current top-level form
+ - `ai`: add import to namespace declaration, then jump back
+ - `ap`: add a dependency to your project **depends on refactor-nrepl**
  - `ar`: add require to namespace declaration, then jump back (see optional setup)
  - `au`: add "use" (ie require refer all) to namespace declaration, then jump back
- - `ai`: add import to namespace declaration, then jump back
- - `ru`: replace all `:use` in namespace with `:refer :all`
- - `sn`: sort :use, :require and :import in the ns form
- - `rr`: remove unused requires
- - `pc`: run project cleaner functions on the whole project
- - `sr`: stop referring (removes `:refer []` from current require, fixing references)
  - `cc`: cycle surrounding collection type
+ - `ci`: refactoring between `if` and `if-not`
  - `cp`: cycle privacy of `defn`s and `def`s
  - `cs`: cycle between "string" -> :string -> "string"
- - `ci`: refactoring between `if` and `if-not`
- - `ad`: add declaration for current top-level form
  - `dk`: destructure keys
+ - `el`: expand let
+ - `il`: introduce let
  - `mf`: move one or more forms to another namespace, `:refer` any functions
- - `sp`: Sort all dependency vectors in project.clj
+ - `ml`: move to let
+ - `pc`: run project cleaner functions on the whole project
+ - `pf`: promote function literal or fn, or fn to defn
  - `rd`: Remove (debug) function invocations **depends on refactor-nrepl**
- - `ap`: add a dependency to your project **depends on refactor-nrepl**
+ - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
+ - `rr`: remove unused requires
+ - `ru`: replace all `:use` in namespace with `:refer :all`
+ - `sn`: sort :use, :require and :import in the ns form
+ - `sp`: Sort all dependency vectors in project.clj
+ - `sr`: stop referring (removes `:refer []` from current require, fixing references)
+ - `tf`: wrap in thread-first (->) and fully thread
+ - `th`: thread another expression
+ - `tl`: wrap in thread-last (->>) and fully thread
+ - `ua`: fully unwind a threaded expression
+ - `uw`: unwind a threaded expression
 
 Combine with your keybinding prefix/modifier.
 
@@ -347,6 +348,29 @@ I place cursor on `my.lib` and do `cljr-stop-referring`:
 (+ (lib/a 1) (lib/b 2))
 ```
 
+## Promote function
+Given this:
+
+```clj
+(map #(-> % (str "!") symbol) '[aww yeah])
+```
+And I place my cursor on `symbol` and do `cljr-promote-function` and rename `%` to `sym`:
+
+```clj
+ (map (fn [sym] (-> sym (str "!") symbol)) '[aww yeah])
+```
+
+And I place my cursor on `symbol` and do `cljr-promote-function` and call the fn `shout-it!`
+
+```clj
+(defn shout-it!
+  [sym]
+  (-> sym (str "!") symbol))
+
+(map shout-it! '[aww yeah])
+```
+
+With a prefix it will promote a function literal all the way to a defn.
 ## Optional setup
 
 If you're not using yasnippet, then the "jumping back"-part of adding to
@@ -497,6 +521,8 @@ You might also like
 - [align-cljlet](https://github.com/gstamp/align-cljlet) - which is an Emacs package for aligning let-like forms.
 
 ## Changelog
+
+- Add `cljr-promote-function` [Lars Andersen](https://github.com/expez)
 
 #### From 0.12 to 0.13
 
