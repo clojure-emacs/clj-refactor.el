@@ -54,6 +54,26 @@
   (lambda ()
     (multiple-cursors-mode 0)))
 
+(Given "^I call the rename callback directly with mock data for foo->baz"
+  (lambda ()
+    (-map (-partial 'cljr--rename-symbol-occurrence "foo" "baz")
+          (list (list 'dict
+                      "occurrence"
+                      '(3 4 1 9 "foo" "tmp/src/example/two.clj" ""))
+                (list 'dict
+                      "occurrence"
+                      '(5 5 15 23 "foo" "tmp/src/example/one.clj" ""))))))
+
+(Given "^I call the rename callback directly with mock data for star->asterisk"
+  (lambda ()
+    (-map (-partial 'cljr--rename-symbol-occurrence "star*" "asterisk*")
+          (list (list 'dict
+                      "occurrence"
+                      '(6 7 1 10 "star*" "tmp/src/example/two.clj" ""))
+                (list 'dict
+                      "occurrence"
+                      '(8 8 17 27 "star*" "tmp/src/example/one.clj" ""))))))
+
 (Then "^the file should be named \"\\([^\"]+\\)\"$"
   (lambda (file-name-postfix)
     (assert (s-ends-with? file-name-postfix (buffer-file-name)) nil "Expected %S to end with %S" (buffer-file-name) file-name-postfix)))

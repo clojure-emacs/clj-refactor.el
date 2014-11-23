@@ -23,6 +23,11 @@ clj-refactor in your path somewhere:
  - <a href="https://github.com/capitaomorte/yasnippet">yasnippet</a>
  - <a href="http://mumble.net/~campbell/emacs/paredit.el">paredit</a>
  - <a href="https://github.com/magnars/multiple-cursors.el">multiple-cursors</a>
+ - <a href="https://github.com/clojure-emacs/cider">cider</a>
+
+### A note on the dependency on cider
+
+Lately we introduced a dependency on [cider](https://github.com/clojure-emacs/cider). In general we use cider for those features which depend on our nREPL middleware [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). This also means that in theory our features not requiring our own middleware continue to work without cider.
 
 ## Setup
 
@@ -74,14 +79,16 @@ Certain features are only available with the middleware added: please see these 
 To set it up you need to add the middleware as you add the middleware for cider. Add the following, either in your project's `project.clj`,  or in the `:user` profile found at `~/.lein/profiles.clj`:
 
 ```clojure
-:plugins [[refactor-nrepl "0.1.0"]]
+:plugins [[refactor-nrepl "0.2.1"]]
 ```
 
 For more details see [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
 
-For most of the `refactor-nrepl` middleware supported refactorings we need to build an AST representation of the code. [tools.analyzer](https://github.com/clojure/tools.analyzer) and [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm) is used for this. (Thanks for @Bronsa's good work.)
+For most of the `refactor-nrepl` middleware supported refactorings we need to build an AST representation of the code. [tools.analyzer](https://github.com/clojure/tools.analyzer) and [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm) is used for this. (Thanks for @Bronsa and other contributors for their good work.)
 
 **WARNING** The analyzer for some (not all) cases need to eval the code too in order to be able to build the AST we can work with. That means your namespace will be loaded as side effect. If loading your code (particularly test files) causes side effects like writing files, opening connections to servers, modifying databases, etc. performing certain refactoring functions on your code will do that, too.
+
+**FURTHER** **WARNING** As with cider you need load your code into your repl for certain features to work to their full potential. People as far as I am aware tend to use some flavour of the reloaded workflow: if you do that and you refresh your code regularly into your repl, you are good to go with the refactor-nrepl too.
 
 ### Populate the artifact cache on startup
 
@@ -97,7 +104,7 @@ This is it so far:
 
  - `ad`: add declaration for current top-level form
  - `ai`: add import to namespace declaration, then jump back
- - `ap`: add a dependency to your project **depends on refactor-nrepl**
+ - `ap`: add a dependency to your project **depends on refactor-nrepl 0.1.0 and above**
  - `ar`: add require to namespace declaration, then jump back (see optional setup)
  - `au`: add "use" (ie require refer all) to namespace declaration, then jump back
  - `cc`: cycle surrounding collection type
@@ -106,14 +113,16 @@ This is it so far:
  - `cs`: cycle between "string" -> :string -> "string"
  - `dk`: destructure keys
  - `el`: expand let
+ - `fu`: Find usages **depends on refactor-nrepl 0.2.0 and above**
  - `il`: introduce let
  - `mf`: move one or more forms to another namespace, `:refer` any functions
  - `ml`: move to let
  - `pc`: run project cleaner functions on the whole project
  - `pf`: promote function literal or fn, or fn to defn
- - `rd`: Remove (debug) function invocations **depends on refactor-nrepl**
+ - `rd`: Remove (debug) function invocations **depends on refactor-nrepl 0.1.0 and above**
  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
  - `rr`: remove unused requires
+ - `rs`: Rename symbol  **depends on refactor-nrepl 0.2.0 and above**
  - `ru`: replace all `:use` in namespace with `:refer :all`
  - `sn`: sort :use, :require and :import in the ns form
  - `sp`: Sort all dependency vectors in project.clj
