@@ -532,6 +532,8 @@ You might also like
 ## Changelog
 
 - Add `cljr-promote-function` [Lars Andersen](https://github.com/expez)
+- Add `cljr-find-usages` [Lars Andersen](https://github.com/expez) and  [Benedek Fazekas](https://github.com/benedekfazekas)
+- Add `cljr-rename-symbol` [Lars Andersen](https://github.com/expez) and  [Benedek Fazekas](https://github.com/benedekfazekas)
 
 #### From 0.12 to 0.13
 
