@@ -144,7 +144,7 @@
   :group 'cljr
   :type 'boolean)
 
-(defcustom cljr-find-symbols-in-dir-prompt t
+(defcustom cljr-find-symbols-in-dir-prompt nil
   "When true prompts for directory to search for symbols in when
    finding usages and renaming symbols, when false defaults to project
    dir"
