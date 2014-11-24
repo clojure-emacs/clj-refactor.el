@@ -1682,8 +1682,11 @@ sorts the project's dependency vectors."
       (setq var (buffer-substring (point) (progn (paredit-backward) (point))))
       (setq replacement (read-string (format "%s => " var)))
       (cljr--append-fn-parameter replacement)
-      (replace-regexp (format "\s%s\\(\s\\|)\\)" var) (format " %s\\1" replacement)
-                      nil fn-start (save-excursion (paredit-forward-up 2) (point))))))
+      (replace-regexp (format "\\s-%s\\(\\s-\\|\\|\n)\\)" var) 
+                      (format " %s\\1" replacement)
+                      nil
+                      fn-start 
+                      (save-excursion (paredit-forward-up 2) (point))))))
 
 (defun cljr-promote-function (promote-to-defn)
   (interactive "P")
