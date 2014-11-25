@@ -79,7 +79,7 @@ Certain features are only available with the middleware added: please see these 
 To set it up you need to add the middleware as you add the middleware for cider. Add the following, either in your project's `project.clj`,  or in the `:user` profile found at `~/.lein/profiles.clj`:
 
 ```clojure
-:plugins [[refactor-nrepl "0.2.1"]]
+:plugins [[refactor-nrepl "0.2.2"]]
 ```
 
 For more details see [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
