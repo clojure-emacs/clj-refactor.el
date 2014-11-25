@@ -86,9 +86,7 @@ For more details see [refactor-nrepl](https://github.com/clojure-emacs/refactor-
 
 For most of the `refactor-nrepl` middleware supported refactorings we need to build an AST representation of the code. [tools.analyzer](https://github.com/clojure/tools.analyzer) and [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm) is used for this. (Thanks for @Bronsa and other contributors for their good work.)
 
-**WARNING** The analyzer for some (not all) cases need to eval the code too in order to be able to build the AST we can work with. That means your namespace will be loaded as side effect. If loading your code (particularly test files) causes side effects like writing files, opening connections to servers, modifying databases, etc. performing certain refactoring functions on your code will do that, too.
-
-**FURTHER** **WARNING** As with cider you need load your code into your repl for certain features to work to their full potential. People as far as I am aware tend to use some flavour of the reloaded workflow: if you do that and you refresh your code regularly into your repl, you are good to go with the refactor-nrepl too.
+**WARNING** The analyzer needs to eval the code too in order to be able to build the AST we can work with. If that causes side effects like writing files, opening connections to servers, modifying databases, etc. performing certain refactoring functions on your code will do that, too.
 
 ### Populate the artifact cache on startup
 

@@ -532,11 +532,16 @@ word test in it and whether the file lives under the test/ directory."
   (paredit-forward)
   (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
          (e (cljr--extract-sexp-content name))
-         (result (cljr--call-middleware-sync
-                  (list "op" "refactor"
-                        "ns-string" body
-                        "refactor-fn" "find-referred"
-                        "referred" e))))
+         (var-info (cider-var-info e))
+         (ns (nrepl-dict-get var-info "ns"))
+         (symbol-name (nrepl-dict-get var-info "name"))
+         (result (if (or (not ns) (not symbol-name))
+                     (message "could not resolve %s" e)
+                   (cljr--call-middleware-sync
+                    (list "op" "refactor"
+                          "ns-string" body
+                          "refactor-fn" "find-referred"
+                          "referred" (format "%s/%s" ns symbol-name))))))
     (when result e)))
 
 (defun cljr--is-name-in-use-vanilla-p (name)
@@ -1682,10 +1687,10 @@ sorts the project's dependency vectors."
       (setq var (buffer-substring (point) (progn (paredit-backward) (point))))
       (setq replacement (read-string (format "%s => " var)))
       (cljr--append-fn-parameter replacement)
-      (replace-regexp (format "\\s-%s\\(\\s-\\|\\|\n)\\)" var) 
+      (replace-regexp (format "\\s-%s\\(\\s-\\|\\|\n)\\)" var)
                       (format " %s\\1" replacement)
                       nil
-                      fn-start 
+                      fn-start
                       (save-excursion (paredit-forward-up 2) (point))))))
 
 (defun cljr-promote-function (promote-to-defn)
@@ -1757,8 +1762,10 @@ sorts the project's dependency vectors."
          (var-info (cider-var-info (cider-symbol-at-point)))
          (ns (nrepl-dict-get var-info "ns"))
          (symbol-name (nrepl-dict-get var-info "name")))
-    (cljr--setup-find-symbol-buffer ns symbol-name)
-    (cljr--find-symbol symbol-name ns 'cljr--format-and-insert-symbol-occurrence)))
+    (if (or (not ns) (not symbol-name))
+        (error "could not resolve symbol. Please load your namespace.")
+      (cljr--setup-find-symbol-buffer ns symbol-name)
+      (cljr--find-symbol symbol-name ns 'cljr--format-and-insert-symbol-occurrence))))
 
 (defun cljr--read-symbol-metadata (occurrences)
   (->> occurrences
@@ -1816,7 +1823,9 @@ sorts the project's dependency vectors."
   ;; TODO symbol name resolution is broken but then renaming 3rd parties does not make sense; needs clean up; works for renaming inproject symbol from where it is used
   (let* ((symbol-name (cider-symbol-at-point))
          (ns (nrepl-dict-get (cider-var-info symbol-name) "ns")))
-    (cljr--find-symbol symbol-name ns (-partial 'cljr--rename-symbol-occurrence symbol-name new-name))))
+    (if (or (not ns) (not symbol-name))
+        (error "could not resolve symbol. Please load your namespace.")
+      (cljr--find-symbol symbol-name ns (-partial 'cljr--rename-symbol-occurrence symbol-name new-name)))))
 
 ;; ------ minor mode -----------
 ;;;###autoload
