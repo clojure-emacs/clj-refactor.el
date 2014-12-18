@@ -524,6 +524,31 @@ Feature: remove unused require
     (str/join "+" ["a" "b" "c"])
     """
 
+  Scenario: Removes own namespace
+    When I insert:
+    """
+    (ns cljr.core
+      (:require [cljr.core :refer [use-time]]
+                [clojure.set :as st]
+                [clj-time.core :as t]))
+
+    (defn use-time []
+      (t/now)
+      (st/difference #{:a :b} #{:a :c}))
+    """
+    And I place the cursor before "now"
+    And I press "C-! rr"
+    Then I should see:
+    """
+    (ns cljr.core
+      (:require [clojure.set :as st]
+                [clj-time.core :as t]))
+
+    (defn use-time []
+      (t/now)
+      (st/difference #{:a :b} #{:a :c}))
+    """
+
   Scenario: Also sorts ns if auto-sort is on
     When I insert:
     """

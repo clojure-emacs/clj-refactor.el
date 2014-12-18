@@ -666,12 +666,17 @@ word test in it and whether the file lives under the test/ directory."
   (cljr--delete-and-extract-sexp)
   (join-line))
 
+(defun cljr--req-statement-is-for-current-ns (s)
+  (string= (cljr--current-namespace)
+           (car (split-string (cljr--extract-sexp-content (s-join " " s))))))
+
 ;;;###autoload
 (defun cljr-remove-unused-requires ()
   (interactive)
   (save-excursion
     (let (req-exists)
       (dolist (statement (->> (cljr--extract-ns-statements ":require" t)
+                           (-remove 'cljr--req-statement-is-for-current-ns)
                            (-map 'cljr--rectify-req-statement)
                            (delq nil)
                            (nreverse)))
@@ -1744,9 +1749,9 @@ sorts the project's dependency vectors."
         (syms-count (nrepl-dict-get occurrence-resp "syms-count"))
         (cljr--find-symbol-buffer  "*cljr-find-usages*"))
     (when syms-count
-        (setq num-of-syms syms-count))
+      (setq num-of-syms syms-count))
     (when occurrence
-        (setq occurrence-count (1+ occurrence-count)))
+      (setq occurrence-count (1+ occurrence-count)))
     (when occurrence
       (->> occurrence
         (apply (lambda (line _ col _ _ file match) (format "%s:%s: %s\n" file line match)))
