@@ -85,7 +85,6 @@ This is it so far:
  - `cc`: cycle surrounding collection type
  - `ci`: refactoring between `if` and `if-not`
  - `cp`: cycle privacy of `defn`s and `def`s
- - `cs`: cycle between "string" -> :string -> "string"
  - `dk`: destructure keys
  - `el`: expand let
  - `il`: introduce let
@@ -267,75 +266,6 @@ and press enter:
 
 Pretty handy. And it works with `if-let` and `when-let` too.
 
-## Cycling Privacy
-
-Given this function:
-
-```clj
-(defn add [a b]
-  (+ a b))
-```
-
-I do `cljr-cycle-privacy`:
-
-```clj
-(defn- add [a b]
-  (+ a b))
-```
-
-I do `cljr-cycle-privacy` again to return to the original:
-
-```clj
-(defn add [a b]
-  (+ a b))
-```
-
-Given this def:
-
-```clj
-(def config
-  "docs"
-  {:env "staging"})
-```
-
-I do `cljr-cycle-privacy`:
-
-```clj
-(def ^:private config
-  "docs"
-  {:env "staging"})
-```
-
-I do `cljr-cycle-privacy` again to return to the original:
-
-```clj
-(def config
-  "docs"
-  {:env "staging"})
-```
-
-## Cycling Collection Type
-
-Given this collection:
-
-```clj
-(:a 1 :b 2)
-```
-
-I do `cljr-cycle-coll` to return:
-
-```clj
-{:a 1 :b 2}
-```
-
-... and then 3 more times:
-
-```clj
-[:a 1 :b 2]
-#{:a 1 :b 2}
-(:a 1 :b 2)
-```
-
 ## Destructuring keys
 
 Given this:
@@ -383,6 +313,7 @@ I place cursor on `my.lib` and do `cljr-stop-referring`:
 ```
 
 ## Promote function
+
 Given this:
 
 ```clj
@@ -405,6 +336,7 @@ And I place my cursor on `symbol` and do `cljr-promote-function` and call the fn
 ```
 
 With a prefix it will promote a function literal all the way to a defn.
+
 ## Optional setup
 
 If you're not using yasnippet, then the "jumping back"-part of adding to
