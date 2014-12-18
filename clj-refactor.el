@@ -536,36 +536,10 @@ word test in it and whether the file lives under the test/ directory."
 (defun cljr--extract-sexp-content (sexp)
   (replace-regexp-in-string "\\[?(?]?)?" "" sexp))
 
-(defun cljr--is-name-in-use-ast-p (name)
-  (cljr--goto-ns)
-  (paredit-forward)
-  (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
-         (e (cljr--extract-sexp-content name))
-         (var-info (cider-var-info e))
-         (ns (nrepl-dict-get var-info "ns"))
-         (symbol-name (nrepl-dict-get var-info "name"))
-         (result (if (or (not ns) (not symbol-name))
-                     (message "could not resolve %s" e)
-                   (cljr--call-middleware-sync
-                    (list "op" "refactor"
-                          "ns-string" body
-                          "refactor-fn" "find-referred"
-                          "referred" (format "%s/%s" ns symbol-name))))))
-    (when result e)))
-
-(defun cljr--is-name-in-use-vanilla-p (name)
+(defun cljr--is-name-in-use-p (name)
   (goto-char (point-min))
   (let ((e (cljr--extract-sexp-content name)))
     (when (re-search-forward (cljr--req-element-regexp e "[^[:word:]^-]") nil t) e)))
-
-(defun cljr--is-name-in-use-p (name)
-  (if (and (cider-connected-p) (nrepl-op-supported-p "refactor"))
-      (progn
-        (message "refactor-nrepl is used")
-        (cljr--is-name-in-use-ast-p name))
-    (progn
-      (message "clj-refactor middleware is not found. Failing back to vanilla elisp impl")
-      (cljr--is-name-in-use-vanilla-p name))))
 
 (defun cljr-remove-debug-fns ()
   (interactive)
