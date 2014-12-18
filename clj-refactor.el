@@ -470,6 +470,15 @@ word test in it and whether the file lives under the test/ directory."
                 (cljr--delete-and-extract-sexp)) statements))
       statements)))
 
+(defun cljr--get-ns-statements (statement-type)
+  (save-excursion
+    (cljr--goto-ns)
+    (when (cljr--search-forward-within-sexp (concat "(" statement-type))
+      (let ((beg (point)))
+        (paredit-forward-up)
+        (paredit-backward-down)
+        (buffer-substring-no-properties beg (point))))))
+
 (defun cljr--only-alpha-chars (s)
   (replace-regexp-in-string "[^[:alnum:]]" "" s))
 
@@ -879,7 +888,8 @@ If REGION is active, move all forms contained by region. "
                     (join-line)
                     (join-line)
                     (delete-char 1))))
-         (forms (cljr--cleanup-whitespace forms)))
+         (forms (cljr--cleanup-whitespace forms))
+         (requires (cljr--get-ns-statements ":require")))
     (let (ns names)
       (save-window-excursion
         (ido-find-file)
@@ -887,10 +897,15 @@ If REGION is active, move all forms contained by region. "
         (open-line 2)
         (forward-line 2)
         (insert forms)
+        (when requires
+          (cljr--insert-in-ns ":require")
+          (insert requires)
+          (cljr-remove-unused-requires))
         (save-buffer)
         (setq ns (cljr--current-namespace)
               names (cljr--name-of-defns forms)))
-      (cljr--update-ns-after-moving-fns ns (nreverse names))))
+      (cljr--update-ns-after-moving-fns ns (nreverse names))
+      (cljr-remove-unused-requires)))
   (cljr--just-one-blank-line))
 
 (defun cljr--update-ns-after-moving-fns (ns &optional refer-names)
