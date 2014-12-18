@@ -4,7 +4,7 @@
 
 # clj-refactor.el
 
-A collection of simple clojure refactoring functions. Please send help.
+A collection of clojure refactoring functions.
 
 ## Installation
 
