@@ -27,7 +27,11 @@ clj-refactor in your path somewhere:
 
 ### A note on the dependency on cider
 
-Lately we introduced a dependency on [cider](https://github.com/clojure-emacs/cider). In general we use cider for those features which depend on our nREPL middleware [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). This also means that in theory our features not requiring our own middleware continue to work without cider.
+Lately we introduced a dependency on
+[cider](https://github.com/clojure-emacs/cider). In general we use cider for
+those features which depend on our nREPL middleware
+[refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). This also
+means that features not requiring the middleware continue to work without cider.
 
 ## Setup
 
@@ -68,33 +72,7 @@ to pick and choose your own keybindings with a smattering of:
 
 **The keybindings suggested here might be conflicting with keybindings in
 either clojure-mode or cider. Ideally, you should pick keybindings that don't
-interfere with both.**
-
-### Refactor nREPL middleware
-
-The project is going forward towards smarter refactorings. To achieve this we need our library to better understand clojure code. Therefore we are investing into an nREPL middleware called [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). This middleware working together with an embedded [cider](https://github.com/clojure-emacs/cider) backed REPL in your Emacs can do some smart refactorings.
-
-Certain features are only available with the middleware added: please see these marked in our list of features.
-
-To set it up you need to add the middleware as you add the middleware for cider. Add the following, either in your project's `project.clj`,  or in the `:user` profile found at `~/.lein/profiles.clj`:
-
-```clojure
-:plugins [[refactor-nrepl "0.2.2"]]
-```
-
-For more details see [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
-
-For most of the `refactor-nrepl` middleware supported refactorings we need to build an AST representation of the code. [tools.analyzer](https://github.com/clojure/tools.analyzer) and [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm) is used for this. (Thanks for @Bronsa and other contributors for their good work.)
-
-**WARNING** The analyzer needs to eval the code too in order to be able to build the AST we can work with. If that causes side effects like writing files, opening connections to servers, modifying databases, etc. performing certain refactoring functions on your code will do that, too.
-
-### Populate the artifact cache on startup
-
-The `add-project-dependency` functionality caches the list of available artifacts for one day, instead of hitting the web every time.  If you don't want to wait for the cache to be populated, when you first call `add-project-dependency`, you can do the following, to have this happen in the background:
-
-```el
-(add-hook 'nrepl-connected-hook #'cljr-update-artifact-cache)
-```
+interfere with either.**
 
 ## Usage
 
@@ -102,7 +80,6 @@ This is it so far:
 
  - `ad`: add declaration for current top-level form
  - `ai`: add import to namespace declaration, then jump back
- - `ap`: add a dependency to your project **depends on refactor-nrepl 0.1.0 and above**
  - `ar`: add require to namespace declaration, then jump back (see optional setup)
  - `au`: add "use" (ie require refer all) to namespace declaration, then jump back
  - `cc`: cycle surrounding collection type
@@ -111,16 +88,13 @@ This is it so far:
  - `cs`: cycle between "string" -> :string -> "string"
  - `dk`: destructure keys
  - `el`: expand let
- - `fu`: Find usages **depends on refactor-nrepl 0.2.0 and above**
  - `il`: introduce let
  - `mf`: move one or more forms to another namespace, `:refer` any functions
  - `ml`: move to let
  - `pc`: run project cleaner functions on the whole project
  - `pf`: promote function literal or fn, or fn to defn
- - `rd`: Remove (debug) function invocations **depends on refactor-nrepl 0.1.0 and above**
  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
  - `rr`: remove unused requires
- - `rs`: Rename symbol  **depends on refactor-nrepl 0.2.0 and above**
  - `ru`: replace all `:use` in namespace with `:refer :all`
  - `sn`: sort :use, :require and :import in the ns form
  - `sp`: Sort all dependency vectors in project.clj
@@ -131,7 +105,60 @@ This is it so far:
  - `ua`: fully unwind a threaded expression
  - `uw`: unwind a threaded expression
 
+[Using refactor-nrepl](#refactor-nrepl-middleware), you also get:
+
+ - `ap`: add a dependency to your project
+ - `fu`: Find usages
+ - `rd`: Remove (debug) function invocations
+ - `rs`: Rename symbol
+
 Combine with your keybinding prefix/modifier.
+
+### Refactor nREPL middleware
+
+The project is going forward towards smarter refactorings. To achieve this we
+need our library to better understand clojure code. Therefore we are investing
+into an nREPL middleware called
+[refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). This
+middleware working together with an embedded
+[cider](https://github.com/clojure-emacs/cider) backed REPL in your Emacs can do
+some smart refactorings.
+
+Certain features are only available with the middleware added: please see these
+marked in our list of features.
+
+To set it up you need to add the middleware as you add the middleware for cider.
+Add the following, either in your project's `project.clj`, or in the `:user`
+profile found at `~/.lein/profiles.clj`:
+
+```clojure
+:plugins [[refactor-nrepl "0.2.2"]]
+```
+
+For more details see [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
+
+For most of the `refactor-nrepl` middleware supported refactorings we need to
+build an AST representation of the code.
+[tools.analyzer](https://github.com/clojure/tools.analyzer) and
+[tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm) is used for
+this. (Thanks for @Bronsa and other contributors for their good work.)
+
+**WARNING** The analyzer needs to eval the code too in order to be able to build
+  the AST we can work with. If that causes side effects like writing files,
+  opening connections to servers, modifying databases, etc. performing certain
+  refactoring functions on your code will do that, too.
+
+### Populate the artifact cache on startup
+
+The `add-project-dependency` functionality caches the list of available
+artifacts for one day, instead of hitting the web every time. If you don't want
+to wait for the cache to be populated, when you first call
+`add-project-dependency`, you can do the following, to have this happen in the
+background:
+
+```el
+(add-hook 'nrepl-connected-hook #'cljr-update-artifact-cache)
+```
 
 ## Thread / unwind example
 
@@ -398,11 +425,15 @@ some snippet packages for Clojure:
 
  - David Nolen has created some [clojure-snippets](https://github.com/swannodette/clojure-snippets)
  - I've made some [datomic-snippets](https://github.com/magnars/datomic-snippets)
- - Max Penet has also created some [clojure-snippets](https://github.com/mpenet/clojure-snippets), early fork of dnolens' with tons of additions and MELPA compatible
+ - Max Penet has also created some
+   [clojure-snippets](https://github.com/mpenet/clojure-snippets), early fork of
+   dnolens' with tons of additions and MELPA compatible
 
 ## Changing the way how the ns declaration is sorted
 
-By default sort ns `sn` will sort your ns declaration alphabetically. You can change this by setting `cljr-sort-comparator` in your clj-refactor configuration.
+By default sort ns `sn` will sort your ns declaration alphabetically. You can
+change this by setting `cljr-sort-comparator` in your clj-refactor
+configuration.
 
 Sort it longer first:
 
@@ -416,7 +447,9 @@ Or you can use the semantic comparator:
 (setq cljr-sort-comparator 'cljr--semantic-comparator)
 ```
 
-The semantic comparator sorts used and required namespaces closer to the namespace of the current buffer before the rest. When this is not applicable it falls back to alphabetical sorting.
+The semantic comparator sorts used and required namespaces closer to the
+namespace of the current buffer before the rest. When this is not applicable it
+falls back to alphabetical sorting.
 
 For example the following namespace:
 
@@ -452,7 +485,10 @@ will be sorted like this:
            [org.joda.time DateTime]))
 ```
 
-The `cljr-sort-comparator` variable also enables you to write your own comparator function if you prefer. Comparator is called with two elements of the sub section of the ns declaration, and should return non-nil if the first element should sort before the second.
+The `cljr-sort-comparator` variable also enables you to write your own
+comparator function if you prefer. Comparator is called with two elements of the
+sub section of the ns declaration, and should return non-nil if the first
+element should sort before the second.
 
 ## Automatic insertion of namespace declaration
 
@@ -495,7 +531,11 @@ or set it to `:prompt` if you want to confirm before it inserts.
 
 ## Project clean up
 
-`cljr-project-clean` runs some clean up functions on all clj files in a project in bulk. By default these are `cljr-remove-unused-requires` and `cljr-sort-ns`. Additionally, `cljr-sort-project-dependencies` is called to put the `project.clj` file in order.  Before any changes are made, the user is prompted for confirmation because this function can touch a large number of files.
+`cljr-project-clean` runs some clean up functions on all clj files in a project
+in bulk. By default these are `cljr-remove-unused-requires` and `cljr-sort-ns`.
+Additionally, `cljr-sort-project-dependencies` is called to put the
+`project.clj` file in order. Before any changes are made, the user is prompted
+for confirmation because this function can touch a large number of files.
 
 This promting can be switched off by setting `cljr-project-clean-prompt` nil:
 
@@ -503,17 +543,25 @@ This promting can be switched off by setting `cljr-project-clean-prompt` nil:
 (setq cljr-project-clean-prompt nil)
 ```
 
-The list of functions to run with `cljr-project-clean` is also configurable via `cljr-project-clean-functions`. You can add more functions defined in clj-refactor or remove some or even write your own.
+The list of functions to run with `cljr-project-clean` is also configurable via
+`cljr-project-clean-functions`. You can add more functions defined in
+clj-refactor or remove some or even write your own.
 
-`cljr-project-clean` will only work with leiningen managed projects with a project.clj in their root directory. This limitation will very likely be fixed when [#27](https://github.com/magnars/clj-refactor.el/issues/27) is done.
+`cljr-project-clean` will only work with leiningen managed projects with a
+project.clj in their root directory. This limitation will very likely be fixed
+when [#27](https://github.com/magnars/clj-refactor.el/issues/27) is done.
 
 ## Add project dependency
 
-When this function is called with a prefix the artifact cache is invalidated and updated.  This happens synchronously.  If you want to update the artifact cache in the background you can call `cljr-update-artifact-cache`.
+When this function is called with a prefix the artifact cache is invalidated and
+updated. This happens synchronously. If you want to update the artifact cache in
+the background you can call `cljr-update-artifact-cache`.
 
 ## Remove (debug) function invocations
 
-Removes invocations of a predefined set of functions from the namespace. Remove function invocations are configurable `cljr-debug-functions`; default value is `"println,pr,prn"`.
+Removes invocations of a predefined set of functions from the namespace. Remove
+function invocations are configurable `cljr-debug-functions`; default value is
+`"println,pr,prn"`.
 
 ## Miscellaneous
 
@@ -604,9 +652,19 @@ Run the tests with:
 
 ## Contributors
 
-- [AlexBaranosky](https://github.com/AlexBaranosky) added a bunch of features. See the [Changelog](#changelog) for details.
-- [Lars Andersen](https://github.com/expez) added `cljr-replace-use`, `cljr-add-declaration` and `cljr-move-form`, `cljr-sort-project-dependencies`  and `cljr-add-project-dependency`.
-- [Benedek Fazekas](https://github.com/benedekfazekas) added `cljr-remove-unused-requires` and improved on the let-expanding functions, `cljr-project-clean`, `cljr-remove-debug-fns` and `refactor-nrepl` integration.
+The project is maintained by
+
+- [Magnar Sveen](https://github.com/magnars)
+- [Lars Andersen](https://github.com/expez)
+- [Benedek Fazekas](https://github.com/benedekfazekas)
+- [AlexBaranosky](https://github.com/AlexBaranosky)
+
+Additional contributors are:
+
+- [Bozhidar Batsov](https://github.com/bbatsov)
+- [Ryan Smith](https://github.com/tanzoniteblack)
+- [Hugo Duncan](https://github.com/hugoduncan)
+- [Luke Snape](https://github.com/lsnape)
 
 Thanks!
 
