@@ -80,8 +80,6 @@ This is it so far:
 
  - `ad`: add declaration for current top-level form
  - `ai`: add import to namespace declaration, then jump back
- - `ap`: add a dependency to your project **depends on refactor-nrepl 0.1.0 and above**
- - `am`: add a missing libspec **depends on refactor-nrepl 0.3.0 and above**
  - `ar`: add require to namespace declaration, then jump back (see optional setup)
  - `au`: add "use" (ie require refer all) to namespace declaration, then jump back
  - `cc`: cycle surrounding collection type
@@ -109,6 +107,7 @@ This is it so far:
 [Using refactor-nrepl](#refactor-nrepl-middleware), you also get:
 
  - `ap`: add a dependency to your project
+ - `am`: add a missing libspec
  - `cn`: Perform various cleanups on the ns form
  - `fu`: Find usages
  - `rd`: Remove (debug) function invocations
