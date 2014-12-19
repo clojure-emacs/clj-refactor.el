@@ -188,7 +188,7 @@ Scenario: Cycling thread-first to thread-last
    """
    (defn foo [coll]
      (-> coll
-       (map inc)))
+         (map inc)))
    """
    And I place the cursor after "(map"
    And I press "C-! ct"
@@ -196,7 +196,7 @@ Scenario: Cycling thread-first to thread-last
    """
    (defn foo [coll]
      (->> coll
-       (map inc)))
+          (map inc)))
    """
 
 Scenario: Cycling thread-last to thread-first
@@ -204,7 +204,7 @@ Scenario: Cycling thread-last to thread-first
    """
    (defn foo []
      (-> {}
-       (->> (assoc :bar 1))))
+         (->> (assoc :bar 1))))
    """
    And I place the cursor after "(assoc"
    And I press "C-! ct"
@@ -212,5 +212,5 @@ Scenario: Cycling thread-last to thread-first
    """
    (defn foo []
      (-> {}
-       (-> (assoc :bar 1))))
+         (-> (assoc :bar 1))))
    """

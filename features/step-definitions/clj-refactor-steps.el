@@ -74,6 +74,18 @@
                       "occurrence"
                       '(8 8 17 27 "star*" "tmp/src/example/one.clj" ""))))))
 
+(Given "^I call the add-missing-libspec callback directly with mock data to import"
+  (lambda ()
+    (cljr--add-missing-libspec "Date" "java.util.Date" "import")))
+
+(Given "^I call the add-missing-libspec callback directly with mock data to refer split"
+  (lambda ()
+    (cljr--add-missing-libspec "split" "clojure.string" "require")))
+
+(Given "^I call the add-missing-libspec callback directly with mock data to alias clojure.string"
+  (lambda ()
+    (cljr--add-missing-libspec "str/split" "clojure.string" "require")))
+
 (Then "^the file should be named \"\\([^\"]+\\)\"$"
   (lambda (file-name-postfix)
     (assert (s-ends-with? file-name-postfix (buffer-file-name)) nil "Expected %S to end with %S" (buffer-file-name) file-name-postfix)))

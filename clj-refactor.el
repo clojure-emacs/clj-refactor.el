@@ -207,6 +207,7 @@ Used in `cljr-remove-debug-fns' feature."
   (define-key clj-refactor-map (funcall key-fn "ad") 'cljr-add-declaration)
   (define-key clj-refactor-map (funcall key-fn "ai") 'cljr-add-import-to-ns)
   (define-key clj-refactor-map (funcall key-fn "ap") 'cljr-add-project-dependency)
+  (define-key clj-refactor-map (funcall key-fn "am") 'cljr-add-missing-libspec)
   (define-key clj-refactor-map (funcall key-fn "ar") 'cljr-add-require-to-ns)
   (define-key clj-refactor-map (funcall key-fn "au") 'cljr-add-use-to-ns)
   (define-key clj-refactor-map (funcall key-fn "cc") 'cljr-cycle-coll)
@@ -1825,6 +1826,75 @@ sorts the project's dependency vectors."
   (interactive)
   (cljr--find-symbol "join" "clojure.string" (lambda (_))))
 
+
+(defun cljr--narrow-candidates (candidates)
+  (cond ((= (length candidates) 0)
+         (error "Couldn't find any symbols matching %s on classpath."
+                (cljr--normalize-symbol-name symbol)))
+        ((= (length candidates) 1)
+         (first candidates))
+        (t
+         (cljr--prompt-user-for "Require: " candidates))))
+
+(defun cljr--insert-libspec-verbosely (libspec)
+  (insert libspec)
+  (message "%s added to ns" libspec))
+
+(defun cljr--insert-missing-import (missing)
+  (save-excursion
+    (cljr--insert-in-ns ":import")
+    (cljr--insert-libspec-verbosely missing)))
+
+(defun cljr--insert-missing-require (symbol missing)
+  (save-excursion
+    (cljr--insert-in-ns ":require")
+    (let ((alias? (s-contains? "/" symbol)))
+      (if alias?
+          (let ((prefix (first (s-split "/" symbol))))
+            (cljr--insert-libspec-verbosely (format "[%s :as %s]" missing prefix)))
+        (cljr--insert-libspec-verbosely (format "[%s :refer [%s]]"
+                                                missing symbol))))))
+
+(defun cljr--add-missing-libspec (symbol candidates type)
+  (let* ((candidates (and candidates (s-split " " candidates)))
+         (missing (cljr--narrow-candidates candidates)))
+    (if (string= type "require")
+        (cljr--insert-missing-require symbol missing)
+      (cljr--insert-missing-import missing))))
+
+(defun cljr--normalize-symbol-name (name)
+  "Removes prefix and reader macros
+
+java.util.Date. -> Date
+str/split -> split
+Date. -> Date"
+  (cond ((s-ends-with? "." name)
+         (->> name (s-chop-suffix ".") cljr--normalize-symbol-name))
+        ((s-contains? "/" name) (->> name (s-split "/") second))
+        ((s-matches? "\\w+\\.\\w+" name)
+         (->> name (s-split "\\.") last car))
+        (t name)))
+
+(defun cljr--call-middleware-to-resolve-missing (symbol)
+  ;; Just so this part can be mocked out in a step definition
+  (nrepl-send-sync-request
+   (list "op" "resolve-missing"
+         "symbol" (cljr--normalize-symbol-name symbol))))
+
+(defun cljr-add-missing-libspec ()
+  "Requires or imports the symbol at point.
+
+If the symbol at point is of the form str/join then the ns
+containing join will be aliased to str."
+  (interactive)
+  (cljr--assert-middleware)
+  (let* ((symbol (cider-symbol-at-point))
+         (response (cljr--call-middleware-to-resolve-missing symbol))
+         (type (nrepl-dict-get response "type"))
+         (candidates (nrepl-dict-get response "candidates")))
+    (-when-let (err (nrepl-dict-get response "error"))
+      (error err))
+    (cljr--add-missing-libspec symbol candidates type)))
 
 ;; ------ minor mode -----------
 ;;;###autoload

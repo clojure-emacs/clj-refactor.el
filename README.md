@@ -80,6 +80,8 @@ This is it so far:
 
  - `ad`: add declaration for current top-level form
  - `ai`: add import to namespace declaration, then jump back
+ - `ap`: add a dependency to your project **depends on refactor-nrepl 0.1.0 and above**
+ - `am`: add a missing libspec **depends on refactor-nrepl 0.3.0 and above**
  - `ar`: add require to namespace declaration, then jump back (see optional setup)
  - `au`: add "use" (ie require refer all) to namespace declaration, then jump back
  - `cc`: cycle surrounding collection type
@@ -497,6 +499,10 @@ When this function is called with a prefix the artifact cache is invalidated and
 updated. This happens synchronously. If you want to update the artifact cache in
 the background you can call `cljr-update-artifact-cache`.
 
+## Add missing libspec
+
+`cljr-add-missing-libspec` will try to resolve the symbol at point and require or import the missing var.  If there are more than one var match the user is prompted. If there's only one result it is added without user intervention.  If the symbol at point is of the form `edn/read-string` the resulting libspec will be aliased to `edn`.
+
 ## Remove (debug) function invocations
 
 Removes invocations of a predefined set of functions from the namespace. Remove
@@ -517,6 +523,7 @@ You might also like
 
 ## Changelog
 
+- Add `cljr-add-missing-libspec` [Lars Andersen](https://github.com/expez)
 - Add `cljr-promote-function` [Lars Andersen](https://github.com/expez)
 - Add `cljr-find-usages` [Lars Andersen](https://github.com/expez) and  [Benedek Fazekas](https://github.com/benedekfazekas)
 - Add `cljr-rename-symbol` [Lars Andersen](https://github.com/expez) and  [Benedek Fazekas](https://github.com/benedekfazekas)

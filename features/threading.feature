@@ -12,7 +12,7 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (-> (assoc {} :key "value")
-      (dissoc :lock))
+        (dissoc :lock))
     """
 
   Scenario: Thread first (->), part 2
@@ -22,8 +22,8 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (-> {}
-      (assoc :key "value")
-      (dissoc :lock))
+        (assoc :key "value")
+        (dissoc :lock))
     """
 
   Scenario: Thread first (->), part 3 - don't thread maps and stuff
@@ -34,8 +34,8 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (-> {}
-      (assoc :key "value")
-      (dissoc :lock))
+        (assoc :key "value")
+        (dissoc :lock))
     """
 
   Scenario: Thread first (->), part 4 - don't thread last one
@@ -46,8 +46,8 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (-> (get-a-map)
-      (assoc :key "value")
-      (dissoc :lock))
+        (assoc :key "value")
+        (dissoc :lock))
     """
 
   Scenario: Thread first (->), part 5 - don't be a stickler for white space
@@ -71,8 +71,8 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (-> [1 2 3 4 5]
-      sum
-      square)
+        sum
+        square)
     """
 
   Scenario: Thread first, part 7 - allow cursor placement before threading
@@ -82,29 +82,29 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (-> (s-acc/mobile? session)
-      not)
+        not)
     """
 
   Scenario: Unwind first (->), part 1
     When I insert:
     """
     (-> {}
-      (assoc :key "value")
-      (dissoc :lock))
+        (assoc :key "value")
+        (dissoc :lock))
     """
     And I press "C-! uw"
     Then I should see:
     """
     (-> (assoc {} :key "value")
-      (dissoc :lock))
+        (dissoc :lock))
     """
 
   Scenario: Unwind first (->), part 2
     When I insert:
     """
     (-> {}
-      (assoc :key "value")
-      (dissoc :lock))
+        (assoc :key "value")
+        (dissoc :lock))
     """
     And I press "C-! uw"
     And I press "C-! uw"
@@ -114,8 +114,8 @@ Feature: Threading and unwinding of macros
     When I insert:
     """
     (-> {}
-      (assoc :key "value")
-      (dissoc :lock))
+        (assoc :key "value")
+        (dissoc :lock))
     """
     And I press "C-! uw"
     And I press "C-! uw"
@@ -129,7 +129,7 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (->> (filter even? [1 2 3 4 5])
-      (map square))
+         (map square))
     """
 
   Scenario: Thread last (->>), part 2
@@ -139,8 +139,8 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (->> [1 2 3 4 5]
-      (filter even?)
-      (map square))
+         (filter even?)
+         (map square))
     """
 
   Scenario: Thread last (->>), part 3 - don't thread vectors and stuff
@@ -151,8 +151,8 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (->> [1 2 3 4 5]
-      (filter even?)
-      (map square))
+         (filter even?)
+         (map square))
     """
 
   Scenario: Thread last (->>), part 4 - don't thread last one
@@ -163,30 +163,30 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (->> (get-a-list)
-      (filter even?)
-      (map square))
+         (filter even?)
+         (map square))
     """
 
   Scenario: Unwind last (->>), part 1
     When I insert:
     """
     (->> [1 2 3 4 5]
-      (filter even?)
-      (map square))
+         (filter even?)
+         (map square))
     """
     And I press "C-! uw"
     Then I should see:
     """
     (->> (filter even? [1 2 3 4 5])
-      (map square))
+         (map square))
     """
 
   Scenario: Unwind last (->>), part 2
     When I insert:
     """
     (->> [1 2 3 4 5]
-      (filter even?)
-      (map square))
+         (filter even?)
+         (map square))
     """
     And I press "C-! uw"
     And I press "C-! uw"
@@ -196,8 +196,8 @@ Feature: Threading and unwinding of macros
     When I insert:
     """
     (->> [1 2 3 4 5]
-      (filter even?)
-      (map square))
+         (filter even?)
+         (map square))
     """
     And I press "C-! uw"
     And I press "C-! uw"
@@ -209,22 +209,22 @@ Feature: Threading and unwinding of macros
     When I insert:
     """
     (->> [1 2 3 4 5]
-      sum
-      square)
+         sum
+         square)
     """
     And I press "C-! uw"
     Then I should see:
     """
     (->> (sum [1 2 3 4 5])
-      square)
+         square)
     """
 
   Scenario: Unwind function name, part 2
     When I insert:
     """
     (-> [1 2 3 4 5]
-     sum
-     square)
+        sum
+        square)
     """
     And I press "C-! uw"
     And I press "C-! uw"
@@ -264,9 +264,9 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (some-> {:a 1}
-      (find :b)
-      val
-      (+ 5))
+            (find :b)
+            val
+            (+ 5))
     """
 
   Scenario: Thread last (some->>)
@@ -277,18 +277,18 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (some->> :b
-      (find {:a 1})
-      val
-      (+ 5))
+             (find {:a 1})
+             val
+             (+ 5))
     """
 
   Scenario: Unwind last (some->)
     When I insert:
     """
     (some-> {:a 1}
-      (find :b)
-      val
-      (+ 5))
+            (find :b)
+            val
+            (+ 5))
     """
     And I press "C-! uw"
     And I press "C-! uw"
@@ -302,9 +302,9 @@ Feature: Threading and unwinding of macros
     When I insert:
     """
     (some->> :b
-      (find {:a 1})
-      val
-      (+ 5))
+             (find {:a 1})
+             val
+             (+ 5))
     """
     And I press "C-! uw"
     And I press "C-! uw"
@@ -321,8 +321,8 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (-> {}
-      (assoc :key "value")
-      (->map :lock))
+        (assoc :key "value")
+        (->map :lock))
     """
 
   Scenario: Thread last all (->>)
@@ -332,16 +332,16 @@ Feature: Threading and unwinding of macros
     Then I should see:
     """
     (->> (make-things)
-      (filter even?)
-      (map square))
+         (filter even?)
+         (map square))
     """
 
   Scenario: Unwind all (->)
     When I insert:
     """
     (-> {}
-      (assoc :key "value")
-      (dissoc :lock))
+        (assoc :key "value")
+        (dissoc :lock))
     """
     And I place the cursor before "(-> "
     And I press "C-! ua"
@@ -354,8 +354,8 @@ Feature: Threading and unwinding of macros
     When I insert: 
     """
     (->> (make-things)
-      (filter even?)
-      (map square))
+         (filter even?)
+         (map square))
     """
     And I place the cursor before "(->>"
     And I press "C-! ua"
