@@ -1821,6 +1821,11 @@ sorts the project's dependency vectors."
         (error "could not resolve symbol. Please load your namespace.")
       (cljr--find-symbol symbol-name ns (-partial 'cljr--rename-symbol-occurrence symbol-name new-name)))))
 
+(defun cljr-warm-ast-cache ()
+  (interactive)
+  (cljr--find-symbol "join" "clojure.string" (lambda (_))))
+
+
 ;; ------ minor mode -----------
 ;;;###autoload
 (define-minor-mode clj-refactor-mode
