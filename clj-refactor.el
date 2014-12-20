@@ -565,7 +565,7 @@ word test in it and whether the file lives under the test/ directory."
   (interactive)
   (cljr--assert-middleware)
   (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
-         (result (cljr--call-middleware-sync
+         (result (cljr--call-middleware-sync "value"
                   (list "op" "refactor"
                         "ns-string" body
                         "refactor-fn" "find-debug-fns"
@@ -1583,10 +1583,9 @@ sorts the project's dependency vectors."
     (indent-region (point-min) (point-max))
     (save-buffer)))
 
-(defun cljr--call-middleware-sync (request)
+(defun cljr--call-middleware-sync (key request)
   (let ((nrepl-sync-request-timeout 25))
-    (nrepl-dict-get (nrepl-send-sync-request request)
-                    "value")))
+    (nrepl-dict-get (nrepl-send-sync-request request) key)))
 
 (defun cljr--call-middleware-async (request &optional callback)
   (nrepl-send-request request callback))
@@ -1595,7 +1594,7 @@ sorts the project's dependency vectors."
   (message "Retrieving list of available libraries...")
   (let ((request (list "op" "artifact-list" "force" (if force "true" "false"))))
     (->> request
-      (cljr--call-middleware-sync)
+      (cljr--call-middleware-sync "value")
       (s-split " "))))
 
 (defun cljr-update-artifact-cache ()
@@ -1608,7 +1607,7 @@ sorts the project's dependency vectors."
   (let ((request (list "op" "artifact-versions"
                        "artifact" artifact)))
     (->> request
-      (cljr--call-middleware-sync)
+      (cljr--call-middleware-sync "value")
       (s-split " "))))
 
 (defun cljr--prompt-user-for (prompt choices)
@@ -1723,6 +1722,18 @@ sorts the project's dependency vectors."
     (end-of-buffer)
     (insert occurrence)))
 
+(defun cljr--find-symbol-sync (symbol ns)
+  (let* ((dir (file-truename
+               (if cljr-find-symbols-in-dir-prompt
+                   (read-directory-name "Base directory: " (cljr--project-dir))
+                 (cljr--project-dir))))
+         (find-symbol-request (list "op" "refactor"
+                                    "ns" ns
+                                    "clj-dir" dir
+                                    "refactor-fn" "find-symbol"
+                                    "name" symbol)))
+    (cljr--call-middleware-sync "occurrence" find-symbol-request)))
+
 (defun cljr--find-symbol (symbol ns callback)
   (let* ((dir (file-truename
                (if cljr-find-symbols-in-dir-prompt
@@ -1818,28 +1829,20 @@ sorts the project's dependency vectors."
           (replace-regexp (regexp-quote (plist-get symbol-meta :name)) new-name nil start end)
           (save-buffer))))))
 
-(defun cljr--rename-symbol-occurrence (name new-name occurrence-resp)
-  (let ((syms-count (nrepl-dict-get occurrence-resp "syms-count"))
-        (occurrence (nrepl-dict-get occurrence-resp "occurrence")))
-    (when syms-count
-      (setq cljr--num-syms syms-count))
-    (when occurrence
-      (setq cjr--occurrence-count (1+ cjr--occurrence-count)))
-    (when occurrence
-      (cljr--rename-symbol (cljr--read-symbol-metadata occurrence) new-name)))
-  (when (= cjr--occurrence-count cljr--num-syms)
-    (message "Rename finished: %d occurrences of %s renamed to %s" cjr--occurrence-count name new-name)))
-
 (defun cljr-rename-symbol (new-name)
   (interactive "sRename to: ")
   (cljr--assert-middleware)
   (save-buffer)
-  ;; TODO symbol name resolution is broken but then renaming 3rd parties does not make sense; needs clean up; works for renaming inproject symbol from where it is used
   (let* ((symbol-name (cider-symbol-at-point))
          (ns (nrepl-dict-get (cider-var-info symbol-name) "ns")))
     (if (or (not ns) (not symbol-name))
         (error "could not resolve symbol. Please load your namespace.")
-      (cljr--find-symbol symbol-name ns (-partial 'cljr--rename-symbol-occurrence symbol-name new-name)))))
+      (let ((occurrences (-> symbol-name
+                           (cljr--find-symbol-sync ns)
+                           cljr--read-symbol-metadata)))
+        (-> occurrences
+          (cljr--rename-symbol new-name))
+        (message "Renamed %s occurrences of %s" (length occurrences) symbol-name)))))
 
 (defun cljr-warm-ast-cache ()
   (interactive)
