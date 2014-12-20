@@ -99,6 +99,12 @@ Used in `cljr-remove-debug-fns' feature."
   :group 'cljr
   :type 'string)
 
+(defcustom cljr-hotload-dependencies t
+  "When true new dependencies added with
+`cljr-add-project-dependency' are also hotloaded into the repl.'"
+  :group 'cljr
+  :type 'boolean)
+
 (defvar cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
     ("set"  . "clojure.set")
@@ -179,6 +185,7 @@ Used in `cljr-remove-debug-fns' feature."
   (define-key clj-refactor-map (funcall key-fn "dk") 'cljr-destructure-keys)
   (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
   (define-key clj-refactor-map (funcall key-fn "fu") 'cljr-find-usages)
+  (define-key clj-refactor-map (funcall key-fn "hd") 'cljr-hotload-dependency)
   (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
   (define-key clj-refactor-map (funcall key-fn "mf") 'cljr-move-form)
   (define-key clj-refactor-map (funcall key-fn "ml") 'cljr-move-to-let)
@@ -1694,18 +1701,23 @@ sorts the project's dependency vectors."
       (cljr--call-middleware-sync "value")
       (s-split " "))))
 
-(defun cljr--prompt-user-for (prompt choices)
+(defun cljr--prompt-user-for (prompt &optional choices)
   (completing-read prompt choices))
 
 (defun cljr--add-project-dependency (artifact version)
-  (cljr--update-file (cljr--project-file)
+  (save-window-excursion
+    (find-file (cljr--project-file))
     (goto-char (point-min))
     (re-search-forward ":dependencies")
     (paredit-forward)
     (paredit-backward-down)
     (newline-and-indent)
-    (insert "[" artifact " \"" version "\"]"))
-  (message "Added %s version %s as a project dependency" artifact version))
+    (insert "[" artifact " \"" version "\"]")
+    (save-buffer)
+    (message "Added %s version %s as a project dependency" artifact version)
+    (when cljr-hotload-dependencies
+      (paredit-backward-down)
+      (cljr-hotload-dependency))))
 
 (defun cljr--assert-middleware ()
   (unless (featurep 'cider)
@@ -2013,6 +2025,10 @@ Date. -> Date"
    (list "op" "resolve-missing"
          "symbol" (cljr--normalize-symbol-name symbol))))
 
+(defun cljr--maybe-rethrow-error (response)
+  (-when-let (err (nrepl-dict-get response "error"))
+    (error err)))
+
 (defun cljr-add-missing-libspec ()
   "Requires or imports the symbol at point.
 
@@ -2024,9 +2040,49 @@ containing join will be aliased to str."
          (response (cljr--call-middleware-to-resolve-missing symbol))
          (type (nrepl-dict-get response "type"))
          (candidates (nrepl-dict-get response "candidates")))
-    (-when-let (err (nrepl-dict-get response "error"))
-      (error err))
+    (cljr--maybe-rethrow-error response)
     (cljr--add-missing-libspec symbol candidates type)))
+
+(defun cljr--dependency-vector-at-point ()
+  (save-excursion
+    (ignore-errors
+      (while (not (cljr--looking-at-dependency-vector-p))
+        (paredit-backward-up))
+      (buffer-substring-no-properties (point)
+                                      (cljr--point-after 'paredit-forward))
+      (error nil))))
+
+(defun cljr--hotload-dependency-callback (response)
+  (cljr--maybe-rethrow-error response)
+  (message "Hotloaded %s" response))
+
+(defun cljr--call-middleware-to-hotload-dependency (dep)
+  (nrepl-send-request
+   (list "op" "hotload-dependency"
+         "coordinates" dep)
+   #'cljr--hotload-dependency-callback))
+
+(defun cljr--assert-dependency-vector (string)
+  (with-temp-buffer
+    (insert string)
+    (goto-char (point-min))
+    (assert (cljr--looking-at-dependency-vector-p) nil
+            (format
+             (s-concat "Expected dependency vector of type "
+                       "[org.clojure \"1.7.0\"], but got '%s'")
+             string)))
+  string)
+
+(defun cljr-hotload-dependency ()
+  "Download a dependency (if needed) and hotload it into the current repl session.
+
+Defaults to the dependency vector at point, but prompts if none is found."
+  (interactive)
+  (cljr--assert-middleware)
+  (-> (or (cljr--dependency-vector-at-point)
+          (cljr--prompt-user-for "Dependency vector: "))
+    cljr--assert-dependency-vector
+    cljr--call-middleware-to-hotload-dependency))
 
 ;; ------ minor mode -----------
 ;;;###autoload

@@ -107,10 +107,11 @@ This is it so far:
 
 [Using refactor-nrepl](#refactor-nrepl-middleware), you also get:
 
- - `ap`: add a dependency to your project
  - `am`: add a missing libspec
+ - `ap`: add a dependency to your project
  - `cn`: Perform various cleanups on the ns form
  - `fu`: Find usages
+ - `hd`: Hotload dependency
  - `rd`: Remove (debug) function invocations
  - `rs`: Rename symbol
 
@@ -496,9 +497,17 @@ when [#27](https://github.com/magnars/clj-refactor.el/issues/27) is done.
 
 ## Add project dependency
 
+Easily add new project dependencies. Completing read among artifacts
+from clojars and a selection from maven central, following by a
+completing read of versions and insertion into `project.clj` and
+hotloading into the repl.
+
 When this function is called with a prefix the artifact cache is invalidated and
 updated. This happens synchronously. If you want to update the artifact cache in
 the background you can call `cljr-update-artifact-cache`.
+
+The variable `cljr--hotload-dependencies` defaults to `true` and
+determines if new dependencies should be hotloaded or not.
 
 ## Add missing libspec
 
@@ -535,6 +544,10 @@ This op performs the following cleanups of the ns form:
 
 Note that we have to build an AST in order to do this, so if the current file is in a bad state this op won't work.
 
+## Hotload dependency
+
+If point is on a dependency vectors in, e.g. in `project.clj`, it will get hotloaded into the repl.
+
 ## Miscellaneous
 
 With clj-refactor enabled, any keybindings for `paredit-raise-sexp` is
@@ -549,6 +562,8 @@ You might also like
 
 ## Changelog
 
+- Add `cljr-hotload-dependency` [Lars Andersen](https://github.com/expez)
+- Hotloading of artifacts added with `cljr-add-project-dependency` [Lars Andersen](https://github.com/expez)
 - Add `cljr-remove-let` [Lars Andersen](https://github.com/expez)
 - Add `cljr-clean-ns` [Lars Andersen](https://github.com/expez)
 - Add `cljr-add-missing-libspec` [Lars Andersen](https://github.com/expez)
