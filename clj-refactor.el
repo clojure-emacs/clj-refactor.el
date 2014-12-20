@@ -183,9 +183,9 @@ Used in `cljr-remove-debug-fns' feature."
 
 ;; tracking state of find-symbol buffer
 
-(defvar-local occurrence-count 0 "Counts occurrences of found symbols")
+(defvar-local cjr--occurrence-count 0 "Counts occurrences of found symbols")
 
-(defvar-local num-of-syms -1 "Keeps track of overall number of symbol occurrences")
+(defvar-local cljr--num-syms -1 "Keeps track of overall number of symbol occurrences")
 
 
 (define-key clj-refactor-map [remap paredit-raise-sexp] 'cljr-raise-sexp)
@@ -1734,8 +1734,8 @@ sorts the project's dependency vectors."
                                     "refactor-fn" "find-symbol"
                                     "name" symbol)))
     (with-current-buffer (nrepl-current-connection-buffer)
-      (setq occurrence-count 0)
-      (setq num-of-syms -1))
+      (setq cjr--occurrence-count 0)
+      (setq cljr--num-syms -1))
     (cljr--call-middleware-async find-symbol-request callback)))
 
 (defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
@@ -1743,15 +1743,15 @@ sorts the project's dependency vectors."
         (syms-count (nrepl-dict-get occurrence-resp "syms-count"))
         (cljr--find-symbol-buffer  "*cljr-find-usages*"))
     (when syms-count
-      (setq num-of-syms syms-count))
+      (setq cljr--num-syms syms-count))
     (when occurrence
-      (setq occurrence-count (1+ occurrence-count)))
+      (setq cjr--occurrence-count (1+ cjr--occurrence-count)))
     (when occurrence
       (->> occurrence
         (apply (lambda (line _ col _ _ file match) (format "%s:%s: %s\n" file line match)))
         (cljr--populate-find-symbol-buffer)))
-    (when (= occurrence-count num-of-syms)
-      (cljr--finalise-find-symbol-buffer num-of-syms))))
+    (when (= cjr--occurrence-count cljr--num-syms)
+      (cljr--finalise-find-symbol-buffer cljr--num-syms))))
 
 (defun cljr--finalise-find-symbol-buffer (num-of-symbols)
   (with-current-buffer "*cljr-find-usages*"
@@ -1822,13 +1822,13 @@ sorts the project's dependency vectors."
   (let ((syms-count (nrepl-dict-get occurrence-resp "syms-count"))
         (occurrence (nrepl-dict-get occurrence-resp "occurrence")))
     (when syms-count
-      (setq num-of-syms syms-count))
+      (setq cljr--num-syms syms-count))
     (when occurrence
-      (setq occurrence-count (1+ occurrence-count)))
+      (setq cjr--occurrence-count (1+ cjr--occurrence-count)))
     (when occurrence
       (cljr--rename-symbol (cljr--read-symbol-metadata occurrence) new-name)))
-  (when (= occurrence-count num-of-syms)
-    (message "Rename finished: %d occurrences of %s renamed to %s" occurrence-count name new-name)))
+  (when (= cjr--occurrence-count cljr--num-syms)
+    (message "Rename finished: %d occurrences of %s renamed to %s" cjr--occurrence-count name new-name)))
 
 (defun cljr-rename-symbol (new-name)
   (interactive "sRename to: ")
