@@ -704,7 +704,7 @@ word test in it and whether the file lives under the test/ directory."
   (cljr--pop-tmp-marker-after-yasnippet)
   (when cljr-auto-sort-ns
     (cljr--add-yas-snippet-sort-ns-hook))
-  (yas-expand-snippet "${1:[${2:$3 :as $4}]}$0"))
+  (yas-expand-snippet "${1:[${2:$3 :as $4}]}"))
 
 ;;;###autoload
 (defun cljr-add-use-to-ns ()
@@ -714,7 +714,7 @@ word test in it and whether the file lives under the test/ directory."
   (cljr--pop-tmp-marker-after-yasnippet)
   (when cljr-auto-sort-ns
     (cljr--add-yas-snippet-sort-ns-hook))
-  (yas-expand-snippet "[$1 :refer ${2:[$3]}]$0"))
+  (yas-expand-snippet "[$1 :refer ${2:[$3]}]"))
 
 ;;;###autoload
 (defun cljr-add-import-to-ns ()
