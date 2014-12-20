@@ -173,6 +173,12 @@ Used in `cljr-remove-debug-fns' feature."
 
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
+(defvar cljr--add-require-snippet "${1:[${2:$3 :as $4}]}"
+  "The snippet used in in `cljr-add-require-to-ns'")
+
+(defvar cljr--add-use-snippet "[$1 :refer ${2:[$3]}]"
+  "The snippet used in in `cljr-add-use-to-ns'")
+
 ;;; Buffer Local Declarations
 
 ;; tracking state of find-symbol buffer
@@ -704,7 +710,7 @@ word test in it and whether the file lives under the test/ directory."
   (cljr--pop-tmp-marker-after-yasnippet)
   (when cljr-auto-sort-ns
     (cljr--add-yas-snippet-sort-ns-hook))
-  (yas-expand-snippet "${1:[${2:$3 :as $4}]}"))
+  (yas-expand-snippet cljr--add-require-snippet))
 
 ;;;###autoload
 (defun cljr-add-use-to-ns ()
@@ -714,7 +720,7 @@ word test in it and whether the file lives under the test/ directory."
   (cljr--pop-tmp-marker-after-yasnippet)
   (when cljr-auto-sort-ns
     (cljr--add-yas-snippet-sort-ns-hook))
-  (yas-expand-snippet "[$1 :refer ${2:[$3]}]"))
+  (yas-expand-snippet cljr--add-use-snippet))
 
 ;;;###autoload
 (defun cljr-add-import-to-ns ()
