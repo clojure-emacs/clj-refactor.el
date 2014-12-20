@@ -222,6 +222,11 @@ Used in `cljr-remove-debug-fns' feature."
       (buffer-substring-no-properties beg end)
     (delete-region beg end)))
 
+(defun cljr--comment-line? ()
+  (save-excursion
+    (goto-char (point-at-bol))
+    (looking-at "\\s-*;+")))
+
 (defun cljr--delete-and-extract-sexp-with-nested-sexps ()
   "Returns list of strings representing the nested sexps if there is any.
    In case there are no nested sexp the list will have only one element.
@@ -283,6 +288,9 @@ errors."
   (delete-region (point-at-bol) (line-end-position))
   (join-line)
   (paredit-forward-delete 1))
+
+(defun cljr--looking-at-dependency-vector-p ()
+  (looking-at "\\[[^[[:space:]]+[[:space:]]+\""))
 
 (defun cljr--just-one-blank-line ()
   (newline 2)
@@ -1550,25 +1558,114 @@ sorts the project's dependency vectors."
     (cljr-sort-project-dependencies)
     (message "Project clean done.")))
 
+(defun cljr--extract-dependency-name ()
+  (assert (cljr--looking-at-dependency-vector-p))
+  (forward-char)
+  (prog1
+      (buffer-substring-no-properties
+       (point)
+       (cljr--point-after '(re-search-forward "\\s-") 'backward-char))
+    (backward-char)
+    (cljr--delete-and-extract-sexp)
+    (delete-region (point-at-bol) (point-at-eol))
+    (forward-line)
+    (join-line)))
+
+(defun cljr--empty-buffer? ()
+  (s-blank? (s-trim (buffer-substring-no-properties (point-min) (point-max)))))
+
+(defun cljr--extract-next-dependency-name ()
+  (while (not (or (cljr--empty-buffer?)
+                  (cljr--looking-at-dependency-vector-p)))
+    (delete-char 1))
+  (when (cljr--looking-at-dependency-vector-p)
+    (cljr--extract-dependency-name)))
+
+(defun cljr--get-sorted-dependency-names (deps)
+  "Strips metadata and comments"
+  (with-temp-buffer
+    (let ((names (list)))
+      (insert (->> deps (s-chop-prefix "[") (s-chop-suffix "]")))
+      (goto-char (point-min))
+      (while (not (cljr--empty-buffer?))
+        (push (cljr--extract-next-dependency-name) names))
+      (s-join "\n "(-sort #'string< names)))))
+
+(defun cljr--prepare-sort-buffer (dividing-line)
+  (insert sorted-names)
+  (goto-char (point-max))
+  (open-line 1)
+  (forward-line)
+  (insert dividing-line)
+  (open-line 1)
+  (forward-line)
+  (insert vectors-and-meta))
+
+(defun cljr--sort-dependency-vectors-with-meta-and-comments (dividing-line)
+  ;;; The buffer looks like this:
+  ;;; foo/bar
+  ;;; <dividing-line>
+  ;;; ^:src-dep [foo/bar "0.1.1"]
+
+  ;;; Until we cross the dividing line, take a sorted line, find
+  ;;; its equal in the raw content below and move that vector with meta and
+  ;;; comments to the end of the buffer
+  (goto-char (point-min))
+  (while (not (looking-at dividing-line))
+    (let ((dep (s-trim (cljr--extract-region (point) (point-at-eol))))
+          start end vector-and-meta)
+      (forward-line)
+      (join-line)
+      (re-search-forward dividing-line)
+      (re-search-forward (s-concat "\\[" dep "\\s-+\""))
+      (paredit-backward-up 2)
+      (while (not (looking-back "^\\s-*"))
+        (forward-char -1))
+      (while (save-excursion (forward-line -1) (cljr--comment-line?))
+        (forward-line -1))
+      (setq start (point))
+      (re-search-forward (s-concat "\\[" dep "\\s-+\""))
+      (setq end (max (point-at-eol)
+                     (cljr--point-after
+                      '(paredit-forward-up 2) '(move-end-of-line 1))))
+      (setq vector-and-meta (buffer-substring-no-properties start end))
+      (delete-region start end)
+      (forward-line)
+      (join-line)
+      (goto-char (point-max))
+      (open-line 1)
+      (forward-line)
+      (insert vector-and-meta)
+      (goto-char (point-min))))
+  (cljr--delete-line))
+
+(defun cljr--sort-dependency-vectors (sorted-names vectors-and-meta)
+  (with-temp-buffer
+    (let ((dividing-line "<===============================>"))
+      (cljr--prepare-sort-buffer dividing-line)
+      (cljr--sort-dependency-vectors-with-meta-and-comments dividing-line)
+      (->> (buffer-substring-no-properties (point) (point-max))
+        s-trim
+        (s-prepend "[")
+        (s-append "]")))))
+
 ;;;###autoload
 (defun cljr-sort-project-dependencies ()
   (interactive)
   "Sorts all dependency vectors in project.clj"
   (cljr--update-file (cljr--project-file)
-    (goto-char (point-min))
-    (while (re-search-forward ":dependencies" (point-max) t)
-      (forward-char)
-      (when (looking-at "\\[")
-        (->> (cljr--delete-and-extract-sexp)
-          (s-chop-prefix "[")
-          (s-chop-suffix "]")
-          s-lines
-          (-map #'s-trim)
-          (-sort #'string<)
-          (s-join "\n")
-          (insert "["))
-        (insert "]")))
-    (indent-region (point-min) (point-max))))
+                     (goto-char (point-min))
+                     (while (re-search-forward ":dependencies" (point-max) t)
+                       (forward-char)
+                       (-> (buffer-substring-no-properties (point)
+                                                           (cljr--point-after 'paredit-forward))
+                         cljr--get-sorted-dependency-names
+                         (cljr--sort-dependency-vectors (->> (cljr--delete-and-extract-sexp)
+                                                          (s-chop-prefix "[")
+                                                          (s-chop-suffix "]")))
+                         insert))
+                     (indent-region (point-min) (point-max))
+                     (save-buffer)))
 
 (defun cljr--call-middleware-sync (key request)
   (let ((nrepl-sync-request-timeout 25))
