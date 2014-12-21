@@ -359,8 +359,8 @@ list of (fn args) to pass to `apply''"
     (forward-char -1)))
 
 (defun cljr--project-depends-on-p (package)
-  (save-window-excursion
-    (find-file (cljr--project-file))
+  (with-current-buffer
+      (find-file-noselect (cljr--project-file))
     (goto-char (point-min))
     (search-forward package nil t)))
 
@@ -1490,16 +1490,16 @@ sorts the project's dependency vectors."
     (dolist (filename (cljr--project-files))
       (when (and (s-ends-with? "clj" filename)
                  (not (cljr--excluded-from-project-clean? filename)))
-        (let ((buffer (get-file-buffer filename))
-              find-file-p)
+        (let ((buffer (get-file-buffer filename)))
           (if buffer
-              (set-buffer buffer)
-            (setq find-file-p t)
-            (find-file filename))
-          (ignore-errors (-map 'funcall cljr-project-clean-functions))
-          (save-buffer)
-          (when find-file-p
-            (kill-buffer)))))
+              (progn
+                (set-buffer buffer)
+                (ignore-errors (-map 'funcall cljr-project-clean-functions))
+                (save-buffer))
+            (with-temp-file filename
+              (insert-file-contents filename)
+              (clojure-mode)
+              (ignore-errors (-map 'funcall cljr-project-clean-functions)))))))
     (cljr-sort-project-dependencies)
     (message "Project clean done.")))
 
@@ -1507,8 +1507,9 @@ sorts the project's dependency vectors."
 (defun cljr-sort-project-dependencies ()
   (interactive)
   "Sorts all dependency vectors in project.clj"
-  (save-window-excursion
-    (find-file (cljr--project-file))
+  (with-temp-file (cljr--project-file)
+    (insert-file-contents (cljr--project-file))
+    (clojure-mode)
     (goto-char (point-min))
     (while (re-search-forward ":dependencies" (point-max) t)
       (forward-char)
@@ -1522,8 +1523,7 @@ sorts the project's dependency vectors."
           (s-join "\n")
           (insert "["))
         (insert "]")))
-    (indent-region (point-min) (point-max))
-    (save-buffer)))
+    (indent-region (point-min) (point-max))))
 
 (defun cljr--call-middleware-sync (key request)
   (let ((nrepl-sync-request-timeout 25))
@@ -1556,15 +1556,15 @@ sorts the project's dependency vectors."
   (completing-read prompt choices))
 
 (defun cljr--add-project-dependency (artifact version)
-  (save-window-excursion
-    (find-file (cljr--project-file))
+  (with-temp-file (cljr--project-file)
+    (insert-file-contents (cljr--project-file))
+    (clojure-mode)
     (goto-char (point-min))
     (re-search-forward ":dependencies")
     (paredit-forward)
     (paredit-backward-down)
     (newline-and-indent)
-    (insert "[" artifact " \"" version "\"]")
-    (save-buffer))
+    (insert "[" artifact " \"" version "\"]"))
   (message "Added %s version %s as a project dependency" artifact version))
 
 (defun cljr--assert-middleware ()
