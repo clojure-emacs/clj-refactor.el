@@ -87,6 +87,12 @@
   :group 'cljr
   :type '(repeat function))
 
+(defcustom cljr-project-clean-exceptions '("dev/user.clj")
+  "Contains a list of files that should not be cleaned when
+  running `cljr-project-clean'."
+  :group 'cljr
+  :type '(repeat string))
+
 (defcustom cljr-debug-functions "println,pr,prn"
   "List of functions used for debug purposes.
 Used in `cljr-remove-debug-fns' feature."
@@ -1468,6 +1474,12 @@ front of function literals and sets."
 
 ;; ------ project clean --------
 
+(defun cljr--excluded-from-project-clean? (filename)
+  (member (s-with filename
+            (s-chop-prefix (cljr--project-dir))
+            (s-chop-prefix "/"))
+          cljr-project-clean-exceptions))
+
 ;;;###autoload
 (defun cljr-project-clean ()
   "Runs `cljr-project-clean-functions' on every clojure file, then
@@ -1476,7 +1488,8 @@ sorts the project's dependency vectors."
   (when (or (not cljr-project-clean-prompt)
             (yes-or-no-p "Cleaning your project might change many of your clj files. Do you want to proceed?"))
     (dolist (filename (cljr--project-files))
-      (when (s-ends-with? "clj" filename)
+      (when (and (s-ends-with? "clj" filename)
+                 (not (cljr--excluded-from-project-clean? filename)))
         (let ((buffer (get-file-buffer filename))
               find-file-p)
           (if buffer
