@@ -138,8 +138,9 @@ Used in `cljr-remove-debug-fns' feature."
              (save-buffer))
          (with-temp-file ,fn
            (insert-file-contents ,fn)
-           (clojure-mode)
-           ,@body)))))
+           (delay-mode-hooks
+             (clojure-mode)
+             ,@body))))))
 
 (define-key clj-refactor-map [remap paredit-raise-sexp] 'cljr-raise-sexp)
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-backward] 'cljr-splice-sexp-killing-backward)
