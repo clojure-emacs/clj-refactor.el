@@ -1676,9 +1676,9 @@ sorts the project's dependency vectors."
                                     "name" symbol)))
     (cljr--call-middleware-sync "occurrence" find-symbol-request)))
 
-(defun cljr--find-symbol (symbol ns callback)
+(defun cljr--find-symbol (force-project-dir symbol ns callback)
   (let* ((dir (file-truename
-               (if cljr-find-symbols-in-dir-prompt
+               (if (and (not force-project-dir) cljr-find-symbols-in-dir-prompt)
                    (read-directory-name "Base directory: " (cljr--project-dir))
                  (cljr--project-dir))))
          (find-symbol-request (list "op" "refactor"
@@ -1732,7 +1732,7 @@ sorts the project's dependency vectors."
     (if (or (not ns) (not symbol-name))
         (error "could not resolve symbol. Please load your namespace.")
       (cljr--setup-find-symbol-buffer ns symbol-name)
-      (cljr--find-symbol symbol-name ns 'cljr--format-and-insert-symbol-occurrence))))
+      (cljr--find-symbol nil symbol-name ns 'cljr--format-and-insert-symbol-occurrence))))
 
 (defun cljr--read-symbol-metadata (occurrences)
   (->> occurrences
@@ -1775,8 +1775,9 @@ sorts the project's dependency vectors."
   (interactive "sRename to: ")
   (cljr--assert-middleware)
   (save-buffer)
-  (let* ((symbol-name (cider-symbol-at-point))
-         (ns (nrepl-dict-get (cider-var-info symbol-name) "ns")))
+  (let* ((var-info (cider-var-info (cider-symbol-at-point)))
+         (symbol-name (nrepl-dict-get var-info "name"))
+         (ns (nrepl-dict-get var-info "ns")))
     (if (or (not ns) (not symbol-name))
         (error "could not resolve symbol. Please load your namespace.")
       (let ((occurrences (-> symbol-name
@@ -1788,7 +1789,7 @@ sorts the project's dependency vectors."
 
 (defun cljr-warm-ast-cache ()
   (interactive)
-  (cljr--find-symbol "join" "clojure.string" (lambda (_))))
+  (cljr--find-symbol t "join" "clojure.string" (lambda (_))))
 
 (defun cljr--replace-ns (new-ns)
   (save-excursion
