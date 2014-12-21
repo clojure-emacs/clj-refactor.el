@@ -509,6 +509,14 @@ Removes invocations of a predefined set of functions from the namespace. Remove
 function invocations are configurable `cljr-debug-functions`; default value is
 `"println,pr,prn"`.
 
+## Find usages
+
+Opens a grep buffer, clickable listing all occurrences of the symbol (most likely def or defn). The project's namespaces don't need to be loaded although cider needs to be able to resolve the symbol you want to search for.
+
+## Rename symbol
+
+Renames the symbol at the cursor across the project. **WARNING** Also reloads the buffer as a side effect where the symbol is defined *only* if that namespace was already loaded. This is needed so the ASTs for the changed files can be recreated (they will refer the renamed symbol).
+
 ## Clean ns
 
 This op performs the following cleanups of the ns form:

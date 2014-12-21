@@ -1787,12 +1787,18 @@ sorts the project's dependency vectors."
          (ns (nrepl-dict-get var-info "ns")))
     (if (or (not ns) (not symbol-name))
         (error "could not resolve symbol. Please load your namespace.")
-      (let ((occurrences (-> symbol-name
-                           (cljr--find-symbol-sync ns)
-                           cljr--read-symbol-metadata)))
-        (-> occurrences
-          (cljr--rename-symbol new-name))
-        (message "Renamed %s occurrences of %s" (length occurrences) symbol-name)))))
+      (let* ((occurrences (-> symbol-name
+                            (cljr--find-symbol-sync ns)
+                            cljr--read-symbol-metadata))
+             (buffer-of-symbol (cider-find-var-file (concat ns "/" symbol-name)))
+             (tooling-buffer-p (cider--tooling-file-p (buffer-name buffer-of-symbol))))
+        (cljr--rename-symbol occurrences new-name)
+        (when (not tooling-buffer-p)
+          (message "Reloading buffer %s where symbol is defined" buffer-of-symbol))
+        (message "Renamed %s occurrences of %s/%s" (length occurrences) ns symbol-name)
+        (when (not tooling-buffer-p)
+          (cider-load-buffer buffer-of-symbol)
+          (cljr-warm-ast-cache))))))
 
 (defun cljr-warm-ast-cache ()
   (interactive)
