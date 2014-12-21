@@ -122,6 +122,24 @@ Used in `cljr-remove-debug-fns' feature."
 
 (defvar-local cljr--num-syms -1 "Keeps track of overall number of symbol occurrences")
 
+(defmacro cljr--update-file (filename &rest body)
+  "If there is an open buffer for FILENAME, then change that.
+   Otherwise open the file and do the changes non-interactively."
+  (declare (debug (form body))
+           (indent 1))
+  (let ((fn (make-symbol "filename"))
+        (bf (make-symbol "buffer")))
+    `(let* ((,fn ,filename)
+            (,bf (get-file-buffer ,fn)))
+       (if ,bf
+           (progn
+             (set-buffer ,bf)
+             ,@body
+             (save-buffer))
+         (with-temp-file ,fn
+           (insert-file-contents ,fn)
+           (clojure-mode)
+           ,@body)))))
 
 (define-key clj-refactor-map [remap paredit-raise-sexp] 'cljr-raise-sexp)
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-backward] 'cljr-splice-sexp-killing-backward)
@@ -1490,16 +1508,8 @@ sorts the project's dependency vectors."
     (dolist (filename (cljr--project-files))
       (when (and (s-ends-with? "clj" filename)
                  (not (cljr--excluded-from-project-clean? filename)))
-        (let ((buffer (get-file-buffer filename)))
-          (if buffer
-              (progn
-                (set-buffer buffer)
-                (ignore-errors (-map 'funcall cljr-project-clean-functions))
-                (save-buffer))
-            (with-temp-file filename
-              (insert-file-contents filename)
-              (clojure-mode)
-              (ignore-errors (-map 'funcall cljr-project-clean-functions)))))))
+        (cljr--update-file filename
+          (ignore-errors (-map 'funcall cljr-project-clean-functions)))))
     (cljr-sort-project-dependencies)
     (message "Project clean done.")))
 
@@ -1507,9 +1517,7 @@ sorts the project's dependency vectors."
 (defun cljr-sort-project-dependencies ()
   (interactive)
   "Sorts all dependency vectors in project.clj"
-  (with-temp-file (cljr--project-file)
-    (insert-file-contents (cljr--project-file))
-    (clojure-mode)
+  (cljr--update-file (cljr--project-file)
     (goto-char (point-min))
     (while (re-search-forward ":dependencies" (point-max) t)
       (forward-char)
@@ -1556,9 +1564,7 @@ sorts the project's dependency vectors."
   (completing-read prompt choices))
 
 (defun cljr--add-project-dependency (artifact version)
-  (with-temp-file (cljr--project-file)
-    (insert-file-contents (cljr--project-file))
-    (clojure-mode)
+  (cljr--update-file (cljr--project-file)
     (goto-char (point-min))
     (re-search-forward ":dependencies")
     (paredit-forward)
