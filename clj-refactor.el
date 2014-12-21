@@ -231,6 +231,7 @@ Used in `cljr-remove-debug-fns' feature."
   (define-key clj-refactor-map (funcall key-fn "pc") 'cljr-project-clean)
   (define-key clj-refactor-map (funcall key-fn "pf") 'cljr-promote-function)
   (define-key clj-refactor-map (funcall key-fn "rf") 'cljr-rename-file)
+  (define-key clj-refactor-map (funcall key-fn "rl") 'cljr-remove-let)
   (define-key clj-refactor-map (funcall key-fn "rs") 'cljr-rename-symbol)
   (define-key clj-refactor-map (funcall key-fn "rr") 'cljr-remove-unused-requires)
   (define-key clj-refactor-map (funcall key-fn "ru") 'cljr-replace-use)
@@ -261,6 +262,11 @@ Used in `cljr-remove-debug-fns' feature."
          (contents (buffer-substring beg end)))
     (delete-region beg end)
     contents))
+
+(defun cljr--extract-region (beg end)
+  (prog1
+      (buffer-substring-no-properties beg end)
+    (delete-region beg end)))
 
 (defun cljr--delete-and-extract-sexp-with-nested-sexps ()
   "Returns list of strings representing the nested sexps if there is any.
@@ -1333,6 +1339,36 @@ let are."
     (cljr--goto-let)
     (re-search-forward "\\[")
     (cljr--depth-at-point)))
+
+(defun cljr-remove-let ()
+  "Inlines all variables in the let form and removes it."
+  (interactive)
+  (cljr--goto-let)
+  (search-forward "[")
+  (let ((bindings (list))
+        (beg (point))
+        (end (cljr--point-after '(paredit-forward-up 2))))
+    (while (not (looking-at "]"))
+      (while (or (looking-at "\\s-+")
+                 (looking-at "\n"))
+        (delete-char 1))
+      (push (cljr--extract-region (point) (cljr--point-after 'paredit-forward))
+            bindings)
+      (while (or (looking-at "\\s-+")
+                 (looking-at "\n"))
+        (delete-char 1))
+      (push (cljr--extract-region (point) (cljr--point-after 'paredit-forward))
+            bindings))
+    (setq bindings (nreverse bindings))
+
+    (loop for (binding form) on bindings by #'cddr while form do
+          (replace-regexp binding form :delimited beg end))
+
+    (cljr--goto-let)
+    (paredit-forward-down)
+    (paredit-forward 2)
+    (paredit-splice-sexp-killing-backward)))
+
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-move-to-let)
 
