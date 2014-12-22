@@ -218,8 +218,7 @@ Used in `cljr-remove-debug-fns' feature."
 
 (defun cljr--delete-and-extract-sexp ()
   (let* ((beg (point))
-         (end (progn (paredit-forward)
-                     (point)))
+         (end (cljr--point-after 'paredit-forward))
          (contents (buffer-substring beg end)))
     (delete-region beg end)
     contents))
@@ -961,7 +960,7 @@ optionally including those that are declared private."
     (paredit-forward)
     (forward-char)
     (let ((beg (point))
-          (end (progn (paredit-forward) (point))))
+          (end (cljr--point-after 'paredit-forward)))
       (buffer-substring-no-properties beg end))))
 
 ;; ------ declare statements -----------
@@ -985,7 +984,7 @@ optionally including those that are declared private."
       (paredit-forward))
     (forward-char)
     (let ((beg (point))
-          (end (progn (paredit-forward) (point))))
+          (end (cljr--point-after 'paredit-forward)))
       (buffer-substring-no-properties beg end))))
 
 ;;;###autoload
@@ -1053,7 +1052,7 @@ optionally including those that are declared private."
 (defun cljr--reindent-thread ()
   (cljr--goto-thread)
   (let ((beg (point))
-        (end (progn (paredit-forward) (point))))
+        (end (cljr--point-after 'paredit-forward)))
     (indent-region beg end)))
 
 ;;;###autoload
@@ -1082,9 +1081,7 @@ optionally including those that are declared private."
     (forward-char 3))
   (search-backward-regexp "([^-]*->")
   (if (cljr--nothing-more-to-unwind)
-      (progn
-        (cljr--pop-out-of-threading)
-        nil)
+      (cljr--pop-out-of-threading)
     (paredit-forward-down)
     (cond
      ((looking-at "[^-]*->[\n\r\t ]")  (cljr--unwind-first))
@@ -1110,9 +1107,7 @@ optionally including those that are declared private."
                      (point)))
          (contents (buffer-substring beg end)))
     (if (string= contents ")")
-        (progn
-          (message "Nothing more to thread.")
-          nil)
+        (message "Nothing more to thread.")
       (delete-region beg end)
       (paredit-backward-up)
       (just-one-space 0)
@@ -1122,8 +1117,7 @@ optionally including those that are declared private."
       t)))
 
 (defun cljr--thread-last ()
-  (paredit-forward)
-  (paredit-forward)
+  (paredit-forward 2)
   (paredit-backward-down)
   (let* ((end (point))
          (beg (progn (paredit-backward)
@@ -1235,9 +1229,7 @@ optionally including those that are declared private."
   (save-excursion
     (let ((bind-var (car binding))
           (init-expr (-last-item binding))
-          (end (save-excursion (progn (cljr--goto-let)
-                                      (paredit-forward)
-                                      (point)))))
+          (end (cljr--point-after 'cljr--goto-let 'paredit-forward)))
       (while (re-search-forward (cljr--sexp-regexp init-expr) end t)
         (replace-match (concat "\\1" bind-var "\\2"))))))
 
@@ -1772,7 +1764,7 @@ sorts the project's dependency vectors."
       (paredit-forward-up)
       (unless (looking-at "\s*?$")
         (newline))
-      (indent-region fn-start (progn (paredit-forward-up) (point))))))
+      (indent-region fn-start (cljr--point-after 'paredit-forward-up)))))
 
 (defun cljr--append-fn-parameter (param)
   (cljr--goto-fn-definition)
@@ -1790,8 +1782,8 @@ sorts the project's dependency vectors."
   (cljr--goto-fn-definition)
   (let ((fn-start (point))
         var replacement)
-    (while (re-search-forward "%[1-9]?" (save-excursion (paredit-forward) (point)) t)
-      (setq var (buffer-substring (point) (progn (paredit-backward) (point))))
+    (while (re-search-forward "%[1-9]?" (cljr--point-after 'paredit-forward) t)
+      (setq var (buffer-substring (point) (cljr--point-after 'paredit-backward)))
       (setq replacement (read-string (format "%s => " var)))
       (cljr--append-fn-parameter replacement)
       (replace-regexp (format "\\s-%s\\(\\s-\\|\\|\n)\\)" var)
