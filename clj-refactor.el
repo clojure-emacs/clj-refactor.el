@@ -1211,7 +1211,7 @@ optionally including those that are declared private."
     (paredit-forward-down)
     (while (/= sexp-start end)
       (paredit-move-forward)
-      (let ((sexp (buffer-substring sexp-start (point))))
+      (let ((sexp (buffer-substring-no-properties sexp-start (point))))
         (push (s-trim
                (if (= start sexp-start)
                    (substring sexp 1)
@@ -1301,34 +1301,28 @@ let are."
     (re-search-forward "\\[")
     (cljr--depth-at-point)))
 
+(defun cljr--eliminate-let ()
+  (cljr--goto-let)
+  (paredit-forward-down)
+  (paredit-forward 2)
+  (paredit-splice-sexp-killing-backward))
+
 (defun cljr-remove-let ()
   "Inlines all variables in the let form and removes it."
   (interactive)
   (cljr--goto-let)
   (search-forward "[")
-  (let ((bindings (list))
-        (beg (point))
-        (end (cljr--point-after '(paredit-forward-up 2))))
-    (while (not (looking-at "]"))
-      (while (or (looking-at "\\s-+")
-                 (looking-at "\n"))
-        (delete-char 1))
-      (push (cljr--extract-region (point) (cljr--point-after 'paredit-forward))
-            bindings)
-      (while (or (looking-at "\\s-+")
-                 (looking-at "\n"))
-        (delete-char 1))
-      (push (cljr--extract-region (point) (cljr--point-after 'paredit-forward))
-            bindings))
-    (setq bindings (nreverse bindings))
+  (paredit-forward-up)
+  (let* ((beg (point))
+         (end (cljr--point-after '(paredit-forward-up 1)))
+         (bindings (cljr--extract-let-bindings)))
 
-    (loop for (binding form) on bindings by #'cddr while form do
-          (replace-regexp binding form :delimited beg end))
+    (dolist (binding bindings)
+      (replace-regexp (first binding) (second binding) :delimited beg end)
+      (cljr--goto-let)
+      (setq end (cljr--point-after 'paredit-forward)))
 
-    (cljr--goto-let)
-    (paredit-forward-down)
-    (paredit-forward 2)
-    (paredit-splice-sexp-killing-backward)))
+    (cljr--eliminate-let)))
 
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-move-to-let)
