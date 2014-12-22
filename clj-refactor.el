@@ -1949,6 +1949,7 @@ sorts the project's dependency vectors."
   (interactive)
   (cljr--assert-leiningen-project)
   (cljr--assert-middleware)
+  (save-buffer)
   (let ((result (nrepl-send-sync-request
                  (list "op" "clean-ns"
                        "path" (buffer-file-name)))))
