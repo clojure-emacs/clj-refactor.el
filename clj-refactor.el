@@ -1196,7 +1196,7 @@ optionally including those that are declared private."
                   (looking-at "\(\\(when-let\\|if-let\\|let\\)\\( \\|\\[\\)")))
     (paredit-backward-up)))
 
-(defun cljr--extract-let-bindings ()
+(defun cljr--get-let-bindings ()
   "Returns a list of lists. The inner lists contain two elements first is
    the binding, second is the init-expr"
   (cljr--goto-let)
@@ -1243,10 +1243,10 @@ optionally including those that are declared private."
   (paredit-forward-up)
   (skip-syntax-forward " >")
   (paredit-convolute-sexp)
-  (-map 'cljr--replace-sexp-with-binding (cljr--extract-let-bindings)))
+  (-map 'cljr--replace-sexp-with-binding (cljr--get-let-bindings)))
 
 (defun cljr--replace-sexp-with-binding-in-let ()
-  (-map 'cljr--replace-sexp-with-binding (cljr--extract-let-bindings))
+  (-map 'cljr--replace-sexp-with-binding (cljr--get-let-bindings))
   (remove-hook 'multiple-cursors-mode-disabled-hook 'replace-sexp-with-binding-in-let))
 
 ;;;###autoload
@@ -1315,7 +1315,7 @@ let are."
   (paredit-forward-up)
   (let* ((beg (point))
          (end (cljr--point-after '(paredit-forward-up 1)))
-         (bindings (cljr--extract-let-bindings)))
+         (bindings (cljr--get-let-bindings)))
 
     (dolist (binding bindings)
       (replace-regexp (first binding) (second binding) :delimited beg end)
