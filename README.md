@@ -93,6 +93,7 @@ This is it so far:
  - `pc`: run project cleaner functions on the whole project
  - `pf`: promote function literal or fn, or fn to defn
  - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
+ - `rl`: remove-let, inline all variables and remove the let form
  - `rr`: remove unused requires
  - `ru`: replace all `:use` in namespace with `:refer :all`
  - `sn`: sort :use, :require and :import in the ns form
@@ -548,6 +549,7 @@ You might also like
 
 ## Changelog
 
+- Add `cljr-remove-let` [Lars Andersen](https://github.com/expez)
 - Add `cljr-clean-ns` [Lars Andersen](https://github.com/expez)
 - Add `cljr-add-missing-libspec` [Lars Andersen](https://github.com/expez)
 - Add `cljr-promote-function` [Lars Andersen](https://github.com/expez)
