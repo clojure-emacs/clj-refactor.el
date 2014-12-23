@@ -54,16 +54,16 @@
   (lambda ()
     (multiple-cursors-mode 0)))
 
-(defun run-rename-symbol (occurrences new-name)
-  (cljr--rename-symbol (cljr--read-symbol-metadata occurrences) new-name))
+(defun run-rename-symbol (ns occurrences new-name)
+  (cljr--rename-symbol ns (cljr--read-symbol-metadata occurrences) new-name))
 
 (Given "^I call the rename callback directly with mock data for foo->baz"
   (lambda ()
-    (run-rename-symbol '(3  4  1  9  "foo"  "tmp/src/example/two.clj"  "" 5  5  15  23  "foo"  "tmp/src/example/one.clj"  "") "baz")))
+    (run-rename-symbol "example.two" '(3  4  1  9  "foo"  "tmp/src/example/two.clj"  "" 5  5  15  23  "foo"  "tmp/src/example/one.clj"  "") "baz")))
 
 (Given "^I call the rename callback directly with mock data for star->asterisk"
   (lambda ()
-    (run-rename-symbol '(6  7  1  10  "star*"  "tmp/src/example/two.clj"  "" 8  8  17  27  "star*"  "tmp/src/example/one.clj"  "") "asterisk*")))
+    (run-rename-symbol "example.two" '(6  7  1  10  "star*"  "tmp/src/example/two.clj"  "" 8  8  17  27  "star*"  "tmp/src/example/one.clj"  "") "asterisk*")))
 
 (Given "^I call the add-missing-libspec callback directly with mock data to import"
   (lambda ()

@@ -14,7 +14,7 @@ Feature: renames symbol (def, defn); nrepl middleware response(s) mocked
       (:require [example.two :as two]))
 
     (defn bar []
-      (str "bar" (two/foo) "foo"))
+      (str "bar" (two/foo) "goo"))
 
     (defn sky []
       (str "sky: " (two/star*)))
@@ -29,7 +29,7 @@ Feature: renames symbol (def, defn); nrepl middleware response(s) mocked
     (ns example.two)
 
     (defn foo []
-      "foo")
+      "goo")
 
     (defn star* []
       "star")
@@ -45,7 +45,7 @@ Feature: renames symbol (def, defn); nrepl middleware response(s) mocked
     (ns example.two)
 
     (defn baz []
-      "foo")
+      "goo")
 
     (defn star* []
       "star")
@@ -57,7 +57,7 @@ Feature: renames symbol (def, defn); nrepl middleware response(s) mocked
       (:require [example.two :as two]))
 
     (defn bar []
-      (str "bar" (two/baz) "foo"))
+      (str "bar" (two/baz) "goo"))
 
     (defn sky []
       (str "sky: " (two/star*)))
@@ -71,7 +71,7 @@ Feature: renames symbol (def, defn); nrepl middleware response(s) mocked
     (ns example.two)
 
     (defn foo []
-      "foo")
+      "goo")
 
     (defn asterisk* []
       "star")
@@ -83,7 +83,7 @@ Feature: renames symbol (def, defn); nrepl middleware response(s) mocked
       (:require [example.two :as two]))
 
     (defn bar []
-      (str "bar" (two/foo) "foo"))
+      (str "bar" (two/foo) "goo"))
 
     (defn sky []
       (str "sky: " (two/asterisk*)))
