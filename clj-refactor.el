@@ -161,10 +161,10 @@ Used in `cljr-remove-debug-fns' feature."
 
 (defun cljr--key-pairs-with-modifier (modifier keys)
   (->> (string-to-list keys)
-    (--map (cljr--fix-special-modifier-combinations
-            (concat modifier (char-to-string it))))
-    (s-join " ")
-    (read-kbd-macro)))
+       (--map (cljr--fix-special-modifier-combinations
+               (concat modifier (char-to-string it))))
+       (s-join " ")
+       (read-kbd-macro)))
 
 (defun cljr--key-pairs-with-prefix (prefix keys)
   (read-kbd-macro (concat prefix " " keys)))
@@ -509,9 +509,9 @@ word test in it and whether the file lives under the test/ directory."
       (dolist (statement-type '(":require" ":use" ":import"))
         (ignore-errors
           (dolist (statement (->> (cljr--extract-ns-statements statement-type nil)
-                               (-map 's-trim)
-                               (-sort comparator)
-                               (-distinct)))
+                                  (-map 's-trim)
+                                  (-sort comparator)
+                                  (-distinct)))
             (cljr--insert-in-ns statement-type)
             (insert statement)))))))
 
@@ -540,10 +540,10 @@ word test in it and whether the file lives under the test/ directory."
   (cljr--assert-middleware)
   (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
          (result (cljr--call-middleware-sync "value"
-                  (list "op" "refactor"
-                        "ns-string" body
-                        "refactor-fn" "find-debug-fns"
-                        "debug-fns" cljr-debug-functions)))
+                                             (list "op" "refactor"
+                                                   "ns-string" body
+                                                   "refactor-fn" "find-debug-fns"
+                                                   "debug-fns" cljr-debug-functions)))
          (debug-fn-tuples (pop result))
          (removed-lines 0))
     (while debug-fn-tuples
@@ -568,9 +568,9 @@ word test in it and whether the file lives under the test/ directory."
                          (-take as-index sexp-as-list)
                        sexp-as-list))
          (referred-names (->> sexp-wo-as
-                           (nthcdr (1+ refer-index))
-                           (-map 'cljr--is-name-in-use-p)
-                           (delq nil))))
+                              (nthcdr (1+ refer-index))
+                              (-map 'cljr--is-name-in-use-p)
+                              (delq nil))))
     (cond (referred-names
            (format "%s [%s]%s"
                    (s-join " " (if (and as-used (< as-index refer-index))
@@ -614,9 +614,9 @@ word test in it and whether the file lives under the test/ directory."
 (defun cljr--rectify-prefix-list-req-statement (require-as-list)
   (let* ((first-element (cljr--extract-sexp-content (car require-as-list)))
          (used-elements (->> require-as-list
-                          (nthcdr 1)
-                          (-map (apply-partially 'cljr--is-prefix-element-in-use first-element))
-                          (delq nil))))
+                             (nthcdr 1)
+                             (-map (apply-partially 'cljr--is-prefix-element-in-use first-element))
+                             (delq nil))))
     (when used-elements
       (format "[%s %s]" first-element (s-join " " used-elements)))))
 
@@ -644,10 +644,10 @@ word test in it and whether the file lives under the test/ directory."
   (save-excursion
     (let (req-exists)
       (dolist (statement (->> (cljr--extract-ns-statements ":require" t)
-                           (-remove 'cljr--req-statement-is-for-current-ns)
-                           (-map 'cljr--rectify-req-statement)
-                           (delq nil)
-                           (nreverse)))
+                              (-remove 'cljr--req-statement-is-for-current-ns)
+                              (-map 'cljr--rectify-req-statement)
+                              (delq nil)
+                              (nreverse)))
         (cljr--insert-in-ns ":require")
         (insert statement)
         (setq req-exists t))
@@ -1638,27 +1638,27 @@ sorts the project's dependency vectors."
       (cljr--prepare-sort-buffer dividing-line)
       (cljr--sort-dependency-vectors-with-meta-and-comments dividing-line)
       (->> (buffer-substring-no-properties (point) (point-max))
-        s-trim
-        (s-prepend "[")
-        (s-append "]")))))
+           s-trim
+           (s-prepend "[")
+           (s-append "]")))))
 
 ;;;###autoload
 (defun cljr-sort-project-dependencies ()
   (interactive)
   "Sorts all dependency vectors in project.clj"
   (cljr--update-file (cljr--project-file)
-                     (goto-char (point-min))
-                     (while (re-search-forward ":dependencies" (point-max) t)
-                       (forward-char)
-                       (-> (buffer-substring-no-properties (point)
-                                                           (cljr--point-after 'paredit-forward))
-                         cljr--get-sorted-dependency-names
-                         (cljr--sort-dependency-vectors (->> (cljr--delete-and-extract-sexp)
-                                                          (s-chop-prefix "[")
-                                                          (s-chop-suffix "]")))
-                         insert))
-                     (indent-region (point-min) (point-max))
-                     (save-buffer)))
+    (goto-char (point-min))
+    (while (re-search-forward ":dependencies" (point-max) t)
+      (forward-char)
+      (-> (buffer-substring-no-properties (point)
+                                          (cljr--point-after 'paredit-forward))
+          cljr--get-sorted-dependency-names
+          (cljr--sort-dependency-vectors (->> (cljr--delete-and-extract-sexp)
+                                              (s-chop-prefix "[")
+                                              (s-chop-suffix "]")))
+          insert))
+    (indent-region (point-min) (point-max))
+    (save-buffer)))
 
 (defun cljr--call-middleware-sync (key request)
   (let ((nrepl-sync-request-timeout 25))
@@ -1671,8 +1671,8 @@ sorts the project's dependency vectors."
   (message "Retrieving list of available libraries...")
   (let ((request (list "op" "artifact-list" "force" (if force "true" "false"))))
     (->> request
-      (cljr--call-middleware-sync "value")
-      (s-split " "))))
+         (cljr--call-middleware-sync "value")
+         (s-split " "))))
 
 (defun cljr-update-artifact-cache ()
   (interactive)
@@ -1684,8 +1684,8 @@ sorts the project's dependency vectors."
   (let ((request (list "op" "artifact-versions"
                        "artifact" artifact)))
     (->> request
-      (cljr--call-middleware-sync "value")
-      (s-split " "))))
+         (cljr--call-middleware-sync "value")
+         (s-split " "))))
 
 (defun cljr--prompt-user-for (prompt &optional choices)
   (completing-read prompt choices))
@@ -1723,9 +1723,9 @@ sorts the project's dependency vectors."
   (cljr--assert-leiningen-project)
   (cljr--assert-middleware)
   (-when-let* ((lib-name (->> (cljr--get-artifacts-from-middleware force)
-                           (cljr--prompt-user-for "Artifact: ")))
+                              (cljr--prompt-user-for "Artifact: ")))
                (version (->> (cljr--get-versions-from-middleware lib-name)
-                          (cljr--prompt-user-for "Version: "))))
+                             (cljr--prompt-user-for "Version: "))))
     (cljr--add-project-dependency lib-name version)))
 
 (defun cljr--goto-fn-definition ()
@@ -1839,8 +1839,8 @@ sorts the project's dependency vectors."
       (setq cjr--occurrence-count (1+ cjr--occurrence-count)))
     (when occurrence
       (->> occurrence
-        (apply (lambda (line _ col _ _ file match) (format "%s:%s: %s\n" file line match)))
-        (cljr--populate-find-symbol-buffer)))
+           (apply (lambda (line _ col _ _ file match) (format "%s:%s: %s\n" file line match)))
+           (cljr--populate-find-symbol-buffer)))
     (when (= cjr--occurrence-count cljr--num-syms)
       (cljr--finalise-find-symbol-buffer cljr--num-syms))))
 
@@ -1874,17 +1874,17 @@ sorts the project's dependency vectors."
 
 (defun cljr--read-symbol-metadata (occurrences)
   (->> occurrences
-    (-partition 7)
-    (-map (lambda (symbol-meta)
-            (apply (lambda (line-start line-end col-start col-end name file match)
-                     (list :line-start line-start
-                           :line-end line-end
-                           :col-start col-start
-                           :col-end col-end
-                           :name (first (last (s-split "/" name)))
-                           :file file
-                           :match match))
-                   symbol-meta)))))
+       (-partition 7)
+       (-map (lambda (symbol-meta)
+               (apply (lambda (line-start line-end col-start col-end name file match)
+                        (list :line-start line-start
+                              :line-end line-end
+                              :col-start col-start
+                              :col-end col-end
+                              :name (first (last (s-split "/" name)))
+                              :file file
+                              :match match))
+                      symbol-meta)))))
 
 (defun cljr--rename-symbol (ns occurrences new-name)
   (save-excursion
@@ -1937,8 +1937,8 @@ sorts the project's dependency vectors."
     (if (or (not ns) (not symbol-name))
         (error "could not resolve symbol. Please load your namespace.")
       (let* ((occurrences (-> symbol-name
-                            (cljr--find-symbol-sync ns)
-                            cljr--read-symbol-metadata))
+                              (cljr--find-symbol-sync ns)
+                              cljr--read-symbol-metadata))
              (buffer-of-symbol (cider-find-var-file (concat ns "/" symbol-name)))
              (tooling-buffer-p (cider--tooling-file-p (buffer-name buffer-of-symbol))))
         (cljr--rename-symbol ns occurrences new-name)
@@ -2086,8 +2086,9 @@ Defaults to the dependency vector at point, but prompts if none is found."
   (cljr--assert-middleware)
   (-> (or (cljr--dependency-vector-at-point)
           (cljr--prompt-user-for "Dependency vector: "))
-    cljr--assert-dependency-vector
-    cljr--call-middleware-to-hotload-dependency))
+      cljr--assert-dependency-vector
+      cljr--call-middleware-to-hotload-dependency))
+
 
 ;; ------ minor mode -----------
 ;;;###autoload
