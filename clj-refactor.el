@@ -184,6 +184,7 @@ Used in `cljr-remove-debug-fns' feature."
   (define-key clj-refactor-map (funcall key-fn "ct") 'cljr-cycle-thread)
   (define-key clj-refactor-map (funcall key-fn "dk") 'cljr-destructure-keys)
   (define-key clj-refactor-map (funcall key-fn "el") 'cljr-expand-let)
+  (define-key clj-refactor-map (funcall key-fn "ef") 'cljr-extract-function)
   (define-key clj-refactor-map (funcall key-fn "fu") 'cljr-find-usages)
   (define-key clj-refactor-map (funcall key-fn "hd") 'cljr-hotload-dependency)
   (define-key clj-refactor-map (funcall key-fn "il") 'cljr-introduce-let)
@@ -2089,6 +2090,40 @@ Defaults to the dependency vector at point, but prompts if none is found."
       cljr--assert-dependency-vector
       cljr--call-middleware-to-hotload-dependency))
 
+(defun cljr--insert-function (name body unbound public?)
+  (save-excursion
+    (cljr--goto-toplevel)
+    (open-line 2)
+    (if public?
+        (insert "(defn ")
+      (insert "(defn- "))
+    (insert name)
+    (newline-and-indent)
+    (insert "[" unbound "]")
+    (newline-and-indent)
+    (insert body ")")))
+
+(defun cljr--call-middleware-to-find-unbound-vars (form)
+  (let ((response (nrepl-send-sync-request
+                   (list "op" "find-unbound" "form" form))))
+    (cljr--maybe-rethrow-error response)
+    (nrepl-dict-get response "unbound")))
+
+(defun cljr-extract-function ()
+  "Extract the form at point, or the nearest enclosing form, into
+  a toplevel defn.
+
+With a prefix the newly created defn will be public."
+  (interactive)
+  (cljr--assert-middleware)
+  (unless (looking-at "(")
+    (paredit-backward-up))
+  (let* ((form (cljr--delete-and-extract-sexp))
+         (unbound (cljr--call-middleware-to-find-unbound-vars form))
+         (public? current-prefix-arg)
+         (name (cljr--prompt-user-for "Name: ")))
+    (cljr--insert-function name form unbound public?)
+    (insert "(" name " " unbound ")")))
 
 ;; ------ minor mode -----------
 ;;;###autoload
