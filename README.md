@@ -110,6 +110,7 @@ This is it so far:
  - `am`: add a missing libspec
  - `ap`: add a dependency to your project
  - `cn`: Perform various cleanups on the ns form
+ - `ef`: Extract function
  - `fu`: Find usages
  - `hd`: Hotload dependency
  - `rd`: Remove (debug) function invocations
@@ -548,6 +549,13 @@ Note that we have to build an AST in order to do this, so if the current file is
 
 If point is on a dependency vectors in, e.g. in `project.clj`, it will get hotloaded into the repl.
 
+
+## Extract function
+
+Extract the form at point, or the nearest enclosing form, into a toplevel defn.
+
+With a prefix the newly created defn will be public.
+
 ## Miscellaneous
 
 With clj-refactor enabled, any keybindings for `paredit-raise-sexp` is
@@ -562,6 +570,7 @@ You might also like
 
 ## Changelog
 
+- Add `cljr-extract-function` [Lars Andersen](https://github.com/expez)
 - Add `cljr-hotload-dependency` [Lars Andersen](https://github.com/expez)
 - Hotloading of artifacts added with `cljr-add-project-dependency` [Lars Andersen](https://github.com/expez)
 - Add `cljr-remove-let` [Lars Andersen](https://github.com/expez)
