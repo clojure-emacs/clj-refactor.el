@@ -2055,8 +2055,7 @@ containing join will be aliased to str."
       (while (not (cljr--looking-at-dependency-vector-p))
         (paredit-backward-up))
       (buffer-substring-no-properties (point)
-                                      (cljr--point-after 'paredit-forward))
-      (error nil))))
+                                      (cljr--point-after 'paredit-forward)))))
 
 (defun cljr--hotload-dependency-callback (response)
   (cljr--maybe-rethrow-error response)
