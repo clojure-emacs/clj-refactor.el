@@ -1804,25 +1804,37 @@ sorts the project's dependency vectors."
     (insert occurrence)))
 
 (defun cljr--find-symbol-sync (symbol ns)
-  (let* ((dir (file-truename
-               (if cljr-find-symbols-in-dir-prompt
-                   (read-directory-name "Base directory: " (cljr--project-dir))
-                 (cljr--project-dir))))
+  (let* ((filename (buffer-file-name))
+         (line (line-number-at-pos))
+         (column (1+ (current-column)))
+         (dir (file-truename
+                             (if cljr-find-symbols-in-dir-prompt
+                                 (read-directory-name "Base directory: " (cljr--project-dir))
+                               (cljr--project-dir))))
          (find-symbol-request (list "op" "refactor"
                                     "ns" ns
                                     "clj-dir" dir
+                                    "file" filename
+                                    "loc-line" line
+                                    "loc-column" column
                                     "refactor-fn" "find-symbol"
                                     "name" symbol)))
     (cljr--call-middleware-sync "occurrence" find-symbol-request)))
 
 (defun cljr--find-symbol (force-project-dir symbol ns callback)
-  (let* ((dir (file-truename
+  (let* ((filename (buffer-file-name))
+         (line (line-number-at-pos))
+         (column (1+ (current-column)))
+         (dir (file-truename
                (if (and (not force-project-dir) cljr-find-symbols-in-dir-prompt)
                    (read-directory-name "Base directory: " (cljr--project-dir))
                  (cljr--project-dir))))
          (find-symbol-request (list "op" "refactor"
                                     "ns" ns
                                     "clj-dir" dir
+                                    "file" filename
+                                    "loc-line" line
+                                    "loc-column" column
                                     "refactor-fn" "find-symbol"
                                     "name" symbol)))
     (with-current-buffer (nrepl-current-connection-buffer)
@@ -1850,28 +1862,25 @@ sorts the project's dependency vectors."
     (insert (format "\nFind symbol finished: %d occurrence%s found"  num-of-symbols (if (> num-of-symbols 1) "s" "")))
     (grep-mode)))
 
-(defun cljr--setup-find-symbol-buffer (ns symbol-name)
+(defun cljr--setup-find-symbol-buffer (symbol-name)
   (save-window-excursion
     (when (get-buffer cljr--find-symbol-buffer)
       (kill-buffer cljr--find-symbol-buffer))
     (pop-to-buffer cljr--find-symbol-buffer)
     (with-current-buffer "*cljr-find-usages*"
-      (insert (format "-*- mode: grep; The symbol '%s/%s' occurs in the following places:  -*-\n\n"
-                      ns
-                      symbol-name)))))
+      (insert (format "-*- mode: grep; The symbol '%s' occurs in the following places:  -*-\n\n" symbol-name)))))
 
 (defun cljr-find-usages ()
   (interactive)
   (cljr--assert-middleware)
   (save-buffer)
   (let* ((cljr--find-symbol-buffer "*cljr-find-usages*")
-         (var-info (cider-var-info (cider-symbol-at-point)))
+         (symbol (cider-symbol-at-point))
+         (var-info (cider-var-info symbol))
          (ns (nrepl-dict-get var-info "ns"))
          (symbol-name (nrepl-dict-get var-info "name")))
-    (if (or (not ns) (not symbol-name))
-        (error "could not resolve symbol. Please load your namespace.")
-      (cljr--setup-find-symbol-buffer ns symbol-name)
-      (cljr--find-symbol nil symbol-name ns 'cljr--format-and-insert-symbol-occurrence))))
+    (cljr--setup-find-symbol-buffer (or symbol-name symbol))
+    (cljr--find-symbol nil (or symbol-name symbol) ns 'cljr--format-and-insert-symbol-occurrence)))
 
 (defun cljr--read-symbol-metadata (occurrences)
   (->> occurrences
@@ -1932,23 +1941,23 @@ sorts the project's dependency vectors."
   (interactive "sRename to: ")
   (cljr--assert-middleware)
   (save-buffer)
-  (let* ((var-info (cider-var-info (cider-symbol-at-point)))
+  (let* ((symbol (cider-symbol-at-point))
+         (var-info (cider-var-info symbol))
          (symbol-name (nrepl-dict-get var-info "name"))
          (ns (nrepl-dict-get var-info "ns")))
-    (if (or (not ns) (not symbol-name))
-        (error "could not resolve symbol. Please load your namespace.")
-      (let* ((occurrences (-> symbol-name
-                              (cljr--find-symbol-sync ns)
-                              cljr--read-symbol-metadata))
-             (buffer-of-symbol (cider-find-var-file (concat ns "/" symbol-name)))
-             (tooling-buffer-p (cider--tooling-file-p (buffer-name buffer-of-symbol))))
-        (cljr--rename-symbol ns occurrences new-name)
-        (when (not tooling-buffer-p)
-          (message "Reloading buffer %s where symbol is defined" buffer-of-symbol))
-        (message "Renamed %s occurrences of %s/%s" (length occurrences) ns symbol-name)
-        (when (not tooling-buffer-p)
-          (cider-load-buffer buffer-of-symbol)
-          (cljr-warm-ast-cache))))))
+    (let* ((occurrences (-> (or symbol-name symbol)
+                          (cljr--find-symbol-sync ns)
+                          cljr--read-symbol-metadata))
+           (buffer-of-symbol (cider-find-var-file (concat ns "/" symbol-name)))
+           (tooling-buffer-p (cider--tooling-file-p (buffer-name buffer-of-symbol))))
+      (cljr--rename-symbol ns occurrences new-name)
+      (when (and (not tooling-buffer-p) symbol-name)
+        (message "Reloading buffer %s where symbol is defined" buffer-of-symbol))
+      (message "Renamed %s occurrences of %s" (length occurrences) (or symbol-name symbol))
+      (when (not tooling-buffer-p)
+        (when symbol-name
+          (cider-load-buffer buffer-of-symbol))
+        (cljr-warm-ast-cache)))))
 
 (defun cljr-warm-ast-cache ()
   (interactive)
