@@ -1244,11 +1244,11 @@ optionally including those that are declared private."
   (paredit-forward-up)
   (skip-syntax-forward " >")
   (paredit-convolute-sexp)
-  (-map 'cljr--replace-sexp-with-binding (cljr--get-let-bindings)))
+  (-each (cljr--get-let-bindings) 'cljr--replace-sexp-with-binding))
 
 (defun cljr--replace-sexp-with-binding-in-let ()
   (remove-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
-  (-map 'cljr--replace-sexp-with-binding (cljr--get-let-bindings)))
+  (-each (cljr--get-let-bindings) 'cljr--replace-sexp-with-binding))
 
 ;;;###autoload
 (defun cljr-move-to-let ()
