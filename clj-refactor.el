@@ -2098,7 +2098,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
       cljr--assert-dependency-vector
       cljr--call-middleware-to-hotload-dependency))
 
-(defun cljr--insert-function (name body unbound public?)
+(defun cljr--insert-function (name body public?)
   (save-excursion
     (cljr--goto-toplevel)
     (open-line 2)
@@ -2107,7 +2107,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
       (insert "(defn- "))
     (insert name)
     (newline-and-indent)
-    (insert "[" unbound "]")
+    (insert "[]")
     (newline-and-indent)
     (insert body ")")))
 
@@ -2126,12 +2126,25 @@ With a prefix the newly created defn will be public."
   (cljr--assert-middleware)
   (unless (looking-at "(")
     (paredit-backward-up))
-  (let* ((form (cljr--delete-and-extract-sexp))
-         (unbound (cljr--call-middleware-to-find-unbound-vars form))
+  (let* ((body (cljr--delete-and-extract-sexp))
          (public? current-prefix-arg)
-         (name (cljr--prompt-user-for "Name: ")))
-    (cljr--insert-function name form unbound public?)
-    (insert "(" name " " unbound ")")))
+         (placeholder "#a015f65")
+         (name (cljr--prompt-user-for "Name: "))
+         (fn-regexp (s-concat "(defn-? " name)))
+    (insert "(" name " " placeholder)
+    (cljr--insert-function name body public?)
+    (re-search-backward fn-regexp)
+    (let* ((end (cljr--point-after 'paredit-forward))
+           ;; Upto and including the new fn, but no more.
+           (buffer-content (buffer-substring-no-properties (point) end))
+           (unbound (cljr--call-middleware-to-find-unbound-vars buffer-content)))
+      ;; Insert args in new fn
+      (paredit-forward-down 2)
+      (insert unbound)
+      ;; Insert args at call-site
+      (re-search-forward placeholder)
+      (delete-region (point) (cljr--point-after 'paredit-backward))
+      (insert unbound))))
 
 ;; ------ minor mode -----------
 ;;;###autoload
