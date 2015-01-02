@@ -1247,8 +1247,8 @@ optionally including those that are declared private."
   (-map 'cljr--replace-sexp-with-binding (cljr--get-let-bindings)))
 
 (defun cljr--replace-sexp-with-binding-in-let ()
-  (-map 'cljr--replace-sexp-with-binding (cljr--get-let-bindings))
-  (remove-hook 'multiple-cursors-mode-disabled-hook 'replace-sexp-with-binding-in-let))
+  (remove-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
+  (-map 'cljr--replace-sexp-with-binding (cljr--get-let-bindings)))
 
 ;;;###autoload
 (defun cljr-move-to-let ()
