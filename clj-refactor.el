@@ -2117,6 +2117,13 @@ Defaults to the dependency vector at point, but prompts if none is found."
     (cljr--maybe-rethrow-error response)
     (nrepl-dict-get response "unbound")))
 
+(defun cljr--goto-enclosing-sexp ()
+  (let ((sexp-regexp (rx (or "(" "#{" "{" "["))))
+    (unless (looking-at sexp-regexp)
+      (paredit-backward-up))
+    (when (looking-back "#")
+      (forward-char -1))))
+
 (defun cljr-extract-function ()
   "Extract the form at point, or the nearest enclosing form, into
   a toplevel defn.
@@ -2124,8 +2131,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
 With a prefix the newly created defn will be public."
   (interactive)
   (cljr--assert-middleware)
-  (unless (looking-at "(")
-    (paredit-backward-up))
+  (cljr--goto-enclosing-sexp)
   (let* ((body (cljr--delete-and-extract-sexp))
          (public? current-prefix-arg)
          (placeholder "#a015f65")
