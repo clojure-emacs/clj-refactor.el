@@ -2114,9 +2114,9 @@ Defaults to the dependency vector at point, but prompts if none is found."
     (newline-and-indent)
     (insert body ")")))
 
-(defun cljr--call-middleware-to-find-unbound-vars (form)
+(defun cljr--call-middleware-to-find-unbound-vars (ns)
   (let ((response (nrepl-send-sync-request
-                   (list "op" "find-unbound" "form" form))))
+                   (list "op" "find-unbound" "ns" ns))))
     (cljr--maybe-rethrow-error response)
     (nrepl-dict-get response "unbound")))
 
@@ -2139,21 +2139,36 @@ With a prefix the newly created defn will be public."
          (public? current-prefix-arg)
          (placeholder "#a015f65")
          (name (cljr--prompt-user-for "Name: "))
-         (fn-regexp (s-concat "(defn-? " name)))
+         (fn-regexp (s-concat "(defn-? " name))
+         unbound irrelevant-buffer-content)
     (insert "(" name " " placeholder)
     (cljr--insert-function name body public?)
+
+    ;; Delete any code following the newly created fn before calling middleware
+    ;; as that part of the buffer might be in a bad state.
     (re-search-backward fn-regexp)
-    (let* ((end (cljr--point-after 'paredit-forward))
-           ;; Upto and including the new fn, but no more.
-           (buffer-content (buffer-substring-no-properties (point) end))
-           (unbound (cljr--call-middleware-to-find-unbound-vars buffer-content)))
-      ;; Insert args in new fn
-      (paredit-forward-down 2)
-      (insert unbound)
-      ;; Insert args at call-site
-      (re-search-forward placeholder)
-      (delete-region (point) (cljr--point-after 'paredit-backward))
-      (insert unbound))))
+    (paredit-forward)
+    (setq irrelevant-buffer-content (cljr--extract-region (point) (point-max)))
+    (save-buffer)
+    (setq unbound (cljr--call-middleware-to-find-unbound-vars
+                   (cljr--current-namespace)))
+    ;; Insert args in new fn
+    (re-search-backward fn-regexp)
+    (paredit-forward-down 2)
+    (insert unbound)
+    ;; restore end of buffer
+    (paredit-forward-up 2)
+    (insert irrelevant-buffer-content)
+    ;; Insert args at call-site
+    (re-search-backward placeholder)
+    (delete-region (point) (cljr--point-after 'paredit-forward))
+    (insert unbound)
+    (when (and (s-blank? unbound) (looking-back " "))
+      (backward-delete-char 1))
+
+    (re-search-backward fn-regexp)
+    (indent-region (point) (point-max))
+    (re-search-forward (s-concat "\(" name unbound))))
 
 ;; ------ minor mode -----------
 ;;;###autoload
