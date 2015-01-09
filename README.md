@@ -135,8 +135,14 @@ To set it up you need to add the middleware as you add the middleware for cider.
 Add the following, either in your project's `project.clj`, or in the `:user`
 profile found at `~/.lein/profiles.clj`:
 
+for the latest stable release of clj-refactor.el, 0.13.0
 ```clojure
 :plugins [[refactor-nrepl "0.2.2"]]
+```
+
+for the latest snapshot of clj-refactor.el:
+```clojure
+:plugins [[refactor-nrepl "0.3.0-SNAPSHOT"]]
 ```
 
 For more details see [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
