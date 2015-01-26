@@ -264,7 +264,9 @@ if SAVE-EXCURSION is T POINT does not move."
       (search-forward s bound t))))
 
 (defun cljr--goto-toplevel ()
-  (paredit-backward-up (cljr--depth-at-point)))
+  (paredit-backward-up (cljr--depth-at-point))
+  (when (looking-back "#")
+    (backward-char)))
 
 (defun cljr--toplevel-p ()
   "T unless we're in an s-expression or string."
