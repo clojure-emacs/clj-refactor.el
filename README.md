@@ -167,7 +167,7 @@ to wait for the cache to be populated, when you first call
 background:
 
 ```el
-(add-hook 'nrepl-connected-hook #'cljr-update-artifact-cache)
+(add-hook 'cider-connected-hook #'cljr-update-artifact-cache)
 ```
 
 ### Populate AST cache on startup
@@ -175,7 +175,7 @@ background:
 For certain functions like find usages and rename symbols we need to build an AST for all the namespaces in the project. This can take time so we cache the built ASTs. That means that when you first call any of these functions it can take much longer. If you want to avoid waiting and you want the AST cache prepopulated you can do the following to have this happen in the background:
 
 ```el
-(add-hook 'nrepl-connected-hook #'cljr-warm-ast-cache)
+(add-hook 'cider-connected-hook #'cljr-warm-ast-cache)
 ```
 
 ## Thread / unwind example
