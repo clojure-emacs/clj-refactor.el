@@ -2073,7 +2073,7 @@ containing join will be aliased to str."
 
 (defun cljr--hotload-dependency-callback (response)
   (cljr--maybe-rethrow-error response)
-  (message "Hotloaded %s" response))
+  (message "Hotloaded %s" (nrepl-dict-get response "dependency")))
 
 (defun cljr--call-middleware-to-hotload-dependency (dep)
   (nrepl-send-request
