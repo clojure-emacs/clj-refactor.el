@@ -670,6 +670,7 @@ Additional contributors are:
 - [Ryan Smith](https://github.com/tanzoniteblack)
 - [Hugo Duncan](https://github.com/hugoduncan)
 - [Luke Snape](https://github.com/lsnape)
+- [Aaron France](https://github.com/AeroNotix)
 
 Thanks!
 
