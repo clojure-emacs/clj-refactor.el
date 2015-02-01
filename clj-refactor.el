@@ -1502,7 +1502,7 @@ front of function literals and sets."
 
 ;; ------ magic requires -------
 
-(defvar cljr--magic-requires-re
+(defun cljr--magic-requires-re ()
   (concat "(\\(" (regexp-opt (-map 'car cljr-magic-require-namespaces)) "\\)/"))
 
 ;;;###autoload
@@ -1511,7 +1511,7 @@ front of function literals and sets."
   (interactive)
   (insert "/")
   (when (and cljr-magic-requires
-             (looking-back cljr--magic-requires-re 6))
+             (looking-back (cljr--magic-requires-re) 6))
     (let* ((short (match-string-no-properties 1))
            (long (aget cljr-magic-require-namespaces short)))
       (if (and (not (cljr--in-namespace-declaration? (concat ":as " short)))
