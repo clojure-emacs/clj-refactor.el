@@ -2170,7 +2170,7 @@ With a prefix the newly created defn will be public."
 
     (re-search-backward fn-regexp)
     (indent-region (point) (point-max))
-    (re-search-forward (s-concat "\(" name unbound))))
+    (re-search-forward (s-concat "\(" name " " unbound))))
 
 ;; ------ minor mode -----------
 ;;;###autoload
