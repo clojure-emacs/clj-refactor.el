@@ -2143,7 +2143,7 @@ With a prefix the newly created defn will be public."
          (name (cljr--prompt-user-for "Name: "))
          (fn-regexp (s-concat "(defn-? " name))
          unbound irrelevant-buffer-content)
-    (insert "(" name " " placeholder)
+    (insert "(" name " " placeholder ")")
     (cljr--insert-function name body public?)
 
     ;; Delete any code following the newly created fn before calling middleware
