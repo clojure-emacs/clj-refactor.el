@@ -1981,7 +1981,7 @@ sorts the project's dependency vectors."
 (defun cljr--narrow-candidates (candidates)
   (cond ((= (length candidates) 0)
          (error "Couldn't find any symbols matching %s on classpath."
-                (cljr--normalize-symbol-name symbol)))
+                (cljr--symbol-suffix symbol)))
         ((= (length candidates) 1)
          (first candidates))
         (t
@@ -1996,41 +1996,87 @@ sorts the project's dependency vectors."
     (cljr--insert-in-ns ":import")
     (cljr--insert-libspec-verbosely missing)))
 
+(defun cljr--symbol-prefix (symbol)
+  "java.util.Date => java.util
+str/split => str
+split => ''"
+  (cond ((s-contains? "/" symbol) (first (s-split "/" symbol)))
+        ((s-matches? "\\w+\\.\\w+" symbol)
+         (s-join "." (butlast (s-split "\\." symbol))))
+        (t "")))
+
 (defun cljr--insert-missing-require (symbol missing)
   (save-excursion
     (cljr--insert-in-ns ":require")
     (let ((alias? (s-contains? "/" symbol)))
       (if alias?
-          (let ((prefix (first (s-split "/" symbol))))
-            (cljr--insert-libspec-verbosely (format "[%s :as %s]" missing prefix)))
-        (cljr--insert-libspec-verbosely (format "[%s :refer [%s]]"
-                                                missing symbol))))))
+          (cljr--insert-libspec-verbosely (format "[%s :as %s]" missing
+                                                  (cljr--symbol-prefix symbol)))
+        (if (and (s-contains? "." missing)
+                 (s-uppercase? (s-left 1 (cljr--symbol-suffix missing))))
+            (cljr--insert-libspec-verbosely  (cljr--symbol-prefix symbol))
+          (cljr--insert-libspec-verbosely (format "[%s :refer [%s]]"
+                                                  missing symbol)))))))
 
-(defun cljr--add-missing-libspec (symbol candidates type)
-  (let* ((candidates (and candidates (s-split " " candidates)))
-         (missing (cljr--narrow-candidates candidates)))
-    (if (string= type "require")
-        (cljr--insert-missing-require symbol missing)
-      (cljr--insert-missing-import missing))))
+(defun cljr--add-missing-libspec (symbol candidates-and-types)
+  (let* ((candidates (mapcar (lambda (pair) (symbol-name (first pair)))
+                             candidates-and-types))
+         (missing (cljr--narrow-candidates candidates))
+         (type (second (assoc (intern missing) candidates-and-types))))
+    (cond ((eq type :ns) (cljr--insert-missing-require symbol missing))
+          ((eq type :type)
+           ;; We need to both require the ns, to trigger compilation,
+           ;; and then import the java class
+
+           ;; In the line below we're assuming that all clojure code
+           ;; will prefer - over _ when naming namespaces :(
+           (progn (cljr--insert-missing-require (s-replace "_" "-" missing)
+                                                missing)
+                  (cljr--insert-missing-import missing)))
+          ((eq type :class) (cljr--insert-missing-import missing))
+          (t (error (format "Uknown type %s" type))))))
+
+(defun cljr--symbol-suffix (symbol)
+  "java.util.Date => Date
+clojure.string/split => split
+str/split => split"
+  (let ((name (cljr--normalize-symbol-name symbol)))
+    (cond
+     ((s-matches? "\\w+\\.\\w+" name)
+      (->> name (s-split "\\.") last car))
+     ((s-contains? "/" name)
+      (->> name (s-split "/") second cljr--normalize-symbol-name))
+     (t ""))))
 
 (defun cljr--normalize-symbol-name (name)
-  "Removes prefix and reader macros
+  "Removes reader macros and quoting
 
-java.util.Date. -> Date
-str/split -> split
-Date. -> Date"
-  (cond ((s-ends-with? "." name)
-         (->> name (s-chop-suffix ".") cljr--normalize-symbol-name))
-        ((s-contains? "/" name) (->> name (s-split "/") second))
-        ((s-matches? "\\w+\\.\\w+" name)
-         (->> name (s-split "\\.") last car))
-        (t name)))
+Date. -> Date
+@sym => sym
+#'sym => sym
+'sym => sym
+~sym => sym
+~@sym => sym"
+  (cond
+   ((s-ends-with? "." name)
+    (->> name (s-chop-suffix ".") cljr--normalize-symbol-name))
+   ((s-starts-with? "#'" name)
+    (-> name (s-chop-prefix "#'") cljr--normalize-symbol-name))
+   ((s-starts-with? "'" name)
+    (->> name (s-chop-prefix "'") cljr--normalize-symbol-name))
+   ((s-starts-with? "~" name)
+    (->> name (s-chop-prefix "~") cljr--normalize-symbol-name))
+   ((s-starts-with? "~@" name)
+    (->> name (s-chop-prefix "~@") cljr--normalize-symbol-name))
+   ((s-starts-with? "@" name)
+    (->> name (s-chop-prefix "@") cljr--normalize-symbol-name))
+   (t name)))
 
 (defun cljr--call-middleware-to-resolve-missing (symbol)
   ;; Just so this part can be mocked out in a step definition
   (nrepl-send-sync-request
    (list "op" "resolve-missing"
-         "symbol" (cljr--normalize-symbol-name symbol))))
+         "symbol" (cljr--symbol-suffix symbol))))
 
 (defun cljr--maybe-rethrow-error (response)
   (-when-let (err (nrepl-dict-get response "error"))
@@ -2045,10 +2091,9 @@ containing join will be aliased to str."
   (cljr--assert-middleware)
   (let* ((symbol (cider-symbol-at-point))
          (response (cljr--call-middleware-to-resolve-missing symbol))
-         (type (nrepl-dict-get response "type"))
-         (candidates (nrepl-dict-get response "candidates")))
+         (candidates-and-types (nrepl-dict-get response "candidates")))
     (cljr--maybe-rethrow-error response)
-    (cljr--add-missing-libspec symbol candidates type)))
+    (cljr--add-missing-libspec symbol (read candidates-and-types))))
 
 (defun cljr--dependency-vector-at-point ()
   (save-excursion

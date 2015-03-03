@@ -34,3 +34,12 @@ Feature: resolve-missing; nrepl middleware response mocked
     (ns example.core
       (:require [clojure.string :as str]))
     """
+
+  Scenario: Require defrecord
+    Given I call the add-missing-libspec callback directly with mock data to require WebrequestHandler
+    Then I should see:
+    """
+    (ns example.core
+      (:require modular.ring)
+      (:import modular.ring.WebrequestHandler)
+    """

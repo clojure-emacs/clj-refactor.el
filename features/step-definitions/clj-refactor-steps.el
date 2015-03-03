@@ -66,20 +66,24 @@
     (run-rename-symbol "example.two" '(6  7  1  10  "star*"  "tmp/src/example/two.clj"  "" 8  8  17  27  "star*"  "tmp/src/example/one.clj"  "") "asterisk*")))
 
 (Given "^I call the add-missing-libspec callback directly with mock data to import"
-  (lambda ()
-    (cljr--add-missing-libspec "Date" "java.util.Date" "import")))
+       (lambda ()
+         (cljr--add-missing-libspec "Date" '((java.util.Date :class)))))
 
 (Given "^I call the add-missing-libspec callback directly with mock data to refer split"
-  (lambda ()
-    (cljr--add-missing-libspec "split" "clojure.string" "require")))
+       (lambda ()
+         (cljr--add-missing-libspec "split" '((clojure.string  :ns)))))
 
 (Given "^I call the add-missing-libspec callback directly with mock data to alias clojure.string"
-  (lambda ()
-    (cljr--add-missing-libspec "str/split" "clojure.string" "require")))
+       (lambda ()
+         (cljr--add-missing-libspec "str/split" '((clojure.string :ns)))))
+
+(Given "^I call the add-missing-libspec callback directly with mock data to require WebrequestHandler"
+       (lambda ()
+         (cljr--add-missing-libspec "WebrequestHandler" '((modular.ring.WebrequestHandler :type)))))
 
 (Then "^the file should be named \"\\([^\"]+\\)\"$"
-  (lambda (file-name-postfix)
-    (assert (s-ends-with? file-name-postfix (buffer-file-name)) nil "Expected %S to end with %S" (buffer-file-name) file-name-postfix)))
+      (lambda (file-name-postfix)
+        (assert (s-ends-with? file-name-postfix (buffer-file-name)) nil "Expected %S to end with %S" (buffer-file-name) file-name-postfix)))
 
 (And "^the cursor is inside the first defn form$"
   (lambda ()
