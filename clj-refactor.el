@@ -73,13 +73,6 @@
   :group 'cljr
   :type 'boolean)
 
-(defcustom cljr-find-symbols-in-dir-prompt nil
-  "When true prompts for directory to search for symbols in when
-   finding usages and renaming symbols, when false defaults to project
-   dir"
-  :group 'cljr
-  :type 'boolean)
-
 (defcustom cljr-project-clean-functions
   (list 'cljr-remove-unused-requires 'cljr-sort-ns)
   "List of functions to run on all the clj files in the project
@@ -1809,10 +1802,7 @@ sorts the project's dependency vectors."
   (let* ((filename (buffer-file-name))
          (line (line-number-at-pos))
          (column (1+ (current-column)))
-         (dir (file-truename
-               (if cljr-find-symbols-in-dir-prompt
-                   (read-directory-name "Base directory: " (cljr--project-dir))
-                 (cljr--project-dir))))
+         (dir (cljr--project-dir))
          (find-symbol-request (list "op" "refactor"
                                     "ns" ns
                                     "clj-dir" dir
@@ -1823,14 +1813,11 @@ sorts the project's dependency vectors."
                                     "name" symbol)))
     (cljr--call-middleware-sync "occurrence" find-symbol-request)))
 
-(defun cljr--find-symbol (force-project-dir symbol ns callback)
+(defun cljr--find-symbol (symbol ns callback)
   (let* ((filename (buffer-file-name))
          (line (line-number-at-pos))
          (column (1+ (current-column)))
-         (dir (file-truename
-               (if (and (not force-project-dir) cljr-find-symbols-in-dir-prompt)
-                   (read-directory-name "Base directory: " (cljr--project-dir))
-                 (cljr--project-dir))))
+         (dir (cljr--project-dir))
          (find-symbol-request (list "op" "refactor"
                                     "ns" ns
                                     "clj-dir" dir
@@ -1882,7 +1869,7 @@ sorts the project's dependency vectors."
          (ns (nrepl-dict-get var-info "ns"))
          (symbol-name (nrepl-dict-get var-info "name")))
     (cljr--setup-find-symbol-buffer (or symbol-name symbol))
-    (cljr--find-symbol nil (or symbol-name symbol) ns 'cljr--format-and-insert-symbol-occurrence)))
+    (cljr--find-symbol (or symbol-name symbol) ns 'cljr--format-and-insert-symbol-occurrence)))
 
 (defun cljr--read-symbol-metadata (occurrences)
   (->> occurrences
@@ -1966,7 +1953,7 @@ sorts the project's dependency vectors."
 
 (defun cljr-warm-ast-cache ()
   (interactive)
-  (cljr--find-symbol t "join" "clojure.string" (lambda (_))))
+  (cljr--find-symbol "join" "clojure.string" (lambda (_))))
 
 (defun cljr--replace-ns (new-ns)
   (save-excursion
