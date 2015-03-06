@@ -2038,6 +2038,7 @@ split => ''"
 
 (defun cljr--symbol-suffix (symbol)
   "java.util.Date => Date
+Date => Date
 clojure.string/split => split
 str/split => split"
   (let ((name (cljr--normalize-symbol-name symbol)))
@@ -2046,7 +2047,7 @@ str/split => split"
       (->> name (s-split "\\.") last car))
      ((s-contains? "/" name)
       (->> name (s-split "/") second cljr--normalize-symbol-name))
-     (t ""))))
+     (t name))))
 
 (defun cljr--normalize-symbol-name (name)
   "Removes reader macros and quoting
