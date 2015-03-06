@@ -2093,7 +2093,9 @@ containing join will be aliased to str."
          (response (cljr--call-middleware-to-resolve-missing symbol))
          (candidates-and-types (nrepl-dict-get response "candidates")))
     (cljr--maybe-rethrow-error response)
-    (cljr--add-missing-libspec symbol (read candidates-and-types))))
+    (if candidates-and-types
+        (cljr--add-missing-libspec symbol (read candidates-and-types))
+      (message "Can't find %s on classpath" (cljr--symbol-suffix symbol)))))
 
 (defun cljr--dependency-vector-at-point ()
   (save-excursion
