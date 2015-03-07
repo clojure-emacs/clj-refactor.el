@@ -138,11 +138,13 @@ profile found at `~/.lein/profiles.clj`:
 for the latest stable release of clj-refactor.el, 0.13.0
 ```clojure
 :plugins [[refactor-nrepl "0.2.2"]]
+:dependencies [[alembic "0.3.2"]]
 ```
 
 for the latest snapshot of clj-refactor.el:
 ```clojure
 :plugins [[refactor-nrepl "0.3.0-SNAPSHOT"]]
+:dependencies [[alembic "0.3.2"]]
 ```
 
 For more details see [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
