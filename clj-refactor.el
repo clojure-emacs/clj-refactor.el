@@ -1849,8 +1849,7 @@ root."
     (when syms-count
       (setq cljr--num-syms syms-count))
     (when occurrence
-      (setq cjr--occurrence-count (1+ cjr--occurrence-count)))
-    (when occurrence
+      (incf cjr--occurrence-count)
       (->> occurrence
            (apply #'cljr--format-symbol-occurrence)
            (cljr--populate-find-symbol-buffer)))
@@ -1859,8 +1858,8 @@ root."
 
 (defun cljr--finalise-find-symbol-buffer (num-of-symbols)
   (with-current-buffer "*cljr-find-usages*"
-    (insert (format "\nFind symbol finished: %d occurrence%s found"  num-of-symbols (if (> num-of-symbols 1) "s" "")))
-    (grep-mode)))
+    (insert (format "\nFind symbol finished: %d occurrence%s found"
+                    num-of-symbols (if (> num-of-symbols 1) "s" "")))))
 
 (defun cljr--setup-find-symbol-buffer (symbol-name)
   (save-window-excursion
