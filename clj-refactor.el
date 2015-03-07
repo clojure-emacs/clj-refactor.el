@@ -1834,6 +1834,14 @@ sorts the project's dependency vectors."
 (defun cljr--first-line (s)
   (-> s s-lines first s-trim))
 
+(defun cljr--project-relative-path (path)
+  "Denormalize PATH to make to make it relative to the project
+root."
+  (s-chop-prefix (cljr--project-dir) path))
+
+(defun cljr--format-symbol-occurrence (line _ col _ _ file match)
+  (format "%s:%s: %s\n" (cljr--project-relative-path file) line (cljr--first-line match)))
+
 (defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
   (let ((occurrence (nrepl-dict-get occurrence-resp "occurrence"))
         (syms-count (nrepl-dict-get occurrence-resp "syms-count"))
@@ -1844,8 +1852,7 @@ sorts the project's dependency vectors."
       (setq cjr--occurrence-count (1+ cjr--occurrence-count)))
     (when occurrence
       (->> occurrence
-           (apply (lambda (line _ col _ _ file match)
-                    (format "%s:%s: %s\n" file line (cljr--first-line match))))
+           (apply #'cljr--format-symbol-occurrence)
            (cljr--populate-find-symbol-buffer)))
     (when (= cjr--occurrence-count cljr--num-syms)
       (cljr--finalise-find-symbol-buffer cljr--num-syms))))
