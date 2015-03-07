@@ -1831,6 +1831,9 @@ sorts the project's dependency vectors."
       (setq cljr--num-syms -1))
     (cljr--call-middleware-async find-symbol-request callback)))
 
+(defun cljr--first-line (s)
+  (-> s s-lines first s-trim))
+
 (defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
   (let ((occurrence (nrepl-dict-get occurrence-resp "occurrence"))
         (syms-count (nrepl-dict-get occurrence-resp "syms-count"))
@@ -1842,7 +1845,7 @@ sorts the project's dependency vectors."
     (when occurrence
       (->> occurrence
            (apply (lambda (line _ col _ _ file match)
-                    (format "%s:%s: %s\n" file line (s-trim match))))
+                    (format "%s:%s: %s\n" file line (cljr--first-line match))))
            (cljr--populate-find-symbol-buffer)))
     (when (= cjr--occurrence-count cljr--num-syms)
       (cljr--finalise-find-symbol-buffer cljr--num-syms))))
