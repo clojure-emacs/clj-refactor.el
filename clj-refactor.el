@@ -1857,7 +1857,9 @@ sorts the project's dependency vectors."
       (kill-buffer cljr--find-symbol-buffer))
     (pop-to-buffer cljr--find-symbol-buffer)
     (with-current-buffer "*cljr-find-usages*"
-      (insert (format "-*- mode: grep; The symbol '%s' occurs in the following places:  -*-\n\n" symbol-name)))))
+      (insert (format "'%s' occurs in the following places:\n\n" symbol-name))
+      (grep-mode)
+      (setq buffer-read-only nil))))
 
 (defun cljr-find-usages ()
   (interactive)
