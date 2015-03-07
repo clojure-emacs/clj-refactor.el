@@ -1841,7 +1841,8 @@ sorts the project's dependency vectors."
       (setq cjr--occurrence-count (1+ cjr--occurrence-count)))
     (when occurrence
       (->> occurrence
-           (apply (lambda (line _ col _ _ file match) (format "%s:%s: %s\n" file line match)))
+           (apply (lambda (line _ col _ _ file match)
+                    (format "%s:%s: %s\n" file line (s-trim match))))
            (cljr--populate-find-symbol-buffer)))
     (when (= cjr--occurrence-count cljr--num-syms)
       (cljr--finalise-find-symbol-buffer cljr--num-syms))))
