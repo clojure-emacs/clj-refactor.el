@@ -1658,7 +1658,8 @@ sorts the project's dependency vectors."
 
 (defun cljr--call-middleware-sync (key request)
   (let ((nrepl-sync-request-timeout 25))
-    (nrepl-dict-get (nrepl-send-sync-request request) key)))
+    (nrepl-dict-get (cljr--maybe-rethrow-error (nrepl-send-sync-request request))
+                    key)))
 
 (defun cljr--call-middleware-async (request &optional callback)
   (nrepl-send-request request callback))
@@ -1846,6 +1847,7 @@ root."
   (let ((occurrence (nrepl-dict-get occurrence-resp "occurrence"))
         (syms-count (nrepl-dict-get occurrence-resp "syms-count"))
         (cljr--find-symbol-buffer  "*cljr-find-usages*"))
+    (cljr--maybe-rethrow-error occurrence-resp)
     (when syms-count
       (setq cljr--num-syms syms-count))
     (when occurrence
@@ -2092,8 +2094,9 @@ Date. -> Date
          "symbol" (cljr--symbol-suffix symbol))))
 
 (defun cljr--maybe-rethrow-error (response)
-  (-when-let (err (nrepl-dict-get response "error"))
-    (error err)))
+  (-if-let (err (nrepl-dict-get response "error"))
+      (error err)
+    response))
 
 (defun cljr-add-missing-libspec ()
   "Requires or imports the symbol at point.
