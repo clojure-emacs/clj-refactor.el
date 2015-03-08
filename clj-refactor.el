@@ -1984,12 +1984,11 @@ root."
   (cljr--assert-leiningen-project)
   (cljr--assert-middleware)
   (save-buffer)
-  (let ((result (nrepl-send-sync-request
-                 (list "op" "clean-ns"
-                       "path" (buffer-file-name)))))
-    (-when-let (error-msg (nrepl-dict-get result "error"))
-      (error error-msg))
-    (-when-let (new-ns (nrepl-dict-get result "ns"))
+  (let ((response (nrepl-send-sync-request
+                   (list "op" "clean-ns"
+                         "path" (buffer-file-name)))))
+    (cljr--maybe-rethrow-error response)
+    (-when-let (new-ns (nrepl-dict-get response "ns"))
       (cljr--replace-ns new-ns))))
 
 (defun cljr--narrow-candidates (candidates)
