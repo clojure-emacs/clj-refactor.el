@@ -1836,13 +1836,8 @@ sorts the project's dependency vectors."
 (defun cljr--first-line (s)
   (-> s s-lines first s-trim))
 
-(defun cljr--project-relative-path (path)
-  "Denormalize PATH to make to make it relative to the project
-root."
-  (s-chop-prefix (cljr--project-dir) path))
-
 (defun cljr--format-symbol-occurrence (line _ col _ _ file match)
-  (format "%s:%s: %s\n" (cljr--project-relative-path file) line (cljr--first-line match)))
+  (format "%s:%s: %s\n" file line (cljr--first-line match)))
 
 (defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
   (let ((occurrence (nrepl-dict-get occurrence-resp "occurrence"))
