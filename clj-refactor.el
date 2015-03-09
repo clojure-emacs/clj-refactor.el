@@ -1708,7 +1708,8 @@ sorts the project's dependency vectors."
   (unless (cider-connected-p)
     (error "CIDER isn't connected!"))
   (unless (nrepl-op-supported-p "refactor")
-    (error "nrepl-refactor middleware not available!")))
+    (error "nrepl-refactor middleware not available!  Did you
+    remember to install it?")))
 
 (defun cljr--assert-leiningen-project ()
   (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
