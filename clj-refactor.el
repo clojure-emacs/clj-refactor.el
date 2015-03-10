@@ -1685,7 +1685,7 @@ If it's present KEY indicates the key to extract from the response."
 
 (defun cljr--get-versions-from-middleware (artifact)
   (let* ((request (list "op" "artifact-versions" "artifact" artifact))
-         (versions (cljr--call-middleware-sync request "artifact-versions")))
+         (versions (cljr--call-middleware-sync request "versions")))
     (if versions
         versions
       (error "Empty version list received from middleware!"))))
@@ -1714,8 +1714,7 @@ If it's present KEY indicates the key to extract from the response."
   (unless (cider-connected-p)
     (error "CIDER isn't connected!"))
   (unless (nrepl-op-supported-p "find-symbol")
-    (error "nrepl-refactor middleware not available!  Did you
-    remember to install it?")))
+    (error "nrepl-refactor middleware not available! Did you remember to install it?")))
 
 (defun cljr--assert-leiningen-project ()
   (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
