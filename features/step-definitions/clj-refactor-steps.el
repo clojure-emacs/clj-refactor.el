@@ -31,16 +31,16 @@
     (setq cljr-project-clean-prompt nil)))
 
 (Given "^I switch auto-sort off$"
-  (lambda ()
-    (setq cljr-auto-sort-ns nil)))
+       (lambda ()
+         (setq cljr-auto-sort-ns nil)))
 
 (Given "^I switch auto-sort on$"
   (lambda ()
     (setq cljr-auto-sort-ns t)))
 
 (Given "^I set sort comparator to string length$"
-  (lambda ()
-    (setq cljr-sort-comparator 'cljr--string-length-comparator)))
+       (lambda ()
+         (setq cljr-sort-comparator 'cljr--string-length-comparator)))
 
 (Given "^I set sort comparator to semantic$"
   (lambda ()
@@ -51,19 +51,34 @@
      (setq cljr-sort-comparator 'cljr--string-natural-comparator)))
 
 (Given "^I exit multiple-cursors-mode"
-  (lambda ()
-    (multiple-cursors-mode 0)))
-
-(defun run-rename-symbol (ns occurrences new-name)
-  (cljr--rename-symbol ns (cljr--read-symbol-metadata occurrences) new-name))
+       (lambda ()
+         (multiple-cursors-mode 0)))
 
 (Given "^I call the rename callback directly with mock data for foo->baz"
-  (lambda ()
-    (run-rename-symbol "example.two" '(3  4  1  9  "foo"  "tmp/src/example/two.clj"  "" 5  5  15  23  "foo"  "tmp/src/example/one.clj"  "") "baz")))
+       (lambda ()
+         (cljr--rename-occurrences "example.two"
+                                   '((:line-beg 3 :line-end 4 :col-beg 1 :col-end 9
+                                                :name "foo"
+                                                :file "tmp/src/example/two.clj"
+                                                :match "")
+                                     (:line-beg 5 :line-end 5 :col-beg 15
+                                                :col-end 23 :name "foo"
+                                                :file "tmp/src/example/one.clj"
+                                                :match ""))
+                                   "baz")))
 
 (Given "^I call the rename callback directly with mock data for star->asterisk"
-  (lambda ()
-    (run-rename-symbol "example.two" '(6  7  1  10  "star*"  "tmp/src/example/two.clj"  "" 8  8  17  27  "star*"  "tmp/src/example/one.clj"  "") "asterisk*")))
+       (lambda ()
+         (cljr--rename-occurrences "example.two"
+                                   '((:line-beg 6 :line-end 7 :col-beg 1
+                                                :col-end 10 :name "star*"
+                                                :file "tmp/src/example/two.clj"
+                                                :match "")
+                                     (:line-beg 8 :line-end 8 :col-beg 17
+                                                :col-end 27 :name "star*"
+                                                :file "tmp/src/example/one.clj"
+                                                :match ""))
+                                   "asterisk*")))
 
 (Given "^I call the add-missing-libspec callback directly with mock data to import"
        (lambda ()
