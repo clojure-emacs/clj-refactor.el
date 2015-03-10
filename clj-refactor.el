@@ -1684,9 +1684,11 @@ If it's present KEY indicates the key to extract from the response."
                                (lambda (_) (message "Artifact cache updated"))))
 
 (defun cljr--get-versions-from-middleware (artifact)
-  (let ((request (list "op" "artifact-versions"
-                       "artifact" artifact)))
-    (s-split " " (cljr--call-middleware-sync request "value"))))
+  (let* ((request (list "op" "artifact-versions" "artifact" artifact))
+         (versions (cljr--call-middleware-sync request "artifact-versions")))
+    (if versions
+        versions
+      (error "Empty version list received from middleware!"))))
 
 (defun cljr--prompt-user-for (prompt &optional choices)
   (completing-read prompt choices))
