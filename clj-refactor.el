@@ -1932,8 +1932,10 @@ root."
                            (forward-line (1- line-e))
                            (move-to-column col-end)
                            (point)))
-               (orig-name (plist-get symbol-meta :name))
-               (name (regexp-quote (cljr--symbol-suffix orig-name)))
+               (name (->> :name
+                       (plist-get symbol-meta)
+                       cljr--symbol-suffix
+                       regexp-quote))
                (matches-count 0)
                (replaced nil))
           (goto-char start)
@@ -1950,7 +1952,7 @@ root."
                      (symbol-name (nrepl-dict-get var-info "name"))
                      (word-start (progn (forward-word -1)
                                         (point))))
-                (when (and (string= symbol-ns ns) (string= symbol-name orig-name))
+                (when (and (string= symbol-ns ns) (string= symbol-name name))
                   (perform-replace name new-name nil nil nil nil nil word-start original-point)
                   (setq replaced t))
                 (goto-char original-point)))))
