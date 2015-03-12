@@ -1310,13 +1310,18 @@ let are."
   (search-forward "[")
   (paredit-forward-up)
   (let* ((beg (point))
-         (end (cljr--point-after '(paredit-forward-up 1)))
-         (bindings (cljr--get-let-bindings)))
+         (end (cljr--point-after 'paredit-forward-up))
+         (bindings (cljr--get-let-bindings))
+         (prev beg))
 
     (dolist (binding bindings)
-      (replace-regexp (first binding) (second binding) :delimited beg end)
-      (cljr--goto-let)
-      (setq end (cljr--point-after 'paredit-forward)))
+      (goto-char beg)
+      (while (and (goto-char prev) (re-search-forward (first binding) end t))
+        (replace-match (second binding))
+        (setq prev (point))
+
+        (cljr--goto-let)
+        (setq end (cljr--point-after 'paredit-forward))))
 
     (cljr--eliminate-let)))
 
