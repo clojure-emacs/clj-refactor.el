@@ -1317,7 +1317,8 @@ let are."
     (dolist (binding bindings)
       (goto-char beg)
       (while (and (goto-char prev) (re-search-forward (first binding) end t))
-        (replace-match (second binding))
+        (unless (save-excursion (paredit-backward) (looking-at ":"))
+          (replace-match (second binding)))
         (setq prev (point))
 
         (cljr--goto-let)
