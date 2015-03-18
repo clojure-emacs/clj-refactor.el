@@ -2111,9 +2111,10 @@ We can't simply call `nrepl-dict-get' because the error value
 itself might be `nil'."
   (assert (nrepl-dict-p response) nil
           "Response from middleware isn't an nrepl-dict!")
-  (let* ((maybe-error-and-rest (-drop-while (lambda (e)
-                                              (not (s-equals? e "error")))
-                                            response))
+  (let* ((maybe-error-and-rest
+          (-drop-while (lambda (e)
+                         (not (or (stringp e) (s-equals? e "error"))))
+                       response))
          (maybe-error (first maybe-error-and-rest)))
     (when (and (stringp maybe-error) (s-equals? maybe-error "error"))
       (or (second maybe-error-and-rest)
