@@ -405,9 +405,10 @@ list of (fn args) to pass to `apply''"
       (cljr--insert-in-ns ":require")
       (insert "[" (s-chop-suffix "-test" ns) " :refer :all]")
       (cljr--insert-in-ns ":require")
-      (insert "[" (if (cljr--project-depends-on-p "midje")
-                      "midje.sweet"
-                    "clojure.test")
+      (insert "[" (cond
+                   ((cljr--project-depends-on-p "midje") "midje.sweet")
+                   ((cljr--project-depends-on-p "expectations") "expectations")
+                   (t "clojure.test"))
               " :refer :all]"))))
 
 (defun cljr--in-tests-p ()
