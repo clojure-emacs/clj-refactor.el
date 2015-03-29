@@ -446,8 +446,8 @@ element should sort before the second.
 When you open a blank `.clj`-file, clj-refactor inserts the namespace
 declaration for you.
 
-It will also add the relevant `:use` clauses in test files, normally
-using `clojure.test`, but if you're depending on midje in your
+It will also add the relevant `:use` clauses in test files, normally using
+`clojure.test`, but if you're depending on *midje* or *expectations* in your
 `project.clj` it uses that instead.
 
 Like clojure-mode, clj-refactor presumes that you are postfixing your
