@@ -1140,6 +1140,15 @@ optionally including those that are declared private."
       (message "Can only thread into lists.")
       nil)))
 
+(defun cljr--maybe-multiple-cursors ()
+  "Workaround for multiple cursors problem.
+
+Calling mc/maybe-multiple-cursors-mode directly doesn't work in
+some circumstances (e.g. when using discover/makey).
+
+See: https://github.com/magnars/multiple-cursors.el/issues/147"
+  (run-with-timer 0 nil 'mc/maybe-multiple-cursors-mode))
+
 ;;;###autoload
 (defun cljr-thread ()
   (interactive)
@@ -1184,7 +1193,7 @@ optionally including those that are declared private."
   (mc/create-fake-cursor-at-point)
   (paredit-forward-up)
   (newline-and-indent)
-  (mc/maybe-multiple-cursors-mode))
+  (cljr--maybe-multiple-cursors))
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-introduce-let)
 
@@ -1258,7 +1267,7 @@ optionally including those that are declared private."
     (backward-char)
     (mc/create-fake-cursor-at-point))
   (add-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
-  (mc/maybe-multiple-cursors-mode))
+  (cljr--maybe-multiple-cursors))
 
 (defun cljr--prepare-to-insert-new-let-binding ()
   (if (cljr--inside-let-binding-form-p)

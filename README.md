@@ -33,7 +33,19 @@ those features which depend on our nREPL middleware
 [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). This also
 means that features not requiring the middleware continue to work without cider.
 
-## Setup
+## Setup (with discover context menu)
+
+```el
+(define-key clojure-mode-map (kbd "C-c j") 'discover-clj-refactor)
+```
+
+When you hit given key combination you will be presented with all
+available refactorings:
+
+![discover context menu](discover-clj-refactor.png)
+
+
+## Setup (without discover)
 
 ```el
 (require 'clj-refactor)
