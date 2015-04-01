@@ -2199,13 +2199,11 @@ Defaults to the dependency vector at point, but prompts if none is found."
     (insert body ")")))
 
 (defun cljr--call-middleware-to-find-unbound-vars (file line column)
-  (let ((response (nrepl-send-sync-request
-                   (list "op" "find-unbound"
-                         "file" file
-                         "line" line
-                         "column" column))))
-    (cljr--maybe-rethrow-error response)
-    (nrepl-dict-get response "unbound")))
+  (s-join " "
+          (-> (list "op" "find-unbound" "file" file "line" line "column" column)
+              nrepl-send-sync-request
+              cljr--maybe-rethrow-error
+              (nrepl-dict-get "unbound")))))
 
 (defun cljr--goto-enclosing-sexp ()
   (let ((sexp-regexp (rx (or "(" "#{" "{" "["))))
@@ -2221,9 +2219,10 @@ Defaults to the dependency vector at point, but prompts if none is found."
 With a prefix the newly created defn will be public."
   (interactive)
   (cljr--assert-middleware)
-  (let* ((unbound (cljr--call-middleware-to-find-unbound-vars (buffer-file-name) (line-number-at-pos) (1+ (current-column))))
+  (let* ((unbound (cljr--call-middleware-to-find-unbound-vars
+                   (buffer-file-name) (line-number-at-pos) (1+ (current-column))))
          (body (progn (cljr--goto-enclosing-sexp)
-                 (cljr--delete-and-extract-sexp)))
+                      (cljr--delete-and-extract-sexp)))
          (public? current-prefix-arg)
          (placeholder "#a015f65")
          (name (cljr--prompt-user-for "Name: "))
