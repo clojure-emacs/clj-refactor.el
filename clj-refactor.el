@@ -2248,14 +2248,25 @@ With a prefix the newly created defn will be public."
     (indent-region (point) (point-max))
     (re-search-forward (s-concat "\(" name " ?" unbound))))
 
-(defun cljr--configure-middleware ()
+(defun cljr--configure-middleware (&optional callback)
   (when (nrepl-op-supported-p "configure")
     (let ((opts (concat "{:prefix-rewriting "
                         (if cljr-favor-prefix-notation "true" "false")
                         "}")))
       (-> (list "op" "configure" "opts" opts)
-          nrepl-send-request
-          cljr--maybe-rethrow-error))))
+          (nrepl-send-request (or callback (lambda (_))))))))
+
+(defun cljr-reload-config ()
+  "Resend configuration settings to the middleware.
+
+This can be used to avoid restarting the repl session after
+changing settings."
+  (interactive)
+  (cljr--assert-middleware)
+  (cljr--configure-middleware
+   (lambda (response)
+     (cljr--maybe-rethrow-error response)
+     (message "Config successfully updated!"))))
 
 (add-hook 'cider-connected-hook #'cljr--configure-middleware)
 

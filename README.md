@@ -562,6 +562,16 @@ Extract the form at point, or the nearest enclosing form, into a toplevel defn.
 
 With a prefix the newly created defn will be public.
 
+## Reload config
+
+You can use `cljr-reload-config` to resubmit configuration settings
+to `refactor-nrepl` after changing them in emacs.  This is a good
+alternative to restarting the repl whenever you change settings
+affecting the middleware.
+
+Currently the only setting that applies to the middleware is
+`cljr-favor-prefix-rewriting`.
+
 ## Miscellaneous
 
 With clj-refactor enabled, any keybindings for `paredit-raise-sexp` is
@@ -576,6 +586,8 @@ You might also like
 
 ## Changelog
 
+- Add `clj-reload-config` to resubmit config settings to the middleware
+- Add config setting for `clean-ns` to not do rewriting to favor prefix form.
 - Add `cljr-extract-function` [Lars Andersen](https://github.com/expez)
 - Add `cljr-hotload-dependency` [Lars Andersen](https://github.com/expez)
 - Hotloading of artifacts added with `cljr-add-project-dependency` [Lars Andersen](https://github.com/expez)
