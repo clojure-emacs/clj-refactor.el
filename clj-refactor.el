@@ -665,7 +665,7 @@ word test in it and whether the file lives under the test/ directory."
     (let ((beg (point))
           (end (progn (paredit-forward) (point))))
       (indent-region beg end)
-      (cljr--maybe-cleanup-ns))))
+      (cljr--maybe-tidy-ns-form))))
 
 (defvar cljr--tmp-marker (make-marker))
 
