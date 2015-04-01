@@ -101,6 +101,9 @@ Used in `cljr-remove-debug-fns' feature."
 (defcustom cljr-favor-prefix-notation t
   "When true `cljr-clean-ns' will favor prefix notation when rebuilding the ns.")
 
+(defcustom cljr-auto-clean-ns t
+  "When true `cljr-clean-ns' will run after the ns is modified.")
+
 (defvar cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
     ("set"  . "clojure.set")
@@ -638,6 +641,12 @@ word test in it and whether the file lives under the test/ directory."
   (string= (cljr--current-namespace)
            (car (split-string (cljr--extract-sexp-content (s-join " " s))))))
 
+(defun cljr--maybe-tidy-ns-form ()
+  (if cljr-auto-clean-ns
+      (cljr-clean-ns)
+    (when cljr-auto-sort-ns
+      (cljr-sort-ns))))
+
 ;;;###autoload
 (defun cljr-remove-unused-requires ()
   (interactive)
@@ -656,8 +665,7 @@ word test in it and whether the file lives under the test/ directory."
     (let ((beg (point))
           (end (progn (paredit-forward) (point))))
       (indent-region beg end)
-      (when cljr-auto-sort-ns
-        (cljr-sort-ns)))))
+      (cljr--maybe-cleanup-ns))))
 
 (defvar cljr--tmp-marker (make-marker))
 
@@ -670,10 +678,13 @@ word test in it and whether the file lives under the test/ directory."
   (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 nil t))
 
 (defun cljr--sort-and-remove-hook (&rest ignore)
-  (cljr-sort-ns)
+  (if cljr-auto-clean-ns
+      (cljr-clean-ns)
+    (when cljr-auto-sort-ns
+      (cljr-sort-ns)))
   (remove-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 t))
 
-(defun cljr--add-yas-snippet-sort-ns-hook ()
+(defun cljr--add-yas-maybe-tidy-ns-hook ()
   (add-hook 'yas/after-exit-snippet-hook 'cljr--sort-and-remove-hook nil t))
 
 ;;;###autoload
@@ -682,8 +693,7 @@ word test in it and whether the file lives under the test/ directory."
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require")
   (cljr--pop-tmp-marker-after-yasnippet)
-  (when cljr-auto-sort-ns
-    (cljr--add-yas-snippet-sort-ns-hook))
+  (cljr--add-yas-maybe-tidy-ns-hook)
   (yas-expand-snippet cljr--add-require-snippet))
 
 ;;;###autoload
@@ -692,8 +702,7 @@ word test in it and whether the file lives under the test/ directory."
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require")
   (cljr--pop-tmp-marker-after-yasnippet)
-  (when cljr-auto-sort-ns
-    (cljr--add-yas-snippet-sort-ns-hook))
+  (cljr--add-yas-maybe-tidy-ns-hook)
   (yas-expand-snippet cljr--add-use-snippet))
 
 ;;;###autoload
@@ -702,8 +711,7 @@ word test in it and whether the file lives under the test/ directory."
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":import")
   (cljr--pop-tmp-marker-after-yasnippet)
-  (when cljr-auto-sort-ns
-    (cljr--add-yas-snippet-sort-ns-hook))
+  (cljr--add-yas-maybe-tidy-ns-hook)
   (yas-expand-snippet "$1"))
 
 (defun cljr--extract-ns-from-use ()
@@ -792,8 +800,7 @@ Presently, there's no support for :use clauses containing :exclude."
     (cljr--goto-ns)
     (paredit-forward)
     (indent-region (point-min) (point)))
-  (when cljr-auto-sort-ns
-    (cljr-sort-ns)))
+  (cljr--maybe-clean-ns-form))
 
 ;;;###autoload
 (defun cljr-stop-referring ()
@@ -901,8 +908,7 @@ If REGION is active, move all forms contained by region. "
               (when require-present-p
                 (cljr--append-refer-clause ns refer-names))))
         (cljr--new-require-clause ns refer-names))
-      (when cljr-auto-sort-ns
-        (cljr-sort-ns)))))
+      (cljr--maybe-tidy-ns-form))))
 
 (defun cljr--append-refer-clause (ns refer-names)
   "Appends :refer [REFER-NAMES] to the :require clause for NS."
@@ -1523,8 +1529,7 @@ front of function literals and sets."
           (save-excursion
             (cljr--insert-in-ns ":require")
             (insert (format "[%s :as %s]" long short))
-            (when cljr-auto-sort-ns
-              (cljr-sort-ns)))))))
+            (cljr--m))))))
 
 (defun aget (map key)
   (cdr (assoc key map)))
@@ -2143,7 +2148,8 @@ containing join will be aliased to str."
     (cljr--maybe-rethrow-error response)
     (if candidates-and-types
         (cljr--add-missing-libspec symbol (read candidates-and-types))
-      (message "Can't find %s on classpath" (cljr--symbol-suffix symbol)))))
+      (error "Can't find %s on classpath" (cljr--symbol-suffix symbol))))
+  (cljr--maybe-tidy-ns-form))
 
 (defun cljr--dependency-vector-at-point ()
   (save-excursion
@@ -2203,7 +2209,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
           (-> (list "op" "find-unbound" "file" file "line" line "column" column)
               nrepl-send-sync-request
               cljr--maybe-rethrow-error
-              (nrepl-dict-get "unbound")))))
+              (nrepl-dict-get "unbound"))))
 
 (defun cljr--goto-enclosing-sexp ()
   (let ((sexp-regexp (rx (or "(" "#{" "{" "["))))
