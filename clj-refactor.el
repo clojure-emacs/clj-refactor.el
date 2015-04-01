@@ -1553,7 +1553,7 @@ sorts the project's dependency vectors."
       (when (and (s-ends-with? "clj" filename)
                  (not (cljr--excluded-from-project-clean? filename)))
         (cljr--update-file filename
-                           (ignore-errors (-map 'funcall cljr-project-clean-functions)))))
+          (ignore-errors (-map 'funcall cljr-project-clean-functions)))))
     (cljr-sort-project-dependencies)
     (message "Project clean done.")))
 
@@ -1653,18 +1653,18 @@ sorts the project's dependency vectors."
   (interactive)
   "Sorts all dependency vectors in project.clj"
   (cljr--update-file (cljr--project-file)
-                     (goto-char (point-min))
-                     (while (re-search-forward ":dependencies" (point-max) t)
-                       (forward-char)
-                       (-> (buffer-substring-no-properties (point)
-                                                           (cljr--point-after 'paredit-forward))
-                           cljr--get-sorted-dependency-names
-                           (cljr--sort-dependency-vectors (->> (cljr--delete-and-extract-sexp)
-                                                               (s-chop-prefix "[")
-                                                               (s-chop-suffix "]")))
-                           insert))
-                     (indent-region (point-min) (point-max))
-                     (save-buffer)))
+    (goto-char (point-min))
+    (while (re-search-forward ":dependencies" (point-max) t)
+      (forward-char)
+      (-> (buffer-substring-no-properties (point)
+                                          (cljr--point-after 'paredit-forward))
+          cljr--get-sorted-dependency-names
+          (cljr--sort-dependency-vectors (->> (cljr--delete-and-extract-sexp)
+                                              (s-chop-prefix "[")
+                                              (s-chop-suffix "]")))
+          insert))
+    (indent-region (point-min) (point-max))
+    (save-buffer)))
 
 (defun cljr--call-middleware-sync (request &optional key)
   "Call the middleware with REQUEST.
@@ -1937,9 +1937,9 @@ root."
                            (move-to-column col-end)
                            (point)))
                (name (->> :name
-                       (plist-get symbol-meta)
-                       cljr--symbol-suffix
-                       regexp-quote))
+                          (plist-get symbol-meta)
+                          cljr--symbol-suffix
+                          regexp-quote))
                (matches-count 0)
                (replaced nil))
           (goto-char start)
