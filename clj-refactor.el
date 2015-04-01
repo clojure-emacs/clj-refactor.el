@@ -642,7 +642,7 @@ word test in it and whether the file lives under the test/ directory."
            (car (split-string (cljr--extract-sexp-content (s-join " " s))))))
 
 (defun cljr--maybe-tidy-ns-form ()
-  (if cljr-auto-clean-ns
+  (if (and (cider-connected-p) cljr-auto-clean-ns)
       (cljr-clean-ns)
     (when cljr-auto-sort-ns
       (cljr-sort-ns))))
@@ -800,7 +800,7 @@ Presently, there's no support for :use clauses containing :exclude."
     (cljr--goto-ns)
     (paredit-forward)
     (indent-region (point-min) (point)))
-  (cljr--maybe-clean-ns-form))
+  (cljr--maybe-tidy-ns-form))
 
 ;;;###autoload
 (defun cljr-stop-referring ()
@@ -1529,7 +1529,7 @@ front of function literals and sets."
           (save-excursion
             (cljr--insert-in-ns ":require")
             (insert (format "[%s :as %s]" long short))
-            (cljr--m))))))
+            (cljr--maybe-tidy-ns-form))))))
 
 (defun aget (map key)
   (cdr (assoc key map)))
