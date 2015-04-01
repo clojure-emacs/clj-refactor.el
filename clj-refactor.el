@@ -98,6 +98,9 @@ Used in `cljr-remove-debug-fns' feature."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-favor-prefix-notation t
+  "When true `cljr-clean-ns' will favor prefix notation when rebuilding the ns.")
+
 (defvar cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
     ("set"  . "clojure.set")
@@ -2244,6 +2247,17 @@ With a prefix the newly created defn will be public."
     (re-search-backward fn-regexp)
     (indent-region (point) (point-max))
     (re-search-forward (s-concat "\(" name " ?" unbound))))
+
+(defun cljr--configure-middleware ()
+  (when (nrepl-op-supported-p "configure")
+    (let ((opts (concat "{:prefix-rewriting "
+                        (if cljr-favor-prefix-notation "true" "false")
+                        "}")))
+      (-> (list "op" "configure" "opts" opts)
+          nrepl-send-request
+          cljr--maybe-rethrow-error))))
+
+(add-hook 'cider-connected-hook #'cljr--configure-middleware)
 
 ;; ------ minor mode -----------
 ;;;###autoload
