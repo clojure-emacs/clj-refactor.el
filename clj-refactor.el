@@ -2195,9 +2195,12 @@ Defaults to the dependency vector at point, but prompts if none is found."
     (newline-and-indent)
     (insert body ")")))
 
-(defun cljr--call-middleware-to-find-unbound-vars (ns)
+(defun cljr--call-middleware-to-find-unbound-vars (file line column)
   (let ((response (nrepl-send-sync-request
-                   (list "op" "find-unbound" "ns" ns))))
+                   (list "op" "find-unbound"
+                         "file" file
+                         "line" line
+                         "column" column))))
     (cljr--maybe-rethrow-error response)
     (nrepl-dict-get response "unbound")))
 
@@ -2215,32 +2218,23 @@ Defaults to the dependency vector at point, but prompts if none is found."
 With a prefix the newly created defn will be public."
   (interactive)
   (cljr--assert-middleware)
-  (cljr--goto-enclosing-sexp)
-  (let* ((body (cljr--delete-and-extract-sexp))
+  (let* ((unbound (cljr--call-middleware-to-find-unbound-vars (buffer-file-name) (line-number-at-pos) (1+ (current-column))))
+         (body (progn (cljr--goto-enclosing-sexp)
+                 (cljr--delete-and-extract-sexp)))
          (public? current-prefix-arg)
          (placeholder "#a015f65")
          (name (cljr--prompt-user-for "Name: "))
-         (fn-regexp (s-concat "(defn-? " name))
-         unbound irrelevant-buffer-content)
+         (fn-regexp (s-concat "(defn-? " name)))
+
     (insert "(" name " " placeholder ")")
     (cljr--insert-function name body public?)
 
-    ;; Delete any code following the newly created fn before calling middleware
-    ;; as that part of the buffer might be in a bad state.
-    (re-search-backward fn-regexp)
-    (paredit-forward)
-    (setq irrelevant-buffer-content (cljr--extract-region (point) (point-max)))
-    (save-buffer)
-    (setq unbound (cljr--call-middleware-to-find-unbound-vars
-                   (cljr--current-namespace)))
     ;; Insert args in new fn
     (re-search-backward fn-regexp)
     (paredit-forward-down 2)
     (insert unbound)
-    ;; restore end of buffer
-    (paredit-forward-up 2)
-    (insert irrelevant-buffer-content)
     ;; Insert args at call-site
+    (re-search-forward placeholder)
     (re-search-backward placeholder)
     (delete-region (point) (cljr--point-after 'paredit-forward))
     (insert unbound)
