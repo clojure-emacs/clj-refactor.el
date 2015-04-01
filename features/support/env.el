@@ -28,6 +28,7 @@
      "_" "-" (mapconcat 'identity (cdr (split-string relative "/")) "."))))
 
 (Setup
+ (yas-global-mode 1)
  (cljr-add-keybindings-with-prefix "C-!")
  (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode))))
 
