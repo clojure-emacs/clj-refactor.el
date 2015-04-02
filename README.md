@@ -4,7 +4,33 @@
 
 # clj-refactor.el
 
-A collection of clojure refactoring functions.
+`clj-refactor` provides refactoring support for clojure projects.
+
+## Action shots
+
+[add declaration](examples/add-declaration.gif)
+[add import](examples/add-import.gif)
+[add libspec](examples/add-libspec.gif)
+[cycle coll](examples/cycle-coll.gif)
+[cycle if](examples/cycle-if.gif)
+[cycle privacy](examples/cycle-privacy.gif)
+[cycle thread](examples/cycle-thread.gif)
+[destructure keys](examples/destructure-keys.gif)
+[expand let](examples/expand-let.gif)
+[extract fn](examples/extract-fn.gif)
+[find usages](examples/find-usages.gif)
+[introduce let](examples/introduce-let.gif)
+[magic requires](examples/magic-requires.gif)
+[move to let](examples/move-to-let.gif)
+[promote fn 1](examples/promote-fn-1.gif)
+[promote fn 2](examples/promote-fn-2.gif)
+[rename symbol global](examples/rename-symbol-global.gif)
+[rename symbol local](examples/rename-symbol-local.gif)
+[thread first all](examples/thread-first-all.gif)
+[thread fully unwind](examples/thread-fully-unwind.gif)
+[thread last all](examples/thread-last-all.gif)
+[thread last](examples/examples/thread-last.gif)
+[unwind thread](examples/examples/unwind-thread.gif)
 
 ## Installation
 
