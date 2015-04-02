@@ -63,16 +63,6 @@ It's available on [marmalade](http://marmalade-repo.org/) and
 
     M-x package-install clj-refactor
 
-You can also install the dependencies on your own, and just dump
-clj-refactor in your path somewhere:
-
- - <a href="https://github.com/magnars/s.el">s.el</a>
- - <a href="https://github.com/magnars/dash.el">dash.el</a>
- - <a href="https://github.com/capitaomorte/yasnippet">yasnippet</a>
- - <a href="http://mumble.net/~campbell/emacs/paredit.el">paredit</a>
- - <a href="https://github.com/magnars/multiple-cursors.el">multiple-cursors</a>
- - <a href="https://github.com/clojure-emacs/cider">cider</a>
-
 ### A note on the dependency on cider
 
 Lately we introduced a dependency on
