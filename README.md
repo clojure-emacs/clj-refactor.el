@@ -190,6 +190,10 @@ This is it so far:
 
 Combine with your keybinding prefix/modifier.
 
+### Customization
+
+To take a look at the available settings do: `M-x customize-group <RET> cljr <RET>`
+
 ### Populate the artifact cache on startup
 
 The `add-project-dependency` functionality caches the list of available
@@ -579,7 +583,6 @@ Prefer to insert your own ns-declarations? Then:
 ```el
 (setq clj-add-ns-to-blank-clj-files nil)
 ```
-
 
 ## Miscellaneous
 
