@@ -475,16 +475,6 @@ Extract the form at point, or the nearest enclosing form, into a toplevel defn.
 
 With a prefix the newly created defn will be public.
 
-## Reload config
-
-You can use `cljr-reload-config` to resubmit configuration settings
-to `refactor-nrepl` after changing them in emacs.  This is a good
-alternative to restarting the repl whenever you change settings
-affecting the middleware.
-
-Currently the only setting that applies to the middleware is
-`cljr-favor-prefix-rewriting`.
-
 ## Changing the way the ns declaration is sorted
 
 By default sort ns `sn` will sort your ns declaration alphabetically. You can
@@ -566,9 +556,21 @@ Prefer to insert your own ns-declarations? Then:
 
 ## Miscellaneous
 
+### Tweaks to paredit
+
 With clj-refactor enabled, any keybindings for `paredit-raise-sexp` is
 replaced by `cljr-raise-sexp` which does the same thing - except it
 also removes any `#` in front of function literals and sets.
+
+### Reload config
+
+You can use `cljr-reload-config` to resubmit configuration settings
+to `refactor-nrepl` after changing them in emacs.  This is a good
+alternative to restarting the repl whenever you change settings
+affecting the middleware.
+
+Currently the only setting that applies to the middleware is
+`cljr-favor-prefix-rewriting`.
 
 ## More stuff to check out
 
