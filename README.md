@@ -104,6 +104,23 @@ to pick and choose your own keybindings with a smattering of:
 either clojure-mode or cider. Ideally, you should pick keybindings that don't
 interfere with either.**
 
+### Optional setup
+
+If you're not using yasnippet, then the "jumping back"-part of adding to
+namespace won't work. To remedy that, enable the mode with either:
+
+```el
+(yas/global-mode 1)
+```
+
+or
+
+```el
+(add-hook 'clojure-mode-hook (lambda () (yas/minor-mode 1)))
+```
+
+It is an excellent package, so I recommend looking into it.
+
 ## Usage
 
 This is it so far:
@@ -499,30 +516,6 @@ affecting the middleware.
 Currently the only setting that applies to the middleware is
 `cljr-favor-prefix-rewriting`.
 
-## Optional setup
-
-If you're not using yasnippet, then the "jumping back"-part of adding to
-namespace won't work. To remedy that, enable the mode with either:
-
-```el
-(yas/global-mode 1)
-```
-
-or
-
-```el
-(add-hook 'clojure-mode-hook (lambda () (yas/minor-mode 1)))
-```
-
-It is an excellent package, so I recommend looking into it. Here are
-some snippet packages for Clojure:
-
- - David Nolen has created some [clojure-snippets](https://github.com/swannodette/clojure-snippets)
- - I've made some [datomic-snippets](https://github.com/magnars/datomic-snippets)
- - Max Penet has also created some
-   [clojure-snippets](https://github.com/mpenet/clojure-snippets), early fork of
-   dnolens' with tons of additions and MELPA compatible
-
 ## Changing the way the ns declaration is sorted
 
 By default sort ns `sn` will sort your ns declaration alphabetically. You can
@@ -614,6 +607,11 @@ also removes any `#` in front of function literals and sets.
 You might also like
 
 - [align-cljlet](https://github.com/gstamp/align-cljlet) - which is an Emacs package for aligning let-like forms.
+- David Nolen has created some [clojure-snippets](https://github.com/swannodette/clojure-snippets)
+- Magnar Sveen made some [datomic-snippets](https://github.com/magnars/datomic-snippets)
+- Max Penet has also created some
+   [clojure-snippets](https://github.com/mpenet/clojure-snippets), early fork of
+   dnolens' with tons of additions and MELPA compatible
 
 ## Changelog
 
