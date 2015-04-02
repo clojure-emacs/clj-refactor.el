@@ -386,109 +386,6 @@ And I place my cursor on `symbol` and do `cljr-promote-function` and call the fn
 
 With a prefix it will promote a function literal all the way to a defn.
 
-## Optional setup
-
-If you're not using yasnippet, then the "jumping back"-part of adding to
-namespace won't work. To remedy that, enable the mode with either:
-
-```el
-(yas/global-mode 1)
-```
-
-or
-
-```el
-(add-hook 'clojure-mode-hook (lambda () (yas/minor-mode 1)))
-```
-
-It is an excellent package, so I recommend looking into it. Here are
-some snippet packages for Clojure:
-
- - David Nolen has created some [clojure-snippets](https://github.com/swannodette/clojure-snippets)
- - I've made some [datomic-snippets](https://github.com/magnars/datomic-snippets)
- - Max Penet has also created some
-   [clojure-snippets](https://github.com/mpenet/clojure-snippets), early fork of
-   dnolens' with tons of additions and MELPA compatible
-
-## Changing the way the ns declaration is sorted
-
-By default sort ns `sn` will sort your ns declaration alphabetically. You can
-change this by setting `cljr-sort-comparator` in your clj-refactor
-configuration.
-
-Sort it longer first:
-
-```el
-(setq cljr-sort-comparator 'cljr--string-length-comparator)
-```
-
-Or you can use the semantic comparator:
-
-```el
-(setq cljr-sort-comparator 'cljr--semantic-comparator)
-```
-
-The semantic comparator sorts used and required namespaces closer to the
-namespace of the current buffer before the rest. When this is not applicable it
-falls back to alphabetical sorting.
-
-For example the following namespace:
-
-```clj
-(ns foo.bar.baz.goo
-  (:require [clj-time.bla :as bla]
-            [foo.bar.baz.bam :refer :all]
-            [foo.bar.async :refer :all]
-            [foo [bar.goo :refer :all] [baz :refer :all]]
-            [async.funkage.core :as afc]
-            [clj-time.core :as clj-time]
-            [foo.async :refer :all])
-  (:import (java.security MessageDigest)
-           java.util.Calendar
-           [org.joda.time DateTime]
-           (java.nio.charset Charset)))
-```
-
-will be sorted like this:
-
-```clj
-(ns foo.bar.baz.goo
-  (:require [foo.bar.baz.bam :refer :all]
-            [foo.bar.async :refer :all]
-            [foo.async :refer :all]
-            [foo [bar.goo :refer :all] [baz :refer :all]]
-            [async.funkage.core :as afc]
-            [clj-time.bla :as bla]
-            [clj-time.core :as clj-time])
-  (:import (java.nio.charset Charset)
-           (java.security MessageDigest)
-           java.util.Calendar
-           [org.joda.time DateTime]))
-```
-
-The `cljr-sort-comparator` variable also enables you to write your own
-comparator function if you prefer. Comparator is called with two elements of the
-sub section of the ns declaration, and should return non-nil if the first
-element should sort before the second.
-
-## Automatic insertion of namespace declaration
-
-When you open a blank `.clj`-file, clj-refactor inserts the namespace
-declaration for you.
-
-It will also add the relevant `:use` clauses in test files, normally using
-`clojure.test`, but if you're depending on *midje* or *expectations* in your
-`project.clj` it uses that instead.
-
-Like clojure-mode, clj-refactor presumes that you are postfixing your
-test files with `_test`.
-
-Prefer to insert your own ns-declarations? Then:
-
-```el
-(setq clj-add-ns-to-blank-clj-files nil)
-```
-
 ## Magic requires
 
 Common namespace shorthands are automatically required when you type
@@ -601,6 +498,110 @@ affecting the middleware.
 
 Currently the only setting that applies to the middleware is
 `cljr-favor-prefix-rewriting`.
+
+## Optional setup
+
+If you're not using yasnippet, then the "jumping back"-part of adding to
+namespace won't work. To remedy that, enable the mode with either:
+
+```el
+(yas/global-mode 1)
+```
+
+or
+
+```el
+(add-hook 'clojure-mode-hook (lambda () (yas/minor-mode 1)))
+```
+
+It is an excellent package, so I recommend looking into it. Here are
+some snippet packages for Clojure:
+
+ - David Nolen has created some [clojure-snippets](https://github.com/swannodette/clojure-snippets)
+ - I've made some [datomic-snippets](https://github.com/magnars/datomic-snippets)
+ - Max Penet has also created some
+   [clojure-snippets](https://github.com/mpenet/clojure-snippets), early fork of
+   dnolens' with tons of additions and MELPA compatible
+
+## Changing the way the ns declaration is sorted
+
+By default sort ns `sn` will sort your ns declaration alphabetically. You can
+change this by setting `cljr-sort-comparator` in your clj-refactor
+configuration.
+
+Sort it longer first:
+
+```el
+(setq cljr-sort-comparator 'cljr--string-length-comparator)
+```
+
+Or you can use the semantic comparator:
+
+```el
+(setq cljr-sort-comparator 'cljr--semantic-comparator)
+```
+
+The semantic comparator sorts used and required namespaces closer to the
+namespace of the current buffer before the rest. When this is not applicable it
+falls back to alphabetical sorting.
+
+For example the following namespace:
+
+```clj
+(ns foo.bar.baz.goo
+  (:require [clj-time.bla :as bla]
+            [foo.bar.baz.bam :refer :all]
+            [foo.bar.async :refer :all]
+            [foo [bar.goo :refer :all] [baz :refer :all]]
+            [async.funkage.core :as afc]
+            [clj-time.core :as clj-time]
+            [foo.async :refer :all])
+  (:import (java.security MessageDigest)
+           java.util.Calendar
+           [org.joda.time DateTime]
+           (java.nio.charset Charset)))
+```
+
+will be sorted like this:
+
+```clj
+(ns foo.bar.baz.goo
+  (:require [foo.bar.baz.bam :refer :all]
+            [foo.bar.async :refer :all]
+            [foo.async :refer :all]
+            [foo [bar.goo :refer :all] [baz :refer :all]]
+            [async.funkage.core :as afc]
+            [clj-time.bla :as bla]
+            [clj-time.core :as clj-time])
+  (:import (java.nio.charset Charset)
+           (java.security MessageDigest)
+           java.util.Calendar
+           [org.joda.time DateTime]))
+```
+
+The `cljr-sort-comparator` variable also enables you to write your own
+comparator function if you prefer. Comparator is called with two elements of the
+sub section of the ns declaration, and should return non-nil if the first
+element should sort before the second.
+
+## Automatic insertion of namespace declaration
+
+When you open a blank `.clj`-file, clj-refactor inserts the namespace
+declaration for you.
+
+It will also add the relevant `:use` clauses in test files, normally using
+`clojure.test`, but if you're depending on *midje* or *expectations* in your
+`project.clj` it uses that instead.
+
+Like clojure-mode, clj-refactor presumes that you are postfixing your
+test files with `_test`.
+
+Prefer to insert your own ns-declarations? Then:
+
+```el
+(setq clj-add-ns-to-blank-clj-files nil)
+```
+
 
 ## Miscellaneous
 
