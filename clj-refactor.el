@@ -121,6 +121,12 @@ can be."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-suppress-middleware-warnings nil
+  "When true no warnings are printed to the repl about problems
+with the middleware."
+  :group 'cljr
+  :type 'boolean)
+
 (defvar cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
     ("set"  . "clojure.set")
@@ -135,6 +141,10 @@ can be."
 
 (defvar cljr--add-use-snippet "[$1 :refer ${2:[$3]}]"
   "The snippet used in in `cljr-add-use-to-ns'")
+
+(defvar cljr--nrepl-ops
+  '("artifact-list" "artifact-versions" "clean-ns" "configure" "find-symbol"
+    "find-unbound" "hotload-dependency" "resolve-missing"))
 
 ;;; Buffer Local Declarations
 
@@ -2290,7 +2300,17 @@ changing settings."
      (cljr--maybe-rethrow-error response)
      (message "Config successfully updated!"))))
 
+(defun cljr--check-nrepl-ops ()
+  "Check whether all nREPL ops are present and emit a warning when not."
+  (let ((missing-ops (-remove 'nrepl-op-supported-p cljr--nrepl-ops)))
+    (when missing-ops
+      (cider-repl-emit-interactive-err-output
+       (format "WARNING: The following nREPL ops are not supported: \n%s\nPlease, install (or update) refactor-nrepl and restart CIDER\nYou can mute this arning by changing cljr-suppress-middleware-warnings to t"
+               (s-join " " missing-ops ))))))
+
 (defun cljr--init-middleware ()
+  (unless cljr-suppress-middleware-warnings
+    (cljr--check-nrepl-ops))
   (cljr--configure-middleware)
   (when cljr-populate-artifact-cache-on-startup
     (cljr--update-artifact-cache))
