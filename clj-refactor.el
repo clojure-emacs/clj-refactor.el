@@ -108,6 +108,19 @@ Used in `cljr-remove-debug-fns' feature."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-populate-artifact-cache-on-startup t
+  "When true the middleware will eagerly populate the artifact
+cache so `cljr-add-project-dependency' is as snappy as can be."
+  :group 'cljr
+  :type 'boolean)
+
+(defcustom cljr-eagerly-build-asts-on-startup t
+  "When true the middleware will eagerly populate the ast cache
+so `cljr-find-symbol' and `cljr-rename-symbol' are as snappy as
+can be."
+  :group 'cljr
+  :type 'boolean)
+
 (defvar cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
     ("set"  . "clojure.set")
@@ -1696,7 +1709,7 @@ If it's present KEY indicates the key to extract from the response."
         artifacts
       (error "Empty artifact list received from middleware!"))))
 
-(defun cljr-update-artifact-cache ()
+(defun cljr--update-artifact-cache ()
   (interactive)
   (cljr--call-middleware-async (list "op" "artifact-list"
                                      "force" "true")
@@ -1987,9 +2000,9 @@ root."
     (cljr--rename-occurrences ns occurrences new-name)
     (message "Renamed %s occurrences of %s" (length occurrences) name)
     (when (> (length occurrences) 0)
-      (cljr-warm-ast-cache))))
+      (cljr--warm-ast-cache))))
 
-(defun cljr-warm-ast-cache ()
+(defun cljr--warm-ast-cache ()
   (interactive)
   (cljr--find-symbol "join" "clojure.string" (lambda (_))))
 
@@ -2277,13 +2290,29 @@ changing settings."
      (cljr--maybe-rethrow-error response)
      (message "Config successfully updated!"))))
 
-(add-hook 'cider-connected-hook #'cljr--configure-middleware)
+(defun cljr--init-middleware ()
+  (cljr--configure-middleware)
+  (when cljr-populate-artifact-cache-on-startup
+    (cljr--update-artifact-cache))
+  (when cljr-eagerly-build-asts-on-startup
+    (cljr--warm-ast-cache)))
+
+(add-hook 'cider-connected-hook #'clj--init-middleware)
 
 ;; ------ minor mode -----------
 ;;;###autoload
 (define-minor-mode clj-refactor-mode
   "A mode to keep the clj-refactor keybindings."
   nil " cljr" clj-refactor-map)
+
+;; Deprecated
+(defun cljr-update-artifact-cache ()
+  (interactive)
+  (message "cljr-update-artifact-cache is deprecated and has been replaced by a customize setting defaulting to true."))
+
+(defun cljr-warm-ast-cache ()
+  (interactive)
+  (message "cljr-warm-ast-cache has been deprecated and replaced by a defcustom defaulting to true."))
 
 (provide 'clj-refactor)
 ;;; clj-refactor.el ends here
