@@ -63,14 +63,6 @@ It's available on [marmalade](http://marmalade-repo.org/) and
 
     M-x package-install clj-refactor
 
-### A note on the dependency on cider
-
-Lately we introduced a dependency on
-[cider](https://github.com/clojure-emacs/cider). In general we use cider for
-those features which depend on our nREPL middleware
-[refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). This also
-means that features not requiring the middleware continue to work without cider.
-
 ## Setup
 
 ```el
