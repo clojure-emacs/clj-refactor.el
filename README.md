@@ -410,7 +410,7 @@ some snippet packages for Clojure:
    [clojure-snippets](https://github.com/mpenet/clojure-snippets), early fork of
    dnolens' with tons of additions and MELPA compatible
 
-## Changing the way how the ns declaration is sorted
+## Changing the way the ns declaration is sorted
 
 By default sort ns `sn` will sort your ns declaration alphabetically. You can
 change this by setting `cljr-sort-comparator` in your clj-refactor
