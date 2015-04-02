@@ -2317,7 +2317,7 @@ changing settings."
   (when cljr-eagerly-build-asts-on-startup
     (cljr--warm-ast-cache)))
 
-(add-hook 'cider-connected-hook #'clj--init-middleware)
+(add-hook 'cider-connected-hook #'cljr--init-middleware)
 
 ;; ------ minor mode -----------
 ;;;###autoload
