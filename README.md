@@ -106,6 +106,31 @@ interfere with either.**
 
 ### Optional setup
 
+#### Refactor nREPL middleware
+
+For some of the more advanced refactorings we've written an [nrepl](https://github.com/clojure/tools.nrepl) middleware called
+[refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl).
+
+Add the following, either in your project's `project.clj`, or in the `:user`
+profile found at `~/.lein/profiles.clj`:
+
+for the latest stable release of clj-refactor.el, 0.13.0
+```clojure
+:plugins [[refactor-nrepl "0.2.2"]]
+```
+
+for the latest snapshot of clj-refactor.el:
+```clojure
+:plugins [[refactor-nrepl "0.3.0-SNAPSHOT"]]
+```
+
+**WARNING** The analyzer needs to eval the code too in order to be able to build
+  the AST we can work with. If that causes side effects like writing files,
+  opening connections to servers, modifying databases, etc. performing certain
+  refactoring functions on your code will do that, too.
+
+
+#### Yasnippet
 If you're not using yasnippet, then the "jumping back"-part of adding to
 namespace won't work. To remedy that, enable the mode with either:
 
@@ -164,46 +189,6 @@ This is it so far:
  - `rs`: Rename symbol
 
 Combine with your keybinding prefix/modifier.
-
-### Refactor nREPL middleware
-
-The project is going forward towards smarter refactorings. To achieve this we
-need our library to better understand clojure code. Therefore we are investing
-into an nREPL middleware called
-[refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). This
-middleware working together with an embedded
-[cider](https://github.com/clojure-emacs/cider) backed REPL in your Emacs can do
-some smart refactorings.
-
-Certain features are only available with the middleware added: please see these
-marked in our list of features.
-
-To set it up you need to add the middleware as you add the middleware for cider.
-Add the following, either in your project's `project.clj`, or in the `:user`
-profile found at `~/.lein/profiles.clj`:
-
-for the latest stable release of clj-refactor.el, 0.13.0
-```clojure
-:plugins [[refactor-nrepl "0.2.2"]]
-```
-
-for the latest snapshot of clj-refactor.el:
-```clojure
-:plugins [[refactor-nrepl "0.3.0-SNAPSHOT"]]
-```
-
-For more details see [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
-
-For most of the `refactor-nrepl` middleware supported refactorings we need to
-build an AST representation of the code.
-[tools.analyzer](https://github.com/clojure/tools.analyzer) and
-[tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm) is used for
-this. (Thanks for @Bronsa and other contributors for their good work.)
-
-**WARNING** The analyzer needs to eval the code too in order to be able to build
-  the AST we can work with. If that causes side effects like writing files,
-  opening connections to servers, modifying databases, etc. performing certain
-  refactoring functions on your code will do that, too.
 
 ### Populate the artifact cache on startup
 
