@@ -99,10 +99,14 @@ Used in `cljr-remove-debug-fns' feature."
   :type 'boolean)
 
 (defcustom cljr-favor-prefix-notation t
-  "When true `cljr-clean-ns' will favor prefix notation when rebuilding the ns.")
+  "When true `cljr-clean-ns' will favor prefix notation when rebuilding the ns."
+  :group 'cljr
+  :type 'boolean)
 
 (defcustom cljr-auto-clean-ns t
-  "When true `cljr-clean-ns' will run after the ns is modified.")
+  "When true `cljr-clean-ns' will run after the ns is modified."
+  :group 'cljr
+  :type 'boolean)
 
 (defvar cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
