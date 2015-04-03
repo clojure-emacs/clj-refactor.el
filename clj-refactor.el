@@ -1418,6 +1418,7 @@ let are."
 (defun cljr-cycle-privacy ()
   (interactive)
   (save-excursion
+    (ignore-errors (forward-char 7))
     (search-backward-regexp "\\((defn-? \\)\\|\\((def \\)")
     (cond
      ((and cljr-use-metadata-for-privacy
