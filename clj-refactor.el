@@ -2252,6 +2252,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
 With a prefix the newly created defn will be public."
   (interactive)
   (cljr--assert-middleware)
+  (save-buffer)
   (let* ((unbound (cljr--call-middleware-to-find-unbound-vars
                    (buffer-file-name) (line-number-at-pos) (1+ (current-column))))
          (body (progn (cljr--goto-enclosing-sexp)
