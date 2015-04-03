@@ -155,7 +155,7 @@ This is it so far:
  - `ar`: add require to namespace declaration, then jump back (see optional setup)
  - `au`: add "use" (ie require refer all) to namespace declaration, then jump back
  - `cc`: cycle surrounding collection type
- - `ci`: refactoring between `if` and `if-not`
+ - `ci`: cycle between `if` and `if-not`
  - `cp`: cycle privacy of `defn`s and `def`s
  - `dk`: destructure keys
  - `el`: expand let
