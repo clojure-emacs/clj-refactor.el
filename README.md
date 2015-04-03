@@ -121,7 +121,7 @@ for the latest stable release of clj-refactor.el, 0.13.0
 
 for the latest snapshot of clj-refactor.el:
 ```clojure
-:plugins [[refactor-nrepl "0.3.0-SNAPSHOT"]]
+:plugins [[refactor-nrepl "1.0.1"]]
 ```
 
 **WARNING** The analyzer needs to eval the code too in order to be able to build
