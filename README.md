@@ -571,7 +571,7 @@ alternative to restarting the repl whenever you change settings
 affecting the middleware.
 
 Currently the only setting that applies to the middleware is
-`cljr-favor-prefix-rewriting`.
+`cljr-favor-prefix-notation`.
 
 ## More stuff to check out
 
