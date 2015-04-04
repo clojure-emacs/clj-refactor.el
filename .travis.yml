@@ -9,3 +9,8 @@ env:
   - EVM_EMACS=emacs-24.3-bin
 script:
   ./run-travis-ci.sh
+
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/e0a71227d62f6fbba877
