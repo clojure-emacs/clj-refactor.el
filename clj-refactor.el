@@ -1025,7 +1025,8 @@ optionally including those that are declared private."
     (-if-let (def (cljr--name-of-current-def))
         (progn (cljr--goto-declare)
                (backward-char)
-               (insert " " def))
+               (insert " " def)
+               (message "Added declaration for %s" def))
       (message "Not inside a def form."))))
 
 ;; ------ threading and unwinding -----------
