@@ -2305,7 +2305,7 @@ changing settings."
   (let ((missing-ops (-remove 'nrepl-op-supported-p cljr--nrepl-ops)))
     (when missing-ops
       (cider-repl-emit-interactive-err-output
-       (format "WARNING: The following nREPL ops are not supported: \n%s\nPlease, install (or update) refactor-nrepl and restart CIDER\nYou can mute this arning by changing cljr-suppress-middleware-warnings to t"
+       (format "WARNING: The following nREPL ops are not supported: \n%s\nPlease, install (or update) refactor-nrepl and restart CIDER\nYou can mute this warning by toggling cljr-suppress-middleware-warnings."
                (s-join " " missing-ops ))))))
 
 (defun cljr--init-middleware ()
