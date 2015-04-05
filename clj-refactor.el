@@ -705,10 +705,8 @@ word test in it and whether the file lives under the test/ directory."
   (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 nil t))
 
 (defun cljr--sort-and-remove-hook (&rest ignore)
-  (if cljr-auto-clean-ns
-      (cljr-clean-ns)
-    (when cljr-auto-sort-ns
-      (cljr-sort-ns)))
+  (when cljr-auto-sort-ns
+    (cljr-sort-ns))
   (remove-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 t))
 
 (defun cljr--add-yas-maybe-tidy-ns-hook ()
