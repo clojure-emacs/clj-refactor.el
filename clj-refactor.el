@@ -1018,15 +1018,25 @@ optionally including those that are declared private."
           (end (cljr--point-after 'paredit-forward)))
       (buffer-substring-no-properties beg end))))
 
+(defun cljr--already-declared? (def)
+  (save-excursion
+    (cljr--goto-declare)
+    (re-search-backward def (cljr--point-after 'paredit-backward) :no-error)))
+
+(defun cljr--add-declaration (def)
+  (cljr--goto-declare)
+  (backward-char)
+  (insert " " def)
+  (message "Added declaration for %s" def))
+
 ;;;###autoload
 (defun cljr-add-declaration ()
   (interactive)
   (save-excursion
     (-if-let (def (cljr--name-of-current-def))
-        (progn (cljr--goto-declare)
-               (backward-char)
-               (insert " " def)
-               (message "Added declaration for %s" def))
+        (if (cljr--already-declared? def)
+            (message "%s is already declared" def)
+          (cljr--add-declaration def))
       (message "Not inside a def form."))))
 
 ;; ------ threading and unwinding -----------
