@@ -668,7 +668,11 @@ word test in it and whether the file lives under the test/ directory."
   (string= (cljr--current-namespace)
            (car (split-string (cljr--extract-sexp-content (s-join " " s))))))
 
-(defun cljr--maybe-tidy-ns-form ()
+(defun cljr--maybe-sort-ns ()
+  (when cljr-auto-sort-ns
+    (cljr-sort-ns)))
+
+(defun cljr--maybe-clean-or-sort-ns ()
   (if (and cljr-auto-clean-ns (cider-connected-p)
            (nrepl-op-supported-p "clean-ns"))
       (cljr-clean-ns)
@@ -693,7 +697,7 @@ word test in it and whether the file lives under the test/ directory."
     (let ((beg (point))
           (end (progn (paredit-forward) (point))))
       (indent-region beg end)
-      (cljr--maybe-tidy-ns-form))))
+      (cljr--maybe-clean-or-sort-ns))))
 
 (defvar cljr--tmp-marker (make-marker))
 
@@ -826,7 +830,7 @@ Presently, there's no support for :use clauses containing :exclude."
     (cljr--goto-ns)
     (paredit-forward)
     (indent-region (point-min) (point)))
-  (cljr--maybe-tidy-ns-form))
+  (cljr--maybe-clean-or-sort-ns))
 
 ;;;###autoload
 (defun cljr-stop-referring ()
@@ -934,7 +938,7 @@ If REGION is active, move all forms contained by region. "
               (when require-present-p
                 (cljr--append-refer-clause ns refer-names))))
         (cljr--new-require-clause ns refer-names))
-      (cljr--maybe-tidy-ns-form))))
+      (cljr--maybe-clean-or-sort-ns))))
 
 (defun cljr--append-refer-clause (ns refer-names)
   "Appends :refer [REFER-NAMES] to the :require clause for NS."
@@ -1567,7 +1571,7 @@ front of function literals and sets."
           (save-excursion
             (cljr--insert-in-ns ":require")
             (insert (format "[%s :as %s]" long short))
-            (cljr--maybe-tidy-ns-form))))))
+            (cljr--maybe-sort-ns))))))
 
 (defun aget (map key)
   (cdr (assoc key map)))
@@ -2187,7 +2191,7 @@ containing join will be aliased to str."
     (if candidates-and-types
         (cljr--add-missing-libspec symbol (read candidates-and-types))
       (error "Can't find %s on classpath" (cljr--symbol-suffix symbol))))
-  (cljr--maybe-tidy-ns-form))
+  (cljr--maybe-clean-or-sort-ns))
 
 (defun cljr--dependency-vector-at-point ()
   (save-excursion
