@@ -81,7 +81,7 @@ You'll also have to set up the keybindings in the lambda. Read on.
 ### Setup keybindings
 
 All functions in clj-refactor have a two-letter mnemonic shortcut. For
-instance, rename-file is `rf`. You get to choose how those are bound.
+instance, rename-file-or-dir is `rf`. You get to choose how those are bound.
 Here's how:
 
 ```el
@@ -100,7 +100,7 @@ If neither of these appeal to your sense of keyboard layout aesthetics, feel fre
 to pick and choose your own keybindings with a smattering of:
 
 ```el
-(define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file)
+(define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file-or-dir)
 ```
 
 **The keybindings suggested here might be conflicting with keybindings in
@@ -162,7 +162,7 @@ This is it so far:
  - `ml`: move to let
  - `pc`: run project cleaner functions on the whole project
  - `pf`: promote function literal or fn, or fn to defn
- - `rf`: rename file, update ns-declaration, and then query-replace new ns in project.
+ - `rf`: rename file or directory and update all affected files
  - `rl`: remove-let, inline all variables and remove the let form
  - `rr`: remove unused requires
  - `ru`: replace all `:use` in namespace with `:refer :all`

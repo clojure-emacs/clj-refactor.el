@@ -2,6 +2,7 @@
 
 ## master (unreleased)
 
+- Add `cljr-rename-file-or-dir` to replace `cljr-rename-file`.
 - Add `cljr-inline-symbol` which replaces the symbol at point with its definition.
 - add `cljr-add-stubs` which adds a skeleton implementation of the protocol or interface at point.
 - Add `cljr-reify-to-defrecord`
