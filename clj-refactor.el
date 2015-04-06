@@ -669,7 +669,8 @@ word test in it and whether the file lives under the test/ directory."
            (car (split-string (cljr--extract-sexp-content (s-join " " s))))))
 
 (defun cljr--maybe-tidy-ns-form ()
-  (if (and (cider-connected-p) cljr-auto-clean-ns)
+  (if (and cljr-auto-clean-ns (cider-connected-p)
+           (nrepl-op-supported-p "clean-ns"))
       (cljr-clean-ns)
     (when cljr-auto-sort-ns
       (cljr-sort-ns))))
