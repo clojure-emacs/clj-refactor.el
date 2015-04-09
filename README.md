@@ -51,9 +51,9 @@
 
 [thread last all](examples/thread-last-all.gif)
 
-[thread last](examples/examples/thread-last.gif)
+[thread last](examples/thread-last.gif)
 
-[unwind thread](examples/examples/unwind-thread.gif)
+[unwind thread](examples/unwind-thread.gif)
 
 ## Installation
 
