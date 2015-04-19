@@ -122,7 +122,7 @@ for the latest stable release of clj-refactor.el, 0.13.0
 
 for the latest snapshot of clj-refactor.el:
 ```clojure
-:plugins [[refactor-nrepl "1.0.1"]]
+:plugins [[refactor-nrepl "1.0.2"]]
 ```
 
 **WARNING** The analyzer needs to eval the code too in order to be able to build
@@ -588,15 +588,15 @@ You might also like
 
 - Add `clj-reload-config` to resubmit config settings to the middleware
 - Add config setting for `clean-ns` to not do rewriting to favor prefix form.
-- Add `cljr-extract-function` [Lars Andersen](https://github.com/expez)
+- Add `cljr-extract-function` [Lars Andersen](https://github.com/expez) and [Benedek Fazekas](https://github.com/benedekfazekas)
 - Add `cljr-hotload-dependency` [Lars Andersen](https://github.com/expez)
 - Hotloading of artifacts added with `cljr-add-project-dependency` [Lars Andersen](https://github.com/expez)
 - Add `cljr-remove-let` [Lars Andersen](https://github.com/expez)
 - Add `cljr-clean-ns` [Lars Andersen](https://github.com/expez)
 - Add `cljr-add-missing-libspec` [Lars Andersen](https://github.com/expez)
 - Add `cljr-promote-function` [Lars Andersen](https://github.com/expez)
-- Add `cljr-find-usages` [Lars Andersen](https://github.com/expez) and  [Benedek Fazekas](https://github.com/benedekfazekas)
-- Add `cljr-rename-symbol` [Lars Andersen](https://github.com/expez) and  [Benedek Fazekas](https://github.com/benedekfazekas)
+- Add `cljr-find-usages` [Lars Andersen](https://github.com/expez) and [Benedek Fazekas](https://github.com/benedekfazekas)
+- Add `cljr-rename-symbol` [Lars Andersen](https://github.com/expez) and [Benedek Fazekas](https://github.com/benedekfazekas)
 
 #### From 0.12 to 0.13
 
