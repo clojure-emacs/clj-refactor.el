@@ -5,7 +5,7 @@
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; Version: 0.13.0
 ;; Keywords: convenience
-;; Package-Requires: ((s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "22") (multiple-cursors "1.2.2") (cider "0.8.1"))
+;; Package-Requires: ((s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "25beta") (multiple-cursors "1.2.2") (cider "0.8.1"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
