@@ -80,7 +80,7 @@
   :group 'cljr
   :type '(repeat function))
 
-(defcustom cljr-project-clean-exceptions '("dev/user.clj")
+(defcustom cljr-project-clean-exceptions '("dev/user.clj" "project.clj")
   "Contains a list of files that should not be cleaned when
   running `cljr-project-clean'."
   :group 'cljr
