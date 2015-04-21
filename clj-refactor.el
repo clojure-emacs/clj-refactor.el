@@ -709,8 +709,7 @@ word test in it and whether the file lives under the test/ directory."
     (paredit-backward-up)
     (let ((beg (point))
           (end (progn (paredit-forward) (point))))
-      (indent-region beg end)
-      (cljr--maybe-clean-or-sort-ns))))
+      (indent-region beg end))))
 
 (defvar cljr--tmp-marker (make-marker))
 

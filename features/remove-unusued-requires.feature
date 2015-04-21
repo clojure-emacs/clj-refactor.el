@@ -548,29 +548,3 @@ Feature: remove unused require
       (t/now)
       (st/difference #{:a :b} #{:a :c}))
     """
-
-  Scenario: Also sorts ns if auto-sort is on
-    When I insert:
-    """
-    (ns cljr.core
-      (:require [clojure.string :as s]
-                [clojure.set :as st]
-                [clj-time.core :as t]))
-
-    (defn use-time []
-      (t/now)
-      (st/difference #{:a :b} #{:a :c}))
-    """
-    And I place the cursor before "now"
-    And I switch auto-sort on
-    And I press "C-! rr"
-    Then I should see:
-    """
-    (ns cljr.core
-      (:require [clj-time.core :as t]
-                [clojure.set :as st]))
-
-    (defn use-time []
-      (t/now)
-      (st/difference #{:a :b} #{:a :c}))
-    """
