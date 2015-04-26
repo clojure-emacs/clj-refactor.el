@@ -2043,7 +2043,10 @@ root."
 
 (defun cljr--warm-ast-cache ()
   (interactive)
-  (cljr--find-symbol "join" "clojure.string" (lambda (_))))
+  (cljr--find-symbol "join" "clojure.string"
+                     (lambda (response)
+                       (cljr--maybe-rethrow-error response)
+                       (message "AST cache warmed"))))
 
 (defun cljr--replace-ns (new-ns)
   (save-excursion
