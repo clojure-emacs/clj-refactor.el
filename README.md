@@ -115,12 +115,6 @@ For some of the more advanced refactorings we've written an [nrepl](https://gith
 Add the following, either in your project's `project.clj`, or in the `:user`
 profile found at `~/.lein/profiles.clj`:
 
-for the latest stable release of clj-refactor.el, 0.13.0
-```clojure
-:plugins [[refactor-nrepl "0.2.2"]]
-```
-
-for the latest snapshot of clj-refactor.el:
 ```clojure
 :plugins [[refactor-nrepl "1.0.4"]]
 ```
