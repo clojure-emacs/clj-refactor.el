@@ -2024,7 +2024,9 @@ root."
         (save-buffer)))))
 
 (defun cljr-rename-symbol (new-name)
-  (interactive "sNew name: ")
+  (interactive
+   (list (read-from-minibuffer "New name: "
+                               (cljr--symbol-suffix (cider-symbol-at-point)))))
   (cljr--assert-middleware)
   (save-buffer)
   (let* ((symbol (cider-symbol-at-point))
