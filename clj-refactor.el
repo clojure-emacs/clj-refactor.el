@@ -34,6 +34,9 @@
 (require 'clojure-mode)
 (require 'cider)
 
+(defvar cljr-version "1.0.5-SNAPSHOT"
+  "The current version of clojure-refactor")
+
 (defcustom cljr-add-ns-to-blank-clj-files t
   "When true, automatically adds a ns form to new clj files."
   :group 'cljr
@@ -149,7 +152,10 @@ with the middleware."
 
 (defvar cljr--nrepl-ops
   '("artifact-list" "artifact-versions" "clean-ns" "configure" "find-symbol"
-    "find-unbound" "hotload-dependency" "resolve-missing"))
+    "find-unbound" "hotload-dependency" "resolve-missing" "version"))
+
+(defvar cljr-version "1.0.5-SNAPSHOT"
+  "The current version of clojure-refactor")
 
 ;;; Buffer Local Declarations
 
@@ -2339,12 +2345,36 @@ changing settings."
   (let ((missing-ops (-remove 'nrepl-op-supported-p cljr--nrepl-ops)))
     (when missing-ops
       (cider-repl-emit-interactive-err-output
-       (format "WARNING: The following nREPL ops are not supported: \n%s\nPlease, install (or update) refactor-nrepl and restart CIDER\nYou can mute this warning by toggling cljr-suppress-middleware-warnings."
+       (format "WARNING: The following nREPL ops are not supported:
+%s\nPlease, install (or update) refactor-nrepl and restart CIDER.
+You can mute this warning by changing cljr-suppress-middleware-warnings."
                (s-join " " missing-ops ))))))
+
+(defun cljr--check-nrepl-ops ()
+  "Check whether all nREPL ops are present and emit a warning when not."
+  (let ((refactor-nrepl-version (cljr--middleware-version)))
+    (unless (s-equals? (s-downcase refactor-nrepl-version)
+                       (s-downcase cljr-version))
+      (cider-repl-emit-interactive-err-output
+       (format "WARNING: clj-refactor and refactor-nrepl are out of sync.
+Their versions are %s and %s, respectively.
+You can mute this warning by changing cljr-suppress-middleware-warnings."
+               cljr-version refactor-nrepl-version)))))
+
+(defun cljr--middleware-version ()
+  (cljr--assert-middleware)
+  (cljr--call-middleware-sync (list "op" "version") "version"))
+
+(defun cljr-version ()
+  "Returns the version of the middleware as well as this package."
+  (interactive)
+  (message "clj-refactor %s, refactor-nrepl %s"
+           cljr-version (cljr--middleware-version)))
 
 (defun cljr--init-middleware ()
   (unless cljr-suppress-middleware-warnings
-    (cljr--check-nrepl-ops))
+    (cljr--check-nrepl-ops)
+    (cljr--check-middleware-version))
   (cljr--configure-middleware)
   (when cljr-populate-artifact-cache-on-startup
     (cljr--update-artifact-cache))
