@@ -2350,9 +2350,9 @@ changing settings."
 You can mute this warning by changing cljr-suppress-middleware-warnings."
                (s-join " " missing-ops ))))))
 
-(defun cljr--check-nrepl-ops ()
-  "Check whether all nREPL ops are present and emit a warning when not."
-  (let ((refactor-nrepl-version (cljr--middleware-version)))
+(defun cljr--check-middleware-version ()
+  "Check whether clj-refactor and nrepl-refactor versions are the same"
+  (let ((refactor-nrepl-version (or (cljr--middleware-version) "n/a")))
     (unless (s-equals? (s-downcase refactor-nrepl-version)
                        (s-downcase cljr-version))
       (cider-repl-emit-interactive-err-output
