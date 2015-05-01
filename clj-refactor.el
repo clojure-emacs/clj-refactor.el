@@ -154,9 +154,6 @@ with the middleware."
   '("artifact-list" "artifact-versions" "clean-ns" "configure" "find-symbol"
     "find-unbound" "hotload-dependency" "resolve-missing" "version"))
 
-(defvar cljr-version "1.0.5-SNAPSHOT"
-  "The current version of clojure-refactor")
-
 ;;; Buffer Local Declarations
 
 ;; tracking state of find-symbol buffer
