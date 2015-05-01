@@ -116,7 +116,7 @@ Add the following, either in your project's `project.clj`, or in the `:user`
 profile found at `~/.lein/profiles.clj`:
 
 ```clojure
-:plugins [[refactor-nrepl "1.0.4"]]
+:plugins [[refactor-nrepl "1.0.5"]]
 ```
 
 **WARNING** The analyzer needs to eval the code too in order to be able to build
