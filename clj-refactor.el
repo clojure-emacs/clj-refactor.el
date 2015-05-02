@@ -3,7 +3,7 @@
 ;; Copyright © 2012-2014 Magnar Sveen <magnars@gmail.com>
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
-;; Version: 1.0.4
+;; Version: 1.0.5
 ;; Keywords: convenience
 ;; Package-Requires: ((s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.8.1"))
 
@@ -34,7 +34,7 @@
 (require 'clojure-mode)
 (require 'cider)
 
-(defvar cljr-version "1.0.5-SNAPSHOT"
+(defvar cljr-version "1.0.5"
   "The current version of clojure-refactor")
 
 (defcustom cljr-add-ns-to-blank-clj-files t
