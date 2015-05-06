@@ -34,7 +34,7 @@
 (require 'clojure-mode)
 (require 'cider)
 
-(defvar cljr-version "1.0.5"
+(defvar cljr-version "1.1.0-SNAPSHOT"
   "The current version of clojure-refactor")
 
 (defcustom cljr-add-ns-to-blank-clj-files t
@@ -1752,7 +1752,6 @@ If it's present KEY indicates the key to extract from the response."
       (error "Empty artifact list received from middleware!"))))
 
 (defun cljr--update-artifact-cache ()
-  (interactive)
   (cljr--call-middleware-async (list "op" "artifact-list"
                                      "force" "true")
                                (lambda (_) (message "Artifact cache updated"))))
@@ -2046,11 +2045,10 @@ root."
       (cljr--warm-ast-cache))))
 
 (defun cljr--warm-ast-cache ()
-  (interactive)
-  (cljr--find-symbol "join" "clojure.string"
-                     (lambda (response)
-                       (cljr--maybe-rethrow-error response)
-                       (message "AST cache warmed"))))
+  (cljr--call-middleware-async
+   (list "op" "warm-ast-cache")
+   (lambda (res)
+     (cljr--maybe-rethrow-error res))))
 
 (defun cljr--replace-ns (new-ns)
   (save-excursion
