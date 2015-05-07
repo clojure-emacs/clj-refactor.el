@@ -362,6 +362,13 @@ list of (fn args) to pass to `apply''"
         (apply f args)))
     (point)))
 
+(defun cljr--new-toplevel-form (form)
+  "Insert a new toplevel FORM before the form containing POINT."
+  (cljr--goto-toplevel)
+  (goto-char (point-at-bol))
+  (open-line 2)
+  (insert form))
+
 (defun cljr-show-changelog ()
   "Show the changelog for `clj-refactor'."
   (interactive)
@@ -371,6 +378,41 @@ list of (fn args) to pass to `apply''"
     (when (fboundp 'markdown-mode)
       (markdown-mode))
     (view-mode 1)))
+
+;; ------ reify protocol defrecord -----------
+
+(defun cljr--goto-reify ()
+  (let ((point (point)))
+    (while (not (or (cljr--toplevel-p)
+                    (looking-at-p "(reify")))
+      (paredit-backward-up))
+    (unless (looking-at-p "(reify")
+      (goto-char point)
+      (error "Can't find call to reify!"))))
+
+(defun cljr-reify-to-defrecord ()
+  "Replace a call to reify with a call to the constructor of newly created record."
+  (interactive "")
+  (cljr--goto-reify)
+  (let ((record-name (cljr--prompt-user-for "Name of new record: "))
+        (reify-sexp (cljr--delete-and-extract-sexp))
+        (placeholder "#85dffa31d"))
+    (insert placeholder)
+    (cljr--new-toplevel-form reify-sexp)
+    (paredit-backward)
+    (paredit-forward-down)
+    (cljr--delete-and-extract-sexp)
+    (insert "defrecord " record-name " []")
+    (if (looking-at-p "[ \t]*$")
+        (forward-line)
+      (newline-and-indent))
+    (cljr--goto-toplevel)
+    (indent-region (point) (cljr--point-after 'paredit-forward))
+    (re-search-forward placeholder)
+    (paredit-backward)
+    (cljr--delete-and-extract-sexp)
+    (insert "("record-name ".)")
+    (paredit-backward-down)))
 
 ;; ------ file -----------
 
@@ -1832,9 +1874,7 @@ If it's present KEY indicates the key to extract from the response."
           (name (read-string "Name: "))
           fn-start)
       (insert name)
-      (cljr--goto-toplevel)
-      (open-line 2)
-      (insert fn)
+      (cljr--new-toplevel-form fn)
       (paredit-backward-down)
       (cljr--goto-fn-definition)
       (setq fn-start (point))

@@ -1,8 +1,9 @@
 # Changelog
 
-- add `cljr-show-changelog` so users don't have to visit github to find out what's changed after a package update.
-
 ## master (unreleased)
+
+- Add `cljr-reify-to-defrecord`
+- Add `cljr-show-changelog` so users don't have to visit github to find out what's changed after a package update.
 
 ## 1.0.5
 
