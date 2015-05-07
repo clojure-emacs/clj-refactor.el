@@ -580,66 +580,7 @@ You might also like
 
 ## Changelog
 
-- Add `clj-reload-config` to resubmit config settings to the middleware
-- Add config setting for `clean-ns` to not do rewriting to favor prefix form.
-- Add `cljr-extract-function` [Lars Andersen](https://github.com/expez) and [Benedek Fazekas](https://github.com/benedekfazekas)
-- Add `cljr-hotload-dependency` [Lars Andersen](https://github.com/expez)
-- Hotloading of artifacts added with `cljr-add-project-dependency` [Lars Andersen](https://github.com/expez)
-- Add `cljr-remove-let` [Lars Andersen](https://github.com/expez)
-- Add `cljr-clean-ns` [Lars Andersen](https://github.com/expez)
-- Add `cljr-add-missing-libspec` [Lars Andersen](https://github.com/expez)
-- Add `cljr-promote-function` [Lars Andersen](https://github.com/expez)
-- Add `cljr-find-usages` [Lars Andersen](https://github.com/expez) and [Benedek Fazekas](https://github.com/benedekfazekas)
-- Add `cljr-rename-symbol` [Lars Andersen](https://github.com/expez) and [Benedek Fazekas](https://github.com/benedekfazekas)
-
-#### From 0.12 to 0.13
-
-- Removed `cljr-cycle-stringlike`.  This function was duplicating the functionality of [clojure-mode's](https://github.com/clojure-emacs/clojure-mode) `clojure-toggle-keyword-string`
-- Add `cljr-cycle-if` [AlexBaranosky](https://github.com/AlexBaranosky)
-- Common namespace shorthands are (optionally) automatically required when you type it.
-- Comparator for sort require, use and import is configurable, add optional lenght based comparator to sort longer first [Benedek Fazekas](https://github.com/benedekfazekas)
-- Add semantic comparator to sort items closer to the current namespace first [Benedek Fazekas](https://github.com/benedekfazekas)
-- Add `cljr-project-clean` with configurable clean functions [Benedek Fazekas](https://github.com/benedekfazekas)
-- Add `cljr-sort-project-dependencies` [Lars Andersen](https://github.com/expez)
-- Add `cljr-add-project-dependency` [Lars Andersen](https://github.com/expez)
-- Add `cljr-remove-debug-fns` [Benedek Fazekas](https://github.com/benedekfazekas)
-- performance tweak for `cljr-remove-unused-requires` if `refactor-nrepl` is used [Benedek Fazekas](https://github.com/benedekfazekas)
-
-#### From 0.11 to 0.12
-
-- When expanding let, or moving expressions to let, it now replaces
-  duplicates in the let body with the bound name. [Benedek Fazekas](https://github.com/benedekfazekas)
-
-#### From 0.10 to 0.11
-
-- Add `cljr-raise-sexp`
-- Add `cljr-remove-unused-requires` [Benedek Fazekas](https://github.com/benedekfazekas)
-- Add `cljr-move-form` [Lars Andersen](https://github.com/expez)
-
-#### From 0.9 to 0.10
-
-- Add `cljr-stop-referring`
-- Add `cljr-destructure-keys`
-- Add `cljr-sort-ns` [AlexBaranosky](https://github.com/AlexBaranosky)
-
-#### From 0.8 to 0.9
-
-- Add `cljr-replace-use` [Lars Andersen](https://github.com/expez)
-- Add `cljr-add-declaration` [Lars Andersen](https://github.com/expez)
-
-#### From 0.7 to 0.8
-
-- Add `cljr-cycle-stringlike` [AlexBaranosky](https://github.com/AlexBaranosky)
-- Add `cljr-cycle-coll` [AlexBaranosky](https://github.com/AlexBaranosky)
-- Add `cljr-cycle-privacy` [AlexBaranosky](https://github.com/AlexBaranosky)
-
-#### From 0.6 to 0.7
-
-- Add `cljr-thread-first-all`, `cljr-thread-last-all` and `cljr-unwind-all` [AlexBaranosky](https://github.com/AlexBaranosky)
-
-#### From 0.5 to 0.6
-
-- Add `cljr-move-to-let` [AlexBaranosky](https://github.com/AlexBaranosky)
+An extensive changelog is available [here](CHANGELOG.md).
 
 ## Contribute
 
