@@ -163,6 +163,7 @@ This is it so far:
  - `rl`: remove-let, inline all variables and remove the let form
  - `rr`: remove unused requires
  - `ru`: replace all `:use` in namespace with `:refer :all`
+ - `sc`: show the project's changelog to learn about recent changes
  - `sn`: sort :use, :require and :import in the ns form
  - `sp`: Sort all dependency vectors in project.clj
  - `sr`: stop referring (removes `:refer []` from current require, fixing references)

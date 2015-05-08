@@ -232,6 +232,7 @@ with the middleware."
     ("rs" . (cljr-rename-symbol "Rename symbol"))
     ("ru" . (cljr-replace-use "Replace use"))
     ("sn" . (cljr-sort-ns "Sort ns"))
+    ("sc" . (cljr-show-changelog "Show the project's changelog"))
     ("sp" . (cljr-sort-project-dependencies "Sort project dependencies"))
     ("sr" . (cljr-stop-referring "Stop referring"))
     ("tf" . (cljr-thread-first-all "Thread first all"))
@@ -360,6 +361,16 @@ list of (fn args) to pass to `apply''"
             (args (if (listp fn-and-args) (cdr fn-and-args) nil)))
         (apply f args)))
     (point)))
+
+(defun cljr-show-changelog ()
+  "Show the changelog for `clj-refactor'."
+  (interactive)
+  (let* ((cljr (second (assoc 'clj-refactor package-alist)))
+         (dir (package-desc-dir cljr)))
+    (find-file (format "%s/CHANGELOG.md" dir))
+    (when (fboundp 'markdown-mode)
+      (markdown-mode))
+    (view-mode 1)))
 
 ;; ------ file -----------
 
