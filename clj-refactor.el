@@ -1805,6 +1805,7 @@ If it's present KEY indicates the key to extract from the response."
                    "project.clj")
     (error "Can't find project.clj!")))
 
+;;;###autoload
 (defun cljr-add-project-dependency (force)
   (interactive "P")
   (cljr--assert-leiningen-project)
@@ -1873,6 +1874,7 @@ If it's present KEY indicates the key to extract from the response."
                       fn-start
                       (save-excursion (paredit-forward-up 2) (point))))))
 
+;;;###autoload
 (defun cljr-promote-function (promote-to-defn)
   (interactive "P")
   (save-excursion
@@ -1978,6 +1980,7 @@ root."
       (setq buffer-read-only nil)
       (setq-local compilation-search-path (list (cljr--project-dir))))))
 
+;;;###autoload
 (defun cljr-find-usages ()
   (interactive)
   (cljr--assert-middleware)
@@ -2036,6 +2039,7 @@ root."
                 (goto-char original-point)))))
         (save-buffer)))))
 
+;;;###autoload
 (defun cljr-rename-symbol (new-name)
   (interactive
    (list (read-from-minibuffer "New name: "
@@ -2071,6 +2075,7 @@ root."
     (paredit-forward)
     (cljr--just-one-blank-line)))
 
+;;;###autoload
 (defun cljr-clean-ns ()
   (interactive)
   (cljr--assert-leiningen-project)
@@ -2207,6 +2212,7 @@ itself might be `nil'."
       (error err)
     response))
 
+;;;###autoload
 (defun cljr-add-missing-libspec ()
   "Requires or imports the symbol at point.
 
@@ -2252,6 +2258,7 @@ containing join will be aliased to str."
              string)))
   string)
 
+;;;###autoload
 (defun cljr-hotload-dependency ()
   "Download a dependency (if needed) and hotload it into the current repl session.
 
@@ -2290,6 +2297,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
     (when (looking-back "#")
       (forward-char -1))))
 
+;;;###autoload
 (defun cljr-extract-function ()
   "Extract the form at point, or the nearest enclosing form, into
   a toplevel defn.
@@ -2334,6 +2342,7 @@ With a prefix the newly created defn will be public."
       (-> (list "op" "configure" "opts" opts)
           (nrepl-send-request (or callback (lambda (_))))))))
 
+;;;###autoload
 (defun cljr-reload-config ()
   "Resend configuration settings to the middleware.
 
@@ -2371,6 +2380,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   (cljr--assert-middleware)
   (cljr--call-middleware-sync (list "op" "version") "version"))
 
+;;;###autoload
 (defun cljr-version ()
   "Returns the version of the middleware as well as this package."
   (interactive)
