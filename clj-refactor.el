@@ -5,7 +5,7 @@
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; Version: 1.0.5
 ;; Keywords: convenience
-;; Package-Requires: ((emacs "24.3") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.8.1"))
+;; Package-Requires: ((emacs "24.3") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.8.1") (edn "1.1"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -33,6 +33,7 @@
 (require 'multiple-cursors-core)
 (require 'clojure-mode)
 (require 'cider)
+(require 'edn)
 
 (defvar cljr-version "1.1.0-SNAPSHOT"
   "The current version of clojure-refactor")
@@ -208,6 +209,7 @@ with the middleware."
     ("am" . (cljr-add-missing-libspec "Add missing libspec"))
     ("ap" . (cljr-add-project-dependency "Add project dependency"))
     ("ar" . (cljr-add-require-to-ns "Add require to ns"))
+    ("as" . (cljr-add-stubs "Add stubs for the interface / protocol at point."))
     ("au" . (cljr-add-use-to-ns "Add use to ns"))
     ("cc" . (cljr-cycle-coll "Cycle coll"))
     ("ci" . (cljr-cycle-if "Cycle if"))
@@ -1842,6 +1844,13 @@ If it's present KEY indicates the key to extract from the response."
   (unless (nrepl-op-supported-p "find-symbol")
     (error "nrepl-refactor middleware not available! Did you remember to install it?")))
 
+(defun cljr--ensure-op-supported (op)
+  "Check for support of middleware op OP.
+Signal an error if it is not supported."
+  (cljr--assert-middleware)
+  (unless (nrepl-op-supported-p op)
+    (error "Can't find nREPL middleware providing op \"%s\".  Please, install (or update) refactor-nrepl %s and restart CIDER" op (upcase cljr-version))))
+
 (defun cljr--assert-leiningen-project ()
   (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
                    "project.clj")
@@ -2375,6 +2384,33 @@ With a prefix the newly created defn will be public."
     (re-search-backward fn-regexp)
     (indent-region (point) (point-max))
     (re-search-forward (s-concat "\(" name " ?" unbound))))
+
+(defun cljr--insert-function-stubs (functions)
+  (paredit-forward)
+  (save-excursion
+    (dolist (fn functions)
+      (newline-and-indent)
+      (insert "(" (gethash :name fn) " " (gethash :parameter-list fn) ")")))
+  (when (> (length functions) 0)
+    ;; Move cursor to point where the first functino body goes
+    (paredit-forward-down)
+    (paredit-forward 2)))
+
+;;;###autoload
+(defun cljr-add-stubs ()
+  "Adds implementation stubs for the interface or protocol at point."
+  (interactive)
+  (cljr--ensure-op-supported "stubs-for-interface")
+  (let* ((interface (cider-symbol-at-point))
+         (prefix? (cljr--symbol-prefix interface))
+         (interface (if (not (s-blank? prefix?))
+                        interface
+                      (format "%s/%s" (cider-current-ns) interface)))
+         (functions (edn-read (cljr--call-middleware-sync
+                               (list "op" "stubs-for-interface"
+                                     "interface" interface)
+                               "functions"))))
+    (cljr--insert-function-stubs functions)))
 
 (defun cljr--configure-middleware (&optional callback)
   (when (nrepl-op-supported-p "configure")

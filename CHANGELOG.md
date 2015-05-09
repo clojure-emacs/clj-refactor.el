@@ -2,6 +2,7 @@
 
 ## master (unreleased)
 
+- add `cljr-add-stubs` which adds a skeleton implementation of the protocol or interface at point.
 - Add `cljr-reify-to-defrecord`
 - Add `cljr-show-changelog` so users don't have to visit github to find out what's changed after a package update.
 
