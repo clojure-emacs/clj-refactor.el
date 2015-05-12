@@ -173,6 +173,10 @@ This is it so far:
  - `ua`: fully unwind a threaded expression
  - `uw`: unwind a threaded expression
 
+The following functions are available, and supported, but used rarely enough that they're not given a keybinding:
+
+* `cljr-reify-to-record` change a call to reify with a call to a defrecord constructor.
+
 [Using refactor-nrepl](#refactor-nrepl-middleware), you also get:
 
  - `am`: add a missing libspec
