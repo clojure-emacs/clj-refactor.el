@@ -224,6 +224,7 @@ with the middleware."
     ("fu" . (cljr-find-usages "Find usages"))
     ("hd" . (cljr-hotload-dependency "Hotload dependency"))
     ("il" . (cljr-introduce-let "Introduce let"))
+    ("iv" . (cljr-inline-symbol "Inline symbol"))
     ("mf" . (cljr-move-form "Move form"))
     ("ml" . (cljr-move-to-let "Move to let"))
     ("pc" . (cljr-project-clean "Project clean"))
@@ -363,6 +364,7 @@ errors."
   (looking-at "\\[[^[[:space:]]+[[:space:]]+\""))
 
 (defun cljr--just-one-blank-line ()
+  "Ensure there's only one blank line at POINT."
   (newline 2)
   (forward-line -1)
   (delete-blank-lines))
@@ -395,6 +397,15 @@ list of (fn args) to pass to `apply''"
     (when (fboundp 'markdown-mode)
       (markdown-mode))
     (view-mode 1)))
+
+(defun cljr--goto-toplevel-forward ()
+  "Move forward and up until we reach toplevel."
+  (paredit-forward-up (cljr--depth-at-point)))
+
+(defun cljr--indent-defun ()
+  "Indent the toplevel form containing point"
+  (indent-region (cljr--point-after 'cljr--goto-toplevel)
+                 (cljr--point-after 'cljr--goto-toplevel-forward)))
 
 ;; ------ reify protocol defrecord -----------
 
@@ -1444,6 +1455,9 @@ let are."
     (cljr--depth-at-point)))
 
 (defun cljr--eliminate-let ()
+  "Remove a the nearest let form.
+
+This function only does the actual removal."
   (cljr--goto-let)
   (paredit-forward-down)
   (paredit-forward 2)
@@ -2072,50 +2086,55 @@ root."
     (cljr--setup-find-symbol-buffer (or symbol-name symbol))
     (cljr--find-symbol (or symbol-name symbol) ns 'cljr--format-and-insert-symbol-occurrence)))
 
-(defun cljr--rename-occurrences (ns occurrences new-name)
+(defun cljr--rename-occurrence (ns file line-beg line-end col-beg col-end name new-name)
   (save-excursion
-    (dolist (symbol-meta occurrences)
-      (with-current-buffer
-          (find-file-noselect (plist-get symbol-meta :file))
-        (goto-char (point-min))
-        (let* ((line-beg (plist-get symbol-meta :line-beg))
-               (line-end (or (plist-get symbol-meta :line-end) line-beg))
-               (col-beg (1- (or (plist-get symbol-meta :col-beg) 1)))
-               (start (progn (forward-line (1- line-beg))
-                             (move-to-column col-beg)
-                             (point)))
-               (col-end (if (= line-beg line-end)
-                            (line-end-position)
-                          (or (plist-get symbol-meta :col-end) (line-end-position))))
-               (end (progn (goto-char (point-min))
-                           (forward-line (1- line-end))
-                           (move-to-column col-end)
+    (with-current-buffer
+        (find-file-noselect file)
+      (goto-char (point-min))
+      (let* ((line-end (or line-end line-beg))
+             (col-beg (1- (or col-beg 1)))
+             (start (progn (forward-line (1- line-beg))
+                           (move-to-column col-beg)
                            (point)))
-               (name (->> :name
-                          (plist-get symbol-meta)
-                          cljr--symbol-suffix
-                          regexp-quote))
-               (matches-count 0)
-               (replaced nil))
-          (goto-char start)
-          (while (re-search-forward name end t)
-            (setq matches-count (1+ matches-count)))
-          (goto-char start)
-          (if (and (= 1 matches-count) (re-search-forward name end t))
-              (replace-match new-name)
-            (while (and (not replaced) (re-search-forward name end t))
-              (let* ((original-point (point))
-                     (cider-symbol (cider-symbol-at-point))
-                     (var-info (cider-var-info cider-symbol))
-                     (symbol-ns (nrepl-dict-get var-info "ns"))
-                     (symbol-name (nrepl-dict-get var-info "name"))
-                     (word-start (progn (forward-word -1)
-                                        (point))))
-                (when (and (string= symbol-ns ns) (string= symbol-name name))
-                  (perform-replace name new-name nil nil nil nil nil word-start original-point)
-                  (setq replaced t))
-                (goto-char original-point)))))
-        (save-buffer)))))
+             (col-end (if (= line-beg line-end)
+                          (line-end-position)
+                        (or col-end (line-end-position))))
+             (end (progn (goto-char (point-min))
+                         (forward-line (1- line-end))
+                         (move-to-column col-end)
+                         (point)))
+             (name (->> name cljr--symbol-suffix regexp-quote))
+             (matches-count 0)
+             (replaced nil))
+        (goto-char start)
+        (while (re-search-forward name end t)
+          (setq matches-count (1+ matches-count)))
+        (goto-char start)
+        (if (and (= 1 matches-count) (re-search-forward name end t))
+            (replace-match new-name)
+          (while (and (not replaced) (re-search-forward name end t))
+            (let* ((original-point (point))
+                   (cider-symbol (cider-symbol-at-point))
+                   (var-info (cider-var-info cider-symbol))
+                   (symbol-ns (nrepl-dict-get var-info "ns"))
+                   (symbol-name (nrepl-dict-get var-info "name"))
+                   (word-start (progn (forward-word -1)
+                                      (point))))
+              (when (and (string= symbol-ns ns) (string= symbol-name name))
+                (perform-replace name new-name nil nil nil nil nil word-start original-point)
+                (setq replaced t))
+              (goto-char original-point)))))
+      (save-buffer))))
+
+(defun cljr--rename-occurrences (ns occurrences new-name)
+  (dolist (symbol-meta occurrences)
+    (let* ((file (plist-get symbol-meta :file))
+           (line-beg (plist-get symbol-meta :line-beg))
+           (line-end (plist-get symbol-meta :line-end))
+           (col-beg (plist-get symbol-meta :col-beg))
+           (col-end (plist-get symbol-meta :col-end))
+           (name (plist-get symbol-meta :name)))
+      (cljr--rename-occurrence ns file line-beg line-end col-beg col-end name new-name))))
 
 ;;;###autoload
 (defun cljr-rename-symbol (new-name)
@@ -2440,6 +2459,81 @@ With a prefix the newly created defn will be public."
                                      "interface" interface)
                                "functions"))))
     (cljr--insert-function-stubs functions)))
+
+(defun cljr--delete-definition (definition)
+  "Delete a definition as part of inlining a symbol."
+  (let ((file (gethash :file definition))
+        (line-beg (gethash :line-beg definition))
+        (col-beg (gethash :col-beg definition)))
+    (save-excursion
+      (find-file-noselect file)
+      (goto-char (point-min))
+      (forward-line (1- line-beg))
+      (forward-char (1- col-beg))
+      (cljr--delete-and-extract-sexp)
+      (when (cljr--inside-let-binding-form-p)
+        (cljr--delete-and-extract-sexp)
+        (unless (save-excursion (cljr--get-let-bindings))
+          (cljr--eliminate-let)
+          (cljr--indent-defun)))
+      (when (looking-at-p "\s*\n")
+        (cljr--just-one-blank-line)))))
+
+(defun cljr--sort-occurrences (occurrences)
+  "Sort the occurrences so the last ones in the file comes first."
+  (-sort (lambda (o1 o2)
+           (let ((o1-line (gethash :line-beg o1))
+                 (o2-line (gethash :line-beg o2))
+                 (o1-col (gethash :col-beg o1))
+                 (o2-col (gethash :col-beg o2)))
+             (cond
+              ((< o1-line o2-line) o2)
+              ((> o1-line o2-line) o1)
+              ((< o1-col o2-col ) o2)
+              ((> o1-col o2-col) o1)
+              t (error "Sort occurrences failed to compare %s %s %s %s"
+                       o1-line o2-line o1-col o2-col))))
+         occurrences))
+
+(defun cljr--inline-symbol (ns definition occurrences)
+  (dolist (symbol-meta (cljr--sort-occurrences occurrences))
+    (let* ((file (gethash :file symbol-meta))
+           (line-beg (gethash :line-beg symbol-meta))
+           (line-end (gethash :line-end symbol-meta))
+           (col-beg (gethash :col-beg symbol-meta))
+           (col-end (gethash :col-end symbol-meta))
+           (name (gethash :name symbol-meta))
+           (def (gethash :definition definition)))
+      (cljr--rename-occurrence ns file line-beg line-end col-beg col-end name def)))
+  (cljr--delete-definition definition))
+
+;;;###autoload
+(defun cljr-inline-symbol ()
+  "Inline the symbol at point."
+  (interactive)
+  (cljr--ensure-op-supported "extract-definition")
+  (save-buffer)
+  (let* ((filename (buffer-file-name))
+         (line (line-number-at-pos))
+         (column (1+ (current-column)))
+         (dir (cljr--project-dir))
+         (symbol (cider-symbol-at-point))
+         (var-info (cider-var-info symbol))
+         (ns (nrepl-dict-get var-info "ns"))
+         (symbol-name (or (nrepl-dict-get var-info "name") symbol))
+         (extract-definition-request (list
+                                      "op" "extract-definition"
+                                      "ns" ns
+                                      "dir" dir
+                                      "file" filename
+                                      "line" line
+                                      "column" column
+                                      "name" symbol-name))
+         (response (edn-read (cljr--call-middleware-sync
+                              extract-definition-request "definition")))
+         (definition (gethash :definition response))
+         (occurrences (gethash :occurrences response)))
+    (cljr--inline-symbol ns definition occurrences)))
 
 (defun cljr--configure-middleware (&optional callback)
   (when (nrepl-op-supported-p "configure")
