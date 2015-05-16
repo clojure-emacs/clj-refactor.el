@@ -628,7 +628,7 @@ Thanks!
 
 ## License
 
-Copyright © 2012-2014 Magnar Sveen
+Copyright © 2012-2015 Magnar Sveen
 
 Authors: Magnar Sveen <magnars@gmail.com>
 Keywords: clojure convenience

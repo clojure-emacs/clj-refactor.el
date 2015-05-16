@@ -1,6 +1,6 @@
 ;;; clj-refactor.el --- A collection of clojure refactoring functions
 
-;; Copyright © 2012-2014 Magnar Sveen <magnars@gmail.com>
+;; Copyright © 2012-2015 Magnar Sveen <magnars@gmail.com>
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;; Version: 1.0.5
