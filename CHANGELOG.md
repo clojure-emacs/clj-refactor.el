@@ -5,6 +5,7 @@
 - add `cljr-add-stubs` which adds a skeleton implementation of the protocol or interface at point.
 - Add `cljr-reify-to-defrecord`
 - Add `cljr-show-changelog` so users don't have to visit github to find out what's changed after a package update.
+- Add `cljr-create-fn-from-example` to create function stub based on example usage
 
 ## 1.0.5
 
