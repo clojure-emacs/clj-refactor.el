@@ -101,6 +101,38 @@
         (assert (s-ends-with? file-name-postfix (buffer-file-name)) nil "Expected %S to end with %S" (buffer-file-name) file-name-postfix)))
 
 (And "^the cursor is inside the first defn form$"
-  (lambda ()
-    (goto-char (point-min))
-    (re-search-forward "defn")))
+     (lambda ()
+       (goto-char (point-min))
+       (re-search-forward "defn")))
+
+(Given "^I call the add-stubs function directly with mock data from the middleware"
+       (lambda ()
+         (cljr--insert-function-stubs (edn-read "(
+{:parameter-list \"[^int arg]\", :name \"remove\"}
+{:parameter-list \"[^int arg0 ^Object arg1]\", :name \"add\"}
+{:parameter-list \"[^java.util.function.UnaryOperator arg]\", :name \"replaceAll\"}
+{:parameter-list \"[^java.util.Collection arg]\", :name \"containsAll\"}
+{:parameter-list \"[^java.util.Collection arg]\", :name \"removeAll\"}
+{:parameter-list \"[]\", :name \"listIterator\"}
+{:parameter-list \"[^int arg0 ^int arg1]\", :name \"subList\"}
+{:parameter-list \"[]\", :name \"iterator\"}
+{:parameter-list \"[^Object arg]\", :name \"lastIndexOf\"}
+{:parameter-list \"[^int arg]\", :name \"listIterator\"}
+{:parameter-list \"[^int arg0 ^java.util.Collection arg1]\", :name \"addAll\"}
+{:parameter-list \"[^Object arg]\", :name \"add\"}
+{:parameter-list \"[^int arg]\", :name \"get\"}
+{:parameter-list \"[]\", :name \"toArray\"}
+{:parameter-list \"[]\", :name \"clear\"}
+{:parameter-list \"[^int arg0 ^Object arg1]\", :name \"set\"}
+{:parameter-list \"[^java.util.Collection arg]\", :name \"retainAll\"}
+{:parameter-list \"[]\", :name \"isEmpty\"}
+{:parameter-list \"[^java.util.Collection arg]\", :name \"addAll\"}
+{:parameter-list \"[]\", :name \"spliterator\"}
+{:parameter-list \"[^Object arg]\", :name \"indexOf\"}
+{:parameter-list \"[^Object... arg]\", :name \"toArray\"}
+{:parameter-list \"[^java.util.Comparator arg]\", :name \"sort\"}
+{:parameter-list \"[]\", :name \"size\"}
+{:parameter-list \"[^Object arg]\", :name \"equals\"}
+{:parameter-list \"[^Object arg]\", :name \"remove\"}
+{:parameter-list \"[]\", :name \"hashCode\"}
+{:parameter-list \"[^Object arg]\", :name \"contains\"})"))))

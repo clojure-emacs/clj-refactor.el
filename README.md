@@ -180,6 +180,7 @@ The following functions are available, and supported, but used rarely enough tha
 [Using refactor-nrepl](#refactor-nrepl-middleware), you also get:
 
  - `am`: add a missing libspec
+ - `as`: add implementation stubs for an interface or protocol
  - `ap`: add a dependency to your project
  - `cn`: Perform various cleanups on the ns form
  - `ef`: Extract function
