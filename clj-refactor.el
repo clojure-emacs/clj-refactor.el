@@ -1877,14 +1877,20 @@ Signal an error if it is not supported."
     (cljr--add-project-dependency lib-name version)))
 
 (defun cljr--goto-fn-definition ()
-  (if (or
-       (re-search-backward "#("
-                           (save-excursion (cljr--goto-toplevel) (point)) t)
-       (re-search-backward "(fn \\["
-                           (save-excursion (cljr--goto-toplevel) (point)) t))
-      (when (looking-back "#")
-        (backward-char))
-    (error "Can't find definition of anonymous function!")))
+  (let ((literal (save-excursion (when (re-search-backward "#("
+                                                        (save-excursion
+                                                          (cljr--goto-toplevel)
+                                                          (point)) t)
+                                (point))))
+        (fn (when (re-search-backward "(fn \\["
+                                      (save-excursion (cljr--goto-toplevel)
+                                                      (point)) t)
+              (point))))
+    (if (or literal fn)
+        (progn (goto-char (max (or literal (point-min)) (or fn (point-min))))
+               (when (looking-back "#")
+                 (backward-char)))
+      (error "Can't find definition of anonymous function!"))))
 
 (defun cljr--promote-fn ()
   (save-excursion
