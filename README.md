@@ -29,6 +29,8 @@
 
 [extract fn](examples/extract-fn.gif)
 
+[create fn from example](examples/create-fn-from-example.gif)
+
 [find usages](examples/find-usages.gif)
 
 [introduce let](examples/introduce-let.gif)
@@ -154,6 +156,7 @@ This is it so far:
  - `cp`: cycle privacy of `defn`s and `def`s
  - `dk`: destructure keys
  - `el`: expand let
+ - `fe`: create function stub from example usage
  - `il`: introduce let
  - `mf`: move one or more forms to another namespace, `:refer` any functions
  - `ml`: move to let
@@ -393,6 +396,39 @@ You can turn this off with:
 ```
 
 or set it to `:prompt` if you want to confirm before it inserts.
+
+## Create function stub from example usage
+
+When you have a function in mind that you eventually want to create you can just type out its signiture as it is used, for example:
+
+```clojure
+(defn my-lovely-fn [some-param]
+  (let [foo (util-fn some-param)]
+    (other-fn some-param foo)))
+```
+
+Then invoking create function stub from example `fe` will create the appropriate stub for you:
+
+```clojure
+(defn- other-fn [some-param foo]
+  )
+
+(defn my-lovely-fn [some-param]
+  (let [foo (util-fn some-param)]
+    (other-fn some-param foo)))
+```
+
+In case your params for the new function are not symbols the feature will replace them with a generated param name:
+
+```clojure
+(defn- other-fn [some-param arg1]
+  )
+
+(defn my-simple-fn [some-param]
+  (other-fn some-param (util-fn some-param)))
+```
+
+(Use rename symbol on the argument afterwards if you wish.)
 
 ## Project clean up
 

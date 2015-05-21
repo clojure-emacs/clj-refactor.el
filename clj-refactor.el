@@ -220,6 +220,7 @@ with the middleware."
     ("dk" . (cljr-destructure-keys "Destructure keys"))
     ("ef" . (cljr-extract-function "Extract function"))
     ("el" . (cljr-expand-let "Expand let"))
+    ("fe" . (cljr-create-fn-from-example "Create function from example"))
     ("fu" . (cljr-find-usages "Find usages"))
     ("hd" . (cljr-hotload-dependency "Hotload dependency"))
     ("il" . (cljr-introduce-let "Introduce let"))
@@ -268,6 +269,20 @@ with the middleware."
          (contents (buffer-substring beg end)))
     (delete-region beg end)
     contents))
+
+(defun cljr--extract-sexp-as-list ()
+  "Returns list of strings representing the elements of the SEXP at point."
+  (save-excursion
+    (let* ((beg (progn (paredit-backward-up)
+                       (forward-char)
+                       (point)))
+           (end (1- (cljr--point-after 'paredit-forward-up)))
+           sexp-elems)
+      (while (/= (point) end)
+        (paredit-forward)
+        (push (s-trim (buffer-substring-no-properties beg (point))) sexp-elems)
+        (setq beg (point)))
+      (nreverse sexp-elems))))
 
 (defun cljr--extract-region (beg end)
   (prog1
@@ -2488,6 +2503,26 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     (cljr--update-artifact-cache))
   (when cljr-eagerly-build-asts-on-startup
     (cljr--warm-ast-cache)))
+
+;;;###autoload
+(defun cljr-create-fn-from-example ()
+  (interactive)
+  (let* ((example-words (cljr--extract-sexp-as-list))
+         (word->arg (lambda (i word)
+                      (if (s-matches? "^[^[{(\"]+$" word)
+                          word
+                        (format "arg%s" i))))
+         (stub (s-concat "(defn- "
+                         (car example-words)
+                         " ["
+                         (->> example-words
+                           (cdr)
+                           (-map-indexed word->arg)
+                           (s-join " "))
+                         "]\n)")))
+    (cljr--new-toplevel-form stub)
+    (beginning-of-line)
+    (indent-according-to-mode)))
 
 (add-hook 'nrepl-connected-hook #'cljr--init-middleware)
 
