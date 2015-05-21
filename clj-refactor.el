@@ -432,9 +432,10 @@ list of (fn args) to pass to `apply''"
 
 (defun cljr--project-files ()
   (split-string (shell-command-to-string
-                 (format "find %s -type f \\( %s \\) %s | head -n %s"
+                 (format "find %s -type f \\( %s -or %s \\) %s | head -n %s"
                          (cljr--project-dir)
                          (format "-name \"%s\"" "*.clj")
+                         (format "-name \"%s\"" "*.cljc")
                          "-not -regex \".*svn.*\""
                          1000))))
 
@@ -524,12 +525,20 @@ word test in it and whether the file lives under the test/ directory."
   (or (string-match-p "test\." (clojure-find-ns))
       (string-match-p "/test" (buffer-file-name))))
 
+(defun cljr--clojure-ish-filename-p (file-name)
+  (or (s-ends-with? ".clj" (buffer-file-name))
+      (s-ends-with? ".cljs" (buffer-file-name))
+      (s-ends-with? ".cljx" (buffer-file-name))
+      (s-ends-with? ".cljc" (buffer-file-name))))
+
+(defun cljr--clojure-filename-p (file-name)
+  (or (s-ends-with? ".clj" (buffer-file-name))
+      (s-ends-with? ".cljc" (buffer-file-name))))
+
 (defun cljr--add-ns-if-blank-clj-file ()
   (ignore-errors
     (when (and cljr-add-ns-to-blank-clj-files
-               (or (s-ends-with? ".clj" (buffer-file-name))
-                   (s-ends-with? ".cljs" (buffer-file-name))
-                   (s-ends-with? ".cljx" (buffer-file-name)))
+               (cljr--clojure-ish-filename-p (buffer-file-name))
                (= (point-min) (point-max)))
       (clojure-insert-ns-form)
       (newline 2)
@@ -543,7 +552,7 @@ word test in it and whether the file lives under the test/ directory."
     (when (and
            file-name
            (not (file-exists-p file-name)) ;; only new files
-           (s-matches? "-[^/]+\.clj$" file-name)
+           (s-matches? "-[^/]+\.clj[sxc]?$" file-name)
            (yes-or-no-p "The file name contains dashes. Replace with underscores?"))
       (let ((new-name (concat
                        (file-name-directory file-name)
@@ -1668,7 +1677,7 @@ sorts the project's dependency vectors."
   (when (or (not cljr-project-clean-prompt)
             (yes-or-no-p "Cleaning your project might change many of your clj files. Do you want to proceed?"))
     (dolist (filename (cljr--project-files))
-      (when (and (s-ends-with? "clj" filename)
+      (when (and (cljr--clojure-filename-p filename)
                  (not (cljr--excluded-from-project-clean? filename)))
         (cljr--update-file filename
           (ignore-errors (-map 'funcall cljr-project-clean-functions)))))
