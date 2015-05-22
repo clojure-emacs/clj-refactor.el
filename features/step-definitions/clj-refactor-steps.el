@@ -1,54 +1,54 @@
 (Given "^I open file \"\\(.+\\)\"$"
-  (lambda (filename)
-    (setq default-directory clj-refactor-root-path)
-    (find-file filename)))
+       (lambda (filename)
+         (setq default-directory clj-refactor-root-path)
+         (find-file filename)))
 
 (Given "^I have a project \"\\([^\"]+\\)\" in \"\\([^\"]+\\)\"$"
-  (lambda (project-name dir-name)
-    (setq default-directory clj-refactor-root-path)
+       (lambda (project-name dir-name)
+         (setq default-directory clj-refactor-root-path)
 
-    ;; delete old directory
-    (when (file-exists-p dir-name)
-      (delete-directory dir-name t))
+         ;; delete old directory
+         (when (file-exists-p dir-name)
+           (delete-directory dir-name t))
 
-    ;; create directory structure
-    (mkdir (expand-file-name project-name (expand-file-name "src" dir-name)) t)
-    (mkdir (expand-file-name project-name (expand-file-name "test" dir-name)) t)
+         ;; create directory structure
+         (mkdir (expand-file-name project-name (expand-file-name "src" dir-name)) t)
+         (mkdir (expand-file-name project-name (expand-file-name "test" dir-name)) t)
 
-    ;; add project.clj
-    (with-temp-file (expand-file-name "project.clj" dir-name)
-      (insert "(defproject " project-name " \"0.1.0-SNAPSHOT\")"))))
+         ;; add project.clj
+         (with-temp-file (expand-file-name "project.clj" dir-name)
+           (insert "(defproject " project-name " \"0.1.0-SNAPSHOT\")"))))
 
 (Given "^I have a clojure-file \"\\([^\"]+\\)\"$"
-  (lambda (file-name)
-    (setq default-directory clj-refactor-root-path)
-    (find-file file-name)
-    (save-buffer)
-    (kill-buffer)))
+       (lambda (file-name)
+         (setq default-directory clj-refactor-root-path)
+         (find-file file-name)
+         (save-buffer)
+         (kill-buffer)))
 
 (Given "^I switch project-clean-prompt off$"
-  (lambda ()
-    (setq cljr-project-clean-prompt nil)))
+       (lambda ()
+         (setq cljr-project-clean-prompt nil)))
 
 (Given "^I switch auto-sort off$"
        (lambda ()
          (setq cljr-auto-sort-ns nil)))
 
 (Given "^I switch auto-sort on$"
-  (lambda ()
-    (setq cljr-auto-sort-ns t)))
+       (lambda ()
+         (setq cljr-auto-sort-ns t)))
 
 (Given "^I set sort comparator to string length$"
        (lambda ()
          (setq cljr-sort-comparator 'cljr--string-length-comparator)))
 
 (Given "^I set sort comparator to semantic$"
-  (lambda ()
-    (setq cljr-sort-comparator 'cljr--semantic-comparator)))
+       (lambda ()
+         (setq cljr-sort-comparator 'cljr--semantic-comparator)))
 
 (Given "^I set sort comparator to string natural$"
-  (lambda ()
-     (setq cljr-sort-comparator 'cljr--string-natural-comparator)))
+       (lambda ()
+         (setq cljr-sort-comparator 'cljr--string-natural-comparator)))
 
 (Given "^I exit multiple-cursors-mode"
        (lambda ()
@@ -136,3 +136,49 @@
 {:parameter-list \"[^Object arg]\", :name \"remove\"}
 {:parameter-list \"[]\", :name \"hashCode\"}
 {:parameter-list \"[^Object arg]\", :name \"contains\"})"))))
+
+(Given "I call the cljr--inline-symbol function directly with mockdata to inline my-constant"
+       (lambda ()
+         (let ((response (edn-read "{:occurrences ({:match \"(println my-constant my-constant another-val)))\"
+:file \"core.clj\"
+:name \"refactor-nrepl.test/my-constant\"
+:col-end 26
+:col-beg 14
+:line-end 5
+:line-beg 5} {:match \"(println my-constant my-constant another-val)))\"
+:file \"core.clj\"
+:name \"refactor-nrepl.test/my-constant\"
+:col-end 38
+:col-beg 26
+:line-end 5
+:line-beg 5})
+:definition {:line-beg 1
+:line-end 1
+:col-beg 1
+:col-end 22
+:name \"refactor-nrepl.test/my-constant\"
+:file \"core.clj\"
+:match \"(def my-constant 123)\"
+:definition \"123\"}}")))
+           (cljr--inline-symbol "fake-ns" (gethash :definition response)
+                                (gethash :occurrences response)))))
+
+(Given "I call the cljr--inline-symbol function directly with mockdata to inline another-val"
+       (lambda ()
+         (let ((response (edn-read "{:definition {:line-beg 4
+:line-end 4
+:col-beg 9
+:col-end 21
+:name \"another-val\"
+:file \"core.clj\"
+:match \"(let [another-val 321]\"
+:definition \"321\"}
+:occurrences ({:match \"(println my-constant my-constant another-val)))\"
+:file \"core.clj\"
+:name \"another-val\"
+:col-end 50
+:col-beg 38
+:line-end 5
+:line-beg 5})}")))
+           (cljr--inline-symbol "fake-ns" (gethash :definition response)
+                                (gethash :occurrences response)))))

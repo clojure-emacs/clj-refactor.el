@@ -189,6 +189,7 @@ The following functions are available, and supported, but used rarely enough tha
  - `ef`: Extract function
  - `fu`: Find usages
  - `hd`: Hotload dependency
+ - `is`: Inline symbol
  - `rd`: Remove (debug) function invocations
  - `rs`: Rename symbol
 
