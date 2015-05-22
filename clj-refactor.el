@@ -2533,7 +2533,10 @@ With a prefix the newly created defn will be public."
                               extract-definition-request "definition")))
          (definition (gethash :definition response))
          (occurrences (gethash :occurrences response)))
-    (cljr--inline-symbol ns definition occurrences)))
+    (cljr--inline-symbol ns definition occurrences)
+    (if occurrences
+        (message "Inlined %s occurrence(s) of '%s'" (length occurrences) symbol)
+      (message "No occurrences of '%s' found.  Deleted the definition." symbol))))
 
 (defun cljr--configure-middleware (&optional callback)
   (when (nrepl-op-supported-p "configure")
