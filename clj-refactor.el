@@ -541,10 +541,10 @@ word test in it and whether the file lives under the test/ directory."
       (string-match-p "/test" (buffer-file-name))))
 
 (defun cljr--clojure-ish-filename-p (file-name)
-  (or (s-ends-with? ".clj" (buffer-file-name))
-      (s-ends-with? ".cljs" (buffer-file-name))
-      (s-ends-with? ".cljx" (buffer-file-name))
-      (s-ends-with? ".cljc" (buffer-file-name))))
+  (or (s-ends-with? ".clj" file-name)
+      (s-ends-with? ".cljs" file-name)
+      (s-ends-with? ".cljx" file-name)
+      (s-ends-with? ".cljc" file-name)))
 
 (defun cljr--clojure-filename-p (file-name)
   (or (s-ends-with? ".clj" (buffer-file-name))
