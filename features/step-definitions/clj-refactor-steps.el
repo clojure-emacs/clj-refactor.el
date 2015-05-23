@@ -182,3 +182,17 @@
 :line-beg 5})}")))
            (cljr--inline-symbol "fake-ns" (gethash :definition response)
                                 (gethash :occurrences response)))))
+
+(Given "I call the cljr--inline-symbol function directly with mockdata to inline some-val"
+       (lambda ()
+         (let ((response (edn-read "{:definition {:line-beg 5
+:line-end 5
+:col-beg 9
+:col-end 17
+:name \"some-val\"
+:file \"core.clj\"
+:match \"some-val 110]\"
+:definition \"110\"}
+:occurrences ()}")))
+           (cljr--inline-symbol "fake-ns" (gethash :definition response)
+                                (gethash :occurrences response)))))

@@ -1936,22 +1936,6 @@ Signal an error if it is not supported."
                              (cljr--prompt-user-for "Version: "))))
     (cljr--add-project-dependency lib-name version)))
 
-(defun cljr--goto-fn-definition ()
-  (let ((literal (save-excursion (when (re-search-backward "#("
-                                                        (save-excursion
-                                                          (cljr--goto-toplevel)
-                                                          (point)) t)
-                                (point))))
-        (fn (when (re-search-backward "(fn \\["
-                                      (save-excursion (cljr--goto-toplevel)
-                                                      (point)) t)
-              (point))))
-    (if (or literal fn)
-        (progn (goto-char (max (or literal (point-min)) (or fn (point-min))))
-               (when (looking-back "#")
-                 (backward-char)))
-      (error "Can't find definition of anonymous function!"))))
-
 (defun cljr--promote-fn ()
   (save-excursion
     (let ((fn (cljr--delete-and-extract-sexp))
@@ -2504,9 +2488,16 @@ With a prefix the newly created defn will be public."
       (cljr--delete-and-extract-sexp)
       (when (cljr--inside-let-binding-form-p)
         (cljr--delete-and-extract-sexp)
-        (unless (save-excursion (cljr--get-let-bindings))
-          (cljr--eliminate-let)
-          (cljr--indent-defun)))
+        (if (save-excursion (cljr--get-let-bindings))
+            (progn
+              (while (looking-at-p "\s*\n")
+                (forward-line)
+                (join-line))
+              (when (looking-at-p "]")
+                ;; we just deleted the last binding in the vector
+                (join-line)))
+          (cljr--eliminate-let))
+        (cljr--indent-defun))
       (when (looking-at-p "\s*\n")
         (cljr--just-one-blank-line)))))
 

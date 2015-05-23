@@ -41,3 +41,23 @@ Feature: Inlining of symbols
     (defn my-function []
       (println my-constant my-constant 321))
     """
+
+  Scenario: Inline let bound at end of vector
+    When I insert:
+    """
+    (def my-constant 123)
+
+    (defn my-function []
+      (let [another-val 321
+            some-val 110]
+        (println my-constant my-constant another-val)))
+    """
+    And I call the cljr--inline-symbol function directly with mockdata to inline some-val
+    Then I should see:
+    """
+    (def my-constant 123)
+
+    (defn my-function []
+      (let [another-val 321]
+        (println my-constant my-constant another-val)))
+    """
