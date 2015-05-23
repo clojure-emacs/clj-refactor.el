@@ -407,6 +407,37 @@ list of (fn args) to pass to `apply''"
   (indent-region (cljr--point-after 'cljr--goto-toplevel)
                  (cljr--point-after 'cljr--goto-toplevel-forward)))
 
+(defun cljr--point-at-text-matching
+    (regexp direction &optional bound noerror count)
+  "Return the point after searching in DIRECTION for TEXT.
+
+DIRECTION is either :forward or :backward.
+
+the optional arguments are passed on the to search function.  See
+e.g. `re-search-forward'"
+  (save-excursion
+    (cond
+     ;; NOTE: non-optional direction is intentional because I think it
+     ;; improves readability greatly at the call site
+     ((eq direction :forward)
+      (re-search-forward regexp bound noerror count))
+     ((eq direction :backward)
+      (re-search-backward regexp bound noerror count))
+     (t (error "Only know how to search :forward or :backward, you asked for '%s'"
+               direction)))))
+
+(defun cljr--goto-fn-definition ()
+  (let* ((search-bound (cljr--point-after 'cljr--goto-toplevel))
+         (literal (cljr--point-at-text-matching "#(" :backward search-bound
+                                                :noerror))
+         (fn (cljr--point-at-text-matching "(fn \\[" :backward search-bound
+                                           :noerror)))
+    (if (or literal fn)
+        (progn (goto-char (max (or literal (point-min)) (or fn (point-min))))
+               (when (looking-back "#")
+                 (backward-char)))
+      (error "Can't find definition of anonymous function!"))))
+
 ;; ------ reify protocol defrecord -----------
 
 (defun cljr--goto-reify ()
