@@ -224,7 +224,7 @@ with the middleware."
     ("fu" . (cljr-find-usages "Find usages"))
     ("hd" . (cljr-hotload-dependency "Hotload dependency"))
     ("il" . (cljr-introduce-let "Introduce let"))
-    ("iv" . (cljr-inline-symbol "Inline symbol"))
+    ("is" . (cljr-inline-symbol "Inline symbol"))
     ("mf" . (cljr-move-form "Move form"))
     ("ml" . (cljr-move-to-let "Move to let"))
     ("pc" . (cljr-project-clean "Project clean"))
