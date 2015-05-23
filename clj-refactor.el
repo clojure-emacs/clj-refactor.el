@@ -2635,9 +2635,9 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                          (car example-words)
                          " ["
                          (->> example-words
-                           (cdr)
-                           (-map-indexed word->arg)
-                           (s-join " "))
+                              cdr
+                              (-map-indexed word->arg)
+                              (s-join " "))
                          "]\n)")))
     (cljr--new-toplevel-form stub)
     (beginning-of-line)
