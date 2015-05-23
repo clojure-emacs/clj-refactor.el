@@ -2513,8 +2513,8 @@ With a prefix the newly created defn will be public."
               ((> o1-line o2-line) o1)
               ((< o1-col o2-col ) o2)
               ((> o1-col o2-col) o1)
-              t (error "Sort occurrences failed to compare %s %s %s %s"
-                       o1-line o2-line o1-col o2-col))))
+              (t (error "Sort occurrences failed to compare %s %s %s %s"
+                        o1-line o2-line o1-col o2-col)))))
          occurrences))
 
 (defun cljr--inline-symbol (ns definition occurrences)
