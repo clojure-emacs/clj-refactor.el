@@ -2522,12 +2522,13 @@ With a prefix the newly created defn will be public."
   (dolist (symbol-meta (cljr--sort-occurrences occurrences))
     (let* ((file (gethash :file symbol-meta))
            (line-beg (gethash :line-beg symbol-meta))
-           (line-end (gethash :line-end symbol-meta))
            (col-beg (gethash :col-beg symbol-meta))
-           (col-end (gethash :col-end symbol-meta))
-           (name (gethash :name symbol-meta))
            (def (gethash :definition definition)))
-      (cljr--rename-occurrence ns file line-beg line-end col-beg col-end name def)))
+      (goto-char (point-min))
+      (forward-line (1- line-beg))
+      (forward-char (1- col-beg))
+      (cljr--delete-and-extract-sexp)
+      (insert def)))
   (cljr--delete-definition definition))
 
 ;;;###autoload
