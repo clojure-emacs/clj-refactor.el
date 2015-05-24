@@ -1468,14 +1468,15 @@ optionally including those that are declared private."
       (newline-and-indent))))
 
 (defun cljr--inside-let-binding-form-p ()
-  (save-excursion
-    (let ((pos (point)))
-      (cljr--goto-let)
-      (re-search-forward "\\[")
-      (if (< pos (point))
-          nil
-        (paredit-forward-up)
-        (< pos (point))))))
+  (ignore-errors
+    (save-excursion
+      (let ((pos (point)))
+        (cljr--goto-let)
+        (re-search-forward "\\[")
+        (if (< pos (point))
+            nil
+          (paredit-forward-up)
+          (< pos (point)))))))
 
 (defun cljr--depth-of-let-bindings ()
   "Returns the depth where the variable bindings for the active
