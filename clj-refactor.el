@@ -2481,8 +2481,7 @@ With a prefix the newly created defn will be public."
   (let ((file (gethash :file definition))
         (line-beg (gethash :line-beg definition))
         (col-beg (gethash :col-beg definition)))
-    (save-excursion
-      (find-file-noselect file)
+    (with-current-buffer (find-file-noselect file)
       (goto-char (point-min))
       (forward-line (1- line-beg))
       (forward-char (1- col-beg))
@@ -2500,7 +2499,8 @@ With a prefix the newly created defn will be public."
           (cljr--eliminate-let))
         (cljr--indent-defun))
       (when (looking-at-p "\s*\n")
-        (cljr--just-one-blank-line)))))
+        (cljr--just-one-blank-line))
+      (save-buffer))))
 
 (defun cljr--sort-occurrences (occurrences)
   "Sort the occurrences so the last ones in the file comes first."
