@@ -2537,30 +2537,31 @@ With a prefix the newly created defn will be public."
   (interactive)
   (cljr--ensure-op-supported "extract-definition")
   (save-buffer)
-  (let* ((filename (buffer-file-name))
-         (line (line-number-at-pos))
-         (column (1+ (current-column)))
-         (dir (cljr--project-dir))
-         (symbol (cider-symbol-at-point))
-         (var-info (cider-var-info symbol))
-         (ns (nrepl-dict-get var-info "ns"))
-         (symbol-name (or (nrepl-dict-get var-info "name") symbol))
-         (extract-definition-request (list
-                                      "op" "extract-definition"
-                                      "ns" ns
-                                      "dir" dir
-                                      "file" filename
-                                      "line" line
-                                      "column" column
-                                      "name" symbol-name))
-         (response (edn-read (cljr--call-middleware-sync
-                              extract-definition-request "definition")))
-         (definition (gethash :definition response))
-         (occurrences (gethash :occurrences response)))
-    (cljr--inline-symbol ns definition occurrences)
-    (if occurrences
-        (message "Inlined %s occurrence(s) of '%s'" (length occurrences) symbol)
-      (message "No occurrences of '%s' found.  Deleted the definition." symbol))))
+  (save-excursion
+    (let* ((filename (buffer-file-name))
+           (line (line-number-at-pos))
+           (column (1+ (current-column)))
+           (dir (cljr--project-dir))
+           (symbol (cider-symbol-at-point))
+           (var-info (cider-var-info symbol))
+           (ns (nrepl-dict-get var-info "ns"))
+           (symbol-name (or (nrepl-dict-get var-info "name") symbol))
+           (extract-definition-request (list
+                                        "op" "extract-definition"
+                                        "ns" ns
+                                        "dir" dir
+                                        "file" filename
+                                        "line" line
+                                        "column" column
+                                        "name" symbol-name))
+           (response (edn-read (cljr--call-middleware-sync
+                                extract-definition-request "definition")))
+           (definition (gethash :definition response))
+           (occurrences (gethash :occurrences response)))
+      (cljr--inline-symbol ns definition occurrences)
+      (if occurrences
+          (message "Inlined %s occurrence(s) of '%s'" (length occurrences) symbol)
+        (message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
 
 (defun cljr--configure-middleware (&optional callback)
   (when (nrepl-op-supported-p "configure")
