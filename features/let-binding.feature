@@ -243,37 +243,3 @@ Feature: Let bindings
                                foobar)]
       (do-something-spectacular parent builder))
     """
-
-  Scenario: Remove let
-    When I insert:
-    """
-    (let [parent (.getParent (io/file root adrf))
-          builder (string-builder)
-          normalize-path (comp (partial path/relative-to root)
-                               path/->normalized
-                               foobar)]
-      (do-something-spectacular parent builder))
-    """
-    And I place the cursor before "(partial"
-    And I press "C-! rl"
-    Then I should see:
-    """
-    (do-something-spectacular (.getParent (io/file root adrf)) (string-builder))
-    """
-
-  Scenario: Remove let with keyword
-    When I insert:
-    """
-    (let [parent (.getParent (io/file root adrf))
-          builder (string-builder)
-          normalize-path (comp (partial path/relative-to root)
-                               path/->normalized
-                               foobar)]
-      (do-something-spectacular {:parent parent :builder builder :builder-trap nil}))
-    """
-    And I place the cursor before "(partial"
-    And I press "C-! rl"
-    Then I should see:
-    """
-    (do-something-spectacular {:parent (.getParent (io/file root adrf)) :builder (string-builder) :builder-trap nil})
-    """

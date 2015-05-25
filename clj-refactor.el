@@ -151,6 +151,9 @@ with the middleware."
 (defvar cljr--add-use-snippet "[$1 :refer ${2:[$3]}]"
   "The snippet used in in `cljr-add-use-to-ns'")
 
+(defvar *cljr--noninteractive* nil
+  "T when our interactive functions are called programmatically.")
+
 (defvar cljr--nrepl-ops
   '("artifact-list" "artifact-versions" "clean-ns" "configure" "find-symbol"
     "find-unbound" "hotload-dependency" "resolve-missing" "version"))
@@ -1498,26 +1501,12 @@ This function only does the actual removal."
 (defun cljr-remove-let ()
   "Inlines all variables in the let form and removes it."
   (interactive)
-  (cljr--goto-let)
-  (search-forward "[")
-  (paredit-forward-up)
-  (let* ((beg (point))
-         (end (cljr--point-after 'paredit-forward-up))
-         (bindings (cljr--get-let-bindings))
-         (prev beg))
-
-    (dolist (binding bindings)
-      (goto-char beg)
-      (while (and (goto-char prev) (re-search-forward (first binding) end t))
-        (unless (save-excursion (paredit-backward) (looking-at ":"))
-          (replace-match (second binding)))
-        (setq prev (point))
-
-        (cljr--goto-let)
-        (setq end (cljr--point-after 'paredit-forward))))
-
-    (cljr--eliminate-let)))
-
+  (save-excursion
+    (let ((*cljr--noninteractive* t)) ; make `cljr-inline-symbol' be quiet
+      (cljr--goto-let)
+      (paredit-forward-down 2)
+      (dotimes (_ (length (save-excursion (cljr--get-let-bindings))))
+        (cljr-inline-symbol)))))
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-move-to-let)
 
@@ -2559,9 +2548,10 @@ With a prefix the newly created defn will be public."
            (definition (gethash :definition response))
            (occurrences (gethash :occurrences response)))
       (cljr--inline-symbol ns definition occurrences)
-      (if occurrences
-          (message "Inlined %s occurrence(s) of '%s'" (length occurrences) symbol)
-        (message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
+      (unless *cljr--noninteractive* ; don't spam when called from `cljr-remove-let'
+        (if occurrences
+            (message "Inlined %s occurrence(s) of '%s'" (length occurrences) symbol)
+          (message "No occurrences of '%s' found.  Deleted the definition." symbol))))))
 
 (defun cljr--configure-middleware (&optional callback)
   (when (nrepl-op-supported-p "configure")
