@@ -645,6 +645,11 @@ Run the tests with:
 
     $ ./run-tests.sh
 
+
+Before submitting a patch or a pull request make sure all tests are
+passing and that your patch is in line with the [contribution
+guidelines](CONTRIBUTING.md).
+
 ## Contributors
 
 The project is maintained by
