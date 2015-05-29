@@ -57,7 +57,7 @@
 (Given "^I call the rename callback directly with mock data for foo->baz"
        (lambda ()
          (cljr--rename-occurrences "example.two"
-                                   '((:line-beg 3 :line-end 4 :col-beg 1 :col-end 9
+                                   '((:line-beg 3 :line-end 4 :col-beg 7 :col-end 9
                                                 :name "foo"
                                                 :file "tmp/src/example/two.clj"
                                                 :match "")
@@ -70,7 +70,7 @@
 (Given "^I call the rename callback directly with mock data for star->asterisk"
        (lambda ()
          (cljr--rename-occurrences "example.two"
-                                   '((:line-beg 6 :line-end 7 :col-beg 1
+                                   '((:line-beg 6 :line-end 7 :col-beg 7
                                                 :col-end 10 :name "star*"
                                                 :file "tmp/src/example/two.clj"
                                                 :match "")
