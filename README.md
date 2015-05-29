@@ -657,7 +657,7 @@ The project is maintained by
 - [Magnar Sveen](https://github.com/magnars)
 - [Lars Andersen](https://github.com/expez)
 - [Benedek Fazekas](https://github.com/benedekfazekas)
-- [AlexBaranosky](https://github.com/AlexBaranosky)
+- [Alex Baranosky](https://github.com/AlexBaranosky)
 
 Additional contributors are:
 
