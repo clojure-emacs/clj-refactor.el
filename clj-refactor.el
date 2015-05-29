@@ -837,6 +837,7 @@ word test in it and whether the file lives under the test/ directory."
     (paredit-backward-up)
     (let ((beg (point))
           (end (progn (paredit-forward) (point))))
+      (delete-trailing-whitespace beg end)
       (indent-region beg end))))
 
 (defvar cljr--tmp-marker (make-marker))

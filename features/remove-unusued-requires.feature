@@ -321,7 +321,7 @@ Feature: remove unused require
     """
     (ns cljr.core
       (:require [clj-time.core]
-                [clojure string 
+                [clojure string
                  [set :as st]]))
 
     (defn use-time []
@@ -349,7 +349,7 @@ Feature: remove unused require
     """
     (ns cljr.core
       (:require [clj-time.core]
-                [clojure string 
+                [clojure string
                  [set :refer [difference]]]))
 
     (defn use-time []
@@ -377,7 +377,7 @@ Feature: remove unused require
     """
     (ns cljr.core
       (:require [clj-time.core]
-                [clojure string 
+                [clojure string
                  [set :refer [difference]]]))
 
     (defn use-time []
@@ -405,7 +405,7 @@ Feature: remove unused require
     """
     (ns cljr.core
       (:require [clj-time.core :refer :all]
-                [clojure string 
+                [clojure string
                  [set :refer :all]]))
 
     (defn use-time []
@@ -433,7 +433,7 @@ Feature: remove unused require
     """
     (ns cljr.core
       (:require [clj-time.core :as tc :refer :all]
-                [clojure string 
+                [clojure string
                  [set :as s :refer :all]]))
 
     (defn use-time []
@@ -460,7 +460,7 @@ Feature: remove unused require
     Then I should see:
     """
     (ns cljr.core
-      (:require [clojure string 
+      (:require [clojure string
                  [set :as st]]
                 [clj-time.core]))
 
