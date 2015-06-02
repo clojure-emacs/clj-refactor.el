@@ -233,7 +233,7 @@ with the middleware."
     ("pc" . (cljr-project-clean "Project clean"))
     ("pf" . (cljr-promote-function "Promote function"))
     ("rd" . (cljr-remove-debug-fns "Remove debug fns"))
-    ("rf" . (cljr-rename-file "Rename file"))
+    ("rf" . (cljr-rename-file-or-dir "Rename file-or-dir"))
     ("rl" . (cljr-remove-let "Remove let"))
     ("rr" . (cljr-remove-unused-requires "Remove unused requires"))
     ("rs" . (cljr-rename-symbol "Rename symbol"))
@@ -499,38 +499,33 @@ e.g. `re-search-forward'"
                          "-not -regex \".*svn.*\""
                          1000))))
 
-(defun cljr--rename-file (filename new-name)
-  (let ((old-ns (clojure-find-ns)))
-    (rename-file filename new-name 1)
-    (rename-buffer new-name)
-    (set-visited-file-name new-name)
-    (clojure-update-ns)
-    (let ((old-syntax (char-to-string (char-syntax ?/))))
-      (modify-syntax-entry ?/ " ")
-      (save-window-excursion
-        (save-excursion
-          (ignore-errors
-            (tags-query-replace (concat (regexp-quote old-ns) "\\_>")
-                                (clojure-expected-ns) nil
-                                '(cljr--project-files)))))
-      (modify-syntax-entry ?/ old-syntax))
-    (save-buffer)
-    (save-some-buffers)))
+(defun cljr--indent-ns-forms (changed-files)
+  "The middleware just dumps the new ns into the file and it's up
+to us to make sure it's nicely indented."
+  (save-window-excursion
+    (dolist (f changed-files)
+      (delay-mode-hooks
+        (with-current-buffer (find-file-noselect f :nowarn)
+          (revert-buffer :ignore-auto :no-confirm)
+          (clojure-mode)
+          (indent-region (point-min) (cljr--point-after 'paredit-forward))
+          (save-buffer))))))
 
 ;;;###autoload
-(defun cljr-rename-file ()
-  "Renames current buffer and file it is visiting."
-  (interactive)
-  (let ((name (buffer-name))
-        (filename (buffer-file-name)))
-    (if (not (and filename (file-exists-p filename)))
-        (error "Buffer '%s' is not visiting a file!" name)
-      (let ((new-name (read-file-name "New name: " filename)))
-        (if (get-buffer new-name)
-            (error "A buffer named '%s' already exists!" new-name)
-          (cljr--rename-file filename new-name)
-          (message "File '%s' successfully renamed to '%s'"
-                   name (file-name-nondirectory new-name)))))))
+(defun cljr-rename-file-or-dir (old-path)
+  "Rename a file or directory of files."
+  (interactive "fOld path: ")
+  (let ((new-path (read-from-minibuffer "New path: " old-path)))
+    (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
+      (let ((changed-files (cljr--call-middleware-sync (list "op" "rename-file-or-dir"
+                                                             "old-path" old-path
+                                                             "new-path" new-path)
+                                                       "touched")))
+        (cljr--indent-ns-forms changed-files)
+        (cond
+         ((null changed-files) (message "Rename complete! No files affected."))
+         ((= (length changed-files) 1) (message "Renamed %s to %s." old-path new-path))
+         (t (message "Rename complete! %s files affected." (length changed-files))))))))
 
 ;; ------ ns statements -----------
 
@@ -2619,6 +2614,10 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr-update-artifact-cache ()
   (interactive)
   (message "cljr-update-artifact-cache is deprecated and has been replaced by a customize setting defaulting to true."))
+
+(defun cljr-rename-file ()
+  (interactive)
+  (message "cljr-rename-file has been removed in favor of cljr-rename-file-or-dir"))
 
 (defun cljr-warm-ast-cache ()
   (interactive)
