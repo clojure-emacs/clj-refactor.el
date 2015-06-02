@@ -2473,19 +2473,47 @@ With a prefix the newly created defn will be public."
                         o1-line o2-line o1-col o2-col)))))
          occurrences))
 
+(defun cljr--inline-fn-at-call-site (def call-site)
+  "Point is at a call site, where the sexp call-site has just
+  been extracted."
+  (let ((args (rest call-site))
+        (params (with-temp-buffer
+                  (insert def)
+                  (goto-char (point-min))
+                  (paredit-forward-down 2)
+                  (cljr--extract-sexp-as-list)))
+        (def (with-temp-buffer
+               (insert def)
+               (goto-char (point-min))
+               (paredit-forward-down 2)
+               (paredit-forward-up)
+               (paredit-splice-sexp-killing-backward)
+               (buffer-string))))
+    (dotimes (i (length args))
+      (setq def (s-replace (nth i params) (nth i args) def)))
+    (insert def)))
+
 (defun cljr--inline-symbol (ns definition occurrences)
   (dolist (symbol-meta (cljr--sort-occurrences occurrences))
     (let* ((file (gethash :file symbol-meta))
            (line-beg (gethash :line-beg symbol-meta))
            (col-beg (gethash :col-beg symbol-meta))
-           (def (gethash :definition definition)))
+           (def (gethash :definition definition))
+           (fn? (s-matches-p "^.+fn" def)))
       (with-current-buffer (find-file-noselect file)
         (goto-char (point-min))
         (forward-line (1- line-beg))
         (forward-char (1- col-beg))
-        (cljr--delete-and-extract-sexp)
-        (insert def)))
-    (cljr--delete-definition definition)))
+        (let* ((call-site? (looking-back "(\s*"))
+               (sexp (if call-site?
+                         (prog1 (cljr--extract-sexp-as-list)
+                           (paredit-backward-up)
+                           (cljr--delete-and-extract-sexp))
+                       (cljr--delete-and-extract-sexp))))
+          (if call-site?
+              (cljr--inline-fn-at-call-site def sexp)
+            (insert def))))))
+  (cljr--delete-definition definition))
 
 ;;;###autoload
 (defun cljr-inline-symbol ()

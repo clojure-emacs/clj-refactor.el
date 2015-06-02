@@ -196,3 +196,29 @@
 :occurrences ()}")))
            (cljr--inline-symbol "fake-ns" (gethash :definition response)
                                 (gethash :occurrences response)))))
+
+(Given "I call the cljr--inline-symbol function directly with mockdata to inline my-inc"
+       (lambda ()
+         (let ((response (edn-read "{:definition {:definition \"(fn [n]\\n  (+ 1 n))\"
+:line-beg 1
+:line-end 2
+:col-beg 1
+:col-end 11
+:name \"refactor-nrepl.foo/my-inc\"
+:file \"core.clj\"
+:match \"(defn my-inc [n]\\n  (+ 1 n))\"}
+:occurrences ({:line-beg 4
+:line-end 4
+:col-beg 5
+:col-end 12
+:name \"refactor-nrepl.foo/my-inc\"
+:file \"core.clj\"
+:match \"(+ (my-inc (- 17 4) 55))\"} {:line-beg 6
+:line-end 6
+:col-beg 6
+:col-end 13
+:name \"refactor-nrepl.foo/my-inc\"
+:file \"core.clj\"
+:match \"(map my-inc (range 10))\"})}")))
+           (cljr--inline-symbol "fake-ns" (gethash :definition response)
+                                (gethash :occurrences response)))))

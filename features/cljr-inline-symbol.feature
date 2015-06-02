@@ -61,3 +61,23 @@ Feature: Inlining of symbols
       (let [another-val 321]
         (println my-constant my-constant another-val)))
     """
+
+
+  Scenario: Inline anonymous fn and replace call-site
+    When I insert:
+    """
+    (defn my-inc [n]
+      (+ 1 n))
+
+    (+ (my-inc (- 17 4)) 55)
+
+    (map my-inc (range 10))
+    """
+    And I call the cljr--inline-symbol function directly with mockdata to inline my-inc
+    Then I should see:
+    """
+    (+ (+ 1 (- 17 4)) 55)
+
+    (map (fn [n]
+      (+ 1 n)) (range 10))
+  """
