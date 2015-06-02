@@ -2628,8 +2628,16 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                               (s-join " "))
                          "]\n)")))
     (cljr--new-toplevel-form stub)
-    (beginning-of-line)
-    (indent-according-to-mode)))
+    ;; Move point into the argument vector
+    (paredit-backward)
+    (paredit-forward-down 2)
+    ;; If we created any argN put point before first one
+    (if (re-search-forward "arg[0-9]+" (cljr--point-after 'paredit-forward-up)
+                           :noerror)
+        (paredit-backward)
+      (forward-line))
+    (cljr--indent-defun)))
+
 
 (add-hook 'nrepl-connected-hook #'cljr--init-middleware)
 
