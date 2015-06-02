@@ -70,3 +70,37 @@ Feature: Create Function from Example
         (clojure.string/trim (:a some-map))
         baz))
     """
+
+  Scenario: Create function from example no params
+    When I insert:
+    """
+    (defn some-fn []
+      (foo))
+    """
+    And I place the cursor after "foo"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- foo []
+      )
+
+    (defn some-fn []
+      (foo))
+    """
+
+  Scenario: Create function from example using literals
+    When I insert:
+    """
+    (defn some-fn []
+      (foo 1 bar :key #{1 2}))
+    """
+    And I place the cursor after "foo"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- foo [arg0 bar arg2 arg3]
+      )
+
+    (defn some-fn []
+      (foo 1 bar :key #{1 2}))
+    """
