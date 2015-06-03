@@ -2513,7 +2513,8 @@ With a prefix the newly created defn will be public."
                        (cljr--delete-and-extract-sexp))))
           (if call-site?
               (cljr--inline-fn-at-call-site def sexp)
-            (insert def))))))
+            (insert def)))
+        (save-buffer))))
   (cljr--delete-definition definition))
 
 ;;;###autoload
