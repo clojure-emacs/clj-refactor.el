@@ -2641,11 +2641,6 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     (cljr--indent-defun)
     (indent-according-to-mode)))
 
-;;;###autoload
-(defun cljr-change-function-signature ()
-  "Change the signature of the function at point and update all call-sites."
-  (interactive))
-
 (add-hook 'nrepl-connected-hook #'cljr--init-middleware)
 
 ;; ------ minor mode -----------
