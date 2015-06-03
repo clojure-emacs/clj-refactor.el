@@ -2613,34 +2613,12 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   (when cljr-eagerly-build-asts-on-startup
     (cljr--warm-ast-cache)))
 
-(defun cljr--gather-symbols-in-call-site-at-point ()
-  "Gather the symbols inside the list at point to use as argument
-  names in `cljr-create-fn-from-exampl'"
-  (let ((end (cljr--point-after 'paredit-forward-up))
-        symbols)
-    (paredit-backward-up)
-    (paredit-forward-down)
-    (while (< (point) end)
-      (if (looking-at-p "\s+\\|$\\|#")
-          (forward-char)
-        (let ((sym (if (number-at-point)
-                       nil
-                     (cider-symbol-at-point))))
-          (if (or (s-blank? sym)
-                  (s-starts-with? ":" sym))
-              (push (format "arg%s" (1- (length symbols))) symbols)
-            (when (not (or (s-equals? sym "#")
-                           (string= (first symbols) sym)))
-              (push sym symbols))))
-        (paredit-forward)))
-    (nreverse symbols)))
-
 ;;;###autoload
 (defun cljr-create-fn-from-example ()
   (interactive)
-  (let* ((example-words (cljr--gather-symbols-in-call-site-at-point))
+  (let* ((example-words (cljr--extract-sexp-as-list))
          (word->arg (lambda (i word)
-                      (if (s-matches? "^[^[{(\"]+$" word)
+                      (if (s-matches? "^[^0-9:[{(\"][^[{(\"]+$" word)
                           word
                         (format "arg%s" i))))
          (stub (s-concat "(defn- "
