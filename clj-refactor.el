@@ -2490,7 +2490,8 @@ With a prefix the newly created defn will be public."
                (paredit-splice-sexp-killing-backward)
                (buffer-string))))
     (dotimes (i (length args))
-      (setq def (s-replace (nth i params) (nth i args) def)))
+      (setq def (replace-regexp-in-string (format "\\_<%s\\_>" (nth i params))
+                                          (nth i args) def t t)))
     (insert def)))
 
 (defun cljr--inline-symbol (ns definition occurrences)
