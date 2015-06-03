@@ -2660,7 +2660,8 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                            :noerror)
         (paredit-backward)
       (forward-line))
-    (cljr--indent-defun)))
+    (cljr--indent-defun)
+    (indent-according-to-mode)))
 
 ;;;###autoload
 (defun cljr-change-function-signature ()
