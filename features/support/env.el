@@ -33,8 +33,8 @@
  (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode))))
 
 (Before
- ;; Before each scenario is run
- )
+ (save-all-buffers-dont-ask)
+ (kill-matching-buffers-dont-ask "clj"))
 
 (defun save-all-buffers-dont-ask ()
   (dolist (buffer (buffer-list))
