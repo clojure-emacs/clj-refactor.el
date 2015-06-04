@@ -431,10 +431,16 @@ e.g. `re-search-forward'"
 
 (defun cljr--goto-fn-definition ()
   (let* ((search-bound (cljr--point-after 'cljr--goto-toplevel))
-         (literal (cljr--point-at-text-matching "#(" :backward search-bound
-                                                :noerror))
-         (fn (cljr--point-at-text-matching "(fn \\[" :backward search-bound
-                                           :noerror)))
+         (literal (cljr--point-at-text-matching
+                   "#("
+                   :backward
+                   search-bound
+                   :noerror))
+         (fn (cljr--point-at-text-matching
+              "(fn \\(\\_<[^ ]+\\_>[[:space:]\n]+\\)?\\["
+              :backward
+              search-bound
+              :noerror)))
     (if (or literal fn)
         (progn (goto-char (max (or literal (point-min)) (or fn (point-min))))
                (when (looking-back "#")
@@ -1922,11 +1928,16 @@ Signal an error if it is not supported."
                              (cljr--prompt-user-for "Version: "))))
     (cljr--add-project-dependency lib-name version)))
 
+(defun cljr--extract-anon-fn-name (sexp-str)
+  (when (string-match "(fn \\(\\_<[^ ]+\\_>\\)?" sexp-str)
+      (match-string-no-properties 1 sexp-str)))
+
 (defun cljr--promote-fn ()
   (save-excursion
-    (let ((fn (cljr--delete-and-extract-sexp))
-          (name (read-string "Name: "))
-          fn-start)
+    (let* ((fn (cljr--delete-and-extract-sexp))
+           (namedp (cljr--extract-anon-fn-name fn))
+           (name (or namedp (read-string "Name: ")))
+           fn-start)
       (insert name)
       (cljr--new-toplevel-form fn)
       (paredit-backward-down)
@@ -1935,7 +1946,7 @@ Signal an error if it is not supported."
       (forward-char)
       (insert "de")
       (paredit-forward)
-      (insert " " name "\n")
+      (when (not namedp) (insert " " name "\n"))
       (re-search-forward "\\[")
       (paredit-forward-up)
       (unless (looking-at "\s*?$")
