@@ -429,23 +429,31 @@ e.g. `re-search-forward'"
      (t (error "Only know how to search :forward or :backward, you asked for '%s'"
                direction)))))
 
+(defun cljr--point-for-anon-function ()
+  "Returns the location of point if the point is currently placed
+at the opening parentheses of an anonymous function."
+  (cond
+   ((looking-at "(fn \\(\\_<[^ ]+\\_>[[:space:]\n]+\\)?\\[")
+    (point))
+   ((save-excursion (backward-char) (looking-at "#("))
+    (1- (point)))))
+
 (defun cljr--goto-fn-definition ()
-  (let* ((search-bound (cljr--point-after 'cljr--goto-toplevel))
-         (literal (cljr--point-at-text-matching
-                   "#("
-                   :backward
-                   search-bound
-                   :noerror))
-         (fn (cljr--point-at-text-matching
-              "(fn \\(\\_<[^ ]+\\_>[[:space:]\n]+\\)?\\["
-              :backward
-              search-bound
-              :noerror)))
-    (if (or literal fn)
-        (progn (goto-char (max (or literal (point-min)) (or fn (point-min))))
-               (when (looking-back "#")
-                 (backward-char)))
-      (error "Can't find definition of anonymous function!"))))
+  (if (zerop (first (paredit-current-parse-state)))
+      (error "Not inside a s-expression.")
+    (let* ((pt-orig (point))
+           (search-bound (cljr--point-after 'cljr--goto-toplevel))
+           found-fn-p)
+      (while (not found-fn-p)
+        (paredit-backward-up)
+        (-if-let (fn-beg (cljr--point-for-anon-function))
+            (let ((fn-end (save-excursion (paredit-forward) (point))))
+              (when (and (< fn-beg pt-orig) (< pt-orig fn-end))
+                (setq found-fn-p t)
+                (when (looking-back "#")
+                  (backward-char))))
+          (when (<= (point) search-bound)
+            (error "Can't find definition of anonymous function!")))))))
 
 ;; ------ reify protocol defrecord -----------
 
@@ -1966,6 +1974,7 @@ Signal an error if it is not supported."
   (delete-char 1)
   (let ((body (cljr--delete-and-extract-sexp)))
     (insert "(fn [] " body ")"))
+  (backward-char)
   (cljr--goto-fn-definition)
   (let ((fn-start (point))
         var replacement)
