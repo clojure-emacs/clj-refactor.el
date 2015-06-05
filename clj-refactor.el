@@ -560,11 +560,27 @@ to us to make sure it's nicely indented."
     (goto-char (point-min))
     (search-forward package nil t)))
 
+(defun cljr--find-source-ns-of-test-ns (test-ns test-file)
+  (let* ((ns-chunks (split-string test-ns "[.]" t))
+         (test-name (car (last ns-chunks)))
+         (src-dir-name (s-replace "test/" "src/" (file-name-directory test-file)))
+         (replace-underscore (-partial 's-replace "_" "-"))
+         (src-ns (car (--filter (or (s-prefix-p it test-name)
+                                    (s-suffix-p it test-name))
+                                (-map (lambda (file-name)
+                                        (funcall replace-underscore
+                                                 (file-name-sans-extension file-name)))
+                                      (directory-files src-dir-name))))))
+    (when src-ns
+      (mapconcat 'identity (append (butlast ns-chunks) (list src-ns)) "."))))
+
 (defun cljr--add-test-use-declarations ()
   (save-excursion
-    (let ((ns (clojure-find-ns)))
+    (let* ((ns (clojure-find-ns))
+           (source-ns (cljr--find-source-ns-of-test-ns ns (buffer-file-name))))
       (cljr--insert-in-ns ":require")
-      (insert "[" (s-chop-suffix "-test" ns) " :refer :all]")
+      (when source-ns
+        (insert "[" source-ns " :refer :all]"))
       (cljr--insert-in-ns ":require")
       (insert "[" (cond
                    ((cljr--project-depends-on-p "midje") "midje.sweet")

@@ -8,6 +8,7 @@
 - Add `cljr-reify-to-defrecord`
 - Add `cljr-show-changelog` so users don't have to visit github to find out what's changed after a package update.
 - Add `cljr-create-fn-from-example` to create function stub based on example usage
+- Now cljr--add-test-use-declarations actually checks the file system in order to find its require for the source ns.
 
 ## 1.0.5
 
