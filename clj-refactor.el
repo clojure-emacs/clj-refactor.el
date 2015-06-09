@@ -2549,8 +2549,8 @@ With a prefix the newly created defn will be public."
                        (cljr--delete-and-extract-sexp))))
           (if call-site?
               (cljr--inline-fn-at-call-site def sexp)
-            (insert def)))
-        (save-buffer))))
+            (insert def))))))
+  (save-buffer)
   (cljr--delete-definition definition))
 
 ;;;###autoload
@@ -2562,7 +2562,7 @@ With a prefix the newly created defn will be public."
   (save-excursion
     (let* ((filename (buffer-file-name))
            (line (line-number-at-pos))
-           (column (current-column))
+           (column (1+ (current-column)))
            (dir (cljr--project-dir))
            (symbol (cider-symbol-at-point))
            (var-info (cider-var-info symbol))
