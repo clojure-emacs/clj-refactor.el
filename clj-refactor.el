@@ -429,6 +429,19 @@ e.g. `re-search-forward'"
      (t (error "Only know how to search :forward or :backward, you asked for '%s'"
                direction)))))
 
+(defun cljr--resolve-alias (alias)
+  "Looks up ALIAS in the ns form."
+  (save-excursion
+    (cljr--goto-ns)
+    (when (re-search-forward
+           (format ":as\\s-+%s" (regexp-quote alias))
+           (cljr--point-after 'paredit-forward)
+           :noerror)
+      (paredit-backward-up)
+      (paredit-forward-down)
+      (buffer-substring-no-properties (point)
+                                      (cljr--point-after 'paredit-forward)))))
+
 (defun cljr--point-for-anon-function ()
   "Returns the location of point if the point is currently placed
 at the opening parentheses of an anonymous function."
@@ -2459,8 +2472,11 @@ With a prefix the newly created defn will be public."
   (cljr--ensure-op-supported "stubs-for-interface")
   (let* ((interface (cider-symbol-at-point))
          (prefix? (cljr--symbol-prefix interface))
+         (alias? (cljr--resolve-alias prefix?))
          (interface (if (not (s-blank? prefix?))
-                        interface
+                        (if alias?
+                            (format "%s/%s" alias? (cljr--symbol-suffix interface))
+                          interface)
                       (format "%s/%s" (cider-current-ns) interface)))
          (functions (edn-read (cljr--call-middleware-sync
                                (list "op" "stubs-for-interface"
