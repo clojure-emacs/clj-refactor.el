@@ -1031,7 +1031,8 @@ Presently, there's no support for :use clauses containing :exclude."
              (symbols (s-split " " (s-trim str) t)))
         (paredit-backward-up)
         (paredit-backward)
-        (kill-sexp 2)
+        (cljr--delete-and-extract-sexp)
+        (cljr--delete-and-extract-sexp)
         (just-one-space 0)
         (cljr--add-ns-prefix ns symbols)))))
 
