@@ -2562,7 +2562,7 @@ With a prefix the newly created defn will be public."
   (save-excursion
     (let* ((filename (buffer-file-name))
            (line (line-number-at-pos))
-           (column (1+ (current-column)))
+           (column (current-column))
            (dir (cljr--project-dir))
            (symbol (cider-symbol-at-point))
            (var-info (cider-var-info symbol))
