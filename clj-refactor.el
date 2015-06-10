@@ -2666,10 +2666,12 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     (cljr--check-nrepl-ops)
     (cljr--check-middleware-version))
   (cljr--configure-middleware)
-  (when cljr-populate-artifact-cache-on-startup
-    (cljr--update-artifact-cache))
-  (when cljr-eagerly-build-asts-on-startup
-    (cljr--warm-ast-cache)))
+  ;; Best effort; don't freak people out with errors
+  (ignore-errors
+    (when cljr-populate-artifact-cache-on-startup
+      (cljr--update-artifact-cache))
+    (when cljr-eagerly-build-asts-on-startup
+      (cljr--warm-ast-cache))))
 
 ;;;###autoload
 (defun cljr-create-fn-from-example ()
