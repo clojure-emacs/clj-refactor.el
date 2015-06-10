@@ -542,7 +542,8 @@ to us to make sure it's nicely indented."
 (defun cljr-rename-file-or-dir (old-path)
   "Rename a file or directory of files."
   (interactive "fOld path: ")
-  (let ((new-path (read-from-minibuffer "New path: " old-path)))
+  (let ((new-path (read-from-minibuffer "New path: " old-path))
+        (buffer-file (buffer-file-name)))
     (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
       (let ((changed-files (cljr--call-middleware-sync (list "op" "rename-file-or-dir"
                                                              "old-path" old-path
@@ -552,7 +553,10 @@ to us to make sure it's nicely indented."
         (cond
          ((null changed-files) (message "Rename complete! No files affected."))
          ((= (length changed-files) 1) (message "Renamed %s to %s." old-path new-path))
-         (t (message "Rename complete! %s files affected." (length changed-files))))))))
+         (t (message "Rename complete! %s files affected." (length changed-files))))))
+    (when (string= buffer-file old-path)
+      (kill-buffer)
+      (find-file new-path))))
 
 ;; ------ ns statements -----------
 
