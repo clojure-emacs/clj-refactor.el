@@ -7,6 +7,28 @@
 
 `clj-refactor` provides refactoring support for clojure projects.
 
+For example add missing libspec
+
+![](examples/add-missing-libspec.gif)
+
+and move expression to let
+
+![](examples/move-to-let.gif)
+
+There are much more than these two. For a full description and demo of all available features see the [wiki](https://github.com/clojure-emacs/clj-refactor.el/wiki).
+
+- [Installation](#installation)
+- [Setup](#setup)
+  - [Setup Keybindings](#setup-keybindings)
+  - [Optional Setup](#optional-setup)
+    - [Refactor nREPL middleware](#refactor-nrepl-middleware)
+    - [Yasnippet](#yasnippet)
+- [Usage](https://github.com/clojure-emacs/clj-refactor.el/wiki)
+- [Changelog](CHANGELOG.md)
+- [Contribute](#contribute)
+- [Contributors](#contributors)
+- [License](#license)
+
 ## Installation
 
 I highly recommend installing clj-refactor through elpa.
@@ -91,14 +113,6 @@ or
 ```
 
 It is an excellent package, so I recommend looking into it.
-
-## Usage
-
-See the wiki for a complete [list of available refactorings] (https://github.com/clojure-emacs/clj-refactor.el/wiki), demonstrations and customization points.
-
-## Changelog
-
-An extensive changelog is available [here](CHANGELOG.md).
 
 ## Contribute
 
