@@ -2598,6 +2598,7 @@ With a prefix the newly created defn will be public."
            (definition (gethash :definition response))
            (occurrences (gethash :occurrences response)))
       (cljr--inline-symbol ns definition occurrences)
+      (cljr--indent-defun)
       (unless *cljr--noninteractive* ; don't spam when called from `cljr-remove-let'
         (if occurrences
             (message "Inlined %s occurrence(s) of '%s'" (length occurrences) symbol)
