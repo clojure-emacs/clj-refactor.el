@@ -2166,6 +2166,11 @@ root."
         (goto-char (point-min))
         (forward-line (1- line-beg))
         (move-to-column (1- col-beg))
+        ;; When the match is a definition, the position of the symbol
+        ;; isn't returned but the beginning of the defining form
+        (when (looking-at-p "(\\s-*def")
+          (re-search-forward name)
+          (paredit-backward))
         (when (looking-at (format "\\(.+/\\)?\\(%s\\)" name))
           (replace-match (format "\\1%s" new-name))))
       (save-buffer))))
