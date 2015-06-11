@@ -2,6 +2,7 @@
 
 ## master (unreleased)
 
+- Add `cljr-describe-refactoring` which shows the wiki page describing one of the available refactorings inline in emacs.
 - Add `cljr-rename-file-or-dir` to replace `cljr-rename-file`.
 - Add `cljr-inline-symbol` which replaces the symbol at point with its definition.
 - add `cljr-add-stubs` which adds a skeleton implementation of the protocol or interface at point.
