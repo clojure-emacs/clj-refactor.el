@@ -1,3 +1,5 @@
+(require 'cl-lib)
+
 (Given "^I open file \"\\(.+\\)\"$"
        (lambda (filename)
          (setq default-directory clj-refactor-root-path)
@@ -236,3 +238,109 @@
      (lambda ()
        (defun cljr--call-middleware-to-find-unbound-vars (file line column)
          "foo bar")))
+
+(defun cljr--make-signature-change
+    (old-index new-index old-name &optional new-name)
+  (let ((h (make-hash-table)))
+    (puthash :old-index old-index h)
+    (puthash :new-index new-index h)
+    (puthash :old-name old-name h)
+    (if new-name
+        (puthash :new-name new-name h)
+      (puthash :new-name old-name h))
+    h))
+
+(setq cljr--test-occurrences
+      '((:line-beg 4
+                   :line-end 4
+                   :col-beg 4
+                   :col-end 7
+                   :name "core/tt"
+                   :file "core.clj"
+                   :match "(tt 1 2 3))")
+        (:line-beg 3
+                   :line-end 3
+                   :col-beg 1
+                   :col-end 25
+                   :name "core/tt"
+                   :file "core.clj"
+                   :match "(defn tt [foo bar baz]\n  (println foo bar baz))")
+        (:line-beg 4
+                   :line-end 4
+                   :col-beg 8
+                   :col-end 11
+                   :name "core/tt"
+                   :file "core.clj"
+                   :match "(map tt [1] [2] [3]))")
+        (:line-beg 4
+                   :line-end 4
+                   :col-beg 17
+                   :col-end 20
+                   :name "core/tt"
+                   :file "core.clj"
+                   :match "(map (partial tt [1]) [2] [3]))")
+        (:line-beg 5
+                   :line-end 5
+                   :col-beg 12
+                   :col-end 15
+                   :name "core/tt"
+                   :file "core.clj"
+                   :match "(apply tt [1] [2] args)))"))
+      cljr--foo-bar-swapped (list (cljr--make-signature-change 0 1 "foo")
+                                  (cljr--make-signature-change 1 0 "bar")
+                                  (cljr--make-signature-change 2 2 "baz"))
+      cljr--bar-baz-swapped (list (cljr--make-signature-change 0 0 "foo")
+                                  (cljr--make-signature-change 1 2 "bar")
+                                  (cljr--make-signature-change 2 1 "baz"))
+      cljr--baz-renamed-to-qux (list (cljr--make-signature-change 0 0 "foo")
+                                     (cljr--make-signature-change 1 1 "bar")
+                                     (cljr--make-signature-change 2 2 "baz" "qux")))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a regular call-site"
+       (lambda ()
+         (cljr--change-function-signature (list (cl-first cljr--test-occurrences))
+                                          cljr--foo-bar-swapped)))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in function definition"
+       (lambda ()
+         (cljr--change-function-signature (list (cl-second cljr--test-occurrences))
+                                          cljr--foo-bar-swapped)))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a higher-order call-site"
+       (lambda ()
+         (cljr--change-function-signature (list (cl-third cljr--test-occurrences))
+                                          cljr--foo-bar-swapped)))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a partial call-site"
+       (lambda ()
+         (cljr--change-function-signature (list (cl-fourth cljr--test-occurrences))
+                                          cljr--foo-bar-swapped)))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in in partial application"
+       (lambda ()
+         (cljr--change-function-signature (list (cl-fourth cljr--test-occurrences))
+                                          cljr--foo-bar-swapped)))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to swap bar and baz in a call-site with apply"
+       (lambda ()
+         (cljr--change-function-signature (list (cl-fifth cljr--test-occurrences))
+                                          cljr--bar-baz-swapped)))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a call-site with apply"
+       (lambda ()
+         (cljr--change-function-signature (list (cl-fifth cljr--test-occurrences))
+                                          cljr--foo-bar-swapped)))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to rename baz to qux"
+       (lambda ()
+         (cl-letf (((symbol-function 'cljr-rename-symbol)
+                    (lambda (new-name)
+                      (backward-char)
+                      (replace-regexp "baz" new-name nil (point)
+                                      (cljr--point-after '(paredit-forward-up 2))))))
+           (cljr--change-function-signature (list (cl-second cljr--test-occurrences))
+                                            cljr--baz-renamed-to-qux))))
+
+(When "I kill the \"\\(.+\\)\" buffer"
+      (lambda (buffer)
+        (kill-buffer buffer)))

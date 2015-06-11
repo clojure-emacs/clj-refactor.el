@@ -197,6 +197,11 @@ with the middleware."
 
 (defvar cljr--debug-mode nil)
 
+(defvar cljr--occurrences nil)
+(defvar cljr--signature-changes nil)
+(defvar cljr--change-signature-buffer "*cljr-change-signature*")
+(defvar cljr--manual-intervention-buffer "*cljr--manual-intervention*")
+
 ;;; Buffer Local Declarations
 
 ;; tracking state of find-symbol buffer
@@ -261,7 +266,7 @@ with the middleware."
     ("ci" . (cljr-cycle-if "Cycle if"))
     ("cn" . (cljr-clean-ns "Clean ns"))
     ("cp" . (cljr-cycle-privacy "Cycle privacy"))
-    ("cs" . (cljr-cycle-stringlike "Cycle stringlike"))
+    ("cs" . (cljr-change-function-signature "Change function signature"))
     ("ct" . (cljr-cycle-thread "Cycle thread"))
     ("dk" . (cljr-destructure-keys "Destructure keys"))
     ("ef" . (cljr-extract-function "Extract function"))
@@ -1741,12 +1746,6 @@ This function only does the actual removal."
       (insert "^:private ")))))
 
 ;;;###autoload
-(defun cljr-cycle-stringlike ()
-  "Removed, use `clojure-toggle-keyword-string'"
-  (interactive)
-  (message "Removed, use `clojure-toggle-keyword-string'"))
-
-;;;###autoload
 (defun cljr-cycle-coll ()
   "Convert the coll at (point) from (x) -> {x} -> [x] -> -> #{x} -> (x) recur"
   (interactive)
@@ -1902,8 +1901,10 @@ sorts the project's dependency vectors."
     (forward-line)
     (join-line)))
 
-(defun cljr--empty-buffer? ()
-  (s-blank? (s-trim (buffer-substring-no-properties (point-min) (point-max)))))
+(defun cljr--empty-buffer? (&optional buffer)
+  (let ((buffer (or buffer (current-buffer))))
+    (with-current-buffer buffer
+      (s-blank? (s-trim (buffer-substring-no-properties (point-min) (point-max)))))))
 
 (defun cljr--extract-next-dependency-name ()
   (while (not (or (cljr--empty-buffer?)
@@ -3224,6 +3225,433 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     (insert description)
     (shr-render-region (point-min) (point-max))
     (view-mode 1)))
+
+(defun cljr--get-function-params (fn)
+  "Retrieve the parameters for FN"
+  (let* ((info (cider-var-info fn))
+         ;; arglists-str looks like this: ([arg] [arg1 arg2] ...)
+         (arglists-str (nrepl-dict-get info "arglists-str")))
+    (unless arglists-str
+      (error "Couldn't retrieve the parameter list for %s" fn))
+    (let* ((arglists-str (substring arglists-str 1 -1)))
+      (unless (s-matches? "^\\[[^]]+\\]$" arglists-str)
+        (error "Can't do work on functions of multiple arities"))
+      (s-split " " (substring arglists-str 1 -1)))))
+
+(defvar cljr--change-signature-mode-map
+  (let ((keymap (make-sparse-keymap)))
+    (define-key keymap (kbd "M-n") #'cljr--move-param-down)
+    (define-key keymap (kbd "M-p") #'cljr--move-param-up)
+    (define-key keymap (kbd "C-c C-k") #'cljr--abort-signature-edit)
+    (define-key keymap (kbd "q") #'cljr--abort-signature-edit)
+    (define-key keymap (kbd "e") #'cljr--edit-parameter-name)
+    (define-key keymap (kbd "C-c C-c") #'cljr--commit-signature-edit)
+    (define-key keymap (kbd "RET") #'cljr--commit-signature-edit)
+    keymap))
+
+(defun cljr--abort-signature-edit ()
+  (interactive)
+  (kill-buffer cljr--change-signature-buffer))
+
+(defun cljr--move-line-up ()
+  "Move the current line up."
+  (let ((col (current-column)))
+    (transpose-lines 1)
+    (forward-line -2)
+    (move-to-column col)))
+
+(defun cljr--move-line-down ()
+  "Move the current line down."
+  (interactive)
+  (let ((col (current-column)))
+    (save-excursion
+      (forward-line)
+      (transpose-lines 1))
+    (forward-line)
+    (move-to-column col)))
+
+(defun cljr--dec-parameter-index ()
+  (let* ((index (1- (line-number-at-pos)))
+         (parameter-info (nth index cljr--signature-changes))
+         (neighbor-info (nth (1- index) cljr--signature-changes)))
+    (puthash :new-index (1- (gethash :new-index parameter-info))
+             parameter-info)
+    (puthash :new-index (1+ (gethash :new-index neighbor-info))
+             neighbor-info)))
+
+(defun cljr--inc-parameter-index ()
+  (let* ((index (1- (line-number-at-pos)))
+         (parameter-info (nth index cljr--signature-changes))
+         (neighbor-info (nth (1+ index) cljr--signature-changes)))
+    (puthash :new-index (1+ (gethash :new-index parameter-info))
+             parameter-info)
+    (puthash :new-index (1- (gethash :new-index neighbor-info))
+             neighbor-info)))
+
+(defun cljr--move-param-down ()
+  (interactive)
+  (unless (save-excursion (beginning-of-line) (or (looking-at-p "\\s-*$")
+                                                  (looking-at-p "#")))
+    (when (save-excursion (beginning-of-line) (looking-at-p "& "))
+      (error "Can't move the rest parameter!"))
+    (view-mode -1)
+    (cljr--move-line-down)
+    (view-mode 1)
+    (cljr--dec-parameter-index)))
+
+(defun cljr--move-param-up ()
+  (interactive)
+  (unless (or (= (line-number-at-pos) 1)
+              (or (looking-at-p "\\s-*$")
+                  (looking-at-p "#")))
+    (when (save-excursion (beginning-of-line) (looking-at-p "& "))
+      (error "Can't move the rest parameter!"))
+    (view-mode -1)
+    (cljr--move-line-up)
+    (cljr--inc-parameter-index)
+    (view-mode 1)))
+
+(defun cljr--edit-parameter-name ()
+  (interactive)
+  (let* ((index (1- (line-number-at-pos)))
+         (new-name (read-from-minibuffer
+                    "New parameter name: "
+                    (save-excursion
+                      (beginning-of-line)
+                      (buffer-substring (point)
+                                        (cljr--point-after 'paredit-forward)))))
+         (parameter-info (nth index cljr--signature-changes)))
+    (puthash :new-name new-name parameter-info)
+    (view-mode -1)
+    (delete-region (point-at-bol) (point-at-eol))
+    (insert new-name)
+    (view-mode 1)))
+
+(defun cljr--defn? (occurrence)
+  (s-matches? (rx (seq line-start (* whitespace) "("
+                       (? (+ (or (in "a-z") (in "A-z") (in "0-9")
+                                 (in "-") (in "._/"))))
+                       "defn"))
+              (plist-get occurrence :match)))
+
+(defun cljr--skip-past-whitespace ()
+  (while (looking-at-p "\\s-\\|$")
+    (forward-char)))
+
+(defun cljr--update-parameter-name (new-name)
+  (cljr--skip-past-whitespace)
+  (forward-char)
+  (cljr-rename-symbol new-name))
+
+(defun cljr--forward-parameter ()
+  "Move point forward across one parameter.
+
+This includes skipping past any type information added by
+prismatic/schema and moving paste any whitespace"
+  (paredit-forward)
+  (cljr--skip-past-whitespace)
+  (when (looking-at-p ":-")
+    (paredit-forward 2))
+  (cljr--skip-past-whitespace))
+
+(defun cljr--update-signature-names (signature-changes)
+  "Point is assumed to be at the the first character in the
+  lambda list.
+
+Updates the names of the function parameters."
+  (dolist (changes signature-changes)
+    (unless (string= (gethash :new-name changes)
+                     (gethash :old-name changes))
+      (cljr--update-parameter-name (gethash :new-name changes)))
+    (cljr--forward-parameter)))
+
+(defun cljr--delete-and-extract-region (beg end)
+  (prog1
+      (buffer-substring-no-properties beg end)
+    (delete-region beg end)))
+
+(defun cljr--delete-and-extract-function-parameter ()
+  (cljr--skip-past-whitespace)
+  (let (parameter)
+    (push (cljr--delete-and-extract-region
+           (point) (cljr--point-after 'paredit-forward))
+          parameter)
+    (delete-region (point) (cljr--point-after 'cljr--skip-past-whitespace))
+    (when (looking-at-p ":-")
+      (push (cljr--delete-and-extract-region
+             (point) (cljr--point-after '(paredit-forward 2)))
+            parameter))
+    (delete-region (point) (cljr--point-after 'cljr--skip-past-whitespace))
+    (s-join " " (nreverse parameter))))
+
+(defun cljr--maybe-wrap-form ()
+  "Insert newlines in or prior to the current form to prevent long lines.
+
+Point is assumed to be at the end of the form."
+  (let ((breakpoint (or (and (boundp 'whitespace-line-column)
+                             whitespace-line-column)
+                        80)))
+    (when (> (current-column) breakpoint)
+      (paredit-backward-up)
+      (if (and (not (looking-back "^\\s-*")) (looking-at-p "\\["))
+          (newline-and-indent) ; Put lambdalist on its own line
+        (paredit-forward-down)
+        (cljr--forward-parameter) ; don't break right after ( or [
+        (while (save-excursion (cljr--forward-parameter)
+                               (< (current-column) breakpoint))
+          (cljr--forward-parameter))
+        (newline-and-indent)))))
+
+(defun cljr--update-signature-order (signature-changes)
+  "Point is assumed to be at the first character in the lambda list.
+
+Updates the ordering of the function parameters."
+  (unless (-every? (lambda (c) (= (gethash :new-index c) (gethash :old-index c)))
+                   signature-changes)
+    (let (parameters)
+      ;; extract parameters
+      (dolist (_ signature-changes)
+        (push (cljr--delete-and-extract-function-parameter)
+              parameters))
+      (setq parameters (nreverse parameters))
+      ;; leave point in empty lambda list
+      (paredit-backward-up)
+      (paredit-forward-down)
+      (delete-region (point) (cljr--point-after 'cljr--skip-past-whitespace))
+      ;; insert parameters in new order
+      (dotimes (i (length parameters))
+        (let ((old-name (gethash :old-name
+                                 (-find (lambda (c) (= (gethash :new-index c) i))
+                                        signature-changes))))
+          (insert (-find (lambda (param)
+                           (s-starts-with? old-name param))
+                         parameters)))
+        (unless (= (1+ i) (length parameters))
+          (insert " ")))
+      (cljr--maybe-wrap-form))))
+
+(defun cljr--update-function-signature (signature-changes)
+  "Point is assumed to be just prior to the function definition
+  we're about to update."
+  (paredit-forward-down 2)
+  (cljr--update-signature-names signature-changes)
+  (cljr--goto-toplevel)
+  (paredit-forward-down 2)
+  (cljr--update-signature-order signature-changes))
+
+(defun cljr--call-site? (fn)
+  "Is point at a call-site for FN?"
+  (save-excursion
+    (ignore-errors
+      (paredit-backward-up)
+      (paredit-forward-down)
+      (s-ends-with? (cljr--symbol-suffix fn) (cider-symbol-at-point)))))
+
+(defun cljr--no-changes-to-parameter-order? (signature-changes)
+  (-every? (lambda (e) (= (gethash :new-index e) (gethash :old-index e)))
+           signature-changes))
+
+(defun cljr--update-call-site (signature-changes)
+  "Point is assumed to be at the name of the function being
+called."
+  (unless (cljr--no-changes-to-parameter-order? signature-changes)
+    (cljr--forward-parameter)
+    (let (args)
+      (dotimes (_ (length signature-changes))
+        (push (cljr--delete-and-extract-function-parameter) args))
+      (setq args (nreverse args))
+      (dotimes (i (length args))
+        (insert (nth (gethash :old-index
+                              (-find (lambda (c) (= (gethash :new-index c) i))
+                                     signature-changes))
+                     args))
+        (unless (= (1+ i) (length args))
+          (insert " ")))
+      (cljr--maybe-wrap-form))))
+
+(defun cljr--append-to-manual-intervention-buffer ()
+  "Append the current line to the buffer of stuff requiring
+manual intervention."
+  (let ((line (s-trim (buffer-substring-no-properties
+                       (point-at-bol) (point-at-eol))))
+        (linum (line-number-at-pos))
+        (file (buffer-file-name)))
+    (with-current-buffer (get-buffer-create cljr--manual-intervention-buffer)
+      (goto-char (point-max))
+      (insert (format "%s:%s: %s\n" file linum line)))))
+
+(defun cljr--update-apply-call-site (signature-changes)
+  "Update a call-site where apply is used to call the function
+  whose signature we're currently editing.
+
+point is assumed to be at the function name"
+  (unless (cljr--no-changes-to-parameter-order? signature-changes)
+    (let ((num-args 0)
+          (max-index (->> signature-changes
+                          (-map (lambda (c) (let ((new  (gethash :new-index c))
+                                                  (old (gethash :old-index c)))
+                                              (if (/= old new)
+                                                  (max old new)))))
+                          (-remove #'null)
+                          (apply #'max)))
+          beg end)
+      (cljr--skip-past-whitespace)
+      (setq beg (point))
+      (paredit-forward)
+      (setq end (cljr--point-after 'paredit-forward-up))
+      (while (< (save-excursion (cljr--point-after 'cljr--forward-parameter)) end)
+        (cljr--forward-parameter)
+        (setq num-args (1+ num-args)))
+      (if (>=  max-index (1- num-args))
+          ;; Some of the arguments in the final list of args to apply have changed
+          (cljr--append-to-manual-intervention-buffer)
+        (goto-char beg)
+        (cljr--update-call-site signature-changes)))))
+
+(defun cljr--update-partial-call-site (signature-changes)
+  "Update a call-site with partial application of the function
+  whose signature we're currently editing.
+
+This only handles the case where we have (partial my-fn a b c)
+and only parameters a b or c are affected.
+
+point is assumed to be at the function name"
+  (unless (cljr--no-changes-to-parameter-order? signature-changes)
+    (let ((num-partials 0)
+          (max-index (->> signature-changes
+                          (-map (lambda (c) (let ((new  (gethash :new-index c))
+                                                  (old (gethash :old-index c)))
+                                              (when (/= old new)
+                                                (max old new)))))
+                          (-remove #'null)
+                          (apply #'max)))
+          beg end)
+      (setq beg (point))
+      (cljr--skip-past-whitespace)
+      (paredit-forward 1)
+      (setq end (cljr--point-after 'paredit-forward-up))
+      (while (< (save-excursion (cljr--point-after 'cljr--forward-parameter)) end)
+        (cljr--forward-parameter)
+        (setq num-partials (1+ num-partials)))
+      (if (>=  max-index num-partials)
+          (cljr--append-to-manual-intervention-buffer)
+        (goto-char beg)
+        (cljr--update-call-site (-remove (lambda (c)
+                                           (>= (gethash :new-index c) num-partials))
+                                         signature-changes))))))
+
+(defun cljr--apply-call-site? ()
+  "Is the function invocation at this place being done using
+  apply?
+
+Point is assumed to be at the function being called."
+  (ignore-errors
+    (save-excursion
+      (paredit-backward-up)
+      (paredit-forward-down)
+      (looking-at-p "apply"))))
+
+(defun cljr--partial-call-site? ()
+  "Is the function invocation at this place being done using
+  partial.
+
+Point is assumed to be at the function being called."
+  (ignore-errors
+    (save-excursion
+      (paredit-backward-up)
+      (paredit-forward-down)
+      (looking-at-p "partial"))))
+
+(defun cljr--ignorable-occurrence? ()
+  (save-excursion
+    (cljr--goto-toplevel)
+    (looking-at-p "\\s-*(ns")))
+
+(defun cljr--change-function-signature (occurrences signature-changes)
+  ;; SIGNATURE-CHANGES is a list of hashmaps with keys:
+  ;; :old-index, :new-index, :old-name :new-name
+  ;; Indexing is from 0
+  ;; The OCCURRENCES are the same as those returned by `cljr--find-symbol'
+  (dolist (symbol-meta occurrences)
+    (let ((file (plist-get symbol-meta :file))
+          (line-beg (plist-get symbol-meta :line-beg))
+          (col-beg (plist-get symbol-meta :col-beg))
+          (name (plist-get symbol-meta :name)))
+      (with-current-buffer
+          (find-file-noselect file)
+        (goto-char (point-min))
+        (forward-line (1- line-beg))
+        (move-to-column (1- col-beg))
+        (cond
+         ((cljr--ignorable-occurrence?) :do-nothing)
+         ((cljr--call-site? name) (cljr--update-call-site signature-changes))
+         ((cljr--partial-call-site?)
+          (cljr--update-partial-call-site signature-changes))
+         ((cljr--apply-call-site?)
+          (cljr--update-apply-call-site signature-changes))
+         ((cljr--defn? symbol-meta)
+          (cljr--update-function-signature signature-changes))
+         (t (cljr--append-to-manual-intervention-buffer)))
+        (save-buffer))))
+  (unless (cljr--empty-buffer? (get-buffer-create cljr--manual-intervention-buffer))
+    (pop-to-buffer cljr--manual-intervention-buffer)
+    (goto-char (point-min))
+    (insert "The following occurrence(s) couldn't be handled automatically:\n\n")
+    (grep-mode)
+    (setq-local compilation-search-path (list (cljr--project-dir)))))
+
+(defun cljr--commit-signature-edit ()
+  (interactive)
+  (cljr--change-function-signature cljr--occurrences cljr--signature-changes)
+  (kill-buffer cljr--change-signature-buffer))
+
+(define-derived-mode cljr--change-signature-mode fundamental-mode
+  "Change Signature"
+  "Major mode for refactoring function signatures.")
+
+(defun cljr--setup-change-signature-buffer (control-buffer params)
+  (when (get-buffer control-buffer)
+    (kill-buffer control-buffer))
+  (pop-to-buffer control-buffer)
+  (delete-region (point-min) (point-max))
+  (insert "
+
+# M-n and M-p to re-order parameters.
+# e or C-c C-e to edit a name.
+# RET or C-c C-c when you're happy with your changes.
+# q or C-c C-k to abort. ")
+  (goto-char (point-min))
+  (insert (s-join "\n" params))
+  (forward-line -1)
+  (when (looking-at-p "&")
+    (forward-line 1)
+    (join-line))
+  (setq cljr--signature-changes (let (signature-changes)
+                                  (dotimes (i (length params))
+                                    (let ((h (make-hash-table)))
+                                      (puthash :old-index i h)
+                                      (puthash :new-index i h)
+                                      (puthash :old-name (nth i params) h)
+                                      (puthash :new-name (nth i params) h)
+                                      (push h signature-changes)))
+                                  (nreverse signature-changes)))
+  (cljr--change-signature-mode)
+  (view-mode))
+
+;;;###autoload
+(defun cljr-change-function-signature ()
+  "Change the function signature of the function at POINT."
+  (interactive)
+  (let* ((fn (cider-symbol-at-point))
+         (params (cljr--get-function-params fn))
+         (var-info (cider-var-info fn))
+         (ns (nrepl-dict-get var-info "ns")))
+    (setq cljr--occurrences (cljr--find-symbol-sync fn ns)
+          cljr--signature-changes nil)
+    (cljr--setup-change-signature-buffer cljr--change-signature-buffer params)
+    (when (get-buffer cljr--manual-intervention-buffer)
+      (kill-buffer cljr--manual-intervention-buffer))
+    (pop-to-buffer cljr--change-signature-buffer)))
 
 (add-hook 'nrepl-connected-hook #'cljr--init-middleware)
 
