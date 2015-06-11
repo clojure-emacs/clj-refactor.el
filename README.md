@@ -81,24 +81,7 @@ Before submitting a patch or a pull request make sure all tests are
 passing and that your patch is in line with the [contribution
 guidelines](CONTRIBUTING.md).
 
-## Contributors
-
-The project is maintained by
-
-- [Magnar Sveen](https://github.com/magnars)
-- [Lars Andersen](https://github.com/expez)
-- [Benedek Fazekas](https://github.com/benedekfazekas)
-- [Alex Baranosky](https://github.com/AlexBaranosky)
-
-Additional contributors are:
-
-- [Bozhidar Batsov](https://github.com/bbatsov)
-- [Ryan Smith](https://github.com/tanzoniteblack)
-- [Hugo Duncan](https://github.com/hugoduncan)
-- [Luke Snape](https://github.com/lsnape)
-- [Aaron France](https://github.com/AeroNotix)
-
-Thanks!
+Thanks to [everyone](https://github.com/clojure-emacs/clj-refactor.el/graphs/contributors) who's contributed so far!
 
 ## License
 
