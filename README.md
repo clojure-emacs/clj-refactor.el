@@ -7,27 +7,9 @@
 
 `clj-refactor` provides refactoring support for clojure projects.
 
-For example add missing libspec
+Here's a small teaser, helping you add a missing libspec:
 
 ![](examples/add-missing-libspec.gif)
-
-and move expression to let
-
-![](examples/move-to-let.gif)
-
-There are much more than these two. For a full description and demo of all available features see the [wiki](https://github.com/clojure-emacs/clj-refactor.el/wiki).
-
-- [Installation](#installation)
-- [Setup](#setup)
-  - [Setup Keybindings](#setup-keybindings)
-  - [Optional Setup](#optional-setup)
-    - [Refactor nREPL middleware](#refactor-nrepl-middleware)
-    - [Yasnippet](#yasnippet)
-- [Usage](https://github.com/clojure-emacs/clj-refactor.el/wiki)
-- [Changelog](CHANGELOG.md)
-- [Contribute](#contribute)
-- [Contributors](#contributors)
-- [License](#license)
 
 ## Installation
 
@@ -42,49 +24,16 @@ It's available on [marmalade](http://marmalade-repo.org/) and
 
 ```el
 (require 'clj-refactor)
-(add-hook 'clojure-mode-hook (lambda ()
-                               (clj-refactor-mode 1)
-                               ;; insert keybinding setup here
-                               ))
+
+(defun my-clojure-mode-hook ()
+    (clj-refactor-mode 1)
+    (yas-minor-mode 1) ; for adding require/use/import
+    (cljr-add-keybindings-with-prefix "C-c C-m"))
+
+(add-hook 'clojure-mode-hook #'my-clojure-mode-hook)
 ```
 
-You'll also have to set up the keybindings in the lambda. Read on.
-
-### Setup keybindings
-
-All functions in clj-refactor have a two-letter mnemonic shortcut. For
-instance, rename-file-or-dir is `rf`. You get to choose how those are bound.
-Here's how:
-
-```el
-(cljr-add-keybindings-with-prefix "C-c C-m")
-;; eg. rename files with `C-c C-m rf`.
-```
-
-If you would rather have a modifier key, instead of a prefix, do:
-
-```el
-(cljr-add-keybindings-with-modifier "C-s-")
-;; eg. rename files with `C-s-r C-s-f`.
-```
-
-If neither of these appeal to your sense of keyboard layout aesthetics, feel free
-to pick and choose your own keybindings with a smattering of:
-
-```el
-(define-key clj-refactor-map (kbd "C-x C-r") 'cljr-rename-file-or-dir)
-```
-
-**The keybindings suggested here might be conflicting with keybindings in
-either clojure-mode or cider. Ideally, you should pick keybindings that don't
-interfere with either.**
-
-### Optional setup
-
-#### Refactor nREPL middleware
-
-For some of the more advanced refactorings we've written an [nrepl](https://github.com/clojure/tools.nrepl) middleware called
-[refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl).
+The more advanced refactorings require our nREPL middleware [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
 
 Add the following, either in your project's `project.clj` or in the `:user`
 profile found at `~/.lein/profiles.clj`:
@@ -93,26 +42,19 @@ profile found at `~/.lein/profiles.clj`:
 :plugins [[refactor-nrepl "1.0.5"]]
 ```
 
-**WARNING** The analyzer needs to eval the code too in order to be able to build
-  the AST we can work with. If that causes side effects like writing files,
-  opening connections to servers, modifying databases, etc. performing certain
-  refactoring functions on your code will do that, too.
+That's it!
 
-#### Yasnippet
-If you're not using yasnippet, then the "jumping back"-part of adding to
-namespace won't work. To remedy that, enable the mode with either:
+Check out the much longer [installation](https://github.com/clojure-emacs/clj-refactor.el/wiki/installation) page in the wiki for a less opinionated approach.
 
-```el
-(yas/global-mode 1)
-```
+## Usage
 
-or
+All functions in clj-refactor have a two-letter mnemonic shortcut. E.g. `rs` for `rename-symbol`.  Given the prefix choice in the example setup you'd call this function by hitting `C-c C-m rs`
 
-```el
-(add-hook 'clojure-mode-hook (lambda () (yas/minor-mode 1)))
-```
-
-It is an excellent package, so I recommend looking into it.
+See the wiki for a complete [list of available refactorings] (https://github.com/clojure-emacs/clj-refactor.el/wiki), demonstrations and customization points.
+-
+-## Changelog
+-
+-An extensive changelog is available [here](CHANGELOG.md).
 
 ## Contribute
 
