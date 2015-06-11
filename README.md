@@ -54,7 +54,7 @@ See the wiki for a complete [list of available refactorings] (https://github.com
 
 ## Changelog
 
--An extensive changelog is available [here](CHANGELOG.md).
+An extensive changelog is available [here](CHANGELOG.md).
 
 ## Contribute
 
