@@ -155,8 +155,22 @@ with the middleware."
   "T when our interactive functions are called programmatically.")
 
 (defvar cljr--nrepl-ops
-  '("artifact-list" "artifact-versions" "clean-ns" "configure" "find-symbol"
-    "find-unbound" "hotload-dependency" "resolve-missing" "version"))
+  '(
+    "artifact-list"
+    "artifact-versions"
+    "clean-ns"
+    "configure"
+    "extract-definition"
+    "find-debug-fns"
+    "find-symbol"
+    "find-unbound"
+    "hotload-dependency"
+    "rename-file-or-dir"
+    "resolve-missing"
+    "stubs-for-interface"
+    "version"
+    "warm-ast-cache"
+    ))
 
 (defvar cljr--debug-mode nil)
 
