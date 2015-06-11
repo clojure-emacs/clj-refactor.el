@@ -158,6 +158,8 @@ with the middleware."
   '("artifact-list" "artifact-versions" "clean-ns" "configure" "find-symbol"
     "find-unbound" "hotload-dependency" "resolve-missing" "version"))
 
+(defvar cljr--debug-mode nil)
+
 ;;; Buffer Local Declarations
 
 ;; tracking state of find-symbol buffer
@@ -2612,6 +2614,7 @@ With a prefix the newly created defn will be public."
   (when (nrepl-op-supported-p "configure")
     (let ((opts (concat "{:prefix-rewriting "
                         (if cljr-favor-prefix-notation "true" "false")
+                        ":debug" (if cljr--debug-mode "true" "false")
                         "}")))
       (-> (list "op" "configure" "opts" opts)
           (nrepl-send-request (or callback (lambda (_))))))))
@@ -2660,6 +2663,14 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   (interactive)
   (message "clj-refactor %s, refactor-nrepl %s"
            cljr-version (cljr--middleware-version)))
+
+;;;###autoload
+(defun cljr-toggle-debug-mode ()
+  (setq cljr--debug-mode (not cljr--debug-mode))
+  (cljr--configure-middleware)
+  (if cljr--debug-mode
+      (message "Debug mode on")
+    (message "Debug mode off")))
 
 (defun cljr--init-middleware ()
   (unless cljr-suppress-middleware-warnings
