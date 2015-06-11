@@ -263,7 +263,8 @@ with the middleware."
     ("tl" . (cljr-thread-last-all "Thread last all"))
     ("ua" . (cljr-unwind-all "Unwind all"))
     ("uw" . (cljr-unwind "Unwind"))
-    ("ad" . (cljr-add-declaration "Add declaration"))))
+    ("ad" . (cljr-add-declaration "Add declaration"))
+    ("?" . (cljr-describe-refactoring))))
 
 (defun cljr--add-keybindings (key-fn)
   "Build up the keymap from the list of keys/functions defined in
@@ -2725,6 +2726,30 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
       (forward-line))
     (cljr--indent-defun)
     (indent-according-to-mode)))
+
+(defun cljr--extract-wiki-description (description-buffer)
+  (with-current-buffer description-buffer
+    (goto-char (point-min))
+    (while (not (looking-at-p "<div id=\"wiki-body\""))
+      (delete-char 1))
+    (sgml-skip-tag-forward 1)
+    (buffer-substring (point-min) (point))))
+
+(defun cljr-describe-refactoring (cljr-fn)
+  "Show the wiki page, in emacs, for one of the available refactorings."
+  (interactive (list (cljr--prompt-user-for "Refactoring to describe: "
+                                            (mapcar (lambda (entry) (cadr entry))
+                                                    cljr--all-helpers))))
+  (let* ((wiki-base-url "https://github.com/clojure-emacs/clj-refactor.el/wiki/")
+         (description-buffer "*cljr-describe-refactoring*")
+         (description (cljr--extract-wiki-description
+                       (url-retrieve-synchronously
+                        (concat wiki-base-url cljr-fn)))))
+    (pop-to-buffer description-buffer)
+    (delete-region (point-min) (point-max))
+    (insert description)
+    (shr-render-region (point-min) (point-max))
+    (view-mode 1)))
 
 (add-hook 'nrepl-connected-hook #'cljr--init-middleware)
 
