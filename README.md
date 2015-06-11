@@ -33,9 +33,9 @@ It's available on [marmalade](http://marmalade-repo.org/) and
 (add-hook 'clojure-mode-hook #'my-clojure-mode-hook)
 ```
 
-The more advanced refactorings require our nREPL middleware [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
+The more advanced refactorings require our nREPL middleware [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl).
 
-Add the following, either in your project's `project.clj` or in the `:user`
+To install it add the following, either in your project's `project.clj` or in the `:user`
 profile found at `~/.lein/profiles.clj`:
 
 ```clojure
