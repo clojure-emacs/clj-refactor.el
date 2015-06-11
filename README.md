@@ -7,9 +7,9 @@
 
 `clj-refactor` provides refactoring support for clojure projects.
 
-Here's a small teaser, helping you add a missing libspec:
+Here's a small teaser, extract function:
 
-![](examples/add-missing-libspec.gif)
+![](examples/extract-fn.gif)
 
 ## Installation
 
