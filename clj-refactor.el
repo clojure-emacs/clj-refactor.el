@@ -34,6 +34,7 @@
 (require 'clojure-mode)
 (require 'cider)
 (require 'edn)
+(require 'sgml-mode)
 
 (defvar cljr-version "1.1.0-SNAPSHOT"
   "The current version of clojure-refactor")
