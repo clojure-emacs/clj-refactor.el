@@ -1325,12 +1325,15 @@ optionally including those that are declared private."
 
 ;;;###autoload
 (defun cljr-unwind ()
+  "Unwind thread at point or above point by one level.
+Return nil if there are no more levels to unwind."
   (interactive)
   (ignore-errors
     (forward-char 3))
   (search-backward-regexp "([^-]*->")
   (if (cljr--nothing-more-to-unwind)
-      (cljr--pop-out-of-threading)
+      (progn (cljr--pop-out-of-threading)
+             nil)
     (paredit-forward-down)
     (cond
      ((looking-at "[^-]*->[\n\r\t ]")  (cljr--unwind-first))
