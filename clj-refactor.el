@@ -1359,7 +1359,7 @@ Return nil if there are no more levels to unwind."
                      (point)))
          (contents (buffer-substring beg end)))
     (if (string= contents ")")
-        (error "Nothing more to thread.")
+        (progn (message "Nothing more to thread.") nil)
       (delete-region beg end)
       (paredit-backward-up)
       (just-one-space 0)
