@@ -2041,7 +2041,8 @@ Signal an error if it is not supported."
                       (format " %s\\1" replacement)
                       nil
                       fn-start
-                      (save-excursion (paredit-forward-up 2) (point))))))
+                      (save-excursion (paredit-forward-up 2) (point)))
+      (goto-char fn-start))))
 
 ;;;###autoload
 (defun cljr-promote-function (promote-to-defn)
