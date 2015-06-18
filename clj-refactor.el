@@ -1359,7 +1359,7 @@ Return nil if there are no more levels to unwind."
                      (point)))
          (contents (buffer-substring beg end)))
     (if (string= contents ")")
-        (message "Nothing more to thread.")
+        (error "Nothing more to thread.")
       (delete-region beg end)
       (paredit-backward-up)
       (just-one-space 0)
@@ -1973,7 +1973,7 @@ If it's present KEY indicates the key to extract from the response."
 Signal an error if it is not supported."
   (cljr--assert-middleware)
   (unless (nrepl-op-supported-p op)
-    (error "Can't find nREPL middleware providing op \"%s\".  Please, install (or update) refactor-nrepl %s and restart CIDER" op (upcase cljr-version))))
+    (error "Can't find nREPL middleware providing op \"%s\".  Please, install (or update) refactor-nrepl %s and restart the REPL." op (upcase cljr-version))))
 
 (defun cljr--assert-leiningen-project ()
   (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
@@ -2662,7 +2662,7 @@ changing settings."
     (when missing-ops
       (cider-repl-emit-interactive-err-output
        (format "WARNING: The following nREPL ops are not supported:
-%s\nPlease, install (or update) refactor-nrepl and restart CIDER.
+%s\nPlease, install (or update) refactor-nrepl and restart REPL.
 You can mute this warning by changing cljr-suppress-middleware-warnings."
                (s-join " " missing-ops ))))))
 
