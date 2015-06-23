@@ -2229,10 +2229,18 @@ root."
   (interactive)
   (cljr--assert-leiningen-project)
   (cljr--assert-middleware)
-  (save-buffer)
-  (let ((result (nrepl-send-sync-request
+  ;; don't save the buffer preliminarily if we are called from project clean
+  (when (not (boundp 'filename))
+    (save-buffer))
+  ;; if filename *is* bound `cljr-clean-ns was called from project-clean
+  ;; so we can *not* use the buffer-file-name as the file was opened in a
+  ;; temporary buffer with no file information attached to it
+  (let* ((path-to-file (if (boundp 'filename)
+                           filename
+                         (buffer-file-name)))
+         (result (nrepl-send-sync-request
                  (list "op" "clean-ns"
-                       "path" (buffer-file-name)))))
+                       "path" path-to-file))))
     (-when-let (error-msg (nrepl-dict-get result "error"))
       (error error-msg))
     (-when-let (new-ns (nrepl-dict-get result "ns"))
