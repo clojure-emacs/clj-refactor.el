@@ -137,6 +137,11 @@ with the middleware."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-verbose nil
+  "When true clj-refactor.el gets more chatty for debugging purposes."
+  :group 'cljr
+  :type 'boolean)
+
 (defvar cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
     ("set"  . "clojure.set")
@@ -565,15 +570,18 @@ to us to make sure it's nicely indented."
          (old-path (expand-file-name old-path))
          (new-path (expand-file-name new-path)))
     (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
-      (let ((changed-files (cljr--call-middleware-sync (list "op" "rename-file-or-dir"
-                                                             "old-path" old-path
-                                                             "new-path" new-path)
-                                                       "touched")))
+      (let* ((changed-files (cljr--call-middleware-sync (list "op" "rename-file-or-dir"
+                                                              "old-path" old-path
+                                                              "new-path" new-path)
+                                                        "touched"))
+             (changed-files-count (length changed-files)))
         (cljr--indent-ns-forms changed-files)
         (cond
          ((null changed-files) (message "Rename complete! No files affected."))
-         ((= (length changed-files) 1) (message "Renamed %s to %s." old-path new-path))
-         (t (message "Rename complete! %s files affected." (length changed-files))))))
+         ((= changed-files-count 1) (message "Renamed %s to %s." old-path new-path))
+         (t (message "Rename complete! %s files affected." changed-files-count)))
+        (when (> changed-files-count 0)
+          (cljr--warm-ast-cache))))
     (when (string= buffer-file old-path)
       (kill-buffer)
       (find-file new-path))))
@@ -1800,6 +1808,8 @@ sorts the project's dependency vectors."
           (ignore-errors (-map 'funcall cljr-project-clean-functions)))))
     (when cljr-project-clean-sorts-project-dependencies
       (cljr-sort-project-dependencies))
+    (if (and (cider-connected-p) (nrepl-op-supported-p "warm-ast-cache"))
+        (cljr--warm-ast-cache))
     (message "Project clean done.")))
 
 (defun cljr--extract-dependency-name ()
@@ -1935,7 +1945,9 @@ If it's present KEY indicates the key to extract from the response."
 (defun cljr--update-artifact-cache ()
   (cljr--call-middleware-async (list "op" "artifact-list"
                                      "force" "true")
-                               (lambda (_) (message "Artifact cache updated"))))
+                               (lambda (_)
+                                 (when cljr-verbose
+                                   (message "Artifact cache updated")))))
 
 (defun cljr--get-versions-from-middleware (artifact)
   (let* ((request (list "op" "artifact-versions" "artifact" artifact))
@@ -2214,7 +2226,9 @@ root."
   (cljr--call-middleware-async
    (list "op" "warm-ast-cache")
    (lambda (res)
-     (cljr--maybe-rethrow-error res))))
+     (cljr--maybe-rethrow-error res)
+     (when cljr-verbose
+       (message "AST index updated")))))
 
 (defun cljr--replace-ns (new-ns)
   (save-excursion
