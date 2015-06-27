@@ -2663,7 +2663,7 @@ With a prefix the newly created defn will be public."
   (when (nrepl-op-supported-p "configure")
     (let ((opts (concat "{:prefix-rewriting "
                         (if cljr-favor-prefix-notation "true" "false")
-                        ":debug" (if cljr--debug-mode "true" "false")
+                        " :debug " (if cljr--debug-mode "true" "false")
                         "}")))
       (-> (list "op" "configure" "opts" opts)
           (nrepl-send-request (or callback (lambda (_))))))))
@@ -2715,6 +2715,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 
 ;;;###autoload
 (defun cljr-toggle-debug-mode ()
+  (interactive)
   (setq cljr--debug-mode (not cljr--debug-mode))
   (cljr--configure-middleware)
   (if cljr--debug-mode
