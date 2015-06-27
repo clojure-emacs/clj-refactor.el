@@ -560,8 +560,10 @@ to us to make sure it's nicely indented."
 (defun cljr-rename-file-or-dir (old-path)
   "Rename a file or directory of files."
   (interactive "fOld path: ")
-  (let ((new-path (read-from-minibuffer "New path: " old-path))
-        (buffer-file (buffer-file-name)))
+  (let* ((new-path (read-from-minibuffer "New path: " old-path))
+         (buffer-file (buffer-file-name))
+         (old-path (expand-file-name old-path))
+         (new-path (expand-file-name new-path)))
     (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
       (let ((changed-files (cljr--call-middleware-sync (list "op" "rename-file-or-dir"
                                                              "old-path" old-path
