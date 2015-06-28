@@ -2111,7 +2111,8 @@ Signal an error if it is not supported."
                                     "file" filename
                                     "line" line
                                     "column" column
-                                    "name" symbol)))
+                                    "name" symbol
+                                    "ignore-errors" "true")))
     (with-current-buffer (nrepl-current-connection-buffer)
       (setq cjr--occurrence-count 0)
       (setq cljr--num-syms -1))
