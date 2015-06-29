@@ -137,11 +137,6 @@ with the middleware."
   :group 'cljr
   :type 'boolean)
 
-(defcustom cljr-verbose nil
-  "When true clj-refactor.el gets more chatty for debugging purposes."
-  :group 'cljr
-  :type 'boolean)
-
 (defvar cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
     ("set"  . "clojure.set")
@@ -1946,7 +1941,7 @@ If it's present KEY indicates the key to extract from the response."
   (cljr--call-middleware-async (list "op" "artifact-list"
                                      "force" "true")
                                (lambda (_)
-                                 (when cljr-verbose
+                                 (when cljr--debug-mode
                                    (message "Artifact cache updated")))))
 
 (defun cljr--get-versions-from-middleware (artifact)
@@ -2228,7 +2223,7 @@ root."
    (list "op" "warm-ast-cache")
    (lambda (res)
      (cljr--maybe-rethrow-error res)
-     (when cljr-verbose
+     (when cljr--debug-mode
        (message "AST index updated")))))
 
 (defun cljr--replace-ns (new-ns)
@@ -2718,7 +2713,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr-toggle-debug-mode ()
   (interactive)
   (setq cljr--debug-mode (not cljr--debug-mode))
-  (cljr--configure-middleware)
+  (ignore-errors (cljr--configure-middleware))
   (if cljr--debug-mode
       (message "Debug mode on")
     (message "Debug mode off")))
