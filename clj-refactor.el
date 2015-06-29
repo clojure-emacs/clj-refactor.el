@@ -699,7 +699,8 @@ word test in it and whether the file lives under the test/ directory."
 
 (defun cljr--extract-ns-statements (statement-type with-nested)
   (cljr--goto-ns)
-  (if (not (cljr--search-forward-within-sexp (concat "(" statement-type)))
+  (if (or (not (cljr--search-forward-within-sexp (concat "(" statement-type)))
+          (cljr--comment-line?))
       '()
     (let (statements)
       (while (not (looking-at " *)"))
