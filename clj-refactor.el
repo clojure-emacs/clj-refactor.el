@@ -137,6 +137,14 @@ with the middleware."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-find-usages-ignore-analyzer-errors nil
+  "When true find usages ignores if any namespaces can not be analyzed
+   and carries on looking for the given symbol in those nampesaces which
+   can be analyzed. If false find usages won't run if there is a broken
+   namespace in the project."
+  :group 'cljr
+  :type 'boolean)
+
 (defvar cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
     ("set"  . "clojure.set")
@@ -2107,7 +2115,7 @@ Signal an error if it is not supported."
                                     "line" line
                                     "column" column
                                     "name" symbol
-                                    "ignore-errors" "true")))
+                                    "ignore-errors" (when cljr-find-usages-ignore-analyzer-errors "true"))))
     (with-current-buffer (nrepl-current-connection-buffer)
       (setq cjr--occurrence-count 0)
       (setq cljr--num-syms -1))
