@@ -1458,9 +1458,11 @@ Return nil if there are no more levels to unwind."
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-introduce-let)
 
 (defun cljr--goto-let ()
-  (while (not (or (cljr--toplevel-p)
-                  (looking-at "\(\\(when-let\\|if-let\\|let\\)\\( \\|\\[\\)")))
-    (paredit-backward-up)))
+  (let ((target-expr "\(\\(when-let\\|if-let\\|let\\)\\( \\|\\[\\)"))
+    (while (not (or (cljr--toplevel-p)
+                    (looking-at target-expr)))
+      (paredit-backward-up))
+    (looking-at target-expr)))
 
 (defun cljr--get-let-bindings ()
   "Returns a list of lists. The inner lists contain two elements first is
@@ -1518,16 +1520,19 @@ Return nil if there are no more levels to unwind."
 ;;;###autoload
 (defun cljr-move-to-let ()
   (interactive)
-  (save-excursion
-    (let ((contents (cljr--delete-and-extract-sexp)))
-      (cljr--prepare-to-insert-new-let-binding)
-      (insert contents))
-    (backward-sexp)
-    (insert " ")
-    (backward-char)
-    (mc/create-fake-cursor-at-point))
-  (add-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
-  (mc/maybe-multiple-cursors-mode))
+  (if (not (save-excursion (cljr--goto-let)))
+      (cljr-introduce-let)
+    (progn
+      (save-excursion
+        (let ((contents (cljr--delete-and-extract-sexp)))
+          (cljr--prepare-to-insert-new-let-binding)
+          (insert contents))
+        (backward-sexp)
+        (insert " ")
+        (backward-char)
+        (mc/create-fake-cursor-at-point))
+      (add-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
+      (mc/maybe-multiple-cursors-mode))))
 
 (defun cljr--prepare-to-insert-new-let-binding ()
   (if (cljr--inside-let-binding-form-p)
