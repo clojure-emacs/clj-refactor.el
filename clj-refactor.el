@@ -2008,7 +2008,7 @@ Signal an error if it is not supported."
 (defun cljr-add-project-dependency (force)
   (interactive "P")
   (cljr--assert-leiningen-project)
-  (cljr--assert-middleware)
+  (cljr--ensure-op-supported "artifact-list")
   (-when-let* ((lib-name (->> (cljr--get-artifacts-from-middleware force)
                               (cljr--prompt-user-for "Artifact: ")))
                (version (->> (cljr--get-versions-from-middleware lib-name)
