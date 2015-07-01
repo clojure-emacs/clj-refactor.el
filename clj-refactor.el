@@ -535,12 +535,17 @@ at the opening parentheses of an anonymous function."
   (or (ignore-errors
         (file-truename
          (locate-dominating-file default-directory "project.clj")))
+      (ignore-errors
+        (file-truename
+         (locate-dominating-file default-directory "boot.clj")))
       (ignore-errors (file-truename
                       (locate-dominating-file default-directory "pom.xml")))))
 
 (defun cljr--project-file ()
   (or (ignore-errors
         (expand-file-name "project.clj" (cljr--project-dir)))
+      (ignore-errors
+        (expand-file-name "boot.clj" (cljr--project-dir)))
       (ignore-errors (expand-file-name "pom.xml" (cljr--project-dir)))))
 
 (defun cljr--project-files ()
