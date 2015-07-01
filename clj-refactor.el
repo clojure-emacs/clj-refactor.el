@@ -1914,8 +1914,8 @@ sorts the project's dependency vectors."
 
 ;;;###autoload
 (defun cljr-sort-project-dependencies ()
-  (interactive)
   "Sorts all dependency vectors in project.clj"
+  (interactive)
   (cljr--update-file (cljr--project-file)
     (goto-char (point-min))
     (while (re-search-forward ":dependencies" (point-max) t)
