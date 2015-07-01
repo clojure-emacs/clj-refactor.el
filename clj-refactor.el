@@ -2727,9 +2727,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr-toggle-debug-mode ()
   (interactive)
   (setq cljr--debug-mode (not cljr--debug-mode))
-  (when (and (cider-connected-p)
-             (nrepl-op-supported-p "configure"))
-    (cljr--configure-middleware))
+  (cljr--ensure-op-supported "configure")
   (if cljr--debug-mode
       (message "Debug mode on")
     (message "Debug mode off")))
