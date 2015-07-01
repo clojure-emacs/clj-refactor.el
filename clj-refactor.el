@@ -1975,15 +1975,13 @@ If it's present KEY indicates the key to extract from the response."
   (completing-read prompt choices))
 
 (defun cljr--add-project-dependency (artifact version)
-  (save-window-excursion
-    (find-file (cljr--project-file))
+  (cljr--update-file (cljr--project-file)
     (goto-char (point-min))
     (re-search-forward ":dependencies")
     (paredit-forward)
     (paredit-backward-down)
     (newline-and-indent)
     (insert "[" artifact " \"" version "\"]")
-    (save-buffer)
     (message "Added %s version %s as a project dependency" artifact version)
     (when cljr-hotload-dependencies
       (paredit-backward-down)
