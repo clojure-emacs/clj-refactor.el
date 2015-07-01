@@ -1916,6 +1916,7 @@ sorts the project's dependency vectors."
 (defun cljr-sort-project-dependencies ()
   "Sorts all dependency vectors in project.clj"
   (interactive)
+  (cljr--assert-leiningen-project)
   (cljr--update-file (cljr--project-file)
     (goto-char (point-min))
     (while (re-search-forward ":dependencies" (point-max) t)
