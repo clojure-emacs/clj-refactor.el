@@ -2730,8 +2730,8 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 ;;;###autoload
 (defun cljr-toggle-debug-mode ()
   (interactive)
-  (setq cljr--debug-mode (not cljr--debug-mode))
   (cljr--ensure-op-supported "configure")
+  (setq cljr--debug-mode (not cljr--debug-mode))
   (if cljr--debug-mode
       (message "Debug mode on")
     (message "Debug mode off")))
