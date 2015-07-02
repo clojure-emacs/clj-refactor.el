@@ -2236,11 +2236,23 @@ root."
     (when (> (length occurrences) 0)
       (cljr--warm-ast-cache))))
 
+(defun cljr--maybe-nses-in-bad-state (response)
+  (let ((asts-in-bad-state (->> (nrepl-dict-get response "ast-statuses")
+                             edn-read
+                             (-partition 2)
+                             (--filter (not (stringp (-last-item it)))))))
+    (when (not (= 0 (length asts-in-bad-state)))
+      (user-error (concat "Some namespaces are in a bad state: "
+                          (->> asts-in-bad-state
+                            (--map (format "error \"%s\" in %s" (-last-item (-last-item it)) (-first-item it)))
+                            (s-join "; ")))))))
+
 (defun cljr--warm-ast-cache ()
   (cljr--call-middleware-async
    (list "op" "warm-ast-cache")
    (lambda (res)
      (cljr--maybe-rethrow-error res)
+     (cljr--maybe-nses-in-bad-state res)
      (when cljr--debug-mode
        (message "AST index updated")))))
 
