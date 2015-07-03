@@ -104,3 +104,25 @@ Feature: Create Function from Example
     (defn some-fn []
       (foo 1 bar :key #{1 2}))
     """
+
+  Scenario: Placeholders for args
+    When I insert:
+    """
+    (defn some-fn []
+      (foo 1 2))
+    """
+    And I place the cursor after "foo"
+    And I press "C-! fe"
+    And I type "one"
+    And I press "<tab>"
+    And I type "two"
+    And I press "<tab>"
+    And I type "body"
+    Then I should see:
+    """
+    (defn foo [one two]
+      body)
+
+    (defn some-fn []
+      (foo 1 2))
+    """

@@ -413,11 +413,14 @@ list of (fn args) to pass to `apply''"
         (apply f args)))
     (point)))
 
-(defun cljr--new-toplevel-form (form)
-  "Insert a new toplevel FORM before the form containing POINT."
+(defun cljr--make-room-for-toplevel-form ()
   (cljr--goto-toplevel)
   (goto-char (point-at-bol))
-  (open-line 2)
+  (open-line 2))
+
+(defun cljr--new-toplevel-form (form)
+  "Insert a new toplevel FORM before the form containing POINT."
+  (cljr--make-room-for-toplevel-form)
   (insert form))
 
 (defun cljr-show-changelog ()
@@ -2241,14 +2244,14 @@ root."
 
 (defun cljr--maybe-nses-in-bad-state (response)
   (let ((asts-in-bad-state (->> (nrepl-dict-get response "ast-statuses")
-                             edn-read
-                             (-partition 2)
-                             (--filter (not (stringp (-last-item it)))))))
+                                edn-read
+                                (-partition 2)
+                                (--filter (not (stringp (-last-item it)))))))
     (when (not (= 0 (length asts-in-bad-state)))
       (user-error (concat "Some namespaces are in a bad state: "
                           (->> asts-in-bad-state
-                            (--map (format "error \"%s\" in %s" (-last-item (-last-item it)) (-first-item it)))
-                            (s-join "; ")))))))
+                               (--map (format "error \"%s\" in %s" (-last-item (-last-item it)) (-first-item it)))
+                               (s-join "; ")))))))
 
 (defun cljr--warm-ast-cache ()
   (cljr--call-middleware-async
@@ -2284,8 +2287,8 @@ root."
                            filename
                          (buffer-file-name)))
          (result (nrepl-send-sync-request
-                 (list "op" "clean-ns"
-                       "path" path-to-file))))
+                  (list "op" "clean-ns"
+                        "path" path-to-file))))
     (-when-let (error-msg (nrepl-dict-get result "error"))
       (error error-msg))
     (-when-let (new-ns (nrepl-dict-get result "ns"))
@@ -2783,8 +2786,8 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   (let* ((example-words (cljr--extract-sexp-as-list))
          (word->arg (lambda (i word)
                       (if (s-matches? "^[^0-9:[{(\"][^[{(\"]+$" word)
-                          word
-                        (format "arg%s" i))))
+                          (format "${%s:%s}" (+ i 1) word)
+                        (format "${%s:arg%s}" (+ i 1) i))))
          (stub (s-concat "(defn "
                          (car example-words)
                          " ["
@@ -2792,18 +2795,9 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                               cdr
                               (-map-indexed word->arg)
                               (s-join " "))
-                         "]\n)")))
-    (cljr--new-toplevel-form stub)
-    ;; Move point into the argument vector
-    (paredit-backward)
-    (paredit-forward-down 2)
-    ;; If we created any argN put point before first one
-    (if (re-search-forward "arg[0-9]+" (cljr--point-after 'paredit-forward-up)
-                           :noerror)
-        (paredit-backward)
-      (forward-line))
-    (cljr--indent-defun)
-    (indent-according-to-mode)))
+                         "]\n$0)")))
+    (cljr--make-room-for-toplevel-form)
+    (yas-expand-snippet stub)))
 
 (defun cljr--extract-wiki-description (description-buffer)
   (with-current-buffer description-buffer
