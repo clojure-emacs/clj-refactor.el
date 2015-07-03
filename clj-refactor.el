@@ -1515,8 +1515,6 @@ Return nil if there are no more levels to unwind."
 ;;;###autoload
 (defun cljr-expand-let ()
   (interactive)
-  (ignore-errors
-    (forward-char 4))
   (cljr--goto-let)
   (paredit-forward-down 2)
   (paredit-forward-up)
