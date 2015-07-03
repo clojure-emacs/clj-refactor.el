@@ -2020,7 +2020,7 @@ Signal an error if it is not supported."
 
 (defun cljr--extract-anon-fn-name (sexp-str)
   (when (string-match "(fn \\(\\_<[^ ]+\\_>\\)?" sexp-str)
-      (match-string-no-properties 1 sexp-str)))
+    (match-string-no-properties 1 sexp-str)))
 
 (defun cljr--promote-fn ()
   (save-excursion
@@ -2498,6 +2498,15 @@ Defaults to the dependency vector at point, but prompts if none is found."
     (when (looking-back "#")
       (forward-char -1))))
 
+(defun cljr--highlight (start end)
+  (let ((overlay (make-overlay start end)))
+    (overlay-put overlay 'face 'secondary-selection)
+    (overlay-put overlay 'priority 100)
+    overlay))
+
+(defun cljr--highlight-sexp ()
+  (cljr--highlight (point) (cljr--point-after 'paredit-forward)))
+
 ;;;###autoload
 (defun cljr-extract-function ()
   "Extract the form at point, or the nearest enclosing form, into
@@ -2509,11 +2518,13 @@ With a prefix the newly created defn will be private."
   (save-buffer)
   (let* ((unbound (cljr--call-middleware-to-find-unbound-vars
                    (buffer-file-name) (line-number-at-pos) (1+ (current-column))))
-         (body (progn (cljr--goto-enclosing-sexp)
-                      (cljr--delete-and-extract-sexp)))
-         (public? (not current-prefix-arg))
+         (highlight (progn (cljr--goto-enclosing-sexp)
+                           (cljr--highlight-sexp)))
          (placeholder "#a015f65")
          (name (cljr--prompt-user-for "Name: "))
+         (_ (delete-overlay highlight))
+         (body (cljr--delete-and-extract-sexp))
+         (public? (not current-prefix-arg))
          (fn-regexp (s-concat "(defn-? " name)))
 
     (insert "(" name " " placeholder ")")
