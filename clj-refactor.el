@@ -296,6 +296,12 @@ with the middleware."
 
 ;; ------ utilities -----------
 
+(defun cljr--extract-sexp ()
+  (buffer-substring (point) (cljr--point-after 'paredit-forward)))
+
+(defun cljr--delete-sexp ()
+  (delete-region (point) (cljr--point-after 'paredit-forward)))
+
 (defun cljr--delete-and-extract-sexp ()
   (let* ((beg (point))
          (end (cljr--point-after 'paredit-forward))
@@ -2026,12 +2032,26 @@ Signal an error if it is not supported."
   (when (string-match "(fn \\(\\_<[^ ]+\\_>\\)?" sexp-str)
     (match-string-no-properties 1 sexp-str)))
 
+(defun cljr--highlight (start end)
+  (let ((overlay (make-overlay start end)))
+    (overlay-put overlay 'face 'secondary-selection)
+    (overlay-put overlay 'priority 100)
+    overlay))
+
+(defun cljr--highlight-sexp ()
+  (cljr--highlight (point) (cljr--point-after 'paredit-forward)))
+
 (defun cljr--promote-fn ()
   (save-excursion
-    (let* ((fn (cljr--delete-and-extract-sexp))
+    (let* ((fn (cljr--extract-sexp))
            (namedp (cljr--extract-anon-fn-name fn))
-           (name (or namedp (read-string "Name: ")))
+           (name (or namedp
+                     (let ((highlight (cljr--highlight-sexp))
+                           (name (read-string "Name: ")))
+                       (delete-overlay highlight)
+                       name)))
            fn-start)
+      (cljr--delete-sexp)
       (insert name)
       (cljr--new-toplevel-form fn)
       (paredit-backward-down)
@@ -2501,15 +2521,6 @@ Defaults to the dependency vector at point, but prompts if none is found."
       (paredit-backward-up))
     (when (looking-back "#")
       (forward-char -1))))
-
-(defun cljr--highlight (start end)
-  (let ((overlay (make-overlay start end)))
-    (overlay-put overlay 'face 'secondary-selection)
-    (overlay-put overlay 'priority 100)
-    overlay))
-
-(defun cljr--highlight-sexp ()
-  (cljr--highlight (point) (cljr--point-after 'paredit-forward)))
 
 ;;;###autoload
 (defun cljr-extract-function ()
