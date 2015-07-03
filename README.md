@@ -86,9 +86,12 @@ Thanks to [everyone](https://github.com/clojure-emacs/clj-refactor.el/graphs/con
 ## License
 
 Copyright © 2012-2015 Magnar Sveen
+Copyright © 2014-2015 Magnar Sveen, Lars Andersen, Benedek Fazekas
 
-Authors: Magnar Sveen <magnars@gmail.com>
-Keywords: clojure convenience
+Author: Magnar Sveen <magnars@gmail.com>
+        Lars Andersen <expez@expez.com>
+        Benedek Fazekas
+Keywords: convenience, clojure, cider
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

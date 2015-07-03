@@ -1,10 +1,13 @@
 ;;; clj-refactor.el --- A collection of clojure refactoring functions
 
-;; Copyright © 2012-2015 Magnar Sveen <magnars@gmail.com>
+;; Copyright © 2012-2015 Magnar Sveen
+;; Copyright © 2014-2015 Magnar Sveen, Lars Andersen, Benedek Fazekas
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
+;;         Lars Andersen <expez@expez.com>
+;;         Benedek Fazekas
 ;; Version: 1.0.5
-;; Keywords: convenience
+;; Keywords: convenience, clojure, cider
 ;; Package-Requires: ((emacs "24.3") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.9.1") (edn "1.1.1"))
 
 ;; This program is free software; you can redistribute it and/or
