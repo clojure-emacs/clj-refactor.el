@@ -2503,7 +2503,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
   "Extract the form at point, or the nearest enclosing form, into
   a toplevel defn.
 
-With a prefix the newly created defn will be public."
+With a prefix the newly created defn will be private."
   (interactive)
   (cljr--assert-middleware)
   (save-buffer)
@@ -2511,7 +2511,7 @@ With a prefix the newly created defn will be public."
                    (buffer-file-name) (line-number-at-pos) (1+ (current-column))))
          (body (progn (cljr--goto-enclosing-sexp)
                       (cljr--delete-and-extract-sexp)))
-         (public? current-prefix-arg)
+         (public? (not current-prefix-arg))
          (placeholder "#a015f65")
          (name (cljr--prompt-user-for "Name: "))
          (fn-regexp (s-concat "(defn-? " name)))
@@ -2771,7 +2771,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                       (if (s-matches? "^[^0-9:[{(\"][^[{(\"]+$" word)
                           word
                         (format "arg%s" i))))
-         (stub (s-concat "(defn- "
+         (stub (s-concat "(defn "
                          (car example-words)
                          " ["
                          (->> example-words
