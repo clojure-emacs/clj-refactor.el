@@ -39,7 +39,7 @@
 (require 'edn)
 (require 'sgml-mode)
 
-(defvar cljr-version "1.1.0-SNAPSHOT"
+(defconst cljr-version "1.1.0-SNAPSHOT"
   "The current version of clojure-refactor")
 
 (defcustom cljr-add-ns-to-blank-clj-files t
