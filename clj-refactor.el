@@ -2623,17 +2623,6 @@ Defaults to the dependency vector at point, but prompts if none is found."
                   "- ")
               " ")))
 
-(defun cljr--insert-function (name body)
-  (save-excursion
-    (cljr--goto-toplevel)
-    (open-line 2)
-    (insert (cljr--defn-str))
-    (insert name)
-    (newline-and-indent)
-    (insert "[]")
-    (newline-and-indent)
-    (insert body ")")))
-
 (defun cljr--call-middleware-to-find-unbound-vars (file line column)
   (s-join " "
           (-> (list "op" "find-unbound" "file" file "line" line "column" column)
@@ -2657,33 +2646,32 @@ Defaults to the dependency vector at point, but prompts if none is found."
   (save-buffer)
   (let* ((unbound (cljr--call-middleware-to-find-unbound-vars
                    (buffer-file-name) (line-number-at-pos) (1+ (current-column))))
-         (highlight (progn (cljr--goto-enclosing-sexp)
-                           (cljr--highlight-sexp)))
-         (placeholder "#a015f65")
-         (name (unwind-protect
-                   (cljr--prompt-user-for "Name: ")
-                 (delete-overlay highlight)))
-         (body (cljr--delete-and-extract-sexp))
-         (fn-regexp (s-concat "(defn-? " name)))
+         (_ (cljr--goto-enclosing-sexp))
+         (name (unless (cljr--use-multiple-cursors?)
+                 (let ((highlight (cljr--highlight-sexp)))
+                   (unwind-protect
+                       (cljr--prompt-user-for "Name: ")
+                     (delete-overlay highlight)))))
+         (body (cljr--delete-and-extract-sexp)))
+    (save-excursion
+      (cljr--make-room-for-toplevel-form)
+      (insert (cljr--defn-str))
+      (if name
+          (insert name)
+        (mc/create-fake-cursor-at-point))
+      (newline nil t)
+      (indent-according-to-mode)
+      (insert "[" unbound "]")
+      (newline-and-indent)
+      (insert body ")"))
+    (insert "(")
+    (when name (insert name))
+    (save-excursion
+      (insert " " unbound ")"))
+    (unless name
+      (mc/maybe-multiple-cursors-mode))))
 
-    (insert "(" name " " placeholder ")")
-    (cljr--insert-function name body)
-
-    ;; Insert args in new fn
-    (re-search-backward fn-regexp)
-    (paredit-forward-down 2)
-    (insert unbound)
-    ;; Insert args at call-site
-    (re-search-forward placeholder)
-    (re-search-backward placeholder)
-    (delete-region (point) (cljr--point-after 'paredit-forward))
-    (insert unbound)
-    (when (and (s-blank? unbound) (looking-back " "))
-      (backward-delete-char 1))
-
-    (re-search-backward fn-regexp)
-    (indent-region (point) (point-max))
-    (re-search-forward (s-concat "\(" name " ?" unbound))))
+(add-to-list 'mc--default-cmds-to-run-once 'cljr-extract-function)
 
 (defun cljr--insert-function-stubs (functions)
   (paredit-forward)
