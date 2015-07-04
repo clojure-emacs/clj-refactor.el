@@ -2162,30 +2162,40 @@ Signal an error if it is not supported."
     (let* ((fn (cljr--extract-sexp))
            (namedp (cljr--extract-anon-fn-name fn))
            (name (or namedp
-                     (let ((highlight (cljr--highlight-sexp)))
-                       (unwind-protect
-                           (read-string "Name: ")
-                         (delete-overlay highlight)))))
+                     (unless (cljr--use-multiple-cursors?)
+                       (let ((highlight (cljr--highlight-sexp)))
+                         (unwind-protect
+                             (read-string "Name: ")
+                           (delete-overlay highlight))))))
            fn-start)
       (cljr--delete-sexp)
-      (insert name)
-      (cljr--new-toplevel-form fn)
-      (paredit-backward-down)
-      (cljr--goto-fn-definition)
-      (setq fn-start (point))
-      (forward-char)
-      (insert "de")
-      (paredit-forward)
-      (when cljr-favor-private-functions
-        (if cljr-use-metadata-for-privacy
-            (insert " ^:private")
-          (insert "-")))
-      (when (not namedp) (insert " " name "\n"))
-      (re-search-forward "\\[")
-      (paredit-forward-up)
-      (unless (looking-at "\s*?$")
-        (newline))
-      (indent-region fn-start (cljr--point-after 'paredit-forward-up)))))
+      (save-excursion
+        (cljr--new-toplevel-form fn)
+        (paredit-backward-down)
+        (cljr--goto-fn-definition)
+        (setq fn-start (point))
+        (forward-char)
+        (insert "de")
+        (paredit-forward)
+        (when cljr-favor-private-functions
+          (if cljr-use-metadata-for-privacy
+              (insert " ^:private")
+            (insert "-")))
+        (when (not namedp)
+          (insert " ")
+          (newline)
+          (backward-char)
+          (if name
+              (insert name)
+            (mc/create-fake-cursor-at-point)))
+        (re-search-forward "\\[")
+        (paredit-forward-up)
+        (unless (looking-at "\s*?$")
+          (newline))
+        (indent-region fn-start (cljr--point-after 'paredit-forward-up)))
+      (if name
+          (insert name)
+        (mc/maybe-multiple-cursors-mode)))))
 
 (defun cljr--append-fn-parameter (param)
   (cljr--goto-fn-definition)

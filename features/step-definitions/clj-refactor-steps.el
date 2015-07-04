@@ -54,6 +54,10 @@
        (lambda ()
          (multiple-cursors-mode 0)))
 
+(Given "^I don't use multiple-cursors"
+       (lambda ()
+         (setq cljr-use-multiple-cursors nil)))
+
 (Given "^I call the rename callback directly with mock data for foo->baz"
        (lambda ()
          (cljr--rename-occurrences "example.two"

@@ -5,6 +5,7 @@ Feature: Tests for some minor features
     And I have a clojure-file "tmp/src/cljr/core.clj"
     And I open file "tmp/src/cljr/core.clj"
     And I clear the buffer
+    And I don't use multiple-cursors
 
   Scenario: Promote fn to defn
     When I insert:
