@@ -1974,9 +1974,57 @@ If it's present KEY indicates the key to extract from the response."
                                  (when cljr--debug-mode
                                    (message "Artifact cache updated")))))
 
+(defun cljr--dictionary-lessp (str1 str2)
+  "return t if STR1 is < STR2 when doing a dictionary compare
+(splitting the string at numbers and doing numeric compare with them).
+It is optimized for version comparisons, in that empty strings are sorted
+before non-empty. This lets 1.7.0 be sorted above 1.7.0-RC1."
+  (let ((str1-components (cljr--dict-split str1))
+        (str2-components (cljr--dict-split str2)))
+    (cljr--dict-lessp str1-components str2-components)))
+
+(defun cljr--dict-lessp (slist1 slist2)
+  "compare the two lists of strings & numbers"
+  (cond ((null slist1)
+         (not (null slist2)))
+        ((null slist2)
+         t)
+        ((and (numberp (car slist1))
+              (stringp (car slist2)))
+         t)
+        ((and (numberp (car slist2))
+              (stringp (car slist1)))
+         nil)
+        ((and (numberp (car slist1))
+              (numberp (car slist2)))
+         (or (< (car slist1) (car slist2))
+             (and (= (car slist1) (car slist2))
+                  (cljr--dict-lessp (cdr slist1) (cdr slist2)))))
+        (t
+         (or (string-lessp (car slist1) (car slist2))
+             (and (string-equal (car slist1) (car slist2))
+                  (cljr--dict-lessp (cdr slist1) (cdr slist2)))))))
+
+(defun cljr--dict-split (str)
+  "split a string into a list of number and non-number components"
+  (save-match-data
+    (let ((res nil))
+      (while (and str (not (string-equal "" str)))
+        (let ((p (string-match "[0-9]+" str)))
+          (cond ((null p)
+                 (setq res (cons str res))
+                 (setq str nil))
+                ((= p 0)
+                 (setq res (cons (string-to-number (match-string 0 str)) res))
+                 (setq str (substring str (match-end 0))))
+                (t
+                 (setq res (cons (substring str 0 (match-beginning 0)) res))
+                 (setq str (substring str (match-beginning 0)))))))
+      (reverse res))))
+
 (defun cljr--get-versions-from-middleware (artifact)
   (let* ((request (list "op" "artifact-versions" "artifact" artifact))
-         (versions (cljr--call-middleware-sync request "versions")))
+         (versions (nreverse (sort (cljr--call-middleware-sync request "versions") 'cljr--dictionary-lessp))))
     (if versions
         versions
       (error "Empty version list received from middleware!"))))
