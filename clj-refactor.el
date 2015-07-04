@@ -2792,7 +2792,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
            (dir (cljr--project-dir))
            (symbol (cider-symbol-at-point))
            (var-info (cider-var-info symbol))
-           (ns (nrepl-dict-get var-info "ns"))
+           (ns (or (nrepl-dict-get var-info "ns") (cider-current-ns)))
            (symbol-name (or (nrepl-dict-get var-info "name") symbol))
            (extract-definition-request (list
                                         "op" "extract-definition"
