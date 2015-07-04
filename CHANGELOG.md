@@ -10,6 +10,7 @@
 - Add `cljr-show-changelog` so users don't have to visit github to find out what's changed after a package update.
 - Add `cljr-create-fn-from-example` to create function stub based on example usage
 - Now cljr--add-test-use-declarations actually checks the file system in order to find its require for the source ns.
+- error handling and reporting around analyzing namespaces improvements and configuration option `cljr-find-usages-ignore-analyzer-errors`: if set to true find usages will run even if there are compilation/analyzer problems in some namespaces; defaults to nil.
 
 ## 1.0.5
 
