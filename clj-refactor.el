@@ -121,6 +121,11 @@ Used in `cljr-remove-debug-fns' feature."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-use-multiple-cursors t
+  "When true multiple-cursors will be used where that makes sense."
+  :group 'cljr
+  :type 'boolean)
+
 (defcustom cljr-auto-clean-ns t
   "When true `cljr-clean-ns' will run after the ns is modified."
   :group 'cljr
@@ -223,6 +228,10 @@ with the middleware."
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-backward] 'cljr-splice-sexp-killing-backward)
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-forward] 'cljr-splice-sexp-killing-forward)
 (define-key clj-refactor-map (kbd "/") 'cljr-slash)
+
+(defun cljr--use-multiple-cursors? ()
+  (and cljr-use-multiple-cursors
+       (not (bound-and-true-p evil-mode))))
 
 (defun cljr--fix-special-modifier-combinations (key)
   (case key
@@ -1473,10 +1482,16 @@ Return nil if there are no more levels to unwind."
   (paredit-wrap-square)
   (insert " ")
   (backward-char)
-  (mc/create-fake-cursor-at-point)
-  (paredit-forward-up)
-  (newline-and-indent)
-  (mc/maybe-multiple-cursors-mode))
+  (let ((name (unless (cljr--use-multiple-cursors?)
+                (cljr--prompt-user-for "Name: "))))
+    (if name
+        (insert name)
+      (mc/create-fake-cursor-at-point))
+    (paredit-forward-up)
+    (newline-and-indent)
+    (if name
+        (insert name)
+      (mc/maybe-multiple-cursors-mode))))
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-introduce-let)
 
@@ -1543,7 +1558,8 @@ Return nil if there are no more levels to unwind."
   (interactive)
   (if (not (save-excursion (cljr--goto-let)))
       (cljr-introduce-let)
-    (progn
+    (let ((name (unless (cljr--use-multiple-cursors?)
+                  (cljr--prompt-user-for "Name: "))))
       (save-excursion
         (let ((contents (cljr--delete-and-extract-sexp)))
           (cljr--prepare-to-insert-new-let-binding)
@@ -1551,9 +1567,15 @@ Return nil if there are no more levels to unwind."
         (backward-sexp)
         (insert " ")
         (backward-char)
-        (mc/create-fake-cursor-at-point))
-      (add-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
-      (mc/maybe-multiple-cursors-mode))))
+        (if name
+            (insert name)
+          (mc/create-fake-cursor-at-point)))
+      (if name
+          (progn
+            (insert name)
+            (cljr--replace-sexp-with-binding-in-let))
+        (add-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
+        (mc/maybe-multiple-cursors-mode)))))
 
 (defun cljr--prepare-to-insert-new-let-binding ()
   (if (cljr--inside-let-binding-form-p)
