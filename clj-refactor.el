@@ -2046,10 +2046,10 @@ Signal an error if it is not supported."
     (let* ((fn (cljr--extract-sexp))
            (namedp (cljr--extract-anon-fn-name fn))
            (name (or namedp
-                     (let ((highlight (cljr--highlight-sexp))
-                           (name (read-string "Name: ")))
-                       (delete-overlay highlight)
-                       name)))
+                     (let ((highlight (cljr--highlight-sexp)))
+                       (unwind-protect
+                           (read-string "Name: ")
+                         (delete-overlay highlight)))))
            fn-start)
       (cljr--delete-sexp)
       (insert name)
@@ -2536,8 +2536,9 @@ With a prefix the newly created defn will be private."
          (highlight (progn (cljr--goto-enclosing-sexp)
                            (cljr--highlight-sexp)))
          (placeholder "#a015f65")
-         (name (cljr--prompt-user-for "Name: "))
-         (_ (delete-overlay highlight))
+         (name (unwind-protect
+                   (cljr--prompt-user-for "Name: ")
+                 (delete-overlay highlight)))
          (body (cljr--delete-and-extract-sexp))
          (public? (not current-prefix-arg))
          (fn-regexp (s-concat "(defn-? " name)))
