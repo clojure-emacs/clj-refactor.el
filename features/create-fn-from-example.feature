@@ -16,7 +16,7 @@ Feature: Create Function from Example
     And I press "C-! fe"
     Then I should see:
     """
-    (defn foo [bar baz]
+    (defn- foo [bar baz]
       )
 
     (defn some-fn []
@@ -35,7 +35,7 @@ Feature: Create Function from Example
     And I press "C-! fe"
     Then I should see:
     """
-    (defn foo [bar baz]
+    (defn- foo [bar baz]
       )
 
     (defn some-fn []
@@ -59,7 +59,7 @@ Feature: Create Function from Example
     And I press "C-! fe"
     Then I should see:
     """
-    (defn foo [arg0 bar arg2 arg3 baz]
+    (defn- foo [arg0 bar arg2 arg3 baz]
       )
 
     (defn some-fn []
@@ -81,7 +81,7 @@ Feature: Create Function from Example
     And I press "C-! fe"
     Then I should see:
     """
-    (defn foo []
+    (defn- foo []
       )
 
     (defn some-fn []
@@ -98,7 +98,7 @@ Feature: Create Function from Example
     And I press "C-! fe"
     Then I should see:
     """
-    (defn foo [arg0 bar arg2 arg3]
+    (defn- foo [arg0 bar arg2 arg3]
       )
 
     (defn some-fn []
@@ -120,7 +120,7 @@ Feature: Create Function from Example
     And I type "body"
     Then I should see:
     """
-    (defn foo [one two]
+    (defn- foo [one two]
       body)
 
     (defn some-fn []

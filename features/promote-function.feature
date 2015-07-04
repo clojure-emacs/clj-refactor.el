@@ -19,7 +19,7 @@ Feature: Tests for some minor features
     And I execute the action chain
     Then I should see:
     """
-    (defn shout-it!
+    (defn- shout-it!
       [sym]
       (-> sym (str "!") symbol))
 
@@ -53,7 +53,7 @@ Feature: Tests for some minor features
     And I execute the action chain
     Then I should see:
     """
-    (defn foobar [x]
+    (defn- foobar [x]
       (str x))
 
     (foobar 123)
@@ -70,7 +70,7 @@ Feature: Tests for some minor features
     And I execute the action chain
     Then I should see:
     """
-    (defn foobar [x]
+    (defn- foobar [x]
       (str x))
 
     (foobar 123)
@@ -94,7 +94,7 @@ Feature: Tests for some minor features
     And I execute the action chain
     Then I should see:
     """
-    (defn step
+    (defn- step
       [{:keys [key-1 key-2] :as acc} [idx cell]]
       (assoc acc (if (even? idx) key-1 key-2)
              (map #(do-stuff %) (range idx))))
