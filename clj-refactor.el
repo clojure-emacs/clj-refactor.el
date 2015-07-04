@@ -2671,7 +2671,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
       (if name
           (insert name)
         (mc/create-fake-cursor-at-point))
-      (newline nil t)
+      (newline)
       (indent-according-to-mode)
       (insert "[" unbound "]")
       (newline-and-indent)
