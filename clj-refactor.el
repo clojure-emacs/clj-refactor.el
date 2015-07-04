@@ -2236,6 +2236,8 @@ Signal an error if it is not supported."
   (when current-prefix-arg
     (cljr--promote-fn)))
 
+(add-to-list 'mc--default-cmds-to-run-once 'cljr-promote-function)
+
 (defun cljr--insert-in-find-symbol-buffer (occurrence)
   (save-excursion
     (pop-to-buffer cljr--find-symbol-buffer)
