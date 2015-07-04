@@ -2155,7 +2155,9 @@ Signal an error if it is not supported."
       (insert "de")
       (paredit-forward)
       (when cljr-favor-private-functions
-        (insert "-"))
+        (if cljr-use-metadata-for-privacy
+            (insert " ^:private")
+          (insert "-")))
       (when (not namedp) (insert " " name "\n"))
       (re-search-forward "\\[")
       (paredit-forward-up)
@@ -2591,13 +2593,19 @@ Defaults to the dependency vector at point, but prompts if none is found."
       cljr--assert-dependency-vector
       cljr--call-middleware-to-hotload-dependency))
 
-(defun cljr--insert-function (name body public?)
+(defun cljr--defn-str ()
+  (s-concat "(defn"
+            (if cljr-favor-private-functions
+                (if cljr-use-metadata-for-privacy
+                    " ^:private "
+                  "- ")
+              " ")))
+
+(defun cljr--insert-function (name body)
   (save-excursion
     (cljr--goto-toplevel)
     (open-line 2)
-    (if public?
-        (insert "(defn ")
-      (insert "(defn- "))
+    (insert (cljr--defn-str))
     (insert name)
     (newline-and-indent)
     (insert "[]")
@@ -2621,9 +2629,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
 ;;;###autoload
 (defun cljr-extract-function ()
   "Extract the form at point, or the nearest enclosing form, into
-  a toplevel defn.
-
-With a prefix the newly created defn will be private."
+  a toplevel defn. "
   (interactive)
   (cljr--assert-middleware)
   (save-buffer)
@@ -2636,13 +2642,10 @@ With a prefix the newly created defn will be private."
                    (cljr--prompt-user-for "Name: ")
                  (delete-overlay highlight)))
          (body (cljr--delete-and-extract-sexp))
-         (public? (if cljr-favor-private-functions
-                      current-prefix-arg
-                    (not current-prefix-arg)))
          (fn-regexp (s-concat "(defn-? " name)))
 
     (insert "(" name " " placeholder ")")
-    (cljr--insert-function name body public?)
+    (cljr--insert-function name body)
 
     ;; Insert args in new fn
     (re-search-backward fn-regexp)
@@ -2896,9 +2899,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                       (if (s-matches? "^[^0-9:[{(\"][^[{(\"]+$" word)
                           (format "${%s:%s}" (+ i 1) word)
                         (format "${%s:arg%s}" (+ i 1) i))))
-         (stub (s-concat (if cljr-favor-private-functions
-                             "(defn- "
-                           "(defn ")
+         (stub (s-concat (cljr--defn-str)
                          (car example-words)
                          " ["
                          (->> example-words
