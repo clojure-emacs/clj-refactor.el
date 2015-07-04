@@ -111,6 +111,11 @@ Used in `cljr-remove-debug-fns' feature."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-favor-private-functions t
+  "When true refactorings will insert private function declarations."
+  :group 'cljr
+  :type 'boolean)
+
 (defcustom cljr-favor-prefix-notation t
   "When true `cljr-clean-ns' will favor prefix notation when rebuilding the ns."
   :group 'cljr
@@ -2149,6 +2154,8 @@ Signal an error if it is not supported."
       (forward-char)
       (insert "de")
       (paredit-forward)
+      (when cljr-favor-private-functions
+        (insert "-"))
       (when (not namedp) (insert " " name "\n"))
       (re-search-forward "\\[")
       (paredit-forward-up)
@@ -2629,7 +2636,9 @@ With a prefix the newly created defn will be private."
                    (cljr--prompt-user-for "Name: ")
                  (delete-overlay highlight)))
          (body (cljr--delete-and-extract-sexp))
-         (public? (not current-prefix-arg))
+         (public? (if cljr-favor-private-functions
+                      current-prefix-arg
+                    (not current-prefix-arg)))
          (fn-regexp (s-concat "(defn-? " name)))
 
     (insert "(" name " " placeholder ")")
@@ -2887,7 +2896,9 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                       (if (s-matches? "^[^0-9:[{(\"][^[{(\"]+$" word)
                           (format "${%s:%s}" (+ i 1) word)
                         (format "${%s:arg%s}" (+ i 1) i))))
-         (stub (s-concat "(defn "
+         (stub (s-concat (if cljr-favor-private-functions
+                             "(defn- "
+                           "(defn ")
                          (car example-words)
                          " ["
                          (->> example-words
