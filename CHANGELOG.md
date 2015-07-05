@@ -5,12 +5,14 @@
 - Add `cljr-describe-refactoring` which shows the wiki page describing one of the available refactorings inline in emacs.
 - Add `cljr-rename-file-or-dir` to replace `cljr-rename-file`.
 - Add `cljr-inline-symbol` which replaces the symbol at point with its definition.
-- add `cljr-add-stubs` which adds a skeleton implementation of the protocol or interface at point.
+- Add `cljr-add-stubs` which adds a skeleton implementation of the protocol or interface at point.
 - Add `cljr-reify-to-defrecord`
 - Add `cljr-show-changelog` so users don't have to visit github to find out what's changed after a package update.
 - Add `cljr-create-fn-from-example` to create function stub based on example usage
-- Now cljr--add-test-use-declarations actually checks the file system in order to find its require for the source ns.
+- Now `cljr--add-test-use-declarations` actually checks the file system in order to find its require for the source ns.
 - error handling and reporting around analyzing namespaces improvements and configuration option `cljr-find-usages-ignore-analyzer-errors`: if set to true find usages will run even if there are compilation/analyzer problems in some namespaces; defaults to nil.
+- Add `cljr-update-project-dependencies` (for leiningen only) prompts to update them showing the available versions
+- usability improvements: use multiple cursors (optionally) where it makes sense and highlight s-expression we are working on for various features
 
 ## 1.0.5
 
