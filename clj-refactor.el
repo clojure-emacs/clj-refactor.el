@@ -1539,6 +1539,12 @@ Return nil if there are no more levels to unwind."
       (while (re-search-forward (cljr--sexp-regexp init-expr) end t)
         (replace-match (concat "\\1" bind-var "\\2"))))))
 
+(defun cljr--one-shot-keybinding (key command)
+  (set-temporary-overlay-map
+   (let ((map (make-sparse-keymap)))
+     (define-key map (kbd key) command)
+     map) t))
+
 ;;;###autoload
 (defun cljr-expand-let ()
   (interactive)
@@ -1547,7 +1553,8 @@ Return nil if there are no more levels to unwind."
   (paredit-forward-up)
   (skip-syntax-forward " >")
   (paredit-convolute-sexp)
-  (-each (cljr--get-let-bindings) 'cljr--replace-sexp-with-binding))
+  (-each (cljr--get-let-bindings) 'cljr--replace-sexp-with-binding)
+  (cljr--one-shot-keybinding "l" 'cljr-expand-let))
 
 (defun cljr--replace-sexp-with-binding-in-let ()
   (remove-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)

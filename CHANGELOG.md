@@ -1,5 +1,9 @@
 # Changelog
 
+## Up next
+
+- Keep pressing `l` after `cljr-expand-let` to expand further.
+
 ## 1.1.0
 
 - Add `cljr-describe-refactoring` which shows the wiki page describing one of the available refactorings inline in emacs.
