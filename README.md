@@ -39,7 +39,7 @@ To install it add the following, either in your project's `project.clj` or in th
 profile found at `~/.lein/profiles.clj`:
 
 ```clojure
-:plugins [[refactor-nrepl "1.0.5"]]
+:plugins [[refactor-nrepl "1.1.0"]]
 ```
 
 That's it!

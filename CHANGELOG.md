@@ -1,6 +1,6 @@
 # Changelog
 
-## master (unreleased)
+## 1.1.0
 
 - Add `cljr-describe-refactoring` which shows the wiki page describing one of the available refactorings inline in emacs.
 - Add `cljr-rename-file-or-dir` to replace `cljr-rename-file`.
