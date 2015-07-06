@@ -9,10 +9,15 @@
 - Add `cljr-reify-to-defrecord`
 - Add `cljr-show-changelog` so users don't have to visit github to find out what's changed after a package update.
 - Add `cljr-create-fn-from-example` to create function stub based on example usage
+- Add `cljr-update-project-dependencies` (for leiningen only) prompts to update dependencies in project.clj, listing available versions
 - Now `cljr--add-test-use-declarations` actually checks the file system in order to find its require for the source ns.
-- error handling and reporting around analyzing namespaces improvements and configuration option `cljr-find-usages-ignore-analyzer-errors`: if set to true find usages will run even if there are compilation/analyzer problems in some namespaces; defaults to nil.
-- Add `cljr-update-project-dependencies` (for leiningen only) prompts to update them showing the available versions
-- usability improvements: use multiple cursors (optionally) where it makes sense and highlight s-expression we are working on for various features
+- Improvements to error handling and reporting around analyzing namespaces
+- Configuration option `cljr-find-usages-ignore-analyzer-errors`: when true, find-usages will run even if there are compilation/analyzer problems in some namespaces; defaults to nil.
+- Configuration option `cljr-favor-private-functions`: set to nil to create public functions where applicable.
+- Better support for `cljr-use-metadata-for-privacy` when creating functions.
+- Highlight the relevant form when extracting and promoting functions.
+- Multiple cursors is used when extracting and promoting functions (disable by setting `cljr-use-multiple-cursors` to nil)
+- Not using multiple-cursors when in evil-mode.
 
 ## 1.0.5
 
