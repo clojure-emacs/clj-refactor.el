@@ -2693,8 +2693,12 @@ Defaults to the dependency vector at point, but prompts if none is found."
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-extract-function)
 
+(defun cljr--at-end-of-symbol-at-point ()
+  (looking-back (regexp-quote (cider-symbol-at-point)) (point-at-bol)))
+
 (defun cljr--insert-function-stubs (functions)
-  (paredit-forward)
+  (unless (cljr--at-end-of-symbol-at-point)
+    (paredit-forward))
   (save-excursion
     (dolist (fn functions)
       (newline-and-indent)
