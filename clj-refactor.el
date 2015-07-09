@@ -1185,8 +1185,7 @@ If REGION is active, move all forms contained by region. "
                 (cljr--append-names-to-refer ns refer-names)
               (when require-present-p
                 (cljr--append-refer-clause ns refer-names))))
-        (cljr--new-require-clause ns refer-names))
-      (cljr--maybe-clean-or-sort-ns))))
+        (cljr--new-require-clause ns refer-names)))))
 
 (defun cljr--append-refer-clause (ns refer-names)
   "Appends :refer [REFER-NAMES] to the :require clause for NS."
@@ -1222,20 +1221,22 @@ Optionally adds :refer [REFER-NAMES] clause."
   "Returns a list of the function names in STRING-WITH-DEFNS,
 optionally including those that are declared private."
   (with-temp-buffer
-    (insert string-with-defns)
-    (goto-char (point-min))
-    (let ((count (paredit-count-sexps-forward))
-          (names '()))
-      (dotimes (_ count)
-        (paredit-forward-down)
-        (cljr--goto-toplevel)
-        (forward-char)
-        (if (and include-private (looking-at "defn-"))
-            (push (cljr--name-of-current-def) names)
-          (when (looking-at "defn ")
-            (push (cljr--name-of-current-def) names)))
-        (paredit-forward-up))
-      names)))
+    (delay-mode-hooks
+      (clojure-mode)
+      (insert string-with-defns)
+      (goto-char (point-min))
+      (let ((count (paredit-count-sexps-forward))
+            (names '()))
+        (dotimes (_ count)
+          (paredit-forward-down)
+          (cljr--goto-toplevel)
+          (forward-char)
+          (if (and include-private (looking-at "defn-"))
+              (push (cljr--name-of-current-def) names)
+            (when (looking-at "defn ")
+              (push (cljr--name-of-current-def) names)))
+          (paredit-forward-up))
+        names))))
 
 (defun cljr--current-namespace ()
   (save-excursion
