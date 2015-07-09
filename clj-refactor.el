@@ -1128,6 +1128,18 @@ Presently, there's no support for :use clauses containing :exclude."
         (insert ns "/")
         (paredit-forward)))))
 
+(defun cljr--insert-with-proper-whitespace (forms)
+  (open-line 2)
+  (forward-line 2)
+  (let ((p (point)))
+    (insert forms)
+    (open-line 2)
+    (forward-line)
+    (cljr--just-one-blank-line)
+    (save-excursion
+      (goto-char p)
+      (cljr--just-one-blank-line))))
+
 ;;;###autoload
 (defun cljr-move-form ()
   "Move the form containing POINT to a new namespace.
@@ -1152,9 +1164,7 @@ If REGION is active, move all forms contained by region. "
       (save-window-excursion
         (ido-find-file)
         (goto-char (point-max))
-        (open-line 2)
-        (forward-line 2)
-        (insert forms)
+        (cljr--insert-with-proper-whitespace forms)
         (when requires
           (cljr--insert-in-ns ":require")
           (insert requires)
