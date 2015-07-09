@@ -248,12 +248,12 @@ Feature: Move forms
       cljr.foo
       "doc..."
       (:use [cljr.core]
+            [cljr.page]
             [cljr.element]
             [cljr.form]
-            [cljr.page]
             [some.lib ns1 ns2 ns3])
-      (:require [cljr.dest :refer [this that select find-doc]]
-                [cljr.foobar :as foo])
+      (:require [cljr.foobar :as foo]
+                [cljr.dest :refer [this that select find-doc]])
       (:refer-clojure :exclude [this that])
       (:import [java.util.Date]))
 
