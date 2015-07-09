@@ -389,7 +389,7 @@ if SAVE-EXCURSION is T POINT does not move."
 
 (defun cljr--depth-at-point ()
   "Returns the depth in s-expressions, or strings, at point."
-  (let ((depth (first (paredit-current-parse-state))))
+  (let ((depth (car (paredit-current-parse-state))))
     (if (paredit-in-string-p)
         (1+ depth)
       depth)))
@@ -447,7 +447,7 @@ list of (fn args) to pass to `apply''"
 (defun cljr-show-changelog ()
   "Show the changelog for `clj-refactor'."
   (interactive)
-  (let* ((cljr (second (assoc 'clj-refactor package-alist)))
+  (let* ((cljr (cadr (assoc 'clj-refactor package-alist)))
          (dir (package-desc-dir cljr)))
     (find-file (format "%s/CHANGELOG.md" dir))
     (when (fboundp 'markdown-mode)
@@ -505,7 +505,7 @@ at the opening parentheses of an anonymous function."
     (1- (point)))))
 
 (defun cljr--goto-fn-definition ()
-  (if (zerop (first (paredit-current-parse-state)))
+  (if (zerop (car (paredit-current-parse-state)))
       (error "Not inside a s-expression.")
     (let* ((pt-orig (point))
            (search-bound (cljr--point-after 'cljr--goto-toplevel))
@@ -996,7 +996,7 @@ word test in it and whether the file lives under the test/ directory."
 returns used.ns, when called on (:use some.ns) returns some.ns"
   (let* ((form (format "%s" (sexp-at-point))))
     (if (looking-at "(:use [A-z.0-9-]+)")
-        (s-chop-suffix ")" (second (s-split " " form)))
+        (s-chop-suffix ")" (cadr (s-split " " form)))
       (substring form 1 (min (or (s-index-of " " form) (1- (length form))
                                  (1- (length form))))))))
 
@@ -2306,7 +2306,7 @@ Signal an error if it is not supported."
     (cljr--call-middleware-async find-symbol-request callback)))
 
 (defun cljr--first-line (s)
-  (-> s s-lines first s-trim))
+  (-> s s-lines car s-trim))
 
 (defun cljr--project-relative-path (path)
   "Denormalize PATH to make to make it relative to the project
@@ -2467,7 +2467,7 @@ root."
          (error "Couldn't find any symbols matching %s on classpath."
                 (cljr--symbol-suffix symbol)))
         ((= (length candidates) 1)
-         (first candidates))
+         (car candidates))
         (t
          (cljr--prompt-user-for "Require: " candidates))))
 
@@ -2484,7 +2484,7 @@ root."
   "java.util.Date => java.util
 str/split => str
 split => ''"
-  (cond ((s-contains? "/" symbol) (first (s-split "/" symbol)))
+  (cond ((s-contains? "/" symbol) (car (s-split "/" symbol)))
         ((s-matches? "\\w+\\.\\w+" symbol)
          (s-join "." (butlast (s-split "\\." symbol))))
         (t "")))
@@ -2503,10 +2503,10 @@ split => ''"
                                                   missing symbol)))))))
 
 (defun cljr--add-missing-libspec (symbol candidates-and-types)
-  (let* ((candidates (mapcar (lambda (pair) (symbol-name (first pair)))
+  (let* ((candidates (mapcar (lambda (pair) (symbol-name (car pair)))
                              candidates-and-types))
          (missing (cljr--narrow-candidates candidates))
-         (type (second (assoc (intern missing) candidates-and-types))))
+         (type (cadr (assoc (intern missing) candidates-and-types))))
     (cond ((eq type :ns) (cljr--insert-missing-require symbol missing))
           ((eq type :type)
            ;; We need to both require the ns, to trigger compilation,
@@ -2530,7 +2530,7 @@ str/split => split"
      ((s-matches? "\\w+\\.\\w+" name)
       (->> name (s-split "\\.") last car cljr--symbol-suffix))
      ((s-contains? "/" name)
-      (->> name (s-split "/") second cljr--symbol-suffix))
+      (->> name (s-split "/") cadr cljr--symbol-suffix))
      (t name))))
 
 (defun cljr--normalize-symbol-name (name)
@@ -2576,9 +2576,9 @@ itself might be `nil'."
             (-drop-while (lambda (e)
                            (not (and (stringp e) (s-equals? e "error"))))
                          response))
-           (maybe-error (first maybe-error-and-rest)))
+           (maybe-error (car maybe-error-and-rest)))
       (when (and (stringp maybe-error) (s-equals? maybe-error "error"))
-        (or (second maybe-error-and-rest)
+        (or (cadr maybe-error-and-rest)
             (format "Error 'nil' returned from middleware. %s"
                     "Please contact your local administrator."))))))
 
