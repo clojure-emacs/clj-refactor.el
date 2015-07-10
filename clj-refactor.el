@@ -93,7 +93,7 @@
   :group 'cljr
   :type 'boolean)
 
-(defcustom cljr-project-clean-exceptions '("dev/user.clj" "project.clj")
+(defcustom cljr-project-clean-exceptions '("dev/user.clj" "project.clj" "boot.clj")
   "Contains a list of files that should not be cleaned when
   running `cljr-project-clean'."
   :group 'cljr
