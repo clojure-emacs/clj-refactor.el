@@ -141,6 +141,18 @@ Feature: Create Function from Example
     (update-in foo [:bar :baz] do-stuff)
     """
 
+  Scenario: Guess at param name, keyword
+    When I insert "(do-stuff (:foo x) (:bar x))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [foo bar]
+      )
+
+    (do-stuff (:foo x) (:bar x))
+    """
+
   Scenario: Placeholders for args
     When I insert:
     """

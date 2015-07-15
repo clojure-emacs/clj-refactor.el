@@ -2943,10 +2943,11 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     (if (string= example-name "update-in")
         (cljr--create-fn-from-update-in)
       (let* ((fn-arguments (cdr sexp-forms))
-             (parent-fn (save-excursion
-                          (paredit-backward-up 2)
-                          (forward-char)
-                          (cljr--extract-sexp)))
+             (parent-fn (ignore-errors
+                          (save-excursion
+                            (paredit-backward-up 2)
+                            (forward-char)
+                            (cljr--extract-sexp))))
              (example-words (cond
                              ((string= parent-fn "->")
                               (cons "0" fn-arguments))
@@ -2961,11 +2962,18 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr--is-symbol? (s)
   (s-matches? "^[^0-9:[{(\"][^[{(\"]+$" s))
 
+(defun cljr--keyword-lookup? (s)
+  (string-match "^(:\\([^ 0-9:[{(\"][^[{(\"]+\\) " s))
+
 (defun cljr--insert-example-fn (example-name example-words)
   (let* ((word->arg (lambda (i word)
-                      (if (cljr--is-symbol? word)
-                          (format "${%s:%s}" (+ i 1) word)
-                        (format "${%s:arg%s}" (+ i 1) i))))
+                      (cond
+                       ((cljr--is-symbol? word)
+                        (format "${%s:%s}" (+ i 1) word))
+                       ((cljr--keyword-lookup? word)
+                        (format "${%s:%s}" (+ i 1) (match-string 1 word)))
+                       (:else
+                        (format "${%s:arg%s}" (+ i 1) i)))))
          (stub (s-concat (cljr--defn-str)
                          example-name
                          " ["
