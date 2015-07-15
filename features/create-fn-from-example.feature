@@ -105,6 +105,30 @@ Feature: Create Function from Example
       (foo 1 bar :key #{1 2}))
     """
 
+  Scenario: Create function from example with thread-first
+    When I insert "(-> game (reveal-tile index))"
+    And I place the cursor after "reveal"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- reveal-tile [arg0 index]
+      )
+
+    (-> game (reveal-tile index))
+    """
+
+  Scenario: Create function from example with thread-last
+    When I insert "(->> game (reveal-tile index))"
+    And I place the cursor after "reveal"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- reveal-tile [index arg1]
+      )
+
+    (->> game (reveal-tile index))
+    """
+
   Scenario: Placeholders for args
     When I insert:
     """

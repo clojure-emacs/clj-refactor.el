@@ -2938,16 +2938,27 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 ;;;###autoload
 (defun cljr-create-fn-from-example ()
   (interactive)
-  (let* ((example-words (cljr--extract-sexp-as-list))
+  (let* ((sexp-forms (cljr--extract-sexp-as-list))
+         (example-name (car sexp-forms))
+         (fn-arguments (cdr sexp-forms))
+         (parent-fn (save-excursion
+                      (paredit-backward-up 2)
+                      (forward-char)
+                      (cljr--extract-sexp)))
+         (example-words (cond
+                         ((string= parent-fn "->")
+                          (cons "0" fn-arguments))
+                         ((string= parent-fn "->>")
+                          (append fn-arguments (list "0")))
+                         (:else fn-arguments)))
          (word->arg (lambda (i word)
                       (if (s-matches? "^[^0-9:[{(\"][^[{(\"]+$" word)
                           (format "${%s:%s}" (+ i 1) word)
                         (format "${%s:arg%s}" (+ i 1) i))))
          (stub (s-concat (cljr--defn-str)
-                         (car example-words)
+                         example-name
                          " ["
                          (->> example-words
-                              cdr
                               (-map-indexed word->arg)
                               (s-join " "))
                          "]\n$0)")))
