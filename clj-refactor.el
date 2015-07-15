@@ -2939,20 +2939,31 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr-create-fn-from-example ()
   (interactive)
   (let* ((sexp-forms (cljr--extract-sexp-as-list))
-         (example-name (car sexp-forms))
-         (fn-arguments (cdr sexp-forms))
-         (parent-fn (save-excursion
-                      (paredit-backward-up 2)
-                      (forward-char)
-                      (cljr--extract-sexp)))
-         (example-words (cond
-                         ((string= parent-fn "->")
-                          (cons "0" fn-arguments))
-                         ((string= parent-fn "->>")
-                          (append fn-arguments (list "0")))
-                         (:else fn-arguments)))
-         (word->arg (lambda (i word)
-                      (if (s-matches? "^[^0-9:[{(\"][^[{(\"]+$" word)
+         (example-name (car sexp-forms)))
+    (if (string= example-name "update-in")
+        (cljr--create-fn-from-update-in)
+      (let* ((fn-arguments (cdr sexp-forms))
+             (parent-fn (save-excursion
+                          (paredit-backward-up 2)
+                          (forward-char)
+                          (cljr--extract-sexp)))
+             (example-words (cond
+                             ((string= parent-fn "->")
+                              (cons "0" fn-arguments))
+                             ((string= parent-fn "->>")
+                              (append fn-arguments (list "0")))
+                             (:else fn-arguments))))
+        (cljr--insert-example-fn example-name example-words)))))
+
+(defun cljr--is-keyword? (s)
+  (s-matches? "^:[^0-9:[{(\"][^[{(\"]+$" last-path-entry))
+
+(defun cljr--is-symbol? (s)
+  (s-matches? "^[^0-9:[{(\"][^[{(\"]+$" s))
+
+(defun cljr--insert-example-fn (example-name example-words)
+  (let* ((word->arg (lambda (i word)
+                      (if (cljr--is-symbol? word)
                           (format "${%s:%s}" (+ i 1) word)
                         (format "${%s:arg%s}" (+ i 1) i))))
          (stub (s-concat (cljr--defn-str)
@@ -2964,6 +2975,15 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                          "]\n$0)")))
     (cljr--make-room-for-toplevel-form)
     (yas-expand-snippet stub)))
+
+(defun cljr--create-fn-from-update-in ()
+  (let ((last-path-entry (save-excursion
+                           (paredit-backward-down)
+                           (cljr--find-symbol-at-point))))
+    (cljr--insert-example-fn (cljr--find-symbol-at-point)
+                             (if (cljr--is-keyword? last-path-entry)
+                                 (list (s-chop-prefix ":" last-path-entry))
+                               (list 0)))))
 
 (defun cljr--extract-wiki-description (description-buffer)
   (with-current-buffer description-buffer

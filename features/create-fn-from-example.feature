@@ -129,6 +129,18 @@ Feature: Create Function from Example
     (->> game (reveal-tile index))
     """
 
+  Scenario: Create function from example, update-in
+    When I insert "(update-in foo [:bar :baz] do-stuff)"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [baz]
+      )
+
+    (update-in foo [:bar :baz] do-stuff)
+    """
+
   Scenario: Placeholders for args
     When I insert:
     """
