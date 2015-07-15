@@ -2967,13 +2967,13 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 
 (defun cljr--insert-example-fn (example-name example-words)
   (let* ((word->arg (lambda (i word)
-                      (cond
-                       ((cljr--is-symbol? word)
-                        (format "${%s:%s}" (+ i 1) word))
-                       ((cljr--keyword-lookup? word)
-                        (format "${%s:%s}" (+ i 1) (match-string 1 word)))
-                       (:else
-                        (format "${%s:arg%s}" (+ i 1) i)))))
+                      (format "${%s:%s}" (+ i 1)
+                              (cond
+                               ((cljr--is-symbol? word)
+                                word)
+                               ((cljr--keyword-lookup? word)
+                                (match-string 1 word))
+                               (:else (format "arg%s" i))))))
          (stub (s-concat (cljr--defn-str)
                          example-name
                          " ["
