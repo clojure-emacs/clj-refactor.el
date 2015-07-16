@@ -153,6 +153,18 @@ Feature: Create Function from Example
     (map do-stuff items (:oxen bar))
     """
 
+  Scenario: Create function from example, keep-indexed
+    When I insert "(keep-indexed do-stuff foos (:bars baz))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [index foo bar]
+      )
+
+    (keep-indexed do-stuff foos (:bars baz))
+    """
+
   Scenario: Guess at param name, keyword
     When I insert "(do-stuff (:foo x) (:bar x))"
     And I place the cursor after "do"

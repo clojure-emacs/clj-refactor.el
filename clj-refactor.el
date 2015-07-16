@@ -2953,18 +2953,35 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     (cond ((string= example-name "update-in")
            (cljr--create-fn-from-update-in))
 
-          ((string= example-name "map")
-           (cljr--create-fn-from-map sexp-forms))
+          ((member example-name cljr--list-fold-function-names)
+           (cljr--create-fn-from-list-fold sexp-forms))
+
+          ((member example-name cljr--list-fold-function-names-with-index)
+           (cljr--create-fn-from-list-fold-with-index sexp-forms))
 
           (:else
            (cljr--insert-example-fn example-name (cdr sexp-forms))))))
 
-(defun cljr--create-fn-from-map (sexp-forms)
+(defvar cljr--list-fold-function-names
+  '("map" "keep" "filter" "remove"))
+
+(defvar cljr--list-fold-function-names-with-index
+  '("map-indexed" "keep-indexed"))
+
+(defun cljr--create-fn-from-list-fold (sexp-forms)
   (cljr--insert-example-fn (cadr sexp-forms)
                            (--map
                             (-when-let (name (cljr--form-to-param-name it))
                               (singularize-string name))
                             (cddr sexp-forms))))
+
+(defun cljr--create-fn-from-list-fold-with-index (sexp-forms)
+  (cljr--insert-example-fn (cadr sexp-forms)
+                           (cons "index"
+                            (--map
+                             (-when-let (name (cljr--form-to-param-name it))
+                               (singularize-string name))
+                             (cddr sexp-forms)))))
 
 (defun cljr--create-fn-from-update-in ()
   (let ((last-path-entry (save-excursion
