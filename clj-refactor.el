@@ -1421,7 +1421,7 @@ Return nil if there are no more levels to unwind."
          (beg (progn (paredit-backward)
                      (point)))
          (contents (buffer-substring beg end)))
-    (if (looking-back "(" 1)
+    (if (looking-back "(")
         (progn
           (message "Nothing more to thread.")
           nil)
@@ -1641,7 +1641,7 @@ This function only does the actual removal."
 
 (defun cljr--find-symbol-at-point ()
   (save-excursion
-    (when (looking-back "\\s_\\|\\sw" 1)
+    (when (looking-back "\\s_\\|\\sw")
       (paredit-backward))
     (let ((beg (point)))
       (paredit-forward)
@@ -1677,7 +1677,7 @@ This function only does the actual removal."
       (paredit-forward-up)
       (when (re-search-forward (regexp-opt (list symbol) 'symbols) bound t)
         (setq include-as t)))
-    (when (looking-back "\\s_\\|\\sw" 1)
+    (when (looking-back "\\s_\\|\\sw")
       (paredit-backward))
     (kill-sexp)
     (insert "{:keys [" (s-join " " (-distinct (reverse symbols))) "]"
@@ -1785,7 +1785,7 @@ This function only does the actual removal."
   "Like paredit-raise-sexp, but removes # in front of function literals and sets."
   (interactive "P")
   (paredit-raise-sexp argument)
-  (when (looking-back " #" 2)
+  (when (looking-back " #")
     (delete-char -1)))
 
 ;;;###autoload
@@ -1794,7 +1794,7 @@ This function only does the actual removal."
 front of function literals and sets."
   (interactive "P")
   (paredit-splice-sexp-killing-backward argument)
-  (when (looking-back " #" 2)
+  (when (looking-back " #")
     (delete-char -1)))
 
 ;;;###autoload
@@ -1804,7 +1804,7 @@ front of function literals and sets."
   (interactive "P")
   (save-excursion
     (paredit-backward-up)
-    (when (looking-back " #" 2)
+    (when (looking-back " #")
       (delete-char -1)))
   (paredit-splice-sexp-killing-forward argument))
 
