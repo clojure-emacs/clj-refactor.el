@@ -8,7 +8,7 @@
 ;;         Benedek Fazekas
 ;; Version: 1.1.0
 ;; Keywords: convenience, clojure, cider
-;; Package-Requires: ((emacs "24.3") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.9.1") (edn "1.1.2"))
+;; Package-Requires: ((emacs "24.3") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.9.1") (edn "1.1.2") (inflections "2.3"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -38,6 +38,7 @@
 (require 'cider)
 (require 'edn)
 (require 'sgml-mode)
+(require 'inflections)
 
 (defconst cljr-version "1.2.0-SNAPSHOT"
   "The current version of clojure-refactor")
@@ -2949,9 +2950,30 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                              (string= parent-fn "->>"))
                          (cljr--unwind-parent-and-extract-this-as-list example-name)
                        sexp-forms*)))
-    (if (string= example-name "update-in")
-        (cljr--create-fn-from-update-in)
-      (cljr--insert-example-fn example-name (cdr sexp-forms)))))
+    (cond ((string= example-name "update-in")
+           (cljr--create-fn-from-update-in))
+
+          ((string= example-name "map")
+           (cljr--create-fn-from-map sexp-forms))
+
+          (:else
+           (cljr--insert-example-fn example-name (cdr sexp-forms))))))
+
+(defun cljr--create-fn-from-map (sexp-forms)
+  (cljr--insert-example-fn (cadr sexp-forms)
+                           (--map
+                            (-when-let (name (cljr--form-to-param-name it))
+                              (singularize-string name))
+                            (cddr sexp-forms))))
+
+(defun cljr--create-fn-from-update-in ()
+  (let ((last-path-entry (save-excursion
+                           (paredit-backward-down)
+                           (cljr--find-symbol-at-point))))
+    (cljr--insert-example-fn (cljr--find-symbol-at-point)
+                             (if (cljr--is-keyword? last-path-entry)
+                                 (list (s-chop-prefix ":" last-path-entry))
+                               (list 0)))))
 
 (defun cljr--unwind-parent-and-extract-this-as-list (name)
   (let* ((parent-sexp (save-excursion
@@ -2984,15 +3006,18 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr--keyword-lookup? (s)
   (string-match "^(:\\([^ 0-9:[{(\"][^[{(\"]+\\) " s))
 
+(defun cljr--form-to-param-name (form)
+  (cond
+   ((cljr--is-symbol? form)
+    form)
+   ((cljr--keyword-lookup? form)
+    (match-string 1 form))))
+
 (defun cljr--insert-example-fn (example-name example-words)
   (let* ((word->arg (lambda (i word)
                       (format "${%s:%s}" (+ i 1)
-                              (cond
-                               ((cljr--is-symbol? word)
-                                word)
-                               ((cljr--keyword-lookup? word)
-                                (match-string 1 word))
-                               (:else (format "arg%s" i))))))
+                              (or (cljr--form-to-param-name word)
+                                  (format "arg%s" i)))))
          (stub (s-concat (cljr--defn-str)
                          example-name
                          " ["
@@ -3002,15 +3027,6 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                          "]\n$0)")))
     (cljr--make-room-for-toplevel-form)
     (yas-expand-snippet stub)))
-
-(defun cljr--create-fn-from-update-in ()
-  (let ((last-path-entry (save-excursion
-                           (paredit-backward-down)
-                           (cljr--find-symbol-at-point))))
-    (cljr--insert-example-fn (cljr--find-symbol-at-point)
-                             (if (cljr--is-keyword? last-path-entry)
-                                 (list (s-chop-prefix ":" last-path-entry))
-                               (list 0)))))
 
 (defun cljr--extract-wiki-description (description-buffer)
   (with-current-buffer description-buffer

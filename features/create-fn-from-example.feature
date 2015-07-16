@@ -141,6 +141,18 @@ Feature: Create Function from Example
     (update-in foo [:bar :baz] do-stuff)
     """
 
+  Scenario: Create function from example, map
+    When I insert "(map do-stuff items (:oxen bar))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [item ox]
+      )
+
+    (map do-stuff items (:oxen bar))
+    """
+
   Scenario: Guess at param name, keyword
     When I insert "(do-stuff (:foo x) (:bar x))"
     And I place the cursor after "do"
