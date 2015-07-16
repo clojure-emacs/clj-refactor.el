@@ -379,9 +379,15 @@ if SAVE-EXCURSION is T POINT does not move."
           (search-forward s bound t))
       (search-forward s bound t))))
 
+(defun cljr--looking-back (regexp &optional limit greedy)
+  "Call `looking-back', but tolerate limit > point."
+  (looking-back regexp (and limit
+                            (min (point-min) limit))
+                greedy))
+
 (defun cljr--goto-toplevel ()
   (paredit-backward-up (cljr--depth-at-point))
-  (when (looking-back "#")
+  (when (cljr--looking-back "#")
     (backward-char)))
 
 (defun cljr--toplevel-p ()
@@ -517,7 +523,7 @@ at the opening parentheses of an anonymous function."
             (let ((fn-end (save-excursion (paredit-forward) (point))))
               (when (and (< fn-beg pt-orig) (< pt-orig fn-end))
                 (setq found-fn-p t)
-                (when (looking-back "#")
+                (when (cljr--looking-back "#")
                   (backward-char))))
           (when (<= (point) search-bound)
             (error "Can't find definition of anonymous function!")))))))
@@ -1025,7 +1031,7 @@ returns (used.ns.lib1 used.ns.lib2)"
   (let ((use-end (save-excursion (forward-sexp) (point))))
     (prog1
         (re-search-forward "\\(\\(\\( \\)\\{2,\\}\\|:use \\)\\(\\[\\(.\\|\n\\)*?\\]\\)\\)\\|\\((:use [^]]+?)\\)" use-end t nth)
-      (if (and (looking-back "\\]") (looking-at "\\]"))
+      (if (and (cljr--looking-back "\\]") (looking-at "\\]"))
           (paredit-backward-up)
         (paredit-backward)))))
 
@@ -1433,7 +1439,7 @@ Return nil if there are no more levels to unwind."
          (beg (progn (paredit-backward)
                      (point)))
          (contents (buffer-substring beg end)))
-    (if (looking-back "(" 1)
+    (if (cljr--looking-back "(" 1)
         (progn
           (message "Nothing more to thread.")
           nil)
@@ -1660,7 +1666,7 @@ This function only does the actual removal."
 
 (defun cljr--find-symbol-at-point ()
   (save-excursion
-    (when (looking-back "\\s_\\|\\sw" 1)
+    (when (cljr--looking-back "\\s_\\|\\sw" 1)
       (paredit-backward))
     (let ((beg (point)))
       (paredit-forward)
@@ -1696,7 +1702,7 @@ This function only does the actual removal."
       (paredit-forward-up)
       (when (re-search-forward (regexp-opt (list symbol) 'symbols) bound t)
         (setq include-as t)))
-    (when (looking-back "\\s_\\|\\sw" 1)
+    (when (cljr--looking-back "\\s_\\|\\sw" 1)
       (paredit-backward))
     (kill-sexp)
     (insert "{:keys [" (s-join " " (-distinct (reverse symbols))) "]"
@@ -1804,7 +1810,7 @@ This function only does the actual removal."
   "Like paredit-raise-sexp, but removes # in front of function literals and sets."
   (interactive "P")
   (paredit-raise-sexp argument)
-  (when (looking-back " #" 2)
+  (when (cljr--looking-back " #" 2)
     (delete-char -1)))
 
 ;;;###autoload
@@ -1813,7 +1819,7 @@ This function only does the actual removal."
 front of function literals and sets."
   (interactive "P")
   (paredit-splice-sexp-killing-backward argument)
-  (when (looking-back " #" 2)
+  (when (cljr--looking-back " #" 2)
     (delete-char -1)))
 
 ;;;###autoload
@@ -1823,7 +1829,7 @@ front of function literals and sets."
   (interactive "P")
   (save-excursion
     (paredit-backward-up)
-    (when (looking-back " #" 2)
+    (when (cljr--looking-back " #" 2)
       (delete-char -1)))
   (paredit-splice-sexp-killing-forward argument))
 
@@ -1838,7 +1844,7 @@ front of function literals and sets."
   (interactive)
   (insert "/")
   (when (and cljr-magic-requires
-             (looking-back (cljr--magic-requires-re) (point-at-bol)))
+             (cljr--looking-back (cljr--magic-requires-re) (point-at-bol)))
     (let* ((short (match-string-no-properties 1))
            (long (aget cljr-magic-require-namespaces short)))
       (if (and (not (cljr--in-namespace-declaration? (concat ":as " short)))
@@ -1944,7 +1950,7 @@ sorts the project's dependency vectors."
       (re-search-forward dividing-line)
       (re-search-forward (s-concat "\\[" dep "\\s-+\""))
       (paredit-backward-up 2)
-      (while (not (looking-back "^\\s-*"))
+      (while (not (cljr--looking-back "^\\s-*"))
         (forward-char -1))
       (while (save-excursion (forward-line -1) (cljr--comment-line?))
         (forward-line -1))
@@ -2221,7 +2227,7 @@ Signal an error if it is not supported."
   (paredit-forward-down)
   (paredit-forward 2)
   (paredit-backward-down)
-  (if (looking-back "\\[")
+  (if (cljr--looking-back "\\[")
       (insert param)
     (insert " " param)))
 
@@ -2665,7 +2671,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
   (let ((sexp-regexp (rx (or "(" "#{" "{" "["))))
     (unless (looking-at sexp-regexp)
       (paredit-backward-up))
-    (when (looking-back "#")
+    (when (cljr--looking-back "#")
       (forward-char -1))))
 
 ;;;###autoload
@@ -2812,7 +2818,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
         (goto-char (point-min))
         (forward-line (1- line-beg))
         (forward-char (1- col-beg))
-        (let* ((call-site? (looking-back "(\s*"))
+        (let* ((call-site? (cljr--looking-back "(\s*"))
                (sexp (if call-site?
                          (prog1 (cljr--extract-sexp-as-list)
                            (paredit-backward-up)
