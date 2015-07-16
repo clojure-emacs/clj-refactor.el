@@ -2963,10 +2963,14 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
            (cljr--insert-example-fn example-name (cdr sexp-forms))))))
 
 (defvar cljr--list-fold-function-names
-  '("map" "keep" "filter" "remove"))
+  '("map" "pmap" "keep" "mapcat" "filter" "remove" "take-while" "drop-while"
+    "group-by" "partition-by" "some" "every?" "not-every?" "not-any?"))
 
 (defvar cljr--list-fold-function-names-with-index
   '("map-indexed" "keep-indexed"))
+
+;; TODO: sort-by, because it has optional "comp" param
+;; TODO: reduce
 
 (defun cljr--create-fn-from-list-fold (sexp-forms)
   (cljr--insert-example-fn (cadr sexp-forms)
