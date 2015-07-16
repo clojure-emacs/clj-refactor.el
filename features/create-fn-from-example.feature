@@ -111,7 +111,7 @@ Feature: Create Function from Example
     And I press "C-! fe"
     Then I should see:
     """
-    (defn- reveal-tile [arg0 index]
+    (defn- reveal-tile [game index]
       )
 
     (-> game (reveal-tile index))
@@ -123,7 +123,7 @@ Feature: Create Function from Example
     And I press "C-! fe"
     Then I should see:
     """
-    (defn- reveal-tile [index arg1]
+    (defn- reveal-tile [index game]
       )
 
     (->> game (reveal-tile index))

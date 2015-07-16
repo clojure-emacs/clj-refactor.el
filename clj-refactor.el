@@ -2938,23 +2938,42 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 ;;;###autoload
 (defun cljr-create-fn-from-example ()
   (interactive)
-  (let* ((sexp-forms (cljr--extract-sexp-as-list))
-         (example-name (car sexp-forms)))
+  (let* ((sexp-forms* (cljr--extract-sexp-as-list))
+         (example-name (car sexp-forms*))
+         (parent-fn (ignore-errors
+                      (save-excursion
+                        (paredit-backward-up 2)
+                        (forward-char)
+                        (cljr--extract-sexp))))
+         (sexp-forms (if (or (string= parent-fn "->")
+                             (string= parent-fn "->>"))
+                         (cljr--unwind-parent-and-extract-this-as-list example-name)
+                       sexp-forms*)))
     (if (string= example-name "update-in")
         (cljr--create-fn-from-update-in)
-      (let* ((fn-arguments (cdr sexp-forms))
-             (parent-fn (ignore-errors
-                          (save-excursion
-                            (paredit-backward-up 2)
-                            (forward-char)
-                            (cljr--extract-sexp))))
-             (example-words (cond
-                             ((string= parent-fn "->")
-                              (cons "0" fn-arguments))
-                             ((string= parent-fn "->>")
-                              (append fn-arguments (list "0")))
-                             (:else fn-arguments))))
-        (cljr--insert-example-fn example-name example-words)))))
+      (cljr--insert-example-fn example-name (cdr sexp-forms)))))
+
+(defun cljr--unwind-parent-and-extract-this-as-list (name)
+  (let* ((parent-sexp (save-excursion
+                        (paredit-backward-up 2)
+                        (cljr--extract-sexp)))
+         (unwound (cljr--unwind-s parent-sexp)))
+    (with-temp-buffer
+      (delay-mode-hooks
+        (clojure-mode)
+        (insert unwound)
+        (goto-char (point-min))
+        (search-forward (concat "(" name))
+        (cljr--extract-sexp-as-list)))))
+
+(defun cljr--unwind-s (s)
+  (with-temp-buffer
+    (delay-mode-hooks
+      (clojure-mode)
+      (insert s)
+      (goto-char (point-min))
+      (cljr-unwind-all)
+      (buffer-substring (point-min) (point-max)))))
 
 (defun cljr--is-keyword? (s)
   (s-matches? "^:[^0-9:[{(\"][^[{(\"]+$" last-path-entry))
