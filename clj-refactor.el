@@ -3076,7 +3076,9 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
      ((cljr--keyword-lookup? prepped-form)
       (match-string 1 prepped-form))
      ((s-starts-with? "(get-in " prepped-form)
-      (cljr--find-param-name-from-get-in prepped-form)))))
+      (cljr--find-param-name-from-get-in prepped-form))
+     ((s-starts-with? "(get " prepped-form)
+      (cljr--find-param-name-from-get prepped-form)))))
 
 (defun cljr--find-param-name-from-get-in (form)
   (let ((last-path-entry (with-temp-buffer
@@ -3090,6 +3092,19 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                              (cljr--find-symbol-at-point)))))
     (when (cljr--is-keyword? last-path-entry)
       (s-chop-prefix ":" last-path-entry))))
+
+(defun cljr--find-param-name-from-get (form)
+  (let ((key (with-temp-buffer
+               (delay-mode-hooks
+                 (clojure-mode)
+                 (insert form)
+                 (goto-char (point-min))
+                 (paredit-forward-down)
+                 (paredit-forward 2)
+                 (skip-syntax-forward " >")
+                 (cljr--extract-sexp)))))
+    (when (cljr--is-keyword? key)
+      (s-chop-prefix ":" key))))
 
 (defun cljr--insert-example-fn (example-name example-words)
   (let* ((word->arg (lambda (i word)

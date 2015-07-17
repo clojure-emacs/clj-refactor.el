@@ -273,6 +273,18 @@ Feature: Create Function from Example
     (do-stuff (get-in x [:foo :bar]))
     """
 
+  Scenario: Guess at param name, get
+    When I insert "(do-stuff (get x :foo) (get x (:bar y)))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [foo arg1]
+      )
+
+    (do-stuff (get x :foo) (get x (:bar y)))
+    """
+
   Scenario: Placeholders for args
     When I insert:
     """
