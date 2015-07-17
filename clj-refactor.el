@@ -1228,26 +1228,32 @@ Optionally adds :refer [REFER-NAMES] clause."
   (when refer-names
     (cljr--append-refer-clause ns refer-names)))
 
+(defmacro cljr--with-string-content (s &rest body)
+  (declare (debug (form body))
+           (indent 1))
+  `(with-temp-buffer
+     (delay-mode-hooks
+       (clojure-mode)
+       (insert ,s)
+       (goto-char (point-min))
+       ,@body)))
+
 (defun cljr--name-of-defns (string-with-defns &optional include-private)
   "Returns a list of the function names in STRING-WITH-DEFNS,
 optionally including those that are declared private."
-  (with-temp-buffer
-    (delay-mode-hooks
-      (clojure-mode)
-      (insert string-with-defns)
-      (goto-char (point-min))
-      (let ((count (paredit-count-sexps-forward))
-            (names '()))
-        (dotimes (_ count)
-          (paredit-forward-down)
-          (cljr--goto-toplevel)
-          (forward-char)
-          (if (and include-private (looking-at "defn-"))
-              (push (cljr--name-of-current-def) names)
-            (when (looking-at "defn ")
-              (push (cljr--name-of-current-def) names)))
-          (paredit-forward-up))
-        names))))
+  (cljr--with-string-content string-with-defns
+    (let ((count (paredit-count-sexps-forward))
+          (names '()))
+      (dotimes (_ count)
+        (paredit-forward-down)
+        (cljr--goto-toplevel)
+        (forward-char)
+        (if (and include-private (looking-at "defn-"))
+            (push (cljr--name-of-current-def) names)
+          (when (looking-at "defn ")
+            (push (cljr--name-of-current-def) names)))
+        (paredit-forward-up))
+      names)))
 
 (defun cljr--current-namespace ()
   (save-excursion
@@ -3040,22 +3046,14 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                         (paredit-backward-up 2)
                         (cljr--extract-sexp)))
          (unwound (cljr--unwind-s parent-sexp)))
-    (with-temp-buffer
-      (delay-mode-hooks
-        (clojure-mode)
-        (insert unwound)
-        (goto-char (point-min))
-        (search-forward (concat "(" name))
-        (cljr--extract-sexp-as-list)))))
+    (cljr--with-string-content unwound
+      (search-forward (concat "(" name))
+      (cljr--extract-sexp-as-list))))
 
 (defun cljr--unwind-s (s)
-  (with-temp-buffer
-    (delay-mode-hooks
-      (clojure-mode)
-      (insert s)
-      (goto-char (point-min))
-      (cljr-unwind-all)
-      (buffer-substring (point-min) (point-max)))))
+  (cljr--with-string-content s
+    (cljr-unwind-all)
+    (buffer-substring (point-min) (point-max))))
 
 (defun cljr--is-keyword? (s)
   (s-matches? "^:[^0-9:[{(\"][^[{(\"]*$" s))
@@ -3081,28 +3079,20 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
       (cljr--find-param-name-from-get prepped-form)))))
 
 (defun cljr--find-param-name-from-get-in (form)
-  (let ((last-path-entry (with-temp-buffer
-                           (delay-mode-hooks
-                             (clojure-mode)
-                             (insert form)
-                             (goto-char (point-min))
-                             (paredit-forward-down)
-                             (paredit-forward 3)
-                             (paredit-backward-down)
-                             (cljr--find-symbol-at-point)))))
+  (let ((last-path-entry (cljr--with-string-content form
+                           (paredit-forward-down)
+                           (paredit-forward 3)
+                           (paredit-backward-down)
+                           (cljr--find-symbol-at-point))))
     (when (cljr--is-keyword? last-path-entry)
       (s-chop-prefix ":" last-path-entry))))
 
 (defun cljr--find-param-name-from-get (form)
-  (let ((key (with-temp-buffer
-               (delay-mode-hooks
-                 (clojure-mode)
-                 (insert form)
-                 (goto-char (point-min))
-                 (paredit-forward-down)
-                 (paredit-forward 2)
-                 (skip-syntax-forward " >")
-                 (cljr--extract-sexp)))))
+  (let ((key (cljr--with-string-content form
+               (paredit-forward-down)
+               (paredit-forward 2)
+               (skip-syntax-forward " >")
+               (cljr--extract-sexp))))
     (when (cljr--is-keyword? key)
       (s-chop-prefix ":" key))))
 
