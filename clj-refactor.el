@@ -2953,6 +2953,9 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     (cond ((string= example-name "update-in")
            (cljr--create-fn-from-update-in))
 
+          ((string= example-name "sort-by")
+           (cljr--create-fn-from-sort-by sexp-forms))
+
           ((member example-name cljr--list-fold-function-names)
            (cljr--create-fn-from-list-fold sexp-forms))
 
@@ -2969,7 +2972,6 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defvar cljr--list-fold-function-names-with-index
   '("map-indexed" "keep-indexed"))
 
-;; TODO: sort-by, because it has optional "comp" param
 ;; TODO: reduce
 
 (defun cljr--create-fn-from-list-fold (sexp-forms)
@@ -2982,10 +2984,10 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr--create-fn-from-list-fold-with-index (sexp-forms)
   (cljr--insert-example-fn (cadr sexp-forms)
                            (cons "index"
-                            (--map
-                             (-when-let (name (cljr--form-to-param-name it))
-                               (singularize-string name))
-                             (cddr sexp-forms)))))
+                                 (--map
+                                  (-when-let (name (cljr--form-to-param-name it))
+                                    (singularize-string name))
+                                  (cddr sexp-forms)))))
 
 (defun cljr--create-fn-from-update-in ()
   (let ((last-path-entry (save-excursion
@@ -2995,6 +2997,11 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                              (if (cljr--is-keyword? last-path-entry)
                                  (list (s-chop-prefix ":" last-path-entry))
                                (list 0)))))
+
+(defun cljr--create-fn-from-sort-by (sexp-forms)
+  (cljr--insert-example-fn (cljr--find-symbol-at-point)
+                           (list (-when-let (name (cljr--form-to-param-name (-last-item sexp-forms)))
+                                   (singularize-string name)))))
 
 (defun cljr--unwind-parent-and-extract-this-as-list (name)
   (let* ((parent-sexp (save-excursion
@@ -3037,7 +3044,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr--insert-example-fn (example-name example-words)
   (let* ((word->arg (lambda (i word)
                       (format "${%s:%s}" (+ i 1)
-                              (or (cljr--form-to-param-name word)
+                              (or (and word (cljr--form-to-param-name word))
                                   (format "arg%s" i)))))
          (stub (s-concat (cljr--defn-str)
                          example-name

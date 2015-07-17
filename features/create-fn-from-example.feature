@@ -153,6 +153,18 @@ Feature: Create Function from Example
     (map do-stuff items (:oxen bar))
     """
 
+  Scenario: Create function from example, sort-by
+    When I insert "(sort-by my-keyfn comp items)"
+    And I place the cursor after "my"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- my-keyfn [item]
+      )
+
+    (sort-by my-keyfn comp items)
+    """
+
   Scenario: Create function from example, keep-indexed
     When I insert "(keep-indexed do-stuff foos (:bars baz))"
     And I place the cursor after "do"
