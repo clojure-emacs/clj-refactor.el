@@ -3058,7 +3058,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
       (buffer-substring (point-min) (point-max)))))
 
 (defun cljr--is-keyword? (s)
-  (s-matches? "^:[^0-9:[{(\"][^[{(\"]*$" last-path-entry))
+  (s-matches? "^:[^0-9:[{(\"][^[{(\"]*$" s))
 
 (defun cljr--is-symbol? (s)
   (s-matches? "^[^0-9:[{(\"][^[{(\"]*$" s))
@@ -3074,7 +3074,22 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
      ((cljr--is-symbol? prepped-form)
       prepped-form)
      ((cljr--keyword-lookup? prepped-form)
-      (match-string 1 prepped-form)))))
+      (match-string 1 prepped-form))
+     ((s-starts-with? "(get-in " prepped-form)
+      (cljr--find-param-name-from-get-in prepped-form)))))
+
+(defun cljr--find-param-name-from-get-in (form)
+  (let ((last-path-entry (with-temp-buffer
+                           (delay-mode-hooks
+                             (clojure-mode)
+                             (insert form)
+                             (goto-char (point-min))
+                             (paredit-forward-down)
+                             (paredit-forward 3)
+                             (paredit-backward-down)
+                             (cljr--find-symbol-at-point)))))
+    (when (cljr--is-keyword? last-path-entry)
+      (s-chop-prefix ":" last-path-entry))))
 
 (defun cljr--insert-example-fn (example-name example-words)
   (let* ((word->arg (lambda (i word)
