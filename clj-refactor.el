@@ -3067,11 +3067,14 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   (string-match "^(:\\([^ 0-9:[{(\"][^[{(\"]+\\) " s))
 
 (defun cljr--form-to-param-name (form)
-  (cond
-   ((cljr--is-symbol? form)
-    form)
-   ((cljr--keyword-lookup? form)
-    (match-string 1 form))))
+  (let ((prepped-form (if (s-starts-with? "(->" form)
+                          (cljr--unwind-s form)
+                        form)))
+    (cond
+     ((cljr--is-symbol? prepped-form)
+      prepped-form)
+     ((cljr--keyword-lookup? prepped-form)
+      (match-string 1 prepped-form)))))
 
 (defun cljr--insert-example-fn (example-name example-words)
   (let* ((word->arg (lambda (i word)

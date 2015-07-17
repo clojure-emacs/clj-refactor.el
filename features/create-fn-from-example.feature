@@ -249,6 +249,18 @@ Feature: Create Function from Example
     (do-stuff (:foo x) (:bar x))
     """
 
+  Scenario: Guess at param name, threading
+    When I insert "(do-stuff (-> x :foo) (->> x :bar :baz))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [foo baz]
+      )
+
+    (do-stuff (-> x :foo) (->> x :bar :baz))
+    """
+
   Scenario: Placeholders for args
     When I insert:
     """
