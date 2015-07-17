@@ -2999,9 +2999,18 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                                (list 0)))))
 
 (defun cljr--create-fn-from-sort-by (sexp-forms)
-  (cljr--insert-example-fn (cljr--find-symbol-at-point)
-                           (list (-when-let (name (cljr--form-to-param-name (-last-item sexp-forms)))
-                                   (singularize-string name)))))
+  (let* ((fn-name (cljr--find-symbol-at-point))
+         (param-name (-when-let (coll-name (cljr--form-to-param-name (-last-item sexp-forms)))
+                       (singularize-string coll-name)))
+         (making-comparator? (and (string= fn-name (nth 2 sexp-forms))
+                                  (= 4 (length sexp-forms)))))
+    (cljr--insert-example-fn fn-name
+                             (if making-comparator?
+                                 (if param-name
+                                     (list (concat param-name "-a")
+                                           (concat param-name "-b"))
+                                   (list nil nil))
+                               (list param-name)))))
 
 (defun cljr--unwind-parent-and-extract-this-as-list (name)
   (let* ((parent-sexp (save-excursion
