@@ -2956,6 +2956,9 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
           ((string= example-name "sort-by")
            (cljr--create-fn-from-sort-by sexp-forms))
 
+          ((string= example-name "reduce")
+           (cljr--create-fn-from-reduce sexp-forms))
+
           ((member example-name cljr--list-fold-function-names)
            (cljr--create-fn-from-list-fold sexp-forms))
 
@@ -2971,8 +2974,6 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 
 (defvar cljr--list-fold-function-names-with-index
   '("map-indexed" "keep-indexed"))
-
-;; TODO: reduce
 
 (defun cljr--create-fn-from-list-fold (sexp-forms)
   (cljr--insert-example-fn (cadr sexp-forms)
@@ -3011,6 +3012,15 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                                            (concat param-name "-b"))
                                    (list nil nil))
                                (list param-name)))))
+
+(defun cljr--create-fn-from-reduce (sexp-forms)
+  (cljr--insert-example-fn
+   (nth 1 sexp-forms)
+   (list (or (and (= 4 (length sexp-forms))
+                  (cljr--form-to-param-name (nth 2 sexp-forms)))
+             "acc")
+         (-when-let (name (cljr--form-to-param-name (-last-item sexp-forms)))
+           (singularize-string name)))))
 
 (defun cljr--unwind-parent-and-extract-this-as-list (name)
   (let* ((parent-sexp (save-excursion

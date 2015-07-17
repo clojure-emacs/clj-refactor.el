@@ -189,6 +189,42 @@ Feature: Create Function from Example
     (keep-indexed do-stuff foos (:bars baz))
     """
 
+  Scenario: Create function from example, reduce 2 args
+    When I insert "(reduce my-fold items)"
+    And I place the cursor after "my"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- my-fold [acc item]
+      )
+
+    (reduce my-fold items)
+    """
+
+  Scenario: Create function from example, reduce 3 args
+    When I insert "(reduce my-fold game items)"
+    And I place the cursor after "my"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- my-fold [game item]
+      )
+
+    (reduce my-fold game items)
+    """
+
+  Scenario: Create function from example, reduce 3 args, anonymous val
+    When I insert "(reduce my-fold {} items)"
+    And I place the cursor after "my"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- my-fold [acc item]
+      )
+
+    (reduce my-fold {} items)
+    """
+
   Scenario: Guess at param name, keyword
     When I insert "(do-stuff (:foo x) (:bar x))"
     And I place the cursor after "do"
