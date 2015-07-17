@@ -177,6 +177,18 @@ Feature: Create Function from Example
     (sort-by keyfn my-comp items)
     """
 
+  Scenario: Create function from example, sort comp
+    When I insert "(sort my-comp [1 2 3])"
+    And I place the cursor after "my"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- my-comp [a b]
+      )
+
+    (sort my-comp [1 2 3])
+    """
+
   Scenario: Create function from example, keep-indexed
     When I insert "(keep-indexed do-stuff foos (:bars baz))"
     And I place the cursor after "do"

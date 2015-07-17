@@ -2956,6 +2956,9 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
           ((string= example-name "sort-by")
            (cljr--create-fn-from-sort-by sexp-forms))
 
+          ((string= example-name "sort")
+           (cljr--create-fn-from-sort sexp-forms))
+
           ((string= example-name "reduce")
            (cljr--create-fn-from-reduce sexp-forms))
 
@@ -2999,6 +3002,16 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                                  (list (s-chop-prefix ":" last-path-entry))
                                (list 0)))))
 
+(defun cljr--create-fn-from-sort (sexp-forms)
+  (let* ((fn-name (cljr--find-symbol-at-point))
+         (param-name (-when-let (coll-name (cljr--form-to-param-name (-last-item sexp-forms)))
+                       (singularize-string coll-name))))
+    (cljr--insert-example-fn fn-name
+                             (if param-name
+                                 (list (concat param-name "-a")
+                                       (concat param-name "-b"))
+                               (list "a" "b")))))
+
 (defun cljr--create-fn-from-sort-by (sexp-forms)
   (let* ((fn-name (cljr--find-symbol-at-point))
          (param-name (-when-let (coll-name (cljr--form-to-param-name (-last-item sexp-forms)))
@@ -3010,7 +3023,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                                  (if param-name
                                      (list (concat param-name "-a")
                                            (concat param-name "-b"))
-                                   (list nil nil))
+                                   (list "a" "b"))
                                (list param-name)))))
 
 (defun cljr--create-fn-from-reduce (sexp-forms)
@@ -3045,10 +3058,10 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
       (buffer-substring (point-min) (point-max)))))
 
 (defun cljr--is-keyword? (s)
-  (s-matches? "^:[^0-9:[{(\"][^[{(\"]+$" last-path-entry))
+  (s-matches? "^:[^0-9:[{(\"][^[{(\"]*$" last-path-entry))
 
 (defun cljr--is-symbol? (s)
-  (s-matches? "^[^0-9:[{(\"][^[{(\"]+$" s))
+  (s-matches? "^[^0-9:[{(\"][^[{(\"]*$" s))
 
 (defun cljr--keyword-lookup? (s)
   (string-match "^(:\\([^ 0-9:[{(\"][^[{(\"]+\\) " s))
