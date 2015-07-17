@@ -2968,6 +2968,9 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
           ((string= example-name "reduce")
            (cljr--create-fn-from-reduce sexp-forms))
 
+          ((string= example-name "repeatedly")
+           (cljr--insert-example-fn (cljr--find-symbol-at-point) nil))
+
           ((member example-name cljr--list-fold-function-names)
            (cljr--create-fn-from-list-fold sexp-forms))
 
