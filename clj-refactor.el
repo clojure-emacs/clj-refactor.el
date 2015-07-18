@@ -3000,7 +3000,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr--create-fn-from-list-fold (sexp-forms)
   (cljr--insert-example-fn (cadr sexp-forms)
                            (--map
-                            (-when-let (name (cljr--form-to-param-name it))
+                            (-when-let (name (cljr--guess-param-name it))
                               (singularize-string name))
                             (cddr sexp-forms))))
 
@@ -3008,7 +3008,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   (cljr--insert-example-fn (cadr sexp-forms)
                            (cons "index"
                                  (--map
-                                  (-when-let (name (cljr--form-to-param-name it))
+                                  (-when-let (name (cljr--guess-param-name it))
                                     (singularize-string name))
                                   (cddr sexp-forms)))))
 
@@ -3023,7 +3023,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 
 (defun cljr--create-fn-from-sort (sexp-forms)
   (let* ((fn-name (cljr--find-symbol-at-point))
-         (param-name (-when-let (coll-name (cljr--form-to-param-name (-last-item sexp-forms)))
+         (param-name (-when-let (coll-name (cljr--guess-param-name (-last-item sexp-forms)))
                        (singularize-string coll-name))))
     (cljr--insert-example-fn fn-name
                              (if param-name
@@ -3033,7 +3033,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 
 (defun cljr--create-fn-from-sort-by (sexp-forms)
   (let* ((fn-name (cljr--find-symbol-at-point))
-         (param-name (-when-let (coll-name (cljr--form-to-param-name (-last-item sexp-forms)))
+         (param-name (-when-let (coll-name (cljr--guess-param-name (-last-item sexp-forms)))
                        (singularize-string coll-name)))
          (making-comparator? (and (string= fn-name (nth 2 sexp-forms))
                                   (= 4 (length sexp-forms)))))
@@ -3049,9 +3049,9 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   (cljr--insert-example-fn
    (nth 1 sexp-forms)
    (list (or (and (= 4 (length sexp-forms))
-                  (cljr--form-to-param-name (nth 2 sexp-forms)))
+                  (cljr--guess-param-name (nth 2 sexp-forms)))
              "acc")
-         (-when-let (name (cljr--form-to-param-name (-last-item sexp-forms)))
+         (-when-let (name (cljr--guess-param-name (-last-item sexp-forms)))
            (singularize-string name)))))
 
 (defun cljr--unwind-and-extract-this-as-list (name)
@@ -3077,10 +3077,12 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr--keyword-lookup? (s)
   (string-match "^(:\\([^ 0-9:[{(\"][^[{(\"]+\\) " s))
 
-(defun cljr--form-to-param-name (form)
-  (let ((prepped-form (if (s-starts-with? "(->" form)
-                          (cljr--unwind-s form)
-                        form)))
+(defun cljr--guess-param-name (form)
+  (let ((prepped-form
+         (cljr--strip-off-assocs
+          (if (s-starts-with? "(->" form)
+              (cljr--unwind-s form)
+            form))))
     (cond
      ((cljr--is-symbol? prepped-form)
       prepped-form)
@@ -3090,6 +3092,17 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
       (cljr--find-param-name-from-get-in prepped-form))
      ((s-starts-with? "(get " prepped-form)
       (cljr--find-param-name-from-get prepped-form)))))
+
+(defun cljr--strip-off-assocs (form)
+  (cljr--with-string-content form
+    (while (or (looking-at "(assoc\\b")
+               (looking-at "(assoc-in\\b")
+               (looking-at "(update-in\\b")
+               (looking-at "(dissoc\\b"))
+      (paredit-forward-down)
+      (paredit-forward)
+      (skip-syntax-forward " >"))
+    (cljr--extract-sexp)))
 
 (defun cljr--find-param-name-from-get-in (form)
   (let ((last-path-entry (cljr--with-string-content form
@@ -3112,7 +3125,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr--insert-example-fn (example-name example-words)
   (let* ((word->arg (lambda (i word)
                       (format "${%s:%s}" (+ i 1)
-                              (or (and word (cljr--form-to-param-name word))
+                              (or (and word (cljr--guess-param-name word))
                                   (format "arg%s" i)))))
          (stub (s-concat (cljr--defn-str)
                          example-name

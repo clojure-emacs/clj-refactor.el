@@ -297,6 +297,30 @@ Feature: Create Function from Example
     (do-stuff (get x :foo) (get x (:bar y)))
     """
 
+  Scenario: Guess at param name, ignore assoc and dissoc
+    When I insert "(do-stuff (-> game (assoc :foo true) (dissoc :bar)))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [game]
+      )
+
+    (do-stuff (-> game (assoc :foo true) (dissoc :bar)))
+    """
+
+  Scenario: Guess at param name, ignore assoc-in and update-in
+    When I insert "(do-stuff (-> game (assoc-in [:foo] true) (update-in [:bar] inc)))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [game]
+      )
+
+    (do-stuff (-> game (assoc-in [:foo] true) (update-in [:bar] inc)))
+    """
+
   Scenario: Placeholders for args
     When I insert:
     """
