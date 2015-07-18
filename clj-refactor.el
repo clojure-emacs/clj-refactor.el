@@ -3090,23 +3090,30 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr--keyword-lookup? (s)
   (string-match "^(:\\([^ 0-9:[{(\"][^[{(\"]+\\) " s))
 
-(defun cljr--first-fn-call (s)
+(defun cljr--first-fn-call-s (s)
   (cljr--with-string-content s
     (when (looking-at "(")
       (paredit-forward-down)
       (cljr--extract-sexp))))
 
-(defun cljr--first-arg (s)
+(defun cljr--first-arg-s (s)
   (cljr--with-string-content s
     (paredit-forward-down)
     (paredit-forward)
     (skip-syntax-forward " >")
     (cljr--extract-sexp)))
 
+(defun cljr--last-arg-s (s)
+  (cljr--with-string-content s
+    (paredit-forward)
+    (paredit-backward-down)
+    (paredit-backward)
+    (cljr--extract-sexp)))
+
 (defun cljr--guess-param-name (form)
   (let* ((prepped-form (cljr--strip-off-semantic-noops
                         (cljr--unwind-s form)))
-         (fn-call (cljr--first-fn-call prepped-form)))
+         (fn-call (cljr--first-fn-call-s prepped-form)))
     (cond
      ((cljr--is-symbol? prepped-form)
       prepped-form)
@@ -3116,9 +3123,12 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
       (cljr--find-param-name-from-get-in prepped-form))
      ((string= "get" fn-call)
       (cljr--find-param-name-from-get prepped-form))
+     ((string= "repeat" fn-call)
+      (pluralize-string
+       (cljr--guess-param-name (cljr--last-arg-s prepped-form))))
      ((member fn-call cljr--fns-that-get-item-out-of-coll)
       (singularize-string
-       (cljr--guess-param-name (cljr--first-arg prepped-form)))))))
+       (cljr--guess-param-name (cljr--first-arg-s prepped-form)))))))
 
 (defvar cljr--fns-that-get-item-out-of-coll
   (list "first" "second" "last" "fnext" "nth" "rand-nth"))

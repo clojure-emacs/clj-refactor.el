@@ -333,6 +333,18 @@ Feature: Create Function from Example
     (do-stuff (first things) (second items) (last foos))
     """
 
+  Scenario: Guess at param name, plural when repeating
+    When I insert "(do-stuff (repeat 100 (:item stuff)))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [items]
+      )
+
+    (do-stuff (repeat 100 (:item stuff)))
+    """
+
   Scenario: Placeholders for args
     When I insert:
     """
