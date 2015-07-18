@@ -321,6 +321,18 @@ Feature: Create Function from Example
     (do-stuff (-> game (assoc-in [:foo] true) (update-in [:bar] inc)))
     """
 
+  Scenario: Guess at param name, singular when picking things out of colls
+    When I insert "(do-stuff (first things) (second items) (last foos))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [thing item foo]
+      )
+
+    (do-stuff (first things) (second items) (last foos))
+    """
+
   Scenario: Placeholders for args
     When I insert:
     """

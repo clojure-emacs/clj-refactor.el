@@ -3075,9 +3075,11 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
       (cljr--extract-sexp-as-list))))
 
 (defun cljr--unwind-s (s)
-  (cljr--with-string-content s
-    (cljr-unwind-all)
-    (buffer-substring (point-min) (point-max))))
+  (if (s-starts-with? "(->" s)
+      (cljr--with-string-content s
+        (cljr-unwind-all)
+        (buffer-substring (point-min) (point-max)))
+    s))
 
 (defun cljr--is-keyword? (s)
   (s-matches? "^:[^0-9:[{(\"][^[{(\"]*$" s))
@@ -3088,21 +3090,38 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr--keyword-lookup? (s)
   (string-match "^(:\\([^ 0-9:[{(\"][^[{(\"]+\\) " s))
 
+(defun cljr--first-fn-call (s)
+  (cljr--with-string-content s
+    (when (looking-at "(")
+      (paredit-forward-down)
+      (cljr--extract-sexp))))
+
+(defun cljr--first-arg (s)
+  (cljr--with-string-content s
+    (paredit-forward-down)
+    (paredit-forward)
+    (skip-syntax-forward " >")
+    (cljr--extract-sexp)))
+
 (defun cljr--guess-param-name (form)
-  (let ((prepped-form
-         (cljr--strip-off-semantic-noops
-          (if (s-starts-with? "(->" form)
-              (cljr--unwind-s form)
-            form))))
+  (let* ((prepped-form (cljr--strip-off-semantic-noops
+                        (cljr--unwind-s form)))
+         (fn-call (cljr--first-fn-call prepped-form)))
     (cond
      ((cljr--is-symbol? prepped-form)
       prepped-form)
      ((cljr--keyword-lookup? prepped-form)
       (match-string 1 prepped-form))
-     ((s-starts-with? "(get-in " prepped-form)
+     ((string= "get-in" fn-call)
       (cljr--find-param-name-from-get-in prepped-form))
-     ((s-starts-with? "(get " prepped-form)
-      (cljr--find-param-name-from-get prepped-form)))))
+     ((string= "get" fn-call)
+      (cljr--find-param-name-from-get prepped-form))
+     ((member fn-call cljr--fns-that-get-item-out-of-coll)
+      (singularize-string
+       (cljr--guess-param-name (cljr--first-arg prepped-form)))))))
+
+(defvar cljr--fns-that-get-item-out-of-coll
+  (list "first" "second" "last" "fnext" "nth" "rand-nth"))
 
 (defun cljr--strip-off-semantic-noops (form)
   "The idea here is that each of these functions, when called on
@@ -3130,8 +3149,8 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 
 (defvar cljr--semantic-noops--first-position
   (list "assoc" "assoc-in" "update-in" "dissoc" "conj" "concat" "cycle"
-        "rest" "nthrest" "next" "nnext" "butlast" "reverse" "vec" "set"
-        "distinct"))
+        "rest" "nthrest" "nthnext" "next" "nnext" "butlast" "reverse"
+        "vec" "set" "distinct"))
 
 (defvar cljr--semantic-noops--last-position
   (list "filter" "filterv" "remove" "take-nth" "cons" "drop" "drop-while"
