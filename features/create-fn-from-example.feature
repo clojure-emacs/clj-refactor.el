@@ -237,6 +237,18 @@ Feature: Create Function from Example
     (reduce my-fold {} items)
     """
 
+  Scenario: Create function from example, naked fn in threading
+    When I insert "(-> game do-stuff)"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [game]
+      )
+
+    (-> game do-stuff)
+    """
+
   Scenario: Guess at param name, keyword
     When I insert "(do-stuff (:foo x) (:bar x))"
     And I place the cursor after "do"

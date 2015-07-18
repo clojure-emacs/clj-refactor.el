@@ -2952,10 +2952,20 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                         (paredit-backward-up 2)
                         (forward-char)
                         (cljr--extract-sexp))))
-         (sexp-forms (if (or (string= parent-fn "->")
-                             (string= parent-fn "->>"))
-                         (cljr--unwind-parent-and-extract-this-as-list example-name)
-                       sexp-forms*)))
+         (sexp-forms (cond
+                      ((or (string= parent-fn "->")
+                           (string= parent-fn "->>"))
+                       (progn
+                         (paredit-backward-up)
+                         (cljr--unwind-and-extract-this-as-list example-name)))
+
+                      ((or (string= example-name "->")
+                           (string= example-name "->>"))
+                       (progn
+                         (setq example-name (cljr--find-symbol-at-point))
+                         (cljr--unwind-and-extract-this-as-list example-name)))
+
+                      (:else sexp-forms*))))
     (cond ((string= example-name "update-in")
            (cljr--create-fn-from-update-in))
 
@@ -3044,9 +3054,9 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
          (-when-let (name (cljr--form-to-param-name (-last-item sexp-forms)))
            (singularize-string name)))))
 
-(defun cljr--unwind-parent-and-extract-this-as-list (name)
-  (let* ((parent-sexp (save-excursion
-                        (paredit-backward-up 2)
+(defun cljr--unwind-and-extract-this-as-list (name)
+  (let* ((parent-sexp (progn
+                        (paredit-backward-up)
                         (cljr--extract-sexp)))
          (unwound (cljr--unwind-s parent-sexp)))
     (cljr--with-string-content unwound
