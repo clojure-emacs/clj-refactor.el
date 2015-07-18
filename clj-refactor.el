@@ -3090,7 +3090,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 
 (defun cljr--guess-param-name (form)
   (let ((prepped-form
-         (cljr--strip-off-assocs
+         (cljr--strip-off-semantic-noops
           (if (s-starts-with? "(->" form)
               (cljr--unwind-s form)
             form))))
@@ -3104,16 +3104,38 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
      ((s-starts-with? "(get " prepped-form)
       (cljr--find-param-name-from-get prepped-form)))))
 
-(defun cljr--strip-off-assocs (form)
+(defun cljr--strip-off-semantic-noops (form)
+  "The idea here is that each of these functions, when called on
+   something, doesn't truly change what that something is - so we
+   can ignore them when trying to figure out a name for a parameter."
   (cljr--with-string-content form
-    (while (or (looking-at "(assoc\\b")
-               (looking-at "(assoc-in\\b")
-               (looking-at "(update-in\\b")
-               (looking-at "(dissoc\\b"))
-      (paredit-forward-down)
-      (paredit-forward)
-      (skip-syntax-forward " >"))
+    (let* ((fn-at-point (lambda ()
+                          (ignore-errors
+                            (save-excursion
+                              (paredit-forward-down)
+                              (cljr--extract-sexp)))))
+           (fn (funcall fn-at-point)))
+      (while (or (member fn cljr--semantic-noops--first-position)
+                 (member fn cljr--semantic-noops--last-position))
+        (if (member fn cljr--semantic-noops--first-position)
+            (progn
+              (paredit-forward-down)
+              (paredit-forward)
+              (skip-syntax-forward " >"))
+          (paredit-forward)
+          (paredit-backward-down)
+          (paredit-backward))
+        (setq fn (funcall fn-at-point))))
     (cljr--extract-sexp)))
+
+(defvar cljr--semantic-noops--first-position
+  (list "assoc" "assoc-in" "update-in" "dissoc" "conj" "concat" "cycle"
+        "rest" "nthrest" "next" "nnext" "butlast" "reverse" "vec" "set"
+        "distinct"))
+
+(defvar cljr--semantic-noops--last-position
+  (list "filter" "filterv" "remove" "take-nth" "cons" "drop" "drop-while"
+        "take-last" "take" "take-while" "drop-last" "sort" "sort-by"))
 
 (defun cljr--find-param-name-from-get-in (form)
   (let ((last-path-entry (cljr--with-string-content form
