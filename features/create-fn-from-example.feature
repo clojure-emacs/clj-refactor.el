@@ -345,6 +345,29 @@ Feature: Create Function from Example
     (do-stuff (repeat 100 (:item stuff)))
     """
 
+  Scenario: Guess at param name, don't get confused by multiline stuff
+    When I insert:
+    """
+    (do-stuff (first (keep-indexed (fn [index tile]
+                          (when (and (= face (:face tile))
+                                     (not (:revealed? tile)))
+                            index))
+                        (:tiles game))))
+    """
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [arg0]
+      )
+
+    (do-stuff (first (keep-indexed (fn [index tile]
+                          (when (and (= face (:face tile))
+                                     (not (:revealed? tile)))
+                            index))
+                        (:tiles game))))
+    """
+
   Scenario: Placeholders for args
     When I insert:
     """

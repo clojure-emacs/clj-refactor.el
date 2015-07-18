@@ -3082,10 +3082,12 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     s))
 
 (defun cljr--is-keyword? (s)
-  (s-matches? "^:[^0-9:[{(\"][^[{(\"]*$" s))
+  (s-matches? "^:[^0-9:[{(\"][^[{(\"]*$"
+              (s-replace "\n" " " s)))
 
 (defun cljr--is-symbol? (s)
-  (s-matches? "^[^0-9:[{(\"][^[{(\"]*$" s))
+  (s-matches? "^[^0-9:[{(\"][^[{(\"]*$"
+              (s-replace "\n" " " s)))
 
 (defun cljr--keyword-lookup? (s)
   (string-match "^(:\\([^ 0-9:[{(\"][^[{(\"]+\\) " s))
