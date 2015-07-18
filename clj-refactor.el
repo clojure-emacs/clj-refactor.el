@@ -2184,7 +2184,11 @@ Signal an error if it is not supported."
 
 (defun cljr--promote-fn ()
   (save-excursion
-    (let* ((fn (cljr--extract-sexp))
+    (let* ((locals (save-excursion (paredit-forward-down)
+                                   (cljr--call-middleware-to-find-unbound-vars
+                                    (buffer-file-name) (line-number-at-pos)
+                                    (1+ (current-column)))))
+           (fn (cljr--extract-sexp))
            (namedp (cljr--extract-anon-fn-name fn))
            (name (or namedp
                      (unless (cljr--use-multiple-cursors?)
@@ -2214,10 +2218,17 @@ Signal an error if it is not supported."
               (insert name)
             (mc/create-fake-cursor-at-point)))
         (re-search-forward "\\[")
+        (when (s-present? locals)
+          (insert locals)
+          (unless (looking-at-p "\\]")
+            (insert " ")))
         (paredit-forward-up)
         (unless (looking-at "\s*?$")
           (newline))
         (indent-region fn-start (cljr--point-after 'paredit-forward-up)))
+      (when (s-present? locals)
+        (insert (format "(partial  %s)" locals))
+        (backward-char (length (concat " " locals ")"))))
       (if name
           (insert name)
         (mc/maybe-multiple-cursors-mode)))))

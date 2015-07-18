@@ -226,3 +226,13 @@
 :match \"(map my-inc (range 10))\"})}")))
            (cljr--inline-symbol "fake-ns" (gethash :definition response)
                                 (gethash :occurrences response)))))
+
+(And "I mock out the call to the middleware to find locals$"
+     (lambda ()
+       (defun cljr--call-middleware-to-find-unbound-vars (file line column)
+         "")))
+
+(And "The middleware is mocked to return foo bar as locals$"
+     (lambda ()
+       (defun cljr--call-middleware-to-find-unbound-vars (file line column)
+         "foo bar")))
