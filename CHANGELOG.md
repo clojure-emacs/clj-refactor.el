@@ -1,7 +1,7 @@
 # Changelog
 
 ## Up next
-
+- Add `cljr-change-function-signature` to re-order or re-name function parameters.
 - Keep pressing `l` after `cljr-expand-let` to expand further.
 
 ## 1.1.0
