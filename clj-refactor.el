@@ -2974,13 +2974,13 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
          (sexp-forms (cond
                       ((or (string= parent-fn "->")
                            (string= parent-fn "->>"))
-                       (progn
+                       (save-excursion
                          (paredit-backward-up)
                          (cljr--unwind-and-extract-this-as-list example-name)))
 
                       ((or (string= example-name "->")
                            (string= example-name "->>"))
-                       (progn
+                       (save-excursion
                          (setq example-name (cljr--find-symbol-at-point))
                          (cljr--unwind-and-extract-this-as-list example-name)))
 

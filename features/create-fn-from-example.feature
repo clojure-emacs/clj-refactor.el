@@ -141,6 +141,18 @@ Feature: Create Function from Example
     (update-in foo [:bar :baz] do-stuff)
     """
 
+  Scenario: Create function from example, update-in + threading
+    When I insert "(-> foo (update-in [:bar :baz] do-stuff))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [baz]
+      )
+
+    (-> foo (update-in [:bar :baz] do-stuff))
+    """
+
   Scenario: Create function from example, map
     When I insert "(map do-stuff items (:oxen bar))"
     And I place the cursor after "do"
