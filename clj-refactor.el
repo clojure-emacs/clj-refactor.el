@@ -622,10 +622,10 @@ to us to make sure it's nicely indented."
          ((= changed-files-count 1) (message "Renamed %s to %s." old-path new-path))
          (t (message "Rename complete! %s files affected." changed-files-count)))
         (when (> changed-files-count 0)
-          (cljr--warm-ast-cache))))
-    (when (string= buffer-file old-path)
-      (kill-buffer)
-      (find-file new-path))))
+          (cljr--warm-ast-cache)))
+      (when (string= buffer-file old-path)
+        (kill-buffer)
+        (find-file new-path)))))
 
 ;; ------ ns statements -----------
 
