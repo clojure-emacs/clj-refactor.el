@@ -603,11 +603,18 @@ to us to make sure it's nicely indented."
           (save-buffer))))))
 
 ;;;###autoload
-(defun cljr-rename-file-or-dir (old-path)
+(defun cljr-rename-file-or-dir (old-path new-path)
   "Rename a file or directory of files."
-  (interactive "fOld path: ")
-  (let* ((new-path (read-from-minibuffer "New path: " old-path))
-         (buffer-file (buffer-file-name))
+  (interactive
+   (let ((old (read-file-name "Old path: " nil nil 'mustmatch "")))
+     (list old
+           (if (file-directory-p old)
+               (read-directory-name "New path: " old)
+             (read-file-name "New path: "
+                             (file-name-directory old)
+                             nil nil
+                             (file-name-nondirectory old))))))
+  (let* ((buffer-file (buffer-file-name))
          (old-path (expand-file-name old-path))
          (new-path (expand-file-name new-path)))
     (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
@@ -622,10 +629,10 @@ to us to make sure it's nicely indented."
          ((= changed-files-count 1) (message "Renamed %s to %s." old-path new-path))
          (t (message "Rename complete! %s files affected." changed-files-count)))
         (when (> changed-files-count 0)
-          (cljr--warm-ast-cache))))
-    (when (string= buffer-file old-path)
-      (kill-buffer)
-      (find-file new-path))))
+          (cljr--warm-ast-cache)))
+      (when (string= buffer-file old-path)
+        (kill-buffer)
+        (find-file new-path)))))
 
 ;; ------ ns statements -----------
 
