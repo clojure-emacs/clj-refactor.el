@@ -269,6 +269,7 @@ with the middleware."
     ("cs" . (cljr-change-function-signature "Change function signature"))
     ("ct" . (cljr-cycle-thread "Cycle thread"))
     ("dk" . (cljr-destructure-keys "Destructure keys"))
+    ("ec" . (cljr-extract-constant "Extract constant"))
     ("ef" . (cljr-extract-function "Extract function"))
     ("el" . (cljr-expand-let "Expand let"))
     ("fe" . (cljr-create-fn-from-example "Create function from example"))
@@ -1321,6 +1322,28 @@ optionally including those that are declared private."
             (message "%s is already declared" def)
           (cljr--add-declaration def))
       (message "Not inside a def form."))))
+
+;; ------ extract constant ----------------
+
+;;;###autoload
+(defun cljr-extract-constant ()
+  (interactive)
+  (let ((name (let ((highlight (cljr--highlight-sexp)))
+                (unwind-protect
+                    (cljr--prompt-user-for "Name: ")
+                  (delete-overlay highlight))))
+        (body (cljr--delete-and-extract-sexp))
+        const-pos)
+    (save-excursion
+      (cljr--goto-ns)
+      (paredit-forward)
+      (insert "\n\n(def ")
+      (insert name)
+      (insert " " body ")")
+      (setq const-pos (point)))
+    (insert name)
+    (save-excursion
+      (query-replace body name nil const-pos (point-max)))))
 
 ;; ------ threading and unwinding -----------
 
