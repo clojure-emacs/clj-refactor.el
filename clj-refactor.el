@@ -2990,6 +2990,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   (interactive)
   (let* ((sexp-forms* (cljr--extract-sexp-as-list))
          (example-name (car sexp-forms*))
+         (symbol-at-point (cljr--find-symbol-at-point))
          (parent-fn (ignore-errors
                       (save-excursion
                         (paredit-backward-up 2)
@@ -3005,11 +3006,11 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                       ((or (string= example-name "->")
                            (string= example-name "->>"))
                        (save-excursion
-                         (setq example-name (cljr--find-symbol-at-point))
+                         (setq example-name symbol-at-point)
                          (cljr--unwind-and-extract-this-as-list example-name)))
 
                       (:else sexp-forms*))))
-    (if (cljr--is-symbol? (cljr--find-symbol-at-point))
+    (if (cljr--is-symbol? symbol-at-point)
         (cond ((string= example-name "update-in")
                (cljr--create-fn-from-update-in))
 
@@ -3023,13 +3024,17 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                (cljr--create-fn-from-reduce sexp-forms))
 
               ((string= example-name "repeatedly")
-               (cljr--insert-example-fn (cljr--find-symbol-at-point) nil))
+               (cljr--insert-example-fn symbol-at-point nil))
 
               ((member example-name cljr--list-fold-function-names)
                (cljr--create-fn-from-list-fold sexp-forms))
 
               ((member example-name cljr--list-fold-function-names-with-index)
                (cljr--create-fn-from-list-fold-with-index sexp-forms))
+
+              ((and (featurep 'cider) (cider-connected-p)
+                    (cider-var-info example-name :all))
+               (cljr--insert-example-fn symbol-at-point (list "args")))
 
               (:else
                (cljr--insert-example-fn example-name (cdr sexp-forms))))
