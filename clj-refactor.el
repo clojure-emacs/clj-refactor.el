@@ -3009,29 +3009,31 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                          (cljr--unwind-and-extract-this-as-list example-name)))
 
                       (:else sexp-forms*))))
-    (cond ((string= example-name "update-in")
-           (cljr--create-fn-from-update-in))
+    (if (cljr--is-symbol? (cljr--find-symbol-at-point))
+        (cond ((string= example-name "update-in")
+               (cljr--create-fn-from-update-in))
 
-          ((string= example-name "sort-by")
-           (cljr--create-fn-from-sort-by sexp-forms))
+              ((string= example-name "sort-by")
+               (cljr--create-fn-from-sort-by sexp-forms))
 
-          ((string= example-name "sort")
-           (cljr--create-fn-from-sort sexp-forms))
+              ((string= example-name "sort")
+               (cljr--create-fn-from-sort sexp-forms))
 
-          ((string= example-name "reduce")
-           (cljr--create-fn-from-reduce sexp-forms))
+              ((string= example-name "reduce")
+               (cljr--create-fn-from-reduce sexp-forms))
 
-          ((string= example-name "repeatedly")
-           (cljr--insert-example-fn (cljr--find-symbol-at-point) nil))
+              ((string= example-name "repeatedly")
+               (cljr--insert-example-fn (cljr--find-symbol-at-point) nil))
 
-          ((member example-name cljr--list-fold-function-names)
-           (cljr--create-fn-from-list-fold sexp-forms))
+              ((member example-name cljr--list-fold-function-names)
+               (cljr--create-fn-from-list-fold sexp-forms))
 
-          ((member example-name cljr--list-fold-function-names-with-index)
-           (cljr--create-fn-from-list-fold-with-index sexp-forms))
+              ((member example-name cljr--list-fold-function-names-with-index)
+               (cljr--create-fn-from-list-fold-with-index sexp-forms))
 
-          (:else
-           (cljr--insert-example-fn example-name (cdr sexp-forms))))))
+              (:else
+               (cljr--insert-example-fn example-name (cdr sexp-forms))))
+      (cljr--insert-example-fn example-name (cdr sexp-forms)))))
 
 (defvar cljr--list-fold-function-names
   '("map" "pmap" "keep" "mapcat" "filter" "remove" "take-while" "drop-while"

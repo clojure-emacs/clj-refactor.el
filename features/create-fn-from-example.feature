@@ -165,6 +165,18 @@ Feature: Create Function from Example
     (map do-stuff items (:oxen bar))
     """
 
+  Scenario: Create function from example, invalid fn name
+    When I insert "(map :key items)"
+    And I place the cursor after "key"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- map [arg0 items]
+      )
+
+    (map :key items)
+    """
+
   Scenario: Create function from example, sort-by keyfn
     When I insert "(sort-by my-keyfn comp items)"
     And I place the cursor after "my"
