@@ -1578,6 +1578,7 @@ Return nil if there are no more levels to unwind."
 ;;;###autoload
 (defun cljr-expand-let ()
   (interactive)
+  (multiple-cursors-mode 0)
   (cljr--goto-let)
   (paredit-forward-down 2)
   (paredit-forward-up)
