@@ -3020,6 +3020,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                          (cljr--unwind-and-extract-this-as-list example-name)))
 
                       (:else sexp-forms*))))
+    (push-mark)
     (if (cljr--is-symbol? symbol-at-point)
         (cond ((string= example-name "update-in")
                (cljr--create-fn-from-update-in))
