@@ -168,8 +168,13 @@ with the middleware."
 
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
-(defvar cljr--add-require-snippet "${1:[${2:$3 :as $4}]}"
+(defvar cljr--add-require-snippet
+  "${1:[${2:${3:} :as ${4:${3:$(cljr--ns-name yas-text)}}}]}"
   "The snippet used in in `cljr-add-require-to-ns'")
+
+(defun cljr--ns-name (ns)
+  "Return the last name in a full NS."
+  (replace-regexp-in-string ".*\\." "" ns))
 
 (defvar cljr--add-use-snippet "[$1 :refer ${2:[$3]}]"
   "The snippet used in in `cljr-add-use-to-ns'")
