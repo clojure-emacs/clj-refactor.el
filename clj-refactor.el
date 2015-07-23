@@ -603,6 +603,30 @@ to us to make sure it's nicely indented."
           (indent-region (point-min) (cljr--point-after 'paredit-forward))
           (save-buffer))))))
 
+(defun cljr--buffers-visiting-dir (dir)
+  (-filter (lambda (buf)
+             (-when-let (path (buffer-file-name buf))
+               (s-starts-with? dir path :ignore-case)))
+           (buffer-list)))
+
+(defun cljr--revisit-buffers (buffers new-dir active)
+  "After moving a directory revisit all files visited by BUFFERS
+  by looking them up in NEW-DIR.
+
+ACTIVE is the buffer the user was looking at when the command was
+issued, and should be left focused."
+  (let ((files (directory-files new-dir))
+        (new-dir (if (s-ends-with? "/" new-dir) new-dir (format "%s/" new-dir)))
+        (same-file (lambda (buf f)
+                     (when (string= (file-name-nondirectory f)
+                                    (file-name-nondirectory (buffer-file-name buf)))
+                       f))))
+    (dolist (buf buffers)
+      (find-file
+       (format "%s%s" new-dir (-some (-partial same-file buf) files)))
+      (kill-buffer buf))
+    (find-file (format "%s/%s" new-dir (-some (-partial same-file active) files)))))
+
 ;;;###autoload
 (defun cljr-rename-file-or-dir (old-path new-path)
   "Rename a file or directory of files."
@@ -615,7 +639,9 @@ to us to make sure it's nicely indented."
                              (file-name-directory old)
                              nil nil
                              (file-name-nondirectory old))))))
-  (let* ((buffer-file (buffer-file-name))
+  (let* ((active-buffer (current-buffer))
+         (affected-buffers (when (file-directory-p old-path)
+                             (cljr--buffers-visiting-dir old-path)))
          (old-path (expand-file-name old-path))
          (new-path (expand-file-name new-path)))
     (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
@@ -631,8 +657,9 @@ to us to make sure it's nicely indented."
          (t (message "Rename complete! %s files affected." changed-files-count)))
         (when (> changed-files-count 0)
           (cljr--warm-ast-cache)))
-      (when (string= buffer-file old-path)
-        (kill-buffer)
+      (if affected-buffers
+          (cljr--revisit-buffers affected-buffers new-path active-buffer)
+        (kill-buffer active-buffer)
         (find-file new-path)))))
 
 ;; ------ ns statements -----------
