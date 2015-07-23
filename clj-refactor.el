@@ -2297,7 +2297,17 @@ Signal an error if it is not supported."
 (defun cljr-promote-function (promote-to-defn)
   (interactive "P")
   (save-excursion
-    (cljr--goto-fn-definition)
+    (cond
+     ;; Already in the right place.
+     ((or (looking-at-p "#(")
+          (looking-at-p "(fn")))
+     ;; Right after the #.
+     ((and (eq (char-after) ?\()
+           (eq (char-before) ?#))
+      (forward-char -1))
+     ;; Possibly inside a function.
+     (t (cljr--goto-fn-definition)))
+    ;; Now promote it.
     (if (looking-at "#(")
         (cljr--promote-function-literal)
       (cljr--promote-fn)))
