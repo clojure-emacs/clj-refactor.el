@@ -2761,9 +2761,13 @@ Defaults to the dependency vector at point, but prompts if none is found."
   (interactive)
   (cljr--assert-middleware)
   (save-buffer)
+  (cljr--goto-enclosing-sexp)
   (let* ((unbound (cljr--call-middleware-to-find-unbound-vars
-                   (buffer-file-name) (line-number-at-pos) (1+ (current-column))))
-         (_ (cljr--goto-enclosing-sexp))
+                   (buffer-file-name) (line-number-at-pos)
+                   ;; +1 because the middleware expects indexing from 1
+                   ;; +1 more because point has to be inside the sexp,
+                   ;; not on the opening paren
+                   (+ (current-column) 2)))
          (name (unless (cljr--use-multiple-cursors?)
                  (let ((highlight (cljr--highlight-sexp)))
                    (unwind-protect
