@@ -20,8 +20,8 @@ Feature: Add to namespace
     Then I should see:
     """
     (ns cljr.core
-      (:require [clojure.strings :as s]
-                [clj-time.core :refer :all]))
+      (:require [clj-time.core :refer :all]
+                [clojure.strings :as s]))
     """
 
   Scenario: Add use to namespace
