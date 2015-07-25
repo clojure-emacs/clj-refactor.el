@@ -478,7 +478,9 @@ list of (fn args) to pass to `apply''"
   (insert form))
 
 (defun cljr-show-changelog ()
-  "Show the changelog for `clj-refactor'."
+  "Show the changelog for `clj-refactor'.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-show-changelog"
   (interactive)
   (let* ((cljr (cadr (assoc 'clj-refactor package-alist)))
          (dir (package-desc-dir cljr)))
@@ -658,7 +660,9 @@ issued, and should be left focused."
 (defun cljr-rename-file-or-dir (old-path new-path)
   "Rename a file or directory of files.
 Buffers visiting any affected file are killed and the
-corresponding files are revisited."
+corresponding files are revisited.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-dir"
   (interactive
    (let ((old (read-file-name "Old path: " nil nil 'mustmatch "")))
      (list old
@@ -850,7 +854,9 @@ word test in it and whether the file lives under the test/ directory."
 
 ;;;###autoload
 (defun cljr-sort-ns ()
-  "Sort the `ns' form according to `cljr-sort-comparator'."
+  "Sort the `ns' form according to `cljr-sort-comparator'.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-ns"
   (interactive)
   (save-excursion
     (let ((comparator (cljr-create-comparator cljr-sort-comparator)))
@@ -885,7 +891,9 @@ word test in it and whether the file lives under the test/ directory."
 
 (defun cljr-remove-debug-fns ()
   "Remove from current buffer all calls to debugging functions.
-These are functions listed in `cljr-debug-functions'."
+These are functions listed in `cljr-debug-functions'.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-debug-fns"
   (interactive)
   (cljr--assert-middleware)
   (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
@@ -1002,7 +1010,9 @@ These are functions listed in `cljr-debug-functions'."
 
 ;;;###autoload
 (defun cljr-remove-unused-requires ()
-  "Remove from the ns form any requires not being used."
+  "Remove from the ns form any requires not being used.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-unused-requires"
   (interactive)
   (save-excursion
     (let (req-exists)
@@ -1041,7 +1051,9 @@ These are functions listed in `cljr-debug-functions'."
 
 ;;;###autoload
 (defun cljr-add-require-to-ns ()
-  "Add a require statement to the ns form in current buffer."
+  "Add a require statement to the ns form in current buffer.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-require-to-ns"
   (interactive)
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require")
@@ -1052,7 +1064,9 @@ These are functions listed in `cljr-debug-functions'."
 
 ;;;###autoload
 (defun cljr-add-use-to-ns ()
-  "Add a use statement to the buffer's ns form."
+  "Add a use statement to the buffer's ns form.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-use-to-ns"
   (interactive)
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require")
@@ -1063,7 +1077,9 @@ These are functions listed in `cljr-debug-functions'."
 
 ;;;###autoload
 (defun cljr-add-import-to-ns ()
-  "Add an import statement to the buffer's ns form."
+  "Add an import statement to the buffer's ns form.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-import-to-ns"
   (interactive)
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":import")
@@ -1131,7 +1147,9 @@ returns (used.ns.lib1 used.ns.lib2)"
 (defun cljr-replace-use ()
   "Replace any :use clause with the equivalent :require clause.
 
-Presently, there's no support for :use clauses containing :exclude."
+Presently, there's no support for :use clauses containing :exclude.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-replace-use"
   (interactive)
   (save-excursion
     (dolist (used-ns (cljr--extract-used-namespaces))
@@ -1162,7 +1180,9 @@ Presently, there's no support for :use clauses containing :exclude."
 
 ;;;###autoload
 (defun cljr-stop-referring ()
-  "Stop referring to vars in the namespace at point."
+  "Stop referring to vars in the namespace at point.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
   (interactive)
   (save-excursion
     (paredit-backward-up)
@@ -1226,7 +1246,9 @@ Presently, there's no support for :use clauses containing :exclude."
 (defun cljr-move-form ()
   "Move the form containing POINT to a new namespace.
 
-If REGION is active, move all forms contained by region. "
+If REGION is active, move all forms contained by region. 
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
   (interactive)
   (let* ((forms (if (region-active-p)
                     (let ((beg (region-beginning))
@@ -1383,7 +1405,9 @@ optionally including those that are declared private."
 
 ;;;###autoload
 (defun cljr-add-declaration ()
-  "Add a declare for the current def near the top of the buffer."
+  "Add a declare for the current def near the top of the buffer.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-declaration"
   (interactive)
   (save-excursion
     (-if-let (def (cljr--name-of-current-def))
@@ -1398,7 +1422,9 @@ optionally including those that are declared private."
 (defun cljr-extract-constant ()
   "Extract form at (or above) point as a constant.
 Create a def for it at the top level, and replace its current
-occurrence with the defined name."
+occurrence with the defined name.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-constant"
   (interactive)
   (let ((name (let ((highlight (cljr--highlight-sexp)))
                 (unwind-protect
@@ -1478,7 +1504,9 @@ occurrence with the defined name."
 ;;;###autoload
 (defun cljr-cycle-thread ()
   "Cycle a threading macro between -> and ->>.
-Also applies to other versions of the macros, like cond->."
+Also applies to other versions of the macros, like cond->.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-cycle-thread"
   (interactive)
   (save-excursion
     (cljr--goto-thread)
@@ -1499,7 +1527,9 @@ Also applies to other versions of the macros, like cond->."
 ;;;###autoload
 (defun cljr-unwind ()
   "Unwind thread at point or above point by one level.
-Return nil if there are no more levels to unwind."
+Return nil if there are no more levels to unwind.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-unwind"
   (interactive)
   (ignore-errors
     (forward-char 3))
@@ -1515,7 +1545,9 @@ Return nil if there are no more levels to unwind."
 
 ;;;###autoload
 (defun cljr-unwind-all ()
-  "Fully unwind thread at point or above point."
+  "Fully unwind thread at point or above point.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-unwind-all"
   (interactive)
   (while (cljr-unwind)
     t))
@@ -1571,7 +1603,9 @@ Return nil if there are no more levels to unwind."
 
 ;;;###autoload
 (defun cljr-thread ()
-  "Thread by one more level an existing threading macro."
+  "Thread by one more level an existing threading macro.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-thread"
   (interactive)
   (when (looking-at "(?[^-]*-?>")
     (goto-char (match-end 0)))
@@ -1585,7 +1619,9 @@ Return nil if there are no more levels to unwind."
 
 ;;;###autoload
 (defun cljr-thread-first-all ()
-  "Fully thread the form at point using ->."
+  "Fully thread the form at point using ->.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-thread-first-all"
   (interactive)
   (save-excursion
     (paredit-wrap-round)
@@ -1595,7 +1631,9 @@ Return nil if there are no more levels to unwind."
 
 ;;;###autoload
 (defun cljr-thread-last-all ()
-  "Fully thread the form at point using ->>."
+  "Fully thread the form at point using ->>.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-thread-last-all"
   (interactive)
   (save-excursion
     (paredit-wrap-round)
@@ -1608,7 +1646,9 @@ Return nil if there are no more levels to unwind."
 ;;;###autoload
 (defun cljr-introduce-let ()
   "Create a let form, binding the form at point.
-The resulting let form can then be expanded with `\\[cljr-expand-let]'."
+The resulting let form can then be expanded with `\\[cljr-expand-let]'.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-introduce-let"
   (interactive)
   (paredit-wrap-round)
   (insert "let ")
@@ -1680,7 +1720,9 @@ The resulting let form can then be expanded with `\\[cljr-expand-let]'."
 
 ;;;###autoload
 (defun cljr-expand-let ()
-  "Expand the let form above point by one level."
+  "Expand the let form above point by one level.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-expand-let"
   (interactive)
   (multiple-cursors-mode 0)
   (cljr--goto-let)
@@ -1697,7 +1739,9 @@ The resulting let form can then be expanded with `\\[cljr-expand-let]'."
 
 ;;;###autoload
 (defun cljr-move-to-let ()
-  "Move the form at point to a binding in the nearest let."
+  "Move the form at point to a binding in the nearest let.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-to-let"
   (interactive)
   (if (not (save-excursion (cljr--goto-let)))
       (cljr-introduce-let)
@@ -1769,7 +1813,9 @@ This function only does the actual removal."
   (paredit-splice-sexp-killing-backward))
 
 (defun cljr-remove-let ()
-  "Inlines all variables in the let form and removes it."
+  "Inlines all variables in the let form and removes it.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-let"
   (interactive)
   (save-excursion
     (let ((*cljr--noninteractive* t)) ; make `cljr-inline-symbol' be quiet
@@ -1794,7 +1840,9 @@ This function only does the actual removal."
 (defun cljr-destructure-keys ()
   "Change a symbol binding at point to a destructuring bind.
 Keys to use in the destructuring are inferred from the code, and
-their usage is replaced with the new local variables."
+their usage is replaced with the new local variables.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-destructure-keys"
   (interactive)
   (save-excursion
     (paredit-backward-up)
@@ -1833,7 +1881,9 @@ their usage is replaced with the new local variables."
 
 ;;;###autoload
 (defun cljr-cycle-privacy ()
-  "Make public the current private def, or vice-versa."
+  "Make public the current private def, or vice-versa.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-cycle-privacy"
   (interactive)
   (save-excursion
     (ignore-errors (forward-char 7))
@@ -1864,7 +1914,9 @@ their usage is replaced with the new local variables."
 
 ;;;###autoload
 (defun cljr-cycle-coll ()
-  "Convert the coll at (point) from (x) -> {x} -> [x] -> -> #{x} -> (x) recur"
+  "Convert the coll at (point) from (x) -> {x} -> [x] -> -> #{x} -> (x) recur
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-cycle-coll"
   (interactive)
   (save-excursion
     (while (and
@@ -1903,7 +1955,9 @@ their usage is replaced with the new local variables."
 
 ;;;###autoload
 (defun cljr-cycle-if ()
-  "Change a surrounding if to if-not, or vice-versa."
+  "Change a surrounding if to if-not, or vice-versa.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-cycle-if"
   (interactive)
   (save-excursion
     (cljr--goto-if)
@@ -1994,7 +2048,9 @@ form."
 ;;;###autoload
 (defun cljr-project-clean ()
   "Run `cljr-project-clean-functions' on every clojure file, then
-sorts the project's dependency vectors."
+sorts the project's dependency vectors.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
   (interactive)
   (when (or (not cljr-project-clean-prompt)
             (yes-or-no-p "Cleaning your project might change many of your clj files. Do you want to proceed?"))
@@ -2104,7 +2160,9 @@ sorts the project's dependency vectors."
 
 ;;;###autoload
 (defun cljr-sort-project-dependencies ()
-  "Sorts all dependency vectors in project.clj"
+  "Sorts all dependency vectors in project.clj
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dependencies"
   (interactive)
   (cljr--assert-leiningen-project)
   (cljr--update-file (cljr--project-file)
@@ -2242,7 +2300,9 @@ Signal an error if it is not supported."
 
 ;;;###autoload
 (defun cljr-add-project-dependency (force)
-  "Add a dependency to the project.clj file."
+  "Add a dependency to the project.clj file.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-dependency"
   (interactive "P")
   (cljr--assert-leiningen-project)
   (cljr--ensure-op-supported "artifact-list")
@@ -2277,7 +2337,9 @@ Signal an error if it is not supported."
 
 ;;;###autoload
 (defun cljr-update-project-dependencies ()
-  "Update all project dependencies."
+  "Update all project dependencies.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-dependencies"
   (interactive)
   (cljr--assert-leiningen-project)
   (find-file (cljr--project-file))
@@ -2390,7 +2452,9 @@ Signal an error if it is not supported."
 (defun cljr-promote-function (promote-to-defn)
   "Promote a function literal to an fn, or an fn to a defn.
 With prefix PROMOTE-TO-DEFN, promote to a defn even if it is a
-function literal."
+function literal.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function"
   (interactive "P")
   (save-excursion
     (cond
@@ -2510,7 +2574,9 @@ root."
 
 ;;;###autoload
 (defun cljr-find-usages ()
-  "Find all usages of the symbol at point in the project."
+  "Find all usages of the symbol at point in the project.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
   (interactive)
   (cljr--assert-middleware)
   (save-buffer)
@@ -2549,7 +2615,9 @@ root."
 
 ;;;###autoload
 (defun cljr-rename-symbol (new-name)
-  "Rename the symbol at point and all of its occurrences."
+  "Rename the symbol at point and all of its occurrences.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
   (interactive
    (list (read-from-minibuffer "New name: "
                                (cljr--symbol-suffix (cider-symbol-at-point)))))
@@ -2600,7 +2668,9 @@ root."
 
 ;;;###autoload
 (defun cljr-clean-ns ()
-  "Clean the ns form for the current buffer."
+  "Clean the ns form for the current buffer.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   (interactive)
   (cljr--assert-leiningen-project)
   (cljr--assert-middleware)
@@ -2755,7 +2825,9 @@ itself might be `nil'."
   "Requires or imports the symbol at point.
 
 If the symbol at point is of the form str/join then the ns
-containing join will be aliased to str."
+containing join will be aliased to str.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libspec"
   (interactive)
   (cljr--assert-middleware)
   (let* ((symbol (cider-symbol-at-point))
@@ -2801,7 +2873,9 @@ containing join will be aliased to str."
 (defun cljr-hotload-dependency ()
   "Download a dependency (if needed) and hotload it into the current repl session.
 
-Defaults to the dependency vector at point, but prompts if none is found."
+Defaults to the dependency vector at point, but prompts if none is found.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependency"
   (interactive)
   (cljr--assert-middleware)
   (-> (or (cljr--dependency-vector-at-point)
@@ -2833,7 +2907,9 @@ Defaults to the dependency vector at point, but prompts if none is found."
 
 ;;;###autoload
 (defun cljr-extract-function ()
-  "Extract the form at (or above) point as a top-level defn."
+  "Extract the form at (or above) point as a top-level defn.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-function"
   (interactive)
   (cljr--assert-middleware)
   (save-buffer)
@@ -2887,7 +2963,9 @@ Defaults to the dependency vector at point, but prompts if none is found."
 
 ;;;###autoload
 (defun cljr-add-stubs ()
-  "Adds implementation stubs for the interface or protocol at point."
+  "Adds implementation stubs for the interface or protocol at point.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
   (interactive)
   (cljr--ensure-op-supported "stubs-for-interface")
   (let* ((interface (cider-symbol-at-point))
@@ -2992,7 +3070,9 @@ Defaults to the dependency vector at point, but prompts if none is found."
 
 ;;;###autoload
 (defun cljr-inline-symbol ()
-  "Inline the symbol at point."
+  "Inline the symbol at point.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
   (interactive)
   (cljr--ensure-op-supported "extract-definition")
   (save-buffer)
@@ -3111,7 +3191,9 @@ context.
 
 For instance, if the symbol is the first argument of a `map'
 call, the defn is created with one argument. If it is the first
-argument of a `reduce', the defn will take two arguments."
+argument of a `reduce', the defn will take two arguments.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-example"
   (interactive)
   (let* ((sexp-forms* (cljr--extract-sexp-as-list))
          (example-name (car sexp-forms*))
@@ -3804,7 +3886,9 @@ Point is assumed to be at the function being called."
 
 ;;;###autoload
 (defun cljr-change-function-signature ()
-  "Change the function signature of the function at POINT."
+  "Change the function signature of the function at POINT.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-signature"
   (interactive)
   (let* ((fn (cider-symbol-at-point))
          (params (cljr--get-function-params fn))
