@@ -3249,7 +3249,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
       (cljr--insert-example-fn example-name (cdr sexp-forms)))))
 
 (defvar cljr--list-fold-function-names
-  '("map" "pmap" "keep" "mapcat" "filter" "remove" "take-while" "drop-while"
+  '("map" "mapv" "pmap" "keep" "mapcat" "filter" "remove" "take-while" "drop-while"
     "group-by" "partition-by" "some" "every?" "not-every?" "not-any?"))
 
 (defvar cljr--list-fold-function-names-with-index
