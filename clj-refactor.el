@@ -566,7 +566,8 @@ at the opening parentheses of an anonymous function."
       (error "Can't find call to reify!"))))
 
 (defun cljr-reify-to-defrecord ()
-  "Replace a call to reify with a call to the constructor of newly created record."
+  "Replace a call to reify with a call to a new constructor.
+A new record is created to define this constructor."
   (interactive "")
   (cljr--goto-reify)
   (let ((record-name (cljr--prompt-user-for "Name of new record: "))
@@ -655,7 +656,9 @@ issued, and should be left focused."
 
 ;;;###autoload
 (defun cljr-rename-file-or-dir (old-path new-path)
-  "Rename a file or directory of files."
+  "Rename a file or directory of files.
+Buffers visiting any affected file are killed and the
+corresponding files are revisited."
   (interactive
    (let ((old (read-file-name "Old path: " nil nil 'mustmatch "")))
      (list old
@@ -847,6 +850,7 @@ word test in it and whether the file lives under the test/ directory."
 
 ;;;###autoload
 (defun cljr-sort-ns ()
+  "Sort the `ns' form according to `cljr-sort-comparator'."
   (interactive)
   (save-excursion
     (let ((comparator (cljr-create-comparator cljr-sort-comparator)))
@@ -880,6 +884,8 @@ word test in it and whether the file lives under the test/ directory."
     (when (re-search-forward (cljr--req-element-regexp e "[^[:word:]^-]") nil t) e)))
 
 (defun cljr-remove-debug-fns ()
+  "Remove from current buffer all calls to debugging functions.
+These are functions listed in `cljr-debug-functions'."
   (interactive)
   (cljr--assert-middleware)
   (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
@@ -894,7 +900,8 @@ word test in it and whether the file lives under the test/ directory."
       (let ((line (- (1- (car debug-fn-tuples)) removed-lines))
             (end-line (nth 1 debug-fn-tuples))
             (column (nth 2 debug-fn-tuples)))
-        (message "removing %s at line %s [%s] column %s (end-line %s end-column %s)" (-last-item debug-fn-tuples) line (car debug-fn-tuples) column end-line (nth 3 debug-fn-tuples))
+        (message "removing %s at line %s [%s] column %s (end-line %s end-column %s)"
+                 (-last-item debug-fn-tuples) line (car debug-fn-tuples) column end-line (nth 3 debug-fn-tuples))
         (save-excursion
           (goto-char (point-min))
           (forward-line line)
@@ -995,6 +1002,7 @@ word test in it and whether the file lives under the test/ directory."
 
 ;;;###autoload
 (defun cljr-remove-unused-requires ()
+  "Remove from the ns form any requires not being used."
   (interactive)
   (save-excursion
     (let (req-exists)
@@ -1033,6 +1041,7 @@ word test in it and whether the file lives under the test/ directory."
 
 ;;;###autoload
 (defun cljr-add-require-to-ns ()
+  "Add a require statement to the ns form in current buffer."
   (interactive)
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require")
@@ -1043,6 +1052,7 @@ word test in it and whether the file lives under the test/ directory."
 
 ;;;###autoload
 (defun cljr-add-use-to-ns ()
+  "Add a use statement to the buffer's ns form."
   (interactive)
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require")
@@ -1053,6 +1063,7 @@ word test in it and whether the file lives under the test/ directory."
 
 ;;;###autoload
 (defun cljr-add-import-to-ns ()
+  "Add an import statement to the buffer's ns form."
   (interactive)
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":import")
@@ -1151,6 +1162,7 @@ Presently, there's no support for :use clauses containing :exclude."
 
 ;;;###autoload
 (defun cljr-stop-referring ()
+  "Stop referring to vars in the namespace at point."
   (interactive)
   (save-excursion
     (paredit-backward-up)
@@ -1371,6 +1383,7 @@ optionally including those that are declared private."
 
 ;;;###autoload
 (defun cljr-add-declaration ()
+  "Add a declare for the current def near the top of the buffer."
   (interactive)
   (save-excursion
     (-if-let (def (cljr--name-of-current-def))
@@ -1383,6 +1396,9 @@ optionally including those that are declared private."
 
 ;;;###autoload
 (defun cljr-extract-constant ()
+  "Extract form at (or above) point as a constant.
+Create a def for it at the top level, and replace its current
+occurrence with the defined name."
   (interactive)
   (let ((name (let ((highlight (cljr--highlight-sexp)))
                 (unwind-protect
@@ -1461,6 +1477,8 @@ optionally including those that are declared private."
 
 ;;;###autoload
 (defun cljr-cycle-thread ()
+  "Cycle a threading macro between -> and ->>.
+Also applies to other versions of the macros, like cond->."
   (interactive)
   (save-excursion
     (cljr--goto-thread)
@@ -1497,6 +1515,7 @@ Return nil if there are no more levels to unwind."
 
 ;;;###autoload
 (defun cljr-unwind-all ()
+  "Fully unwind thread at point or above point."
   (interactive)
   (while (cljr-unwind)
     t))
@@ -1552,6 +1571,7 @@ Return nil if there are no more levels to unwind."
 
 ;;;###autoload
 (defun cljr-thread ()
+  "Thread by one more level an existing threading macro."
   (interactive)
   (when (looking-at "(?[^-]*-?>")
     (goto-char (match-end 0)))
@@ -1565,6 +1585,7 @@ Return nil if there are no more levels to unwind."
 
 ;;;###autoload
 (defun cljr-thread-first-all ()
+  "Fully thread the form at point using ->."
   (interactive)
   (save-excursion
     (paredit-wrap-round)
@@ -1574,6 +1595,7 @@ Return nil if there are no more levels to unwind."
 
 ;;;###autoload
 (defun cljr-thread-last-all ()
+  "Fully thread the form at point using ->>."
   (interactive)
   (save-excursion
     (paredit-wrap-round)
@@ -1585,6 +1607,8 @@ Return nil if there are no more levels to unwind."
 
 ;;;###autoload
 (defun cljr-introduce-let ()
+  "Create a let form, binding the form at point.
+The resulting let form can then be expanded with `\\[cljr-expand-let]'."
   (interactive)
   (paredit-wrap-round)
   (insert "let ")
@@ -1656,6 +1680,7 @@ Return nil if there are no more levels to unwind."
 
 ;;;###autoload
 (defun cljr-expand-let ()
+  "Expand the let form above point by one level."
   (interactive)
   (multiple-cursors-mode 0)
   (cljr--goto-let)
@@ -1672,6 +1697,7 @@ Return nil if there are no more levels to unwind."
 
 ;;;###autoload
 (defun cljr-move-to-let ()
+  "Move the form at point to a binding in the nearest let."
   (interactive)
   (if (not (save-excursion (cljr--goto-let)))
       (cljr-introduce-let)
@@ -1766,6 +1792,9 @@ This function only does the actual removal."
 
 ;;;###autoload
 (defun cljr-destructure-keys ()
+  "Change a symbol binding at point to a destructuring bind.
+Keys to use in the destructuring are inferred from the code, and
+their usage is replaced with the new local variables."
   (interactive)
   (save-excursion
     (paredit-backward-up)
@@ -1804,6 +1833,7 @@ This function only does the actual removal."
 
 ;;;###autoload
 (defun cljr-cycle-privacy ()
+  "Make public the current private def, or vice-versa."
   (interactive)
   (save-excursion
     (ignore-errors (forward-char 7))
@@ -1873,7 +1903,7 @@ This function only does the actual removal."
 
 ;;;###autoload
 (defun cljr-cycle-if ()
-  "Cycle surrounding if or if-not, to if-not or if"
+  "Change a surrounding if to if-not, or vice-versa."
   (interactive)
   (save-excursion
     (cljr--goto-if)
@@ -1926,7 +1956,11 @@ front of function literals and sets."
 
 ;;;###autoload
 (defun cljr-slash ()
-  "Inserts / as normal, but also checks for common namespace shorthands to require."
+  "Inserts / as normal, but also checks for common namespace shorthands to require.
+If `cljr-magic-require-namespaces' is non-nil, typing one of the
+short aliases listed in `cljr-magic-requires' followed by this
+command will add the corresponding require statement to the ns
+form."
   (interactive)
   (insert "/")
   (when (and cljr-magic-requires
@@ -1959,7 +1993,7 @@ front of function literals and sets."
 
 ;;;###autoload
 (defun cljr-project-clean ()
-  "Runs `cljr-project-clean-functions' on every clojure file, then
+  "Run `cljr-project-clean-functions' on every clojure file, then
 sorts the project's dependency vectors."
   (interactive)
   (when (or (not cljr-project-clean-prompt)
@@ -2208,6 +2242,7 @@ Signal an error if it is not supported."
 
 ;;;###autoload
 (defun cljr-add-project-dependency (force)
+  "Add a dependency to the project.clj file."
   (interactive "P")
   (cljr--assert-leiningen-project)
   (cljr--ensure-op-supported "artifact-list")
@@ -2219,6 +2254,7 @@ Signal an error if it is not supported."
 
 ;;;###autoload
 (defun cljr-update-project-dependency ()
+  "Update the version of the dependency at point."
   (interactive)
   (cljr--assert-leiningen-project)
   (cljr--ensure-op-supported "artifact-list")
@@ -2241,6 +2277,7 @@ Signal an error if it is not supported."
 
 ;;;###autoload
 (defun cljr-update-project-dependencies ()
+  "Update all project dependencies."
   (interactive)
   (cljr--assert-leiningen-project)
   (find-file (cljr--project-file))
@@ -2351,6 +2388,9 @@ Signal an error if it is not supported."
 
 ;;;###autoload
 (defun cljr-promote-function (promote-to-defn)
+  "Promote a function literal to an fn, or an fn to a defn.
+With prefix PROMOTE-TO-DEFN, promote to a defn even if it is a
+function literal."
   (interactive "P")
   (save-excursion
     (cond
@@ -2470,6 +2510,7 @@ root."
 
 ;;;###autoload
 (defun cljr-find-usages ()
+  "Find all usages of the symbol at point in the project."
   (interactive)
   (cljr--assert-middleware)
   (save-buffer)
@@ -2508,6 +2549,7 @@ root."
 
 ;;;###autoload
 (defun cljr-rename-symbol (new-name)
+  "Rename the symbol at point and all of its occurrences."
   (interactive
    (list (read-from-minibuffer "New name: "
                                (cljr--symbol-suffix (cider-symbol-at-point)))))
@@ -2558,6 +2600,7 @@ root."
 
 ;;;###autoload
 (defun cljr-clean-ns ()
+  "Clean the ns form for the current buffer."
   (interactive)
   (cljr--assert-leiningen-project)
   (cljr--assert-middleware)
@@ -2790,8 +2833,7 @@ Defaults to the dependency vector at point, but prompts if none is found."
 
 ;;;###autoload
 (defun cljr-extract-function ()
-  "Extract the form at point, or the nearest enclosing form, into
-  a toplevel defn. "
+  "Extract the form at (or above) point as a top-level defn."
   (interactive)
   (cljr--assert-middleware)
   (save-buffer)
@@ -3062,6 +3104,14 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 
 ;;;###autoload
 (defun cljr-create-fn-from-example ()
+  "Create a top-level defn for the symbol at point.
+The context in which symbol is being used should be that of a
+function, and the arglist of the defn is guessed from this
+context.
+
+For instance, if the symbol is the first argument of a `map'
+call, the defn is created with one argument. If it is the first
+argument of a `reduce', the defn will take two arguments."
   (interactive)
   (let* ((sexp-forms* (cljr--extract-sexp-as-list))
          (example-name (car sexp-forms*))
