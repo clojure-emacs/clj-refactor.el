@@ -28,6 +28,8 @@
      "_" "-" (mapconcat 'identity (cdr (split-string relative "/")) "."))))
 
 (Setup
+ ;; Used in cljr--maybe-eval-ns-form
+ (defun cider-eval-ns-form (&rest _))
  (yas-global-mode 1)
  (cljr-add-keybindings-with-prefix "C-!")
  (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode))))

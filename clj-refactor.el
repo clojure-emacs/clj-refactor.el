@@ -159,6 +159,10 @@ with the middleware."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-auto-eval-ns-form t
+  "When true refactorings which change the ns form also trigger
+  its re-evaluation.")
+
 (defvar cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
     ("set"  . "clojure.set")
@@ -1017,7 +1021,8 @@ word test in it and whether the file lives under the test/ directory."
   (cljr--insert-in-ns ":require")
   (cljr--pop-tmp-marker-after-yasnippet)
   (cljr--add-yas-maybe-tidy-ns-hook)
-  (yas-expand-snippet cljr--add-require-snippet))
+  (yas-expand-snippet cljr--add-require-snippet)
+  (cljr--maybe-eval-ns-form))
 
 ;;;###autoload
 (defun cljr-add-use-to-ns ()
@@ -1026,7 +1031,8 @@ word test in it and whether the file lives under the test/ directory."
   (cljr--insert-in-ns ":require")
   (cljr--pop-tmp-marker-after-yasnippet)
   (cljr--add-yas-maybe-tidy-ns-hook)
-  (yas-expand-snippet cljr--add-use-snippet))
+  (yas-expand-snippet cljr--add-use-snippet)
+  (cljr--maybe-eval-ns-form))
 
 ;;;###autoload
 (defun cljr-add-import-to-ns ()
@@ -1035,7 +1041,8 @@ word test in it and whether the file lives under the test/ directory."
   (cljr--insert-in-ns ":import")
   (cljr--pop-tmp-marker-after-yasnippet)
   (cljr--add-yas-maybe-tidy-ns-hook)
-  (yas-expand-snippet "$1"))
+  (yas-expand-snippet "$1")
+  (cljr--maybe-eval-ns-form))
 
 (defun cljr--extract-ns-from-use ()
   "Let point be denoted by |.  Then, when called on: |[used.ns ...]
@@ -2679,6 +2686,10 @@ itself might be `nil'."
       (error err)
     response))
 
+(defun cljr--maybe-eval-ns-form ()
+  (when cljr-auto-eval-ns-form
+    (cider-eval-ns-form :synchronously)))
+
 ;;;###autoload
 (defun cljr-add-missing-libspec ()
   "Requires or imports the symbol at point.
@@ -2694,7 +2705,8 @@ containing join will be aliased to str."
     (if candidates-and-types
         (cljr--add-missing-libspec symbol (read candidates-and-types))
       (error "Can't find %s on classpath" (cljr--symbol-suffix symbol))))
-  (cljr--maybe-clean-or-sort-ns))
+  (cljr--maybe-clean-or-sort-ns)
+  (cljr--maybe-eval-ns-form))
 
 (defun cljr--dependency-vector-at-point ()
   (save-excursion
