@@ -44,59 +44,78 @@
   "The current version of clojure-refactor")
 
 (defcustom cljr-add-ns-to-blank-clj-files t
-  "When true, automatically adds a ns form to new clj files."
+  "If t, automatically add a ns form to new .clj files."
   :group 'cljr
   :type 'boolean)
 
-(defcustom cljr-sort-comparator 'cljr--string-natural-comparator
-  "The comparator function to use to sort ns declaration. Set your
-   own if you see fit. Comparator is called with two elements of
-   the sub section of the ns declaration, and should return non-nil
-   if the first element should sort before the second."
+(defcustom cljr-sort-comparator #'cljr--string-natural-comparator
+  "The comparator function to use to sort ns declaration.
+Set your own if you see fit. Comparator is called with two
+elements of the sub section of the ns declaration, and should
+return non-nil if the first element should sort before the
+second.
+
+The following functions are also provided for use with this:
+`cljr--string-length-comparator', `cljr--semantic-comparator',
+and `cljr--string-natural-comparator'"
   :group 'cljr
   :type 'function)
 
 (defcustom cljr-auto-sort-ns t
-  "When true, sort ns form whenever adding to the form using clj-refactor
-   functions."
+  "If t, sort ns form after any command that changes it."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-magic-requires t
-  "When true, suggests requiring common namespaces when you type
-  its short form. Set to :prompt to ask before doing anything."
+  "Whether to automatically require common namespaces when they are used.
+These are the namespaces listed in `cljr-magic-require-namespaces'.
+
+If this variable is `:prompt', typing the short form followed by
+`\\[cljr-slash]' will ask if you want to add the corresponding require
+statement to the ns form.
+Any other non-nil value means to add the form without asking."
   :group 'cljr
   :type '(choice (const :tag "true" t)
                  (const :tag "prompt" :prompt)
                  (const :tag "false" nil)))
 
+(defcustom cljr-magic-require-namespaces
+  '(("io"   . "clojure.java.io")
+    ("set"  . "clojure.set")
+    ("str"  . "clojure.string")
+    ("walk" . "clojure.walk")
+    ("zip"  . "clojure.zip"))
+  "Alist of aliases and namespaces used by `cljr-slash'."
+  :type '(repeat (cons (string :tag "Short alias")
+                       (string :tag "Full namespace")))
+  :group 'cljr)
+
 (defcustom cljr-use-metadata-for-privacy nil
-  "When nil, `cljr-cycle-privacy' will use (defn- f []).
-   When t, it will use (defn ^:private f [])"
+  "If nil, `cljr-cycle-privacy' will use (defn- f []).
+If t, it will use (defn ^:private f [])."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-project-clean-prompt t
-  "When true prompts to ask before doing anything if false
-   runs project clean functions without warning."
+  "If t, `cljr-project-clean' asks before doing anything.
+If nil, the project clean functions are run without warning."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-project-clean-functions
-  (list 'cljr-remove-unused-requires 'cljr-sort-ns)
-  "List of functions to run on all the clj files in the project
-   when you perform project clean."
+  (list #'cljr-remove-unused-requires #'cljr-sort-ns)
+  "List of functions called by `cljr-project-clean'.
+These are called on all .clj files in the project."
   :group 'cljr
   :type '(repeat function))
 
 (defcustom cljr-project-clean-sorts-project-dependencies nil
-  "When true sorts project dependencies when you run project-clean."
+  "If t, `cljr-project-clean' sorts project dependencies."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-project-clean-exceptions '("dev/user.clj" "project.clj" "boot.clj")
-  "Contains a list of files that should not be cleaned when
-  running `cljr-project-clean'."
+  "A list of files that `cljr-project-clean' should avoid."
   :group 'cljr
   :type '(repeat string))
 
@@ -107,68 +126,65 @@ Used in `cljr-remove-debug-fns' feature."
   :type 'string)
 
 (defcustom cljr-hotload-dependencies t
-  "When true new dependencies added with
-`cljr-add-project-dependency' are also hotloaded into the repl.'"
+  "If t, newly added dependencies are also hotloaded into the repl.
+This only applies to dependencies added by `cljr-add-project-dependency'."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-favor-private-functions t
-  "When true refactorings will insert private function declarations."
+  "If t, refactorings insert private function declarations."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-favor-prefix-notation t
-  "When true `cljr-clean-ns' will favor prefix notation when rebuilding the ns."
+  "If t, `cljr-clean-ns' favors prefix notation in the ns form."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-use-multiple-cursors t
-  "When true multiple-cursors will be used where that makes sense."
+  "If t, some refactorings use the `multiple-cursors' package.
+This improves interactivity of the commands. If nil, those
+refactorings will use regular prompts instead."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-auto-clean-ns t
-  "When true `cljr-clean-ns' will run after the ns is modified."
+  "If t, call `cljr-clean-ns' after commands that change the ns."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-populate-artifact-cache-on-startup t
-  "When true the middleware will eagerly populate the artifact
-cache so `cljr-add-project-dependency' is as snappy as can be."
+  "If t, the middleware will eagerly populate the artifact cache.
+This makes `cljr-add-project-dependency' as snappy as can be."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-eagerly-build-asts-on-startup t
-  "When true the middleware will eagerly populate the ast cache
-so `cljr-find-symbol' and `cljr-rename-symbol' are as snappy as
-can be."
+  "If t, the middleware will eagerly populate the ast cache.
+This makes `cljr-find-symbol' and `cljr-rename-symbol' as snappy
+as can be."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-suppress-middleware-warnings nil
-  "When true no warnings are printed to the repl about problems
-with the middleware."
+  "If t, no middleware warnings are printed to the repl."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-find-usages-ignore-analyzer-errors nil
-  "When true find usages ignores if any namespaces can not be analyzed
-   and carries on looking for the given symbol in those nampesaces which
-   can be analyzed. If false find usages won't run if there is a broken
-   namespace in the project."
+  "If t, `cljr-find-usages' ignores namespaces that cannot be analyzed.
+If any namespaces presents an analyzer error, it is skipped and
+the command carries on looking for the given symbol in those
+namespaces which can be analyzed.
+
+If nil, `cljr-find-usages' won't run if there is a broken
+namespace in the project."
   :group 'cljr
   :type 'boolean)
 
 (defcustom cljr-auto-eval-ns-form t
   "When true refactorings which change the ns form also trigger
   its re-evaluation.")
-
-(defvar cljr-magic-require-namespaces
-  '(("io"   . "clojure.java.io")
-    ("set"  . "clojure.set")
-    ("str"  . "clojure.string")
-    ("walk" . "clojure.walk")
-    ("zip"  . "clojure.zip")))
 
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
@@ -181,10 +197,10 @@ with the middleware."
   (replace-regexp-in-string ".*\\." "" ns))
 
 (defvar cljr--add-use-snippet "[$1 :refer ${2:[$3]}]"
-  "The snippet used in in `cljr-add-use-to-ns'")
+  "The snippet used in in `cljr-add-use-to-ns'.")
 
 (defvar *cljr--noninteractive* nil
-  "T when our interactive functions are called programmatically.")
+  "t, when our interactive functions are called programmatically.")
 
 (defvar cljr--nrepl-ops
   '(
@@ -221,7 +237,7 @@ with the middleware."
 
 (defmacro cljr--update-file (filename &rest body)
   "If there is an open buffer for FILENAME, then change that.
-   Otherwise open the file and do the changes non-interactively."
+Otherwise open the file and do the changes non-interactively."
   (declare (debug (form body))
            (indent 1))
   (let ((fn (make-symbol "filename"))
@@ -310,8 +326,7 @@ with the middleware."
     ("?" . (cljr-describe-refactoring))))
 
 (defun cljr--add-keybindings (key-fn)
-  "Build up the keymap from the list of keys/functions defined in
-`cljr-all-helpers`."
+  "Build the keymap from the list of keys/functions in `cljr--all-helpers'."
   (dolist (details cljr--all-helpers)
     (let ((key (car details))
           (fn (cadr details)))
@@ -319,10 +334,12 @@ with the middleware."
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
+  "Bind keys in `cljr--all-helpers' under a PREFIX key."
   (cljr--add-keybindings (-partial 'cljr--key-pairs-with-prefix prefix)))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-modifier (modifier)
+  "Bind keys in `cljr--all-helpers' under a MODIFIER key."
   (cljr--add-keybindings (-partial 'cljr--key-pairs-with-modifier modifier)))
 
 ;; ------ utilities -----------
