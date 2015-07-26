@@ -1049,9 +1049,15 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-unused-re
   (remove-hook 'yas/after-exit-snippet-hook
                'cljr--pop-tmp-marker-after-yasnippet-1 :local))
 
+(defun cljr--maybe-eval-ns-form-and-remove-hook ()
+  (cljr--maybe-eval-ns-form)
+  (remove-hook 'yas/after-exit-snippet-hook
+               'cljr--maybe-eval-ns-form-and-remove-hook :local))
+
 (defun cljr--add-yas-ns-updated-hook ()
   (add-hook 'yas/after-exit-snippet-hook 'cljr--sort-and-remove-hook nil :local)
-  (add-hook 'yas/after-exit-snippet-hook 'cljr--maybe-eval-ns-form nil :local))
+  (add-hook 'yas/after-exit-snippet-hook
+            'cljr--maybe-eval-ns-form-and-remove-hook nil :local))
 
 ;;;###autoload
 (defun cljr-add-require-to-ns ()
