@@ -1049,8 +1049,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-unused-re
   (remove-hook 'yas/after-exit-snippet-hook
                'cljr--pop-tmp-marker-after-yasnippet-1 :local))
 
-(defun cljr--add-yas-maybe-tidy-ns-hook ()
-  (add-hook 'yas/after-exit-snippet-hook 'cljr--sort-and-remove-hook nil t))
+(defun cljr--add-yas-ns-updated-hook ()
+  (add-hook 'yas/after-exit-snippet-hook 'cljr--sort-and-remove-hook nil :local)
+  (add-hook 'yas/after-exit-snippet-hook 'cljr--maybe-eval-ns-form nil :local))
 
 ;;;###autoload
 (defun cljr-add-require-to-ns ()
@@ -1061,9 +1062,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-require-to-n
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require")
   (cljr--pop-tmp-marker-after-yasnippet)
-  (cljr--add-yas-maybe-tidy-ns-hook)
-  (yas-expand-snippet cljr--add-require-snippet)
-  (cljr--maybe-eval-ns-form))
+  (cljr--add-yas-ns-updated-hook)
+  (yas-expand-snippet cljr--add-require-snippet))
 
 ;;;###autoload
 (defun cljr-add-use-to-ns ()
@@ -1074,9 +1074,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-use-to-ns"
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require")
   (cljr--pop-tmp-marker-after-yasnippet)
-  (cljr--add-yas-maybe-tidy-ns-hook)
-  (yas-expand-snippet cljr--add-use-snippet)
-  (cljr--maybe-eval-ns-form))
+  (cljr--add-yas-ns-updated-hook)
+  (yas-expand-snippet cljr--add-use-snippet))
 
 ;;;###autoload
 (defun cljr-add-import-to-ns ()
@@ -1087,9 +1086,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-import-to-ns
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":import")
   (cljr--pop-tmp-marker-after-yasnippet)
-  (cljr--add-yas-maybe-tidy-ns-hook)
-  (yas-expand-snippet "$1")
-  (cljr--maybe-eval-ns-form))
+  (cljr--add-yas-ns-updated-hook)
+  (yas-expand-snippet "$1"))
 
 (defun cljr--extract-ns-from-use ()
   "Let point be denoted by |.  Then, when called on: |[used.ns ...]
