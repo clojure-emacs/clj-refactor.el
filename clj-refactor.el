@@ -1036,15 +1036,18 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-unused-re
 (defun cljr--pop-tmp-marker-after-yasnippet-1 (&rest ignore)
   (goto-char cljr--tmp-marker)
   (set-marker cljr--tmp-marker nil)
-  (remove-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 t))
+  (remove-hook 'yas/after-exit-snippet-hook
+               'cljr--pop-tmp-marker-after-yasnippet-1 :local))
 
 (defun cljr--pop-tmp-marker-after-yasnippet ()
-  (add-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 nil t))
+  (add-hook 'yas/after-exit-snippet-hook
+            'cljr--pop-tmp-marker-after-yasnippet-1 nil :local))
 
 (defun cljr--sort-and-remove-hook (&rest ignore)
   (when cljr-auto-sort-ns
     (cljr-sort-ns))
-  (remove-hook 'yas/after-exit-snippet-hook 'cljr--pop-tmp-marker-after-yasnippet-1 t))
+  (remove-hook 'yas/after-exit-snippet-hook
+               'cljr--pop-tmp-marker-after-yasnippet-1 :local))
 
 (defun cljr--add-yas-maybe-tidy-ns-hook ()
   (add-hook 'yas/after-exit-snippet-hook 'cljr--sort-and-remove-hook nil t))
