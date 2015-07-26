@@ -1047,7 +1047,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-unused-re
   (when cljr-auto-sort-ns
     (cljr-sort-ns))
   (remove-hook 'yas/after-exit-snippet-hook
-               'cljr--pop-tmp-marker-after-yasnippet-1 :local))
+               'cljr--sort-and-remove-hook :local))
 
 (defun cljr--maybe-eval-ns-form-and-remove-hook ()
   (cljr--maybe-eval-ns-form)
