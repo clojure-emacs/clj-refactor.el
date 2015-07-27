@@ -129,6 +129,18 @@ Feature: Create Function from Example
     (->> game (reveal-tile index))
     """
 
+  Scenario: Create function from example, update
+    When I insert "(update foo :bar do-stuff)"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [bar]
+      )
+
+    (update foo :bar do-stuff)
+    """
+
   Scenario: Create function from example, update-in
     When I insert "(update-in foo [:bar :baz] do-stuff)"
     And I place the cursor after "do"
@@ -369,8 +381,8 @@ Feature: Create Function from Example
     (do-stuff (.getName f))
     """
 
-  Scenario: Guess at param name, ignore assoc and dissoc
-    When I insert "(do-stuff (-> game (assoc :foo true) (dissoc :bar)))"
+  Scenario: Guess at param name, ignore assoc, update and dissoc
+    When I insert "(do-stuff (-> game (assoc :foo true) (update :bar inc) (dissoc :baz)))"
     And I place the cursor after "do"
     And I press "C-! fe"
     Then I should see:
@@ -378,7 +390,7 @@ Feature: Create Function from Example
     (defn- do-stuff [game]
       )
 
-    (do-stuff (-> game (assoc :foo true) (dissoc :bar)))
+    (do-stuff (-> game (assoc :foo true) (update :bar inc) (dissoc :baz)))
     """
 
   Scenario: Guess at param name, ignore assoc-in and update-in

@@ -1253,7 +1253,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
 (defun cljr-move-form ()
   "Move the form containing POINT to a new namespace.
 
-If REGION is active, move all forms contained by region. 
+If REGION is active, move all forms contained by region.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
   (interactive)
@@ -3226,7 +3226,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                       (:else sexp-forms*))))
     (push-mark)
     (if (cljr--is-symbol? symbol-at-point)
-        (cond ((string= example-name "update-in")
+        (cond ((string= example-name "update")
+               (cljr--create-fn-from-update sexp-forms))
+
+              ((string= example-name "update-in")
                (cljr--create-fn-from-update-in))
 
               ((string= example-name "sort-by")
@@ -3276,6 +3279,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                                   (-when-let (name (cljr--guess-param-name it))
                                     (singularize-string name))
                                   (cddr sexp-forms)))))
+
+(defun cljr--create-fn-from-update (sexp-forms)
+  (let ((keyfn (nth 2 sexp-forms)))
+    (cljr--insert-example-fn (cljr--find-symbol-at-point)
+                             (if (cljr--is-keyword? keyfn)
+                                 (list (s-chop-prefix ":" keyfn))
+                               (list 0)))))
 
 (defun cljr--create-fn-from-update-in ()
   (let ((last-path-entry (save-excursion
@@ -3420,9 +3430,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
     (cljr--extract-sexp)))
 
 (defvar cljr--semantic-noops--first-position
-  (list "assoc" "assoc-in" "update-in" "dissoc" "conj" "concat" "cycle"
-        "rest" "nthrest" "nthnext" "next" "nnext" "butlast" "reverse"
-        "vec" "set" "distinct"))
+  (list "assoc" "assoc-in" "update" "update-in" "dissoc" "conj" "concat"
+        "cycle" "rest" "nthrest" "nthnext" "next" "nnext" "butlast"
+        "reverse" "vec" "set" "distinct"))
 
 (defvar cljr--semantic-noops--last-position
   (list "filter" "filterv" "remove" "take-nth" "cons" "drop" "drop-while"
