@@ -321,6 +321,18 @@ Feature: Create Function from Example
     (do-stuff (get x :foo) (get x (:bar y)))
     """
 
+  Scenario: Guess at param name, create
+    When I insert "(do-stuff (create-thing))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [thing]
+      )
+
+    (do-stuff (create-thing))
+    """
+
   Scenario: Guess at param name, ignore assoc and dissoc
     When I insert "(do-stuff (-> game (assoc :foo true) (dissoc :bar)))"
     And I place the cursor after "do"

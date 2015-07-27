@@ -3375,6 +3375,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
       prepped-form)
      ((cljr--keyword-lookup? prepped-form)
       (match-string 1 prepped-form))
+     ((and fn-call (s-starts-with? "create-" fn-call))
+      (s-chop-prefix "create-" fn-call))
      ((string= "get-in" fn-call)
       (cljr--find-param-name-from-get-in prepped-form))
      ((string= "get" fn-call)
