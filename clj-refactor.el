@@ -3308,10 +3308,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 
 (defun cljr--create-fn-from-sort-by (sexp-forms)
   (let* ((fn-name (cljr--find-symbol-at-point))
-         (param-name (-when-let (coll-name (cljr--guess-param-name (-last-item sexp-forms)))
-                       (singularize-string coll-name)))
          (making-comparator? (and (string= fn-name (nth 2 sexp-forms))
-                                  (= 4 (length sexp-forms)))))
+                                  (= 4 (length sexp-forms))))
+         (param-name (if making-comparator?
+                         (when (cljr--is-keyword? (cadr sexp-forms))
+                           (s-chop-prefix ":" (cadr sexp-forms)))
+                       (-when-let (coll-name (cljr--guess-param-name (-last-item sexp-forms)))
+                         (singularize-string coll-name)))))
     (cljr--insert-example-fn fn-name
                              (if making-comparator?
                                  (if param-name

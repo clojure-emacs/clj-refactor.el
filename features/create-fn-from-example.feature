@@ -202,15 +202,15 @@ Feature: Create Function from Example
     """
 
   Scenario: Create function from example, sort-by comp
-    When I insert "(sort-by keyfn my-comp items)"
+    When I insert "(sort-by :name my-comp items)"
     And I place the cursor after "my"
     And I press "C-! fe"
     Then I should see:
     """
-    (defn- my-comp [item-a item-b]
+    (defn- my-comp [name-a name-b]
       )
 
-    (sort-by keyfn my-comp items)
+    (sort-by :name my-comp items)
     """
 
   Scenario: Create function from example, sort comp
