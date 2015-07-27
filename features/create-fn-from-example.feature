@@ -333,6 +333,30 @@ Feature: Create Function from Example
     (do-stuff (create-thing))
     """
 
+  Scenario: Guess at param name, constructor
+    When I insert "(do-stuff (FileDescriptor. path))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [file-descriptor]
+      )
+
+    (do-stuff (FileDescriptor. path))
+    """
+
+  Scenario: Guess at param name, namespaced constructor
+    When I insert "(do-stuff (java.io.FileDescriptor. path))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [file-descriptor]
+      )
+
+    (do-stuff (java.io.FileDescriptor. path))
+    """
+
   Scenario: Guess at param name, ignore assoc and dissoc
     When I insert "(do-stuff (-> game (assoc :foo true) (dissoc :bar)))"
     And I place the cursor after "do"
