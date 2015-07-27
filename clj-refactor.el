@@ -3379,6 +3379,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
       (s-dashed-words (-last-item (s-split "\\." fn-call t))))
      ((and fn-call (s-starts-with? "create-" fn-call))
       (s-chop-prefix "create-" fn-call))
+     ((and fn-call (s-starts-with? ".get" fn-call))
+      (s-dashed-words (s-chop-prefix ".get" fn-call)))
      ((string= "get-in" fn-call)
       (cljr--find-param-name-from-get-in prepped-form))
      ((string= "get" fn-call)

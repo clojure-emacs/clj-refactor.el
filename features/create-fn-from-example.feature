@@ -357,6 +357,18 @@ Feature: Create Function from Example
     (do-stuff (java.io.FileDescriptor. path))
     """
 
+  Scenario: Guess at param name, java getter
+    When I insert "(do-stuff (.getName f))"
+    And I place the cursor after "do"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- do-stuff [name]
+      )
+
+    (do-stuff (.getName f))
+    """
+
   Scenario: Guess at param name, ignore assoc and dissoc
     When I insert "(do-stuff (-> game (assoc :foo true) (dissoc :bar)))"
     And I place the cursor after "do"
