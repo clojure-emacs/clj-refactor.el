@@ -3613,12 +3613,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                        "defn"))
               (plist-get occurrence :match)))
 
-(defun cljr--skip-past-whitespace ()
-  (while (looking-at-p "\\s-\\|$")
-    (forward-char)))
-
 (defun cljr--update-parameter-name (new-name)
-  (cljr--skip-past-whitespace)
+  (cljr--skip-past-whitespace-and-comments)
   (forward-char)
   (cljr-rename-symbol new-name))
 
@@ -3628,10 +3624,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 This includes skipping past any type information added by
 prismatic/schema and moving paste any whitespace"
   (paredit-forward)
-  (cljr--skip-past-whitespace)
+  (cljr--skip-past-whitespace-and-comments)
   (when (looking-at-p ":-")
     (paredit-forward 2))
-  (cljr--skip-past-whitespace))
+  (cljr--skip-past-whitespace-and-comments))
 
 (defun cljr--update-signature-names (signature-changes)
   "Point is assumed to be at the the first character in the
@@ -3650,17 +3646,19 @@ Updates the names of the function parameters."
     (delete-region beg end)))
 
 (defun cljr--delete-and-extract-function-parameter ()
-  (cljr--skip-past-whitespace)
+  (cljr--skip-past-whitespace-and-comments)
   (let (parameter)
     (push (cljr--delete-and-extract-region
            (point) (cljr--point-after 'paredit-forward))
           parameter)
-    (delete-region (point) (cljr--point-after 'cljr--skip-past-whitespace))
+    (delete-region (point) (cljr--point-after
+                            'cljr--skip-past-whitespace-and-comments))
     (when (looking-at-p ":-")
       (push (cljr--delete-and-extract-region
              (point) (cljr--point-after '(paredit-forward 2)))
             parameter))
-    (delete-region (point) (cljr--point-after 'cljr--skip-past-whitespace))
+    (delete-region (point) (cljr--point-after
+                            'cljr--skip-past-whitespace-and-comments))
     (s-join " " (nreverse parameter))))
 
 (defun cljr--maybe-wrap-form ()
@@ -3696,7 +3694,7 @@ Updates the ordering of the function parameters."
       ;; leave point in empty lambda list
       (paredit-backward-up)
       (paredit-forward-down)
-      (delete-region (point) (cljr--point-after 'cljr--skip-past-whitespace))
+      (delete-region (point) (cljr--point-after 'cljr--skip-past-whitespace-and-comments))
       ;; insert parameters in new order
       (dotimes (i (length parameters))
         (let ((old-name (gethash :old-name
@@ -3774,7 +3772,7 @@ point is assumed to be at the function name"
                           (-remove #'null)
                           (apply #'max)))
           beg end)
-      (cljr--skip-past-whitespace)
+      (cljr--skip-past-whitespace-and-comments)
       (setq beg (point))
       (paredit-forward)
       (setq end (cljr--point-after 'paredit-forward-up))
@@ -3806,7 +3804,7 @@ point is assumed to be at the function name"
                           (apply #'max)))
           beg end)
       (setq beg (point))
-      (cljr--skip-past-whitespace)
+      (cljr--skip-past-whitespace-and-comments)
       (paredit-forward 1)
       (setq end (cljr--point-after 'paredit-forward-up))
       (while (< (save-excursion (cljr--point-after 'cljr--forward-parameter)) end)
