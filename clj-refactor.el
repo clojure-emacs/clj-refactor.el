@@ -1735,7 +1735,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-expand-let"
   (cljr--goto-let)
   (paredit-forward-down 2)
   (paredit-forward-up)
-  (skip-syntax-forward " >")
+  (cljr--skip-past-whitespace-and-comments)
   (paredit-convolute-sexp)
   (-each (cljr--get-let-bindings) 'cljr--replace-sexp-with-binding)
   (cljr--one-shot-keybinding "l" 'cljr-expand-let))
@@ -2354,14 +2354,21 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
   (let (cljr-hotload-dependencies)
     (while (re-search-forward ":dependencies" (point-max) t)
       (paredit-forward-down)
-      (skip-syntax-forward " >")
+      (cljr--skip-past-whitespace-and-comments)
       (while (not (looking-at "]"))
         (let ((highlight (cljr--highlight-sexp)))
           (unwind-protect
               (cljr-update-project-dependency)
             (delete-overlay highlight)))
         (paredit-forward)
-        (skip-syntax-forward " >")))))
+        (cljr--skip-past-whitespace-and-comments)))))
+
+(defun cljr--skip-past-whitespace-and-comments ()
+  (skip-syntax-forward " >")
+  (while (looking-at ";")
+    (move-end-of-line 1)
+    (forward-char)
+    (skip-syntax-forward " >")))
 
 (defun cljr--extract-anon-fn-name (sexp-str)
   (when (string-match "(fn \\(\\_<[^ ]+\\_>\\)?" sexp-str)
@@ -3369,7 +3376,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
   (cljr--with-string-content s
     (paredit-forward-down)
     (paredit-forward)
-    (skip-syntax-forward " >")
+    (cljr--skip-past-whitespace-and-comments)
     (cljr--extract-sexp)))
 
 (defun cljr--last-arg-s (s)
@@ -3425,7 +3432,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
             (progn
               (paredit-forward-down)
               (paredit-forward)
-              (skip-syntax-forward " >"))
+              (cljr--skip-past-whitespace-and-comments))
           (paredit-forward)
           (paredit-backward-down)
           (paredit-backward))
@@ -3454,7 +3461,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
   (let ((key (cljr--with-string-content form
                (paredit-forward-down)
                (paredit-forward 2)
-               (skip-syntax-forward " >")
+               (cljr--skip-past-whitespace-and-comments)
                (cljr--extract-sexp))))
     (when (cljr--is-keyword? key)
       (s-chop-prefix ":" key))))
