@@ -2628,13 +2628,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
       (cljr--rename-occurrence file line-beg col-beg name new-name))))
 
 ;;;###autoload
-(defun cljr-rename-symbol (new-name)
+(defun cljr-rename-symbol ()
   "Rename the symbol at point and all of its occurrences.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
-  (interactive
-   (list (read-from-minibuffer "New name: "
-                               (cljr--symbol-suffix (cider-symbol-at-point)))))
+  (interactive)
   (cljr--assert-middleware)
   (save-buffer)
   (let* ((symbol (cider-symbol-at-point))
@@ -2642,7 +2640,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
          (symbol-name (nrepl-dict-get var-info "name"))
          (ns (nrepl-dict-get var-info "ns"))
          (name (or symbol-name symbol))
+         (_ (message "Fetching symbol occurrences..."))
          (occurrences (cljr--find-symbol-sync name ns))
+         (new-name (read-from-minibuffer "New name: " (cljr--symbol-suffix symbol)))
          (buffer-of-symbol (cider-find-var-file (concat ns "/" symbol-name)))
          (tooling-buffer-p (cider--tooling-file-p (buffer-name buffer-of-symbol))))
     (cljr--rename-occurrences ns occurrences new-name)
