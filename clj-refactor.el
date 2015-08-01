@@ -2573,7 +2573,10 @@ root."
 (defun cljr--finalise-find-symbol-buffer (num-of-symbols)
   (with-current-buffer "*cljr-find-usages*"
     (insert (format "\nFind symbol finished: %d occurrence%s found"
-                    num-of-symbols (if (> num-of-symbols 1) "s" "")))))
+                    num-of-symbols (if (> num-of-symbols 1) "s" "")))
+    ;; Place point on first occurrence
+    (goto-char (point-min))
+    (forward-line 2)))
 
 (defun cljr--setup-find-symbol-buffer (symbol-name)
   (save-window-excursion
