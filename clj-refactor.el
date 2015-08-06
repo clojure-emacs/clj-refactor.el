@@ -3212,6 +3212,8 @@ argument of a `reduce', the defn will take two arguments.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-example"
   (interactive)
+  (while (cljr--is-keyword? (car (cljr--extract-sexp-as-list)))
+    (paredit-backward-up))
   (let* ((sexp-forms* (cljr--extract-sexp-as-list))
          (example-name (car sexp-forms*))
          (symbol-at-point (cljr--find-symbol-at-point))

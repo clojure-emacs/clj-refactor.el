@@ -105,6 +105,18 @@ Feature: Create Function from Example
       (foo 1 bar :key #{1 2}))
     """
 
+  Scenario: Create function from example, don't create keyword functions
+    When I insert "(foo (:bar baz))"
+    And I place the cursor before "baz"
+    And I press "C-! fe"
+    Then I should see:
+    """
+    (defn- foo [bar]
+      )
+
+    (foo (:bar baz))
+    """
+
   Scenario: Create function from example with thread-first
     When I insert "(-> game (reveal-tile index))"
     And I place the cursor after "reveal"
