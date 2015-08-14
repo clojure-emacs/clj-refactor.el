@@ -348,3 +348,15 @@
 (When "I kill the \"\\(.+\\)\" buffer"
       (lambda (buffer)
         (kill-buffer buffer)))
+
+(And "^I save the file$"
+     (lambda ()
+       (save-buffer)))
+
+(Then "^The buffer should be modified$"
+      (lambda ()
+        (assert (buffer-modified-p))))
+
+(Then "^The buffer should not be modified$"
+      (lambda ()
+        (assert (not (buffer-modified-p)))))

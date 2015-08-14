@@ -859,15 +859,26 @@ word test in it and whether the file lives under the test/ directory."
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-ns"
   (interactive)
   (save-excursion
-    (let ((comparator (cljr-create-comparator cljr-sort-comparator)))
+    (let ((buf-already-modified? (buffer-modified-p))
+          (comparator (cljr-create-comparator cljr-sort-comparator)))
       (dolist (statement-type '(":require" ":use" ":import"))
         (ignore-errors
-          (dolist (statement (->> (cljr--extract-ns-statements statement-type nil)
-                                  (-map 's-trim)
-                                  (-sort comparator)
-                                  (-distinct)))
-            (cljr--insert-in-ns statement-type)
-            (insert statement)))))))
+          (let* ((statement        (->> (cljr--extract-ns-statements statement-type nil)
+                                        (nreverse)
+                                        (-map 's-trim)))
+                 (sorted-statement (->> statement
+                                        (-sort comparator)
+                                        (-distinct))))
+            (dolist (it sorted-statement)
+              (cljr--insert-in-ns statement-type)
+              (insert it))
+            (when (and (not buf-already-modified?)
+                       (buffer-modified-p)
+                       (->> (-interleave statement sorted-statement)
+                            (-partition 2)
+                            (--map (apply 's-equals? it))
+                            (--every? (eq it t))))
+              (not-modified))))))))
 
 (defun cljr--is-require-flag (req-statement)
   (let ((t-req (s-trim req-statement)))

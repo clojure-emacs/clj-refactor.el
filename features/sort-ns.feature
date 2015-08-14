@@ -24,6 +24,40 @@ Feature: Sort ns form
     """
     And I place the cursor before "Calendar"
     And I press "C-! sn"
+    Then The buffer should be modified
+    Then I should see:
+    """
+    (ns ^{:doc "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+            eiusmod tempor incididunt ut labore (et dolore magna aliqua)."}
+      furtive.runtime.session.bucket
+      (:use clojure.string
+            clojure.test)
+      (:require [clj-time.core :as clj-time]
+                [foo.bar :refer :all])
+      (:import (java.nio.charset Charset)
+               (java.security MessageDigest)
+               java.util.Calendar
+               [org.joda.time DateTime]))
+    """
+  Scenario: Sort ns that already sorted
+    When I insert:
+    """
+    (ns ^{:doc "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+            eiusmod tempor incididunt ut labore (et dolore magna aliqua)."}
+      furtive.runtime.session.bucket
+      (:use clojure.string
+            clojure.test)
+      (:require [clj-time.core :as clj-time]
+                [foo.bar :refer :all])
+      (:import (java.nio.charset Charset)
+               (java.security MessageDigest)
+               java.util.Calendar
+               [org.joda.time DateTime]))
+    """
+    And I place the cursor before "Calendar"
+    And I save the file
+    And I press "C-! sn"
+    Then The buffer should not be modified
     Then I should see:
     """
     (ns ^{:doc "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
