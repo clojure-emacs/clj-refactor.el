@@ -522,7 +522,7 @@ e.g. `re-search-forward'"
   (save-excursion
     (cljr--goto-ns)
     (when (re-search-forward
-           (format ":as\\s-+%s" (regexp-quote alias))
+           (format ":as\\s-+%s\\_>" (regexp-quote alias))
            (cljr--point-after 'paredit-forward)
            :noerror)
       (paredit-backward-up)

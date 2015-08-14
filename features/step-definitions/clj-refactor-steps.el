@@ -111,7 +111,7 @@
        (goto-char (point-min))
        (re-search-forward "defn")))
 
-(Given "^I call the add-stubs function directly with mock data from the middleware"
+(Given "^I call the add-stubs function directly with mock data for java.util.List from the middleware"
        (lambda ()
          (cljr--insert-function-stubs (edn-read "(
 {:parameter-list \"[^int arg]\", :name \"remove\"}
@@ -142,6 +142,10 @@
 {:parameter-list \"[^Object arg]\", :name \"remove\"}
 {:parameter-list \"[]\", :name \"hashCode\"}
 {:parameter-list \"[^Object arg]\", :name \"contains\"})"))))
+
+(Given "^I call the add-stubs function directly with mock data for clojure.reflect from the middleware"
+       (lambda ()
+         (cljr--insert-function-stubs (edn-read "({:parameter-list \"[this]\", :name \"typename\"})"))))
 
 (Given "I call the cljr--inline-symbol function directly with mockdata to inline my-constant"
        (lambda ()
