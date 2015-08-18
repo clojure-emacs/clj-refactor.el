@@ -184,7 +184,15 @@ namespace in the project."
 
 (defcustom cljr-auto-eval-ns-form t
   "When true refactorings which change the ns form also trigger
-  its re-evaluation.")
+  its re-evaluation."
+  :group 'cljr
+  :type 'boolean)
+
+(defcustom cljr-thread-all-but-last nil
+  "When true cljr-thread-first-all and cljr-thread-last-all don't thread
+   the last expression."
+  :group 'cljr
+  :type 'boolean)
 
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
@@ -1636,28 +1644,32 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-thread"
      ((looking-at "[^-]*->>[\n\r\t ]") (cljr--thread-last)))))
 
 ;;;###autoload
-(defun cljr-thread-first-all ()
+(defun cljr-thread-first-all (but-last)
   "Fully thread the form at point using ->.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-thread-first-all"
-  (interactive)
+  (interactive "P")
   (save-excursion
     (paredit-wrap-round)
     (insert "-> "))
   (while (save-excursion (cljr-thread))
-    t))
+    t)
+  (when (or but-last cljr-thread-all-but-last)
+    (cljr-unwind)))
 
 ;;;###autoload
-(defun cljr-thread-last-all ()
+(defun cljr-thread-last-all (but-last)
   "Fully thread the form at point using ->>.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-thread-last-all"
-  (interactive)
+  (interactive "P")
   (save-excursion
     (paredit-wrap-round)
     (insert "->> "))
   (while (save-excursion (cljr-thread))
-    t))
+    t)
+  (when (or but-last cljr-thread-all-but-last)
+    (cljr-unwind)))
 
 ;; ------ let binding ----------
 
