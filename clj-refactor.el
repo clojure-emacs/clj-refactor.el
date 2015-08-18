@@ -3158,7 +3158,7 @@ changing settings."
   "Check whether all nREPL ops are present and emit a warning when not."
   (let ((missing-ops (-remove 'nrepl-op-supported-p cljr--nrepl-ops)))
     (when missing-ops
-      (cider-repl-emit-interactive-err-output
+      (cider-repl-emit-interactive-stderr
        (format "WARNING: The following nREPL ops are not supported:
 %s\nPlease, install (or update) refactor-nrepl and restart REPL.
 You can mute this warning by changing cljr-suppress-middleware-warnings."
@@ -3169,7 +3169,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   (let ((refactor-nrepl-version (or (cljr--middleware-version) "n/a")))
     (unless (s-equals? (s-downcase refactor-nrepl-version)
                        (s-downcase cljr-version))
-      (cider-repl-emit-interactive-err-output
+      (cider-repl-emit-interactive-stderr
        (format "WARNING: clj-refactor and refactor-nrepl are out of sync.
 Their versions are %s and %s, respectively.
 You can mute this warning by changing cljr-suppress-middleware-warnings."
