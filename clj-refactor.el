@@ -2293,7 +2293,9 @@ before non-empty. This lets 1.7.0 be sorted above 1.7.0-RC1."
       (error "Empty version list received from middleware!"))))
 
 (defun cljr--prompt-user-for (prompt &optional choices)
-  (completing-read prompt choices))
+  (if choices
+      (completing-read prompt choices)
+    (read-from-minibuffer prompt)))
 
 (defun cljr--add-project-dependency (artifact version)
   (cljr--update-file (cljr--project-file)
