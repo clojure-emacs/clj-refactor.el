@@ -243,6 +243,11 @@ namespace in the project."
 
 (defvar-local cljr--num-syms -1 "Keeps track of overall number of symbol occurrences")
 
+;; dummy vars for free vars
+(defvar sorted-names)
+(defvar vectors-and-meta)
+(defvar cljr--find-symbol-buffer)
+
 (defmacro cljr--update-file (filename &rest body)
   "If there is an open buffer for FILENAME, then change that.
 Otherwise open the file and do the changes non-interactively."
