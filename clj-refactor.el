@@ -2557,7 +2557,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
                                     "column" column
                                     "name" symbol
                                     "ignore-errors" (when cljr-find-usages-ignore-analyzer-errors "true"))))
-    (with-current-buffer (nrepl-current-connection-buffer)
+    (with-current-buffer (cider-current-connection-buffer)
       (setq cjr--occurrence-count 0)
       (setq cljr--num-syms -1))
     (cljr--call-middleware-async find-symbol-request callback)))
