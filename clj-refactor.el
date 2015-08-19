@@ -2732,7 +2732,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
     (-when-let (new-ns (nrepl-dict-get result "ns"))
       (cljr--replace-ns new-ns))))
 
-(defun cljr--narrow-candidates (candidates)
+(defun cljr--narrow-candidates (candidates symbol)
   (cond ((= (length candidates) 0)
          (error "Couldn't find any symbols matching %s on classpath."
                 (cljr--symbol-suffix symbol)))
@@ -2775,7 +2775,7 @@ split => ''"
 (defun cljr--add-missing-libspec (symbol candidates-and-types)
   (let* ((candidates (mapcar (lambda (pair) (symbol-name (car pair)))
                              candidates-and-types))
-         (missing (cljr--narrow-candidates candidates))
+         (missing (cljr--narrow-candidates candidates symbol))
          (type (cadr (assoc (intern missing) candidates-and-types))))
     (cond ((eq type :ns) (cljr--insert-missing-require symbol missing))
           ((eq type :type)
