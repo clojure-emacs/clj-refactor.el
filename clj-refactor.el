@@ -2654,7 +2654,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
       (cljr--rename-occurrence file line-beg col-beg name new-name))))
 
 ;;;###autoload
-(defun cljr-rename-symbol ()
+(defun cljr-rename-symbol (&optional new-name)
   "Rename the symbol at point and all of its occurrences.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
@@ -2666,9 +2666,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
          (symbol-name (nrepl-dict-get var-info "name"))
          (ns (nrepl-dict-get var-info "ns"))
          (name (or symbol-name symbol))
-         (_ (message "Fetching symbol occurrences..."))
+         (_ (unless *cljr--noninteractive* (message "Fetching symbol occurrences...")))
          (occurrences (cljr--find-symbol-sync name ns))
-         (new-name (read-from-minibuffer "New name: " (cljr--symbol-suffix symbol)))
+         (new-name (or new-name (read-from-minibuffer "New name: "
+                                                      (cljr--symbol-suffix symbol))))
          (buffer-of-symbol (cider-find-var-file (concat ns "/" symbol-name)))
          (tooling-buffer-p (cider--tooling-file-p (buffer-name buffer-of-symbol))))
     (cljr--rename-occurrences ns occurrences new-name)
@@ -3877,27 +3878,28 @@ Point is assumed to be at the function being called."
   ;; :old-index, :new-index, :old-name :new-name
   ;; Indexing is from 0
   ;; The OCCURRENCES are the same as those returned by `cljr--find-symbol'
-  (dolist (symbol-meta occurrences)
-    (let ((file (plist-get symbol-meta :file))
-          (line-beg (plist-get symbol-meta :line-beg))
-          (col-beg (plist-get symbol-meta :col-beg))
-          (name (plist-get symbol-meta :name)))
-      (with-current-buffer
-          (find-file-noselect file)
-        (goto-char (point-min))
-        (forward-line (1- line-beg))
-        (move-to-column (1- col-beg))
-        (cond
-         ((cljr--ignorable-occurrence?) :do-nothing)
-         ((cljr--call-site? name) (cljr--update-call-site signature-changes))
-         ((cljr--partial-call-site?)
-          (cljr--update-partial-call-site signature-changes))
-         ((cljr--apply-call-site?)
-          (cljr--update-apply-call-site signature-changes))
-         ((cljr--defn? symbol-meta)
-          (cljr--update-function-signature signature-changes))
-         (t (cljr--append-to-manual-intervention-buffer)))
-        (save-buffer))))
+  (let ((*cljr--noninteractive* t))
+    (dolist (symbol-meta occurrences)
+      (let ((file (plist-get symbol-meta :file))
+            (line-beg (plist-get symbol-meta :line-beg))
+            (col-beg (plist-get symbol-meta :col-beg))
+            (name (plist-get symbol-meta :name)))
+        (with-current-buffer
+            (find-file-noselect file)
+          (goto-char (point-min))
+          (forward-line (1- line-beg))
+          (move-to-column (1- col-beg))
+          (cond
+           ((cljr--ignorable-occurrence?) :do-nothing)
+           ((cljr--call-site? name) (cljr--update-call-site signature-changes))
+           ((cljr--partial-call-site?)
+            (cljr--update-partial-call-site signature-changes))
+           ((cljr--apply-call-site?)
+            (cljr--update-apply-call-site signature-changes))
+           ((cljr--defn? symbol-meta)
+            (cljr--update-function-signature signature-changes))
+           (t (cljr--append-to-manual-intervention-buffer)))
+          (save-buffer)))))
   (unless (cljr--empty-buffer? (get-buffer-create cljr--manual-intervention-buffer))
     (pop-to-buffer cljr--manual-intervention-buffer)
     (goto-char (point-min))
