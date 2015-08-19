@@ -5,10 +5,10 @@
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;;         Lars Andersen <expez@expez.com>
-;;         Benedek Fazekas
+;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;; Version: 1.1.0
 ;; Keywords: convenience, clojure, cider
-;; Package-Requires: ((emacs "24.3") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.9.1") (edn "1.1.2") (inflections "2.3"))
+;; Package-Requires: ((emacs "24.4") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.9.1") (edn "1.1.2") (inflections "2.3"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
