@@ -2516,7 +2516,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
 (defun cljr--insert-in-find-symbol-buffer (occurrence)
   (save-excursion
     (pop-to-buffer cljr--find-symbol-buffer)
-    (end-of-buffer)
+    (goto-char (point-max))
     (insert occurrence)))
 
 (defun cljr--end-of-buffer? ()
