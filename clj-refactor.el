@@ -1743,7 +1743,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-introduce-let"
         (replace-match (concat "\\1" bind-var "\\2"))))))
 
 (defun cljr--one-shot-keybinding (key command)
-  (set-temporary-overlay-map
+  (set-transient-map
    (let ((map (make-sparse-keymap)))
      (define-key map (kbd key) command)
      map) t))
@@ -1794,6 +1794,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-to-let"
         (add-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
         (mc/maybe-multiple-cursors-mode)))))
 
+(defun cljr--prev-line ()
+  "goes to the previous line and keeps column position"
+  (let ((col (current-column)))
+    (forward-line -1)
+    (move-to-column col)))
+
 (defun cljr--prepare-to-insert-new-let-binding ()
   (if (cljr--inside-let-binding-form-p)
       (progn
@@ -1801,7 +1807,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-to-let"
                                 (cljr--depth-of-let-bindings)))
         (paredit-backward)
         (newline-and-indent)
-        (previous-line)
+        (cljr--prev-line)
         (indent-for-tab-command))
     (cljr--goto-let)
     (search-forward "[")
@@ -2480,11 +2486,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
       (setq var (buffer-substring (point) (cljr--point-after 'paredit-backward)))
       (setq replacement (read-string (format "%s => " var)))
       (cljr--append-fn-parameter replacement)
-      (replace-regexp (format "\\s-%s\\(\\s-\\|\\|\n)\\)" var)
-                      (format " %s\\1" replacement)
-                      nil
-                      fn-start
-                      (save-excursion (paredit-forward-up 2) (point)))
+      (goto-char (1+ fn-start))
+      (re-search-forward (format "\\s-%s\\(\\s-\\|\\|\n)\\)" var)
+                         (save-excursion (paredit-forward-up 2) (point)))
+      (replace-match (format " %s\\1" replacement))
       (goto-char fn-start))))
 
 ;;;###autoload
