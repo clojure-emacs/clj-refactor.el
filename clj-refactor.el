@@ -3233,6 +3233,13 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     (when cljr-eagerly-build-asts-on-startup
       (cljr--warm-ast-cache))))
 
+(defvar cljr--list-fold-function-names
+  '("map" "mapv" "pmap" "keep" "mapcat" "filter" "remove" "take-while" "drop-while"
+    "group-by" "partition-by" "some" "every?" "not-every?" "not-any?"))
+
+(defvar cljr--list-fold-function-names-with-index
+  '("map-indexed" "keep-indexed"))
+
 ;;;###autoload
 (defun cljr-create-fn-from-example ()
   "Create a top-level defn for the symbol at point.
@@ -3303,13 +3310,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
               (:else
                (cljr--insert-example-fn example-name (cdr sexp-forms))))
       (cljr--insert-example-fn example-name (cdr sexp-forms)))))
-
-(defvar cljr--list-fold-function-names
-  '("map" "mapv" "pmap" "keep" "mapcat" "filter" "remove" "take-while" "drop-while"
-    "group-by" "partition-by" "some" "every?" "not-every?" "not-any?"))
-
-(defvar cljr--list-fold-function-names-with-index
-  '("map-indexed" "keep-indexed"))
 
 (defun cljr--create-fn-from-list-fold (sexp-forms)
   (cljr--insert-example-fn (cadr sexp-forms)
@@ -3425,6 +3425,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
     (paredit-backward)
     (cljr--extract-sexp)))
 
+(defvar cljr--fns-that-get-item-out-of-coll
+  (list "first" "second" "last" "fnext" "nth" "rand-nth"))
+
 (defun cljr--guess-param-name (form)
   (let* ((prepped-form (cljr--strip-off-semantic-noops
                         (cljr--unwind-s form)))
@@ -3451,8 +3454,14 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
       (singularize-string
        (cljr--guess-param-name (cljr--first-arg-s prepped-form)))))))
 
-(defvar cljr--fns-that-get-item-out-of-coll
-  (list "first" "second" "last" "fnext" "nth" "rand-nth"))
+(defvar cljr--semantic-noops--first-position
+  (list "assoc" "assoc-in" "update" "update-in" "dissoc" "conj" "concat"
+        "cycle" "rest" "nthrest" "nthnext" "next" "nnext" "butlast"
+        "reverse" "vec" "set" "distinct"))
+
+(defvar cljr--semantic-noops--last-position
+  (list "filter" "filterv" "remove" "take-nth" "cons" "drop" "drop-while"
+        "take-last" "take" "take-while" "drop-last" "sort" "sort-by"))
 
 (defun cljr--strip-off-semantic-noops (form)
   "The idea here is that each of these functions, when called on
@@ -3477,15 +3486,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
           (paredit-backward))
         (setq fn (funcall fn-at-point))))
     (cljr--extract-sexp)))
-
-(defvar cljr--semantic-noops--first-position
-  (list "assoc" "assoc-in" "update" "update-in" "dissoc" "conj" "concat"
-        "cycle" "rest" "nthrest" "nthnext" "next" "nnext" "butlast"
-        "reverse" "vec" "set" "distinct"))
-
-(defvar cljr--semantic-noops--last-position
-  (list "filter" "filterv" "remove" "take-nth" "cons" "drop" "drop-while"
-        "take-last" "take" "take-while" "drop-last" "sort" "sort-by"))
 
 (defun cljr--find-param-name-from-get-in (form)
   (let ((last-path-entry (cljr--with-string-content form
