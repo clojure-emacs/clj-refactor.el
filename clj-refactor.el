@@ -233,7 +233,8 @@ namespace in the project."
 (defvar cljr--occurrences nil)
 (defvar cljr--signature-changes nil)
 (defvar cljr--change-signature-buffer "*cljr-change-signature*")
-(defvar cljr--manual-intervention-buffer "*cljr--manual-intervention*")
+(defvar cljr--manual-intervention-buffer "*cljr-manual-intervention*")
+(defvar cljr--find-symbol-buffer "*cljr-find-usages*")
 
 ;;; Buffer Local Declarations
 
@@ -242,11 +243,6 @@ namespace in the project."
 (defvar-local cjr--occurrence-count 0 "Counts occurrences of found symbols")
 
 (defvar-local cljr--num-syms -1 "Keeps track of overall number of symbol occurrences")
-
-;; dummy vars for free vars
-(defvar sorted-names)
-(defvar vectors-and-meta)
-(defvar cljr--find-symbol-buffer)
 
 (defmacro cljr--update-file (filename &rest body)
   "If there is an open buffer for FILENAME, then change that.
@@ -2141,7 +2137,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
         (push (cljr--extract-next-dependency-name) names))
       (s-join "\n "(-sort #'string< names)))))
 
-(defun cljr--prepare-sort-buffer (dividing-line)
+(defun cljr--prepare-sort-buffer (sorted-names vectors-and-meta dividing-line)
   (insert sorted-names)
   (goto-char (point-max))
   (open-line 1)
@@ -2192,7 +2188,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
 (defun cljr--sort-dependency-vectors (sorted-names vectors-and-meta)
   (with-temp-buffer
     (let ((dividing-line "<===============================>"))
-      (cljr--prepare-sort-buffer dividing-line)
+      (cljr--prepare-sort-buffer sorted-names vectors-and-meta dividing-line)
       (cljr--sort-dependency-vectors-with-meta-and-comments dividing-line)
       (->> (buffer-substring-no-properties (point) (point-max))
            s-trim
@@ -2591,8 +2587,7 @@ root."
 
 (defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
   (let ((occurrence (nrepl-dict-get occurrence-resp "occurrence"))
-        (count (nrepl-dict-get occurrence-resp "count"))
-        (cljr--find-symbol-buffer "*cljr-find-usages*"))
+        (count (nrepl-dict-get occurrence-resp "count")))
     (cljr--maybe-rethrow-error occurrence-resp)
     (when count
       (setq cljr--num-syms count))

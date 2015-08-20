@@ -85,7 +85,7 @@ Feature: Change function signature
       (map tt [1] [2] [3]))
     """
     And I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a higher-order call-site
-    And I switch to buffer "*cljr--manual-intervention*"
+    And I switch to buffer "*cljr-manual-intervention*"
     And I go to line "3"
     Then I should see pattern ".*core.clj:4"
 
@@ -98,7 +98,7 @@ Feature: Change function signature
       (map (partial tt 1) 2 3))
     """
     And I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a partial call-site
-    And I switch to buffer "*cljr--manual-intervention*"
+    And I switch to buffer "*cljr-manual-intervention*"
     And I go to line "3"
     Then I should see pattern ".*core.clj:4"
 
@@ -149,7 +149,7 @@ Feature: Change function signature
         (apply tt [1] [2] args)))
     """
     And I call the cljr--change-function-signature function directly with mockdata to swap bar and baz in a call-site with apply
-    And I switch to buffer "*cljr--manual-intervention*"
+    And I switch to buffer "*cljr-manual-intervention*"
     And I go to line "3"
     Then I should see pattern ".*core.clj:5"
 
