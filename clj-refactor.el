@@ -486,6 +486,9 @@ list of (fn args) to pass to `apply''"
   (cljr--make-room-for-toplevel-form)
   (insert form))
 
+(defvar package-alist)
+(declare-function package-desc-dir "package.el")
+
 (defun cljr-show-changelog ()
   "Show the changelog for `clj-refactor'.
 
