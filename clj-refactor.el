@@ -486,20 +486,15 @@ list of (fn args) to pass to `apply''"
   (cljr--make-room-for-toplevel-form)
   (insert form))
 
-(defvar package-alist)
-(declare-function package-desc-dir (locate-library "package"))
-
 (defun cljr-show-changelog ()
   "Show the changelog for `clj-refactor'.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-show-changelog"
   (interactive)
-  (let* ((cljr (cadr (assoc 'clj-refactor package-alist)))
-         (dir (package-desc-dir cljr)))
-    (find-file (format "%s/CHANGELOG.md" dir))
-    (when (fboundp 'markdown-mode)
-      (markdown-mode))
-    (view-mode 1)))
+  (find-file (format "%s/CHANGELOG.md" (file-name-directory (locate-library "clj-refactor"))))
+  (when (fboundp 'markdown-mode)
+    (markdown-mode))
+  (view-mode 1))
 
 (defun cljr--goto-toplevel-forward ()
   "Move forward and up until we reach toplevel."
