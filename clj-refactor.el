@@ -487,7 +487,7 @@ list of (fn args) to pass to `apply''"
   (insert form))
 
 (defvar package-alist)
-(declare-function package-desc-dir "package.el")
+(declare-function package-desc-dir (locate-library "package"))
 
 (defun cljr-show-changelog ()
   "Show the changelog for `clj-refactor'.
