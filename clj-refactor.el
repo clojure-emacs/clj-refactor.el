@@ -679,6 +679,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
                              (file-name-directory old)
                              nil nil
                              (file-name-nondirectory old))))))
+  (cljr--ensure-op-supported "rename-file-or-dir")
   (let* ((active-buffer (current-buffer))
          (affected-buffers (when (file-directory-p old-path)
                              (cljr--buffers-visiting-dir old-path)))
@@ -938,7 +939,7 @@ These are functions listed in `cljr-debug-functions'.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-debug-fns"
   (interactive)
-  (cljr--assert-middleware)
+  (cljr--ensure-op-supported "find-debug-fns")
   (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
          (result (cljr--call-middleware-sync
                   (list "op" "find-debug-fns"
@@ -2384,6 +2385,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-dependencies"
   (interactive)
   (cljr--assert-leiningen-project)
+  (cljr--ensure-op-supported "artifact-list")
   (find-file (cljr--project-file))
   (goto-char (point-min))
   (let (cljr-hotload-dependencies)
@@ -2504,6 +2506,7 @@ function literal.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function"
   (interactive "P")
+  (cljr--ensure-op-supported "find-unbound")
   (save-excursion
     (cond
      ;; Already in the right place.
@@ -2628,7 +2631,7 @@ root."
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
   (interactive)
-  (cljr--assert-middleware)
+  (cljr--ensure-op-supported "find-symbol")
   (save-buffer)
   (let* ((cljr--find-symbol-buffer "*cljr-find-usages*")
          (symbol (cider-symbol-at-point))
@@ -2669,7 +2672,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
   (interactive)
-  (cljr--assert-middleware)
+  (cljr--ensure-op-supported "find-symbol")
   (save-buffer)
   (let* ((symbol (cider-symbol-at-point))
          (var-info (cider-var-info symbol))
@@ -2724,7 +2727,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   (interactive)
   (cljr--assert-leiningen-project)
-  (cljr--assert-middleware)
+  (cljr--ensure-op-supported "clean-ns")
   ;; don't save the buffer preliminarily if we are called from project clean
   (when (not (boundp 'filename))
     (save-buffer))
@@ -2881,7 +2884,7 @@ containing join will be aliased to str.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libspec"
   (interactive)
-  (cljr--assert-middleware)
+  (cljr--ensure-op-supported "resolve-missing")
   (let* ((symbol (cider-symbol-at-point))
          (response (cljr--call-middleware-to-resolve-missing symbol))
          (candidates-and-types (nrepl-dict-get response "candidates")))
@@ -2929,7 +2932,7 @@ Defaults to the dependency vector at point, but prompts if none is found.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependency"
   (interactive)
-  (cljr--assert-middleware)
+  (cljr--ensure-op-supported "hotload-dependency")
   (-> (or (cljr--dependency-vector-at-point)
           (cljr--prompt-user-for "Dependency vector: "))
       cljr--assert-dependency-vector
@@ -2963,7 +2966,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-function"
   (interactive)
-  (cljr--assert-middleware)
+  (cljr--ensure-op-supported "find-unbound")
   (save-buffer)
   (cljr--goto-enclosing-sexp)
   (let* ((unbound (cljr--call-middleware-to-find-unbound-vars
@@ -3172,7 +3175,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
 This can be used to avoid restarting the repl session after
 changing settings."
   (interactive)
-  (cljr--assert-middleware)
+  (cljr--ensure-op-supported "configure")
   (cljr--configure-middleware
    (lambda (response)
      (cljr--maybe-rethrow-error response)
@@ -3200,13 +3203,13 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
                cljr-version refactor-nrepl-version)))))
 
 (defun cljr--middleware-version ()
-  (cljr--assert-middleware)
   (cljr--call-middleware-sync (list "op" "version") "version"))
 
 ;;;###autoload
 (defun cljr-version ()
   "Returns the version of the middleware as well as this package."
   (interactive)
+  (cljr--ensure-op-supported "version")
   (message "clj-refactor %s, refactor-nrepl %s"
            cljr-version (cljr--middleware-version)))
 
@@ -3962,6 +3965,7 @@ Point is assumed to be at the function being called."
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-signature"
   (interactive)
+  (cljr--ensure-op-supported "find-symbol")
   (let* ((fn (cider-symbol-at-point))
          (params (cljr--get-function-params fn))
          (var-info (cider-var-info fn))

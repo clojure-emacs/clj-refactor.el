@@ -30,6 +30,7 @@
 (Setup
  ;; Used in cljr--maybe-eval-ns-form
  (defun cider-eval-ns-form (&rest _))
+ (defun cljr--ensure-op-supported (op) t)
  (yas-global-mode 1)
  (cljr-add-keybindings-with-prefix "C-!")
  (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode))))
