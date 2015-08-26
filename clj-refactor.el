@@ -1506,7 +1506,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-constant
 Create a def for it at the top level, and replace its current
 occurrence with the defined name.
 
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-constant"
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-def"
   (interactive)
   (cljr--extract-def-at-point))
 
