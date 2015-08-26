@@ -3548,8 +3548,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
     (sgml-skip-tag-forward 1)
     (buffer-substring (point-min) (point))))
 
+;;;###autoload
 (defun cljr-describe-refactoring (cljr-fn)
-  "Show the wiki page, in emacs, for one of the available refactorings."
+  "Show the wiki page, in emacs, for one of the available refactorings.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refactoring"
   (interactive (list (cljr--prompt-user-for "Refactoring to describe: "
                                             (mapcar (lambda (entry) (cadr entry))
                                                     cljr--all-helpers))))
