@@ -24,7 +24,7 @@ Feature: Extract constant
     """
     (ns cljr.core)
 
-    (def five 5)
+    (def ^:const five 5)
 
     (defn add-five [a]
       (+ a five))
@@ -52,7 +52,7 @@ Feature: Extract constant
     """
     (ns cljr.core)
 
-    (def five 5)
+    (def ^:const five 5)
 
     (defn multiply-by-five [a]
       (* a five))

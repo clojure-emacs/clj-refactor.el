@@ -1486,7 +1486,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-constant
     (save-excursion
       (cljr--goto-ns)
       (paredit-forward)
-      (insert "\n\n(def ")
+      (insert "\n\n(def ^:const ")
       (insert name)
       (insert " " body ")")
       (setq const-pos (point)))
