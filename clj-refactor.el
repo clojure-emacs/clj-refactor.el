@@ -704,7 +704,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
 
 (defun cljr--op-supported? (op)
   "Is the OP we require provided by the current middleware stack?"
-  (nrepl-op-supported-p op (cider-current-repl)))
+  (nrepl-op-supported-p op (cider-current-repl-buffer)))
 
 (defun cljr--assert-middleware ()
   (unless (featurep 'cider)
@@ -2568,7 +2568,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
                                     "column" column
                                     "name" symbol
                                     "ignore-errors" (when cljr-find-usages-ignore-analyzer-errors "true"))))
-    (with-current-buffer (nrepl-default-connection-buffer)
+    (with-current-buffer (cider-current-repl-buffer)
       (setq cjr--occurrence-count 0)
       (setq cljr--num-syms -1))
     (cljr--call-middleware-async find-symbol-request callback)))
