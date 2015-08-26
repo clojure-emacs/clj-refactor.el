@@ -6,6 +6,16 @@
 - Add `cljr-change-function-signature` to re-order or re-name function parameters.
 - Keep pressing `l` after `cljr-expand-let` to expand further.
 
+### Changes
+
+- Teach `cljr-extract-constant` about the `^:const` hint to the compiler.
+- Use yasnippet for placeholder parameters in `cljr-create-fn-from-example`
+- Highlight the function be promoted with overlays in `cljr-promote-function`.
+- Highlight the form to be extracted with overlays in `cljr-extract-function`.
+- `cljr-create-fn-from-example` is now significantly smarter about guessing parameter numbers and names.
+- `cljr-sort-ns` no longer marks the buffer as changed if it did no work.
+- `cljr-rename-symbol` now fails earlier, before prompting the user for a new name if an AST can't be built due to errors.
+
 ## 1.1.0
 
 - Add `cljr-describe-refactoring` which shows the wiki page describing one of the available refactorings inline in emacs.
