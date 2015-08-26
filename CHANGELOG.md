@@ -1,6 +1,8 @@
 # Changelog
 
 ## Up next
+
+- Add `cljr-extract-def` which extracts the form at, or around, point as a def.
 - Add `cljr-change-function-signature` to re-order or re-name function parameters.
 - Keep pressing `l` after `cljr-expand-let` to expand further.
 

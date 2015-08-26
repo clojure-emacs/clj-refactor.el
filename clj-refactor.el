@@ -304,6 +304,7 @@ Otherwise open the file and do the changes non-interactively."
     ("ct" . (cljr-cycle-thread "Cycle thread"))
     ("dk" . (cljr-destructure-keys "Destructure keys"))
     ("ec" . (cljr-extract-constant "Extract constant"))
+    ("ed" . (cljr-extract-def "Extract form as def"))
     ("ef" . (cljr-extract-function "Extract function"))
     ("el" . (cljr-expand-let "Expand let"))
     ("fe" . (cljr-create-fn-from-example "Create function from example"))
@@ -1469,14 +1470,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-declaration"
 
 ;; ------ extract constant ----------------
 
-;;;###autoload
-(defun cljr-extract-constant ()
-  "Extract form at (or above) point as a constant.
-Create a def for it at the top level, and replace its current
-occurrence with the defined name.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-constant"
-  (interactive)
+(defun cljr--extract-def-at-point (&optional const?)
   (let ((name (let ((highlight (cljr--highlight-sexp)))
                 (unwind-protect
                     (cljr--prompt-user-for "Name: ")
@@ -1486,13 +1480,35 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-constant
     (save-excursion
       (cljr--goto-ns)
       (paredit-forward)
-      (insert "\n\n(def ^:const ")
+      (insert "\n\n(def ")
+      (when const?
+        (insert "^:const "))
       (insert name)
       (insert " " body ")")
       (setq const-pos (point)))
     (insert name)
     (save-excursion
       (query-replace body name nil const-pos (point-max)))))
+
+;;;###autoload
+(defun cljr-extract-constant ()
+  "Extract form at (or above) point as a constant.
+Create a def for it at the top level, and replace its current
+occurrence with the defined name.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-constant"
+  (interactive)
+  (cljr--extract-def-at-point :const))
+
+;;;###autoload
+(defun cljr-extract-def ()
+  "Extract form at (or above) point as a def.
+Create a def for it at the top level, and replace its current
+occurrence with the defined name.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-constant"
+  (interactive)
+  (cljr--extract-def-at-point))
 
 ;; ------ threading and unwinding -----------
 
