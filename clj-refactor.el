@@ -776,19 +776,31 @@ Signal an error if it is not supported."
     (when src-ns
       (mapconcat 'identity (append (butlast ns-chunks) (list src-ns)) "."))))
 
+(defun cljr--cljc-file? (&optional buf)
+  "Is BUF, or the current buffer, visiting a cljc file?"
+  (s-ends-with? ".cljc" (buffer-file-name (or buf (current-buffer)))))
+
 (defun cljr--add-test-use-declarations ()
   (save-excursion
     (let* ((ns (clojure-find-ns))
            (source-ns (cljr--find-source-ns-of-test-ns ns (buffer-file-name))))
       (cljr--insert-in-ns ":require")
       (when source-ns
-        (insert "[" source-ns " :refer :all]"))
+        (if (cljr--cljc-file?)
+            ;; no :refer :all in cljs
+            (insert "[" source-ns " :as sut]")
+          (insert "[" source-ns " :refer :all]")))
       (cljr--insert-in-ns ":require")
-      (insert "[" (cond
-                   ((cljr--project-depends-on-p "midje") "midje.sweet")
-                   ((cljr--project-depends-on-p "expectations") "expectations")
-                   (t "clojure.test"))
-              " :refer :all]"))))
+      (insert (cond
+               ((cljr--project-depends-on-p "midje")
+                "[midje.sweet :refer :all]")
+               ((cljr--project-depends-on-p "expectations")
+                "[expectations :refer :all]")
+               ((cljr--cljc-file?)
+                "#?(:clj [clojure.test :as t]
+:cljs [cljs.test :as t :include-macros true])")
+               (t "[clojure.test :refer :all]"))))
+    (indent-region (point-min) (point-max))))
 
 (defun cljr--in-tests-p ()
   "Check whether the current file is a test file.

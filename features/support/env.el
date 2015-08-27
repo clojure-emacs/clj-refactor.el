@@ -18,15 +18,6 @@
 (require 'ert)
 (require 's)
 
-(defun clojure-expected-ns ()
-  "Returns the namespace name that the file should have."
-  (let* ((project-dir (file-truename
-                       (locate-dominating-file default-directory
-                                               "project.clj")))
-         (relative (substring (file-truename (buffer-file-name)) (length project-dir) -4)))
-    (replace-regexp-in-string
-     "_" "-" (mapconcat 'identity (cdr (split-string relative "/")) "."))))
-
 (Setup
  ;; Used in cljr--maybe-eval-ns-form
  (defun cider-eval-ns-form (&rest _))
@@ -34,20 +25,6 @@
  (yas-global-mode 1)
  (cljr-add-keybindings-with-prefix "C-!")
  (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode))))
-
-(Before
- (save-all-buffers-dont-ask)
- (kill-matching-buffers-dont-ask "clj")
- (setq cljr-use-multiple-cursors t))
-
-(defun save-all-buffers-dont-ask ()
-  (dolist (buffer (buffer-list))
-    (with-current-buffer buffer
-      (let ((filename (buffer-file-name)))
-        (when (and filename
-                   (or (file-exists-p filename)
-                       (s-ends-with? ".clj" filename)))
-          (save-buffer))))))
 
 (defun kill-matching-buffers-dont-ask (regexp &optional internal-too)
   (dolist (buffer (buffer-list))
@@ -57,9 +34,24 @@
                  (string-match regexp name))
         (kill-buffer buffer)))))
 
+(defun save-all-buffers-dont-ask ()
+  (dolist (buffer (buffer-list))
+    (with-current-buffer buffer
+      (let ((filename (buffer-file-name)))
+        (when (and filename
+                   (or (file-exists-p filename)
+                       (s-ends-with? ".clj" filename)
+                       (s-ends-with? ".cljc" filename)))
+          (save-buffer))))))
+
+(Before
+ (save-all-buffers-dont-ask)
+ (kill-matching-buffers-dont-ask "cljc?")
+ (setq cljr-use-multiple-cursors t))
+
 (After
  (save-all-buffers-dont-ask)
- (kill-matching-buffers-dont-ask "clj")
+ (kill-matching-buffers-dont-ask "cljc?")
  (delete-directory (expand-file-name "tmp" clj-refactor-root-path) t))
 
 (Teardown

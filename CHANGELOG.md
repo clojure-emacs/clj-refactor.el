@@ -8,6 +8,7 @@
 
 ### Changes
 
+- [#216](https://github.com/clojure-emacs/clj-refactor.el/issues/216) Teach our automatic ns generator about cljc files.
 - Teach `cljr-extract-constant` about the `^:const` hint to the compiler.
 - Use yasnippet for placeholder parameters in `cljr-create-fn-from-example`
 - Highlight the function be promoted with overlays in `cljr-promote-function`.
