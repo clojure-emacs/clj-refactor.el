@@ -8,6 +8,8 @@
 
 ### Changes
 
+- [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217)When requiring the test framework in test files stop favoring `:refer :all`.
+- [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217)Add a bunch of defcustoms to paramterise what gets inserted into the test namespaces for the various test frameworks.
 - [#216](https://github.com/clojure-emacs/clj-refactor.el/issues/216) Teach our automatic ns generator about cljc files.
 - Teach `cljr-extract-constant` about the `^:const` hint to the compiler.
 - Use yasnippet for placeholder parameters in `cljr-create-fn-from-example`
