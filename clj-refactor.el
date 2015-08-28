@@ -253,6 +253,7 @@ namespace in the project."
 (defvar cljr--change-signature-buffer "*cljr-change-signature*")
 (defvar cljr--manual-intervention-buffer "*cljr-manual-intervention*")
 (defvar cljr--find-symbol-buffer "*cljr-find-usages*")
+(defvar cljr--namespace-aliases-cache nil)
 
 ;;; Buffer Local Declarations
 
@@ -2109,8 +2110,35 @@ front of function literals and sets."
 
 ;; ------ magic requires -------
 
+(defun cljr--clj-file? (&optional buf)
+  "Is BUF, or the current buffer, visiting a clj file?"
+  (s-ends-with? ".clj" (buffer-file-name (or buf (current-buffer)))))
+
 (defun cljr--magic-requires-re ()
-  (concat "(\\(" (regexp-opt (-map 'car cljr-magic-require-namespaces)) "\\)/"))
+  (regexp-opt (-map 'car cljr-magic-require-namespaces)))
+
+(defun cljr--clj-context? ()
+  "Is point in a cljs context?"
+  (or (cljr--clj-file?)
+      ;; TODO check for context within a reader conditional
+      ;; perhaps these class of functions belong in `clojure-mode'
+      ))
+
+(defun cljr--magic-requires-lookup-alias ()
+  "Return (alias (ns.candidate candidate.ns)) if we recognize
+the alias in the project."
+  (let ((short (buffer-substring-no-properties
+                (cljr--point-after 'paredit-backward)
+                (1- (point)))))
+    (if (s-matches? (cljr--magic-requires-re) short)
+        (list short
+              (list (aget cljr-magic-require-namespaces short)))
+      (-when-let (aliases (and cljr--namespace-aliases-cache
+                               (if (cljr--clj-context?)
+                                   (gethash :clj cljr--namespace-aliases-cache)
+                                 (gethash :cljs cljr--namespace-aliases-cache))))
+        (-when-let (candidates (gethash (intern short) aliases))
+          (list short candidates))))))
 
 ;;;###autoload
 (defun cljr-slash ()
@@ -2121,16 +2149,19 @@ command will add the corresponding require statement to the ns
 form."
   (interactive)
   (insert "/")
-  (when (and cljr-magic-requires
-             (looking-back (cljr--magic-requires-re) (point-at-bol)))
-    (let* ((short (match-string-no-properties 1))
-           (long (aget cljr-magic-require-namespaces short)))
+  (-when-let (aliases (and cljr-magic-requires
+                           (cljr--magic-requires-lookup-alias)))
+    (let* ((short (first aliases))
+           (long (cljr--prompt-user-for "Require " (second aliases))))
       (if (and (not (cljr--in-namespace-declaration? (concat ":as " short)))
                (or (not (eq :prompt cljr-magic-requires))
+                   (not (> (length (second aliases)) 1)) ; already prompted
                    (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
           (save-excursion
             (cljr--insert-in-ns ":require")
-            (insert (format "[%s :as %s]" long short))
+            (let ((libspec (format "[%s :as %s]" long short)))
+              (insert libspec)
+              (message "Required %s" libspec))
             (cljr--maybe-sort-ns))))))
 
 (defun aget (map key)
@@ -2367,8 +2398,14 @@ before non-empty. This lets 1.7.0 be sorted above 1.7.0-RC1."
       (error "Empty version list received from middleware!"))))
 
 (defun cljr--prompt-user-for (prompt &optional choices)
+  "Prompt the user with PROMPT.
+
+If CHOICES is provided provide a completed read among the
+possible choices. If the choice is trivial, return it."
   (if choices
-      (completing-read prompt choices)
+      (if (= (length choices) 1)
+          (first choices)
+        (completing-read prompt choices))
     (read-from-minibuffer prompt)))
 
 (defun cljr--add-project-dependency (artifact version)
@@ -2763,6 +2800,16 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
     (paredit-forward)
     (cljr--just-one-blank-line)))
 
+(defun cljr--update-namespace-aliases-cache-async ()
+  "Update the contents of `cljr--namespace-aliases-cache'."
+  (cljr--call-middleware-async
+   (list "op" "namespace-aliases")
+   (lambda (response)
+     (ignore-errors
+       (cljr--maybe-rethrow-error response) ; abort; best effort
+       (setq cljr--namespace-aliases-cache
+             (edn-read (nrepl-dict-get response "namespace-aliases")))))))
+
 ;;;###autoload
 (defun cljr-clean-ns ()
   "Clean the ns form for the current buffer.
@@ -2786,16 +2833,14 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
                         "path" path-to-file))))
     (cljr--maybe-rethrow-error result)
     (-when-let (new-ns (nrepl-dict-get result "ns"))
-      (cljr--replace-ns new-ns))))
+      (cljr--replace-ns new-ns))
+    (cljr--update-namespace-aliases-cache-async)))
 
 (defun cljr--narrow-candidates (candidates symbol)
-  (cond ((= (length candidates) 0)
-         (message "Couldn't find any symbols matching %s on classpath."
-                  (cljr--symbol-suffix symbol)))
-        ((= (length candidates) 1)
-         (car candidates))
-        (t
-         (cljr--prompt-user-for "Require: " candidates))))
+  (if (= (length candidates) 0)
+      (error "Couldn't find any symbols matching %s on classpath."
+             (cljr--symbol-suffix symbol))
+    (cljr--prompt-user-for "Require: " candidates)))
 
 (defun cljr--insert-libspec-verbosely (libspec)
   (insert libspec)
@@ -3294,7 +3339,8 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     (when cljr-populate-artifact-cache-on-startup
       (cljr--update-artifact-cache))
     (when cljr-eagerly-build-asts-on-startup
-      (cljr--warm-ast-cache))))
+      (cljr--warm-ast-cache))
+    (cljr--update-namespace-aliases-cache-async)))
 
 (defvar cljr--list-fold-function-names
   '("map" "mapv" "pmap" "keep" "mapcat" "filter" "remove" "take-while" "drop-while"

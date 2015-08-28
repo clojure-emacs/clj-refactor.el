@@ -345,6 +345,16 @@
            (cljr--change-function-signature (list (cl-second cljr--test-occurrences))
                                             cljr--baz-renamed-to-qux))))
 
+(Given "The cache of namespace aliases is populated"
+       (lambda ()
+         (setq cljr--namespace-aliases-cache
+               (edn-read "{:clj {t (clojure.test)
+set (clojure.set)
+util (refactor-nrepl.util clojure.tools.analyzer.jvm.utils)
+readers (clojure.tools.reader.reader-types) }
+:cljs {set (clojure.set)
+pprint (cljs.pprint)}}"))))
+
 (When "I kill the \"\\(.+\\)\" buffer"
       (lambda (buffer)
         (kill-buffer buffer)))
