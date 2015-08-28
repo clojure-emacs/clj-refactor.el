@@ -2894,9 +2894,13 @@ itself might be `nil'."
             (format "Error 'nil' returned from middleware. %s"
                     "Please contact your local administrator."))))))
 
+(defun cljr--format-escape (msg)
+  "Make the message consumable by format."
+  (s-replace "%" "%%" msg))
+
 (defun cljr--maybe-rethrow-error (response)
   (-if-let (err (cljr--get-error-value response))
-      (error err)
+      (error (cljr--format-escape err))
     response))
 
 (defun cljr--maybe-eval-ns-form ()
