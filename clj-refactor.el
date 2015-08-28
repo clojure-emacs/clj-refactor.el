@@ -2769,8 +2769,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
          (result (nrepl-send-sync-request
                   (list "op" "clean-ns"
                         "path" path-to-file))))
-    (-when-let (error-msg (nrepl-dict-get result "error"))
-      (error error-msg))
+    (cljr--maybe-rethrow-error result)
     (-when-let (new-ns (nrepl-dict-get result "ns"))
       (cljr--replace-ns new-ns))))
 
