@@ -2273,13 +2273,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
 
 If it's present KEY indicates the key to extract from the response."
   (let* ((nrepl-sync-request-timeout 25)
-         (response (-> request nrepl-send-sync-request cljr--maybe-rethrow-error)))
+         (response (-> request cider-nrepl-send-sync-request cljr--maybe-rethrow-error)))
     (if key
         (nrepl-dict-get response key)
       response)))
 
 (defun cljr--call-middleware-async (request &optional callback)
-  (nrepl-send-request request callback))
+  (cider-nrepl-send-request request callback))
 
 (defun cljr--get-artifacts-from-middleware (force)
   (message "Retrieving list of available libraries...")
@@ -2766,7 +2766,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   (let* ((path-to-file (if (boundp 'filename)
                            filename
                          (buffer-file-name)))
-         (result (nrepl-send-sync-request
+         (result (cider-nrepl-send-sync-request
                   (list "op" "clean-ns"
                         "path" path-to-file))))
     (cljr--maybe-rethrow-error result)
@@ -2870,9 +2870,10 @@ Date. -> Date
 
 (defun cljr--call-middleware-to-resolve-missing (symbol)
   ;; Just so this part can be mocked out in a step definition
-  (nrepl-send-sync-request
+  (cider-nrepl-send-sync-request
    (list "op" "resolve-missing"
-         "symbol" (cljr--symbol-suffix symbol))))
+         "symbol" (cljr--symbol-suffix symbol)
+         "session" (cider-current-session))))
 
 (defun cljr--get-error-value (response)
   "Gets the error value from the middleware response.
@@ -2939,7 +2940,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
   (message "Hotloaded %s" (nrepl-dict-get response "dependency")))
 
 (defun cljr--call-middleware-to-hotload-dependency (dep)
-  (nrepl-send-request
+  (cider-nrepl-send-request
    (list "op" "hotload-dependency"
          "coordinates" dep)
    #'cljr--hotload-dependency-callback))
@@ -2980,7 +2981,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
 (defun cljr--call-middleware-to-find-unbound-vars (file line column)
   (s-join " "
           (-> (list "op" "find-unbound" "file" file "line" line "column" column)
-              nrepl-send-sync-request
+              cider-nrepl-send-sync-request
               cljr--maybe-rethrow-error
               (nrepl-dict-get "unbound"))))
 
@@ -3197,7 +3198,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
                         " :debug " (if cljr--debug-mode "true" "false")
                         "}")))
       (-> (list "op" "configure" "opts" opts)
-          (nrepl-send-request (or callback (lambda (_))))))))
+          (cider-nrepl-send-request (or callback (lambda (_))))))))
 
 ;;;###autoload
 (defun cljr-reload-config ()
