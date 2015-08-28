@@ -706,7 +706,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
 
 (defun cljr--op-supported? (op)
   "Is the OP we require provided by the current middleware stack?"
-  (nrepl-op-supported-p op (cider-current-repl-buffer)))
+  (cider-nrepl-op-supported-p op))
 
 (defun cljr--assert-middleware ()
   (unless (featurep 'cider)
