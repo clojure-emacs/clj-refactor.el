@@ -6,7 +6,7 @@
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;;         Lars Andersen <expez@expez.com>
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
-;; Version: 1.1.0
+;; Version: 1.2.0-SNAPSHOT
 ;; Keywords: convenience, clojure, cider
 ;; Package-Requires: ((emacs "24.4") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.10.0-cvs") (edn "1.1.2") (inflections "2.3"))
 
