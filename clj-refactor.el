@@ -2776,8 +2776,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
 
 (defun cljr--narrow-candidates (candidates symbol)
   (cond ((= (length candidates) 0)
-         (error "Couldn't find any symbols matching %s on classpath."
-                (cljr--symbol-suffix symbol)))
+         (message "Couldn't find any symbols matching %s on classpath."
+                  (cljr--symbol-suffix symbol)))
         ((= (length candidates) 1)
          (car candidates))
         (t
