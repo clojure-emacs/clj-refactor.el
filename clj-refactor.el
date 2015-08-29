@@ -2124,6 +2124,9 @@ front of function literals and sets."
       ;; perhaps these class of functions belong in `clojure-mode'
       ))
 
+(defun cljr--aget (map key)
+  (cdr (assoc key map)))
+
 (defun cljr--magic-requires-lookup-alias ()
   "Return (alias (ns.candidate candidate.ns)) if we recognize
 the alias in the project."
@@ -2132,7 +2135,7 @@ the alias in the project."
                 (1- (point)))))
     (if (s-matches? (cljr--magic-requires-re) short)
         (list short
-              (list (aget cljr-magic-require-namespaces short)))
+              (list (cljr--aget cljr-magic-require-namespaces short)))
       (-when-let (aliases (and cljr--namespace-aliases-cache
                                (if (cljr--clj-context?)
                                    (gethash :clj cljr--namespace-aliases-cache)
@@ -2163,9 +2166,6 @@ form."
               (insert libspec)
               (message "Required %s" libspec))
             (cljr--maybe-sort-ns))))))
-
-(defun aget (map key)
-  (cdr (assoc key map)))
 
 (defun cljr--in-namespace-declaration? (s)
   (save-excursion
