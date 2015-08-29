@@ -798,7 +798,13 @@ Signal an error if it is not supported."
 
 (defun cljr--cljc-file? (&optional buf)
   "Is BUF, or the current buffer, visiting a cljc file?"
-  (s-ends-with? ".cljc" (buffer-file-name (or buf (current-buffer)))))
+  (s-equals? (file-name-extension (buffer-file-name (or buf (current-buffer))))
+             "cljc"))
+
+(defun cljr--clj-file? (&optional buf)
+  "Is BUF, or the current buffer, visiting a clj file?"
+  (s-equals? (file-name-extension (buffer-file-name (or buf (current-buffer))))
+             "clj"))
 
 (defun cljr--add-test-declarations ()
   (save-excursion
@@ -2110,23 +2116,29 @@ front of function literals and sets."
 
 ;; ------ magic requires -------
 
-(defun cljr--clj-file? (&optional buf)
-  "Is BUF, or the current buffer, visiting a clj file?"
-  (s-equals? (file-name-extension (buffer-file-name (or buf (current-buffer))))
-             "clj"))
-
 (defun cljr--magic-requires-re ()
   (regexp-opt (-map 'car cljr-magic-require-namespaces)))
 
 (defun cljr--goto-reader-conditional ()
-  "Move point just before #?."
-  (let (found)
+  "Move point just before #?.
+
+Return the value of point if we moved."
+  (let ((start (point))
+        found)
     (while (not (or found (cljr--toplevel-p)))
       (paredit-backward-up)
       (when (looking-back (regexp-opt (list "#\?@" "#\?")) (point-at-bol))
         (paredit-backward)
         (setq found t)))
-    found))
+    (if found
+        (point)
+      (goto-char start)
+      nil)))
+
+(defun cljr--point-in-reader-conditional? ()
+  "Return t if point is inside a reader conditional."
+  (save-excursion
+    (cljr--goto-reader-conditional)))
 
 (defun cljr--point-in-reader-conditional-branch? (feature)
   "Is point in a reader conditional branch for FEATURE?
@@ -2150,7 +2162,12 @@ FEATURE is either :clj or :cljs."
 (defun cljr--clj-context? ()
   "Is point in a clj context?"
   (or (cljr--clj-file?)
-      (cljr--point-in-reader-conditional-branch? :clj)))
+      (when (cljr--cljc-file?)
+        (if (cljr--point-in-reader-conditional?)
+            (cljr--point-in-reader-conditional-branch? :clj)
+          (s-equals? (cljr--prompt-user-for "Language context at point? "
+                                            (list "clj" "cljs"))
+                     "clj")))))
 
 (defun cljr--aget (map key)
   (cdr (assoc key map)))
