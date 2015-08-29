@@ -2112,17 +2112,45 @@ front of function literals and sets."
 
 (defun cljr--clj-file? (&optional buf)
   "Is BUF, or the current buffer, visiting a clj file?"
-  (s-ends-with? ".clj" (buffer-file-name (or buf (current-buffer)))))
+  (s-equals? (file-name-extension (buffer-file-name (or buf (current-buffer))))
+             "clj"))
 
 (defun cljr--magic-requires-re ()
   (regexp-opt (-map 'car cljr-magic-require-namespaces)))
 
+(defun cljr--goto-reader-conditional ()
+  "Move point just before #?."
+  (let (found)
+    (while (not (or found (cljr--toplevel-p)))
+      (paredit-backward-up)
+      (when (looking-back (regexp-opt (list "#\?@" "#\?")) (point-at-bol))
+        (paredit-backward)
+        (setq found t)))
+    found))
+
+(defun cljr--point-in-reader-conditional-branch? (feature)
+  "Is point in a reader conditional branch for FEATURE?
+
+FEATURE is either :clj or :cljs."
+  (assert (or (eq feature :clj) (eq feature :cljs)) nil
+          "FEATURE has to be either :clj or :cljs.  Received: %s" feature)
+  (save-excursion
+    (let ((start (point))
+          (start-reader-conditional
+           (cljr--point-after 'cljr--goto-reader-conditional))
+          (other (if (eq feature :clj) ":cljs\\b" ":clj\\b"))
+          found)
+      (when start-reader-conditional
+        (while (not (or (setq found (looking-at-p (format "%s\\b" feature)))
+                        (looking-at-p other)
+                        (< (point) start-reader-conditional)))
+          (paredit-backward))
+        found))))
+
 (defun cljr--clj-context? ()
-  "Is point in a cljs context?"
+  "Is point in a clj context?"
   (or (cljr--clj-file?)
-      ;; TODO check for context within a reader conditional
-      ;; perhaps these class of functions belong in `clojure-mode'
-      ))
+      (cljr--point-in-reader-conditional-branch? :clj)))
 
 (defun cljr--aget (map key)
   (cdr (assoc key map)))

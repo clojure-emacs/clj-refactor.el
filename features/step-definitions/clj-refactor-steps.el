@@ -350,6 +350,7 @@
          (setq cljr--namespace-aliases-cache
                (edn-read "{:clj {t (clojure.test)
 set (clojure.set)
+pprint (clojure.pprint)
 util (refactor-nrepl.util clojure.tools.analyzer.jvm.utils)
 readers (clojure.tools.reader.reader-types) }
 :cljs {set (clojure.set)
