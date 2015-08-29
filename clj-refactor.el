@@ -729,11 +729,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
 
 (defun cljr--assert-middleware ()
   (unless (featurep 'cider)
-    (error "CIDER isn't installed!"))
+    (user-error "CIDER isn't installed!"))
   (unless (cider-connected-p)
-    (error "CIDER isn't connected!"))
+    (user-error "CIDER isn't connected!"))
   (unless (cljr--op-supported? "find-symbol")
-    (error "nrepl-refactor middleware not available! Did you remember to install it?")))
+    (user-error "nrepl-refactor middleware not available! Did you remember to install it?")))
 
 (defun cljr--ensure-op-supported (op)
   "Check for support of middleware op OP.
@@ -746,7 +746,7 @@ Signal an error if it is not supported."
 (defun cljr--assert-leiningen-project ()
   (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
                    "project.clj")
-    (error "Can't find project.clj!")))
+    (user-error "Can't find project.clj!")))
 
 
 ;; ------ ns statements -----------
@@ -1273,10 +1273,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
   (save-excursion
     (paredit-backward-up)
     (unless (looking-at "\\[")
-      (error "Place cursor on the namespace whose vars you want to stop referring to."))
+      (user-error "Place cursor on the namespace whose vars you want to stop referring to."))
     (paredit-backward-up)
     (unless (looking-at "(:require ")
-      (error "Place cursor on the namespace whose vars you want to stop referring to.")))
+      (user-error "Place cursor on the namespace whose vars you want to stop referring to.")))
   (save-excursion
     (paredit-backward-up)
     (let* ((bound (save-excursion
@@ -1289,9 +1289,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
                    (paredit-forward)
                    (buffer-substring-no-properties beg (point))))))
       (unless (re-search-forward " :refer " bound t)
-        (error "No :refer clause found."))
+        (user-error "No :refer clause found."))
       (when (looking-at ":all")
-        (error "Not smart enough to stop referring to :all unfortunately."))
+        (user-error "Not smart enough to stop referring to :all unfortunately."))
       (paredit-forward-down)
       (let* ((beg (point))
              (str (progn (paredit-forward-up)
@@ -1958,7 +1958,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-destructure-keys
   (save-excursion
     (paredit-backward-up)
     (unless (looking-at "\\[")
-      (error "Place point on the symbol to destructure inside the [let form]")))
+      (user-error "Place point on the symbol to destructure inside the [let form]")))
   (let* ((symbol (cljr--find-symbol-at-point))
          (re (concat "(:\\(\\sw\\|\\s_\\)+ " (regexp-quote symbol) ")"))
          (bound (save-excursion
@@ -2379,7 +2379,7 @@ If it's present KEY indicates the key to extract from the response."
          (artifacts (cljr--call-middleware-sync request "artifacts")))
     (if artifacts
         artifacts
-      (error "Empty artifact list received from middleware!"))))
+      (user-error "Empty artifact list received from middleware!"))))
 
 (defun cljr--update-artifact-cache ()
   (cljr--call-middleware-async (list "op" "artifact-list"
@@ -2488,7 +2488,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
   (cljr--assert-leiningen-project)
   (cljr--ensure-op-supported "artifact-list")
   (unless (cljr--looking-at-dependency-vector-p)
-    (error "Place cursor in front of dependency vector to update."))
+    (user-error "Place cursor in front of dependency vector to update."))
   (save-excursion
     (let (lib-name current-version)
       (paredit-forward-down)
