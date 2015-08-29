@@ -2363,8 +2363,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
   "Call the middleware with REQUEST.
 
 If it's present KEY indicates the key to extract from the response."
-  (let* ((nrepl-sync-request-timeout 25)
-         (response (-> request cider-nrepl-send-sync-request cljr--maybe-rethrow-error)))
+  (let ((response (-> request cider-nrepl-send-sync-request cljr--maybe-rethrow-error)))
     (if key
         (nrepl-dict-get response key)
       response)))
