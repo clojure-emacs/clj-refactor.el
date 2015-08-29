@@ -194,6 +194,27 @@ namespace in the project."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-midje-test-declaration "[midje.sweet :as midje]"
+  "The require form to use when midje is in use."
+  :group 'cljr
+  :type 'string)
+
+(defcustom cljr-expectations-test-declaration "[expectations :as e]"
+  "The require form to use when expectations is in use."
+  :group 'cljr
+  :type 'string)
+
+(defcustom cljr-cljc-clojure-test-declaration "#?(:clj [clojure.test :as t]
+:cljs [cljs.test :as t :include-macros true])"
+  "The require form to use when clojure.test and cljs.test is in use in a cljc file."
+  :group 'cljr
+  :type 'string)
+
+(defcustom cljr-clojure-test-declaration "[clojure.test :as t]"
+  "The require form to use when clojure.test and cljs.test is in use in a cljc file."
+  :group 'cljr
+  :type 'string)
+
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
 (defvar cljr--add-require-snippet
@@ -780,26 +801,22 @@ Signal an error if it is not supported."
   "Is BUF, or the current buffer, visiting a cljc file?"
   (s-ends-with? ".cljc" (buffer-file-name (or buf (current-buffer)))))
 
-(defun cljr--add-test-use-declarations ()
+(defun cljr--add-test-declarations ()
   (save-excursion
     (let* ((ns (clojure-find-ns))
            (source-ns (cljr--find-source-ns-of-test-ns ns (buffer-file-name))))
       (cljr--insert-in-ns ":require")
       (when source-ns
-        (if (cljr--cljc-file?)
-            ;; no :refer :all in cljs
-            (insert "[" source-ns " :as sut]")
-          (insert "[" source-ns " :refer :all]")))
+        (insert "[" source-ns " :as sut]"))
       (cljr--insert-in-ns ":require")
       (insert (cond
                ((cljr--project-depends-on-p "midje")
-                "[midje.sweet :refer :all]")
+                cljr-midje-test-declaration)
                ((cljr--project-depends-on-p "expectations")
-                "[expectations :refer :all]")
+                cljr-expectations-test-declaration)
                ((cljr--cljc-file?)
-                "#?(:clj [clojure.test :as t]
-:cljs [cljs.test :as t :include-macros true])")
-               (t "[clojure.test :refer :all]"))))
+                cljr-cljc-clojure-test-declaration)
+               (t cljr-clojure-test-declaration))))
     (indent-region (point-min) (point-max))))
 
 (defun cljr--in-tests-p ()
@@ -828,7 +845,7 @@ word test in it and whether the file lives under the test/ directory."
       (clojure-insert-ns-form)
       (newline 2)
       (when (cljr--in-tests-p)
-        (cljr--add-test-use-declarations)))))
+        (cljr--add-test-declarations)))))
 
 (add-hook 'find-file-hook 'cljr--add-ns-if-blank-clj-file)
 
