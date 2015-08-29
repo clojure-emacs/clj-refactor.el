@@ -360,3 +360,24 @@
 (Then "^The buffer should not be modified$"
       (lambda ()
         (assert (not (buffer-modified-p)))))
+
+(defun validate-helper-type (type)
+  (let ((all-descriptions (-map 'cdr cljr--all-helpers))
+        result)
+    (--each (-filter (lambda (desc) (-contains? (-last-item desc) type))
+                     all-descriptions)
+      (if (-contains? result (nth 2 it))
+          (error "'%s' is a duplicate in type '%s'!" (byte-to-string (nth 2 it)) type)
+        (!cons (nth 2 it) result)))))
+
+(defun validate-all-helpers ()
+  (-each
+      (->> cljr--all-helpers
+           (-map (lambda (fn-description) (-last-item (cdr fn-description))))
+           (-flatten)
+           (-distinct))
+    'validate-helper-type))
+
+(When "I run cljr--all-helpers check"
+      (lambda ()
+        (validate-all-helpers)))
