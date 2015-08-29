@@ -3267,9 +3267,10 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defun cljr-version ()
   "Returns the version of the middleware as well as this package."
   (interactive)
-  (cljr--ensure-op-supported "version")
   (message "clj-refactor %s, refactor-nrepl %s"
-           cljr-version (cljr--middleware-version)))
+           (cljr--version)
+           (or (ignore-errors (cljr--middleware-version))
+               "is unreachable")))
 
 ;;;###autoload
 (defun cljr-toggle-debug-mode ()
