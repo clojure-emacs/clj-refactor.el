@@ -2179,8 +2179,10 @@ the alias in the project."
                 (cljr--point-after 'paredit-backward)
                 (1- (point)))))
     (if (s-matches? (cljr--magic-requires-re) short)
-        (list short
-              (list (cljr--aget cljr-magic-require-namespaces short)))
+        ;; This when-let might seem unnecessary but the regexp match
+        ;; isn't perfect.
+        (-when-let (long (cljr--aget cljr-magic-require-namespaces short))
+          (list short (list long)))
       (-when-let (aliases (and cljr--namespace-aliases-cache
                                (if (cljr--clj-context?)
                                    (gethash :clj cljr--namespace-aliases-cache)
