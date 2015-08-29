@@ -40,9 +40,6 @@
 (require 'sgml-mode)
 (require 'inflections)
 
-(defconst cljr-version "1.2.0-SNAPSHOT"
-  "The current version of clojure-refactor")
-
 (defcustom cljr-add-ns-to-blank-clj-files t
   "If t, automatically add a ns form to new .clj files."
   :group 'cljr
@@ -742,7 +739,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
 Signal an error if it is not supported."
   (cljr--assert-middleware)
   (unless (cljr--op-supported? op)
-    (error "Can't find nREPL middleware providing op \"%s\".  Please, install (or update) refactor-nrepl %s and restart the REPL." op (upcase cljr-version))))
+    (error "Can't find nREPL middleware providing op \"%s\".  Please, install (or update) refactor-nrepl %s and restart the REPL."
+           op (upcase (cljr--version :prune-package-version)))))
 
 (defun cljr--assert-leiningen-project ()
   (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
@@ -3240,19 +3238,30 @@ changing settings."
 You can mute this warning by changing cljr-suppress-middleware-warnings."
                (s-join " " missing-ops ))))))
 
+(defun cljr--version (&optional remove-package-version)
+  "Get the version of `clj-refactor' from the package header.
+
+if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
+  (let ((version (s-replace "snapshot" "-SNAPSHOT"
+                            (s-trim (pkg-info-version-info 'clj-refactor)))))
+    (if remove-package-version
+        (replace-regexp-in-string " (.*)" "" version)
+      version)))
+
+(defun cljr--middleware-version ()
+  (cljr--call-middleware-sync (list "op" "version") "version"))
+
 (defun cljr--check-middleware-version ()
   "Check whether clj-refactor and nrepl-refactor versions are the same"
-  (let ((refactor-nrepl-version (or (cljr--middleware-version) "n/a")))
+  (let ((refactor-nrepl-version (or (cljr--middleware-version)
+                                    "n/a")))
     (unless (s-equals? (s-downcase refactor-nrepl-version)
-                       (s-downcase cljr-version))
+                       (s-downcase (cljr--version :remove-package-version)))
       (cider-repl-emit-interactive-stderr
        (format "WARNING: clj-refactor and refactor-nrepl are out of sync.
 Their versions are %s and %s, respectively.
 You can mute this warning by changing cljr-suppress-middleware-warnings."
-               cljr-version refactor-nrepl-version)))))
-
-(defun cljr--middleware-version ()
-  (cljr--call-middleware-sync (list "op" "version") "version"))
+               (cljr--version) refactor-nrepl-version)))))
 
 ;;;###autoload
 (defun cljr-version ()
