@@ -2219,18 +2219,19 @@ form."
   (insert "/")
   (-when-let (aliases (and cljr-magic-requires
                            (cljr--magic-requires-lookup-alias)))
-    (let* ((short (first aliases))
-           (long (cljr--prompt-user-for "Require " (second aliases))))
-      (if (and (not (cljr--in-namespace-declaration? (concat ":as " short)))
-               (or (not (eq :prompt cljr-magic-requires))
-                   (not (> (length (second aliases)) 1)) ; already prompted
-                   (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
+    (let ((short (first aliases)))
+      (-when-let (long (and (not (cljr--resolve-alias short))
+                            (cljr--prompt-user-for "Require " (second aliases))))
+        (when (and (not (cljr--in-namespace-declaration? (concat ":as " short)))
+                   (or (not (eq :prompt cljr-magic-requires))
+                       (not (> (length (second aliases)) 1)) ; already prompted
+                       (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
           (save-excursion
             (cljr--insert-in-ns ":require")
             (let ((libspec (format "[%s :as %s]" long short)))
               (insert libspec)
               (message "Required %s" libspec))
-            (cljr--maybe-sort-ns))))))
+            (cljr--maybe-sort-ns)))))))
 
 (defun cljr--in-namespace-declaration? (s)
   (save-excursion

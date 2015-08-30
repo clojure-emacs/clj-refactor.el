@@ -45,3 +45,25 @@ Feature: Magic requires
 
     (util/get-last-sexp)
     """
+
+
+  Scenario: If alias exists nothing happens
+    When I insert:
+    """
+    (ns cljr.core
+      (:require [refactor-nrepl.util :as util]))
+
+    (util)
+    """
+    And the cache of namespace aliases is populated
+    And I place the cursor after "(util"
+    And I start an action chain
+    And I type "/get-last-sexp"
+    And I execute the action chain
+    Then I should see:
+    """
+    (ns cljr.core
+      (:require [refactor-nrepl.util :as util]))
+
+    (util/get-last-sexp)
+    """
