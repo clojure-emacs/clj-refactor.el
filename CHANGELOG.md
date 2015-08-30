@@ -2,6 +2,7 @@
 
 ## Up next
 
+- Get rid of `cljr-reload-config`.  We're now sending the configuration options down to the middleware on each request instead of storing it down there.
 - Make magic requires cljc aware.
 - [#215](https://github.com/clojure-emacs/clj-refactor.el/issues/215)Improve the magic requires feature (when you hit `/`) by asking the middleware for all available namespace aliases.
 - Add `cljr-extract-def` which extracts the form at, or around, point as a def.
