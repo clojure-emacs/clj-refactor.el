@@ -820,8 +820,9 @@ Signal an error if it is not supported."
 
 (defun cljr--clj-file? (&optional buf)
   "Is BUF, or the current buffer, visiting a clj file?"
-  (s-equals? (file-name-extension (buffer-file-name (or buf (current-buffer))))
-             "clj"))
+  (or (eq major-mode 'clojure-mode)
+      (s-equals? (file-name-extension (buffer-file-name (or buf (current-buffer))))
+                 "clj")))
 
 (defun cljr--add-test-declarations ()
   (save-excursion
