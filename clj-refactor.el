@@ -233,7 +233,6 @@ namespace in the project."
     "artifact-list"
     "artifact-versions"
     "clean-ns"
-    "configure"
     "extract-definition"
     "find-debug-fns"
     "find-symbol"
@@ -583,6 +582,23 @@ at the opening parentheses of an anonymous function."
           (when (<= (point) search-bound)
             (error "Can't find definition of anonymous function!")))))))
 
+(defun cljr--create-msg (op &rest kvs)
+  "Create a msg for the middleware for OP and optionally include
+  the kv pairs KVS.
+
+All config settings are included in the created msg."
+  (-remove #'null
+           (apply #'list "op" op
+                  "prefix-rewriting"
+                  (if cljr-favor-prefix-notation
+                      "true"
+                    "false")
+                  "debug"
+                  (if cljr--debug-mode
+                      "true"
+                    "false")
+                  kvs)))
+
 ;; ------ reify protocol defrecord -----------
 
 (defun cljr--goto-reify ()
@@ -706,10 +722,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
          (old-path (expand-file-name old-path))
          (new-path (expand-file-name new-path)))
     (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
-      (let* ((changed-files (cljr--call-middleware-sync (list "op" "rename-file-or-dir"
-                                                              "old-path" old-path
-                                                              "new-path" new-path)
-                                                        "touched"))
+      (let* ((changed-files (cljr--call-middleware-sync
+                             (cljr--create-msg "rename-file-or-dir"
+                                               "old-path" old-path
+                                               "new-path" new-path)
+                             "touched"))
              (changed-files-count (length changed-files)))
         (cljr--indent-ns-forms changed-files)
         (cond
@@ -977,9 +994,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-debug-fns
   (cljr--ensure-op-supported "find-debug-fns")
   (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
          (result (cljr--call-middleware-sync
-                  (list "op" "find-debug-fns"
-                        "ns-string" body
-                        "debug-fns" cljr-debug-functions)
+                  (cljr--create-msg "find-debug-fns"
+                                    "ns-string" body
+                                    "debug-fns" cljr-debug-functions)
                   "value"))
          (debug-fn-tuples (pop result))
          (removed-lines 0))
@@ -2375,15 +2392,15 @@ If it's present KEY indicates the key to extract from the response."
 
 (defun cljr--get-artifacts-from-middleware (force)
   (message "Retrieving list of available libraries...")
-  (let* ((request (list "op" "artifact-list" "force" (if force "true" "false")))
+  (let* ((request (cljr--create-msg "artifact-list" "force" (if force "true" "false")))
          (artifacts (cljr--call-middleware-sync request "artifacts")))
     (if artifacts
         artifacts
       (user-error "Empty artifact list received from middleware!"))))
 
 (defun cljr--update-artifact-cache ()
-  (cljr--call-middleware-async (list "op" "artifact-list"
-                                     "force" "true")
+  (cljr--call-middleware-async (cljr--create-msg "artifact-list"
+                                                 "force" "true")
                                (lambda (_)
                                  (when cljr--debug-mode
                                    (message "Artifact cache updated")))))
@@ -2437,7 +2454,7 @@ before non-empty. This lets 1.7.0 be sorted above 1.7.0-RC1."
       (reverse res))))
 
 (defun cljr--get-versions-from-middleware (artifact)
-  (let* ((request (list "op" "artifact-versions" "artifact" artifact))
+  (let* ((request (cljr--create-msg "artifact-versions" "artifact" artifact))
          (versions (nreverse (sort (cljr--call-middleware-sync request "versions") 'cljr--dictionary-lessp))))
     (if versions
         versions
@@ -2668,13 +2685,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
          (line (line-number-at-pos))
          (column (1+ (current-column)))
          (dir (cljr--project-dir))
-         (request (list "op" "find-symbol"
-                        "ns" ns
-                        "dir" dir
-                        "file" filename
-                        "line" line
-                        "column" column
-                        "name" symbol))
+         (request (cljr--create-msg "find-symbol"
+                                    "ns" ns
+                                    "dir" dir
+                                    "file" filename
+                                    "line" line
+                                    "column" column
+                                    "name" symbol))
          occurrences)
     (with-temp-buffer
       (insert (cljr--call-middleware-sync request "occurrence"))
@@ -2689,7 +2706,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
          (line (line-number-at-pos))
          (column (1+ (current-column)))
          (dir (cljr--project-dir))
-         (find-symbol-request (list "op" "find-symbol"
+         (find-symbol-request (cljr--create-msg "find-symbol"
                                     "ns" ns
                                     "dir" dir
                                     "file" filename
@@ -2829,7 +2846,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
 
 (defun cljr--warm-ast-cache ()
   (cljr--call-middleware-async
-   (list "op" "warm-ast-cache")
+   (cljr--create-msg "warm-ast-cache")
    (lambda (res)
      (cljr--maybe-rethrow-error res)
      (cljr--maybe-nses-in-bad-state res)
@@ -2849,7 +2866,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
 (defun cljr--update-namespace-aliases-cache-async ()
   "Update the contents of `cljr--namespace-aliases-cache'."
   (cljr--call-middleware-async
-   (list "op" "namespace-aliases")
+   (cljr--create-msg "namespace-aliases")
    (lambda (response)
      (ignore-errors
        (cljr--maybe-rethrow-error response) ; abort; best effort
@@ -2875,7 +2892,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
                            filename
                          (buffer-file-name)))
          (result (cider-nrepl-send-sync-request
-                  (list "op" "clean-ns"
+                  (cljr--create-msg "clean-ns"
                         "path" path-to-file))))
     (cljr--maybe-rethrow-error result)
     (-when-let (new-ns (nrepl-dict-get result "ns"))
@@ -2977,7 +2994,7 @@ Date. -> Date
 (defun cljr--call-middleware-to-resolve-missing (symbol)
   ;; Just so this part can be mocked out in a step definition
   (cider-nrepl-send-sync-request
-   (list "op" "resolve-missing"
+   (cljr--create-msg "resolve-missing"
          "symbol" (cljr--symbol-suffix symbol)
          "session" (cider-current-session))))
 
@@ -3047,7 +3064,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
 
 (defun cljr--call-middleware-to-hotload-dependency (dep)
   (cider-nrepl-send-request
-   (list "op" "hotload-dependency"
+   (cljr--create-msg "hotload-dependency"
          "coordinates" dep)
    #'cljr--hotload-dependency-callback))
 
@@ -3086,7 +3103,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
 
 (defun cljr--call-middleware-to-find-unbound-vars (file line column)
   (s-join " "
-          (-> (list "op" "find-unbound" "file" file "line" line "column" column)
+          (-> (cljr--create-msg "find-unbound" "file" file "line" line "column" column)
               cider-nrepl-send-sync-request
               cljr--maybe-rethrow-error
               (nrepl-dict-get "unbound"))))
@@ -3170,8 +3187,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
                           interface)
                       (format "%s/%s" (cider-current-ns) interface)))
          (functions (edn-read (cljr--call-middleware-sync
-                               (list "op" "stubs-for-interface"
-                                     "interface" interface)
+                               (cljr--create-msg "stubs-for-interface"
+                                                 "interface" interface)
                                "functions"))))
     (cljr--insert-function-stubs functions)))
 
@@ -3297,28 +3314,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
           (message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
   (cljr--indent-defun))
 
-(defun cljr--configure-middleware (&optional callback)
-  (when (cljr--op-supported? "configure")
-    (let ((opts (concat "{:prefix-rewriting "
-                        (if cljr-favor-prefix-notation "true" "false")
-                        " :debug " (if cljr--debug-mode "true" "false")
-                        "}")))
-      (-> (list "op" "configure" "opts" opts)
-          (cider-nrepl-send-request (or callback (lambda (_))))))))
-
-;;;###autoload
-(defun cljr-reload-config ()
-  "Resend configuration settings to the middleware.
-
-This can be used to avoid restarting the repl session after
-changing settings."
-  (interactive)
-  (cljr--ensure-op-supported "configure")
-  (cljr--configure-middleware
-   (lambda (response)
-     (cljr--maybe-rethrow-error response)
-     (message "Config successfully updated!"))))
-
 (defun cljr--check-nrepl-ops ()
   "Check whether all nREPL ops are present and emit a warning when not."
   (let ((missing-ops (-remove #'cljr--op-supported? cljr--nrepl-ops)))
@@ -3340,7 +3335,7 @@ if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
       version)))
 
 (defun cljr--middleware-version ()
-  (cljr--call-middleware-sync (list "op" "version") "version"))
+  (cljr--call-middleware-sync (cljr--create-msg "version") "version"))
 
 (defun cljr--check-middleware-version ()
   "Check whether clj-refactor and nrepl-refactor versions are the same"
@@ -3366,20 +3361,15 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 ;;;###autoload
 (defun cljr-toggle-debug-mode ()
   (interactive)
-  (cljr--ensure-op-supported "configure")
-  (cljr--configure-middleware
-   (lambda (response)
-     (cljr--maybe-rethrow-error response)
-     (setq cljr--debug-mode (not cljr--debug-mode))
-     (if cljr--debug-mode
-         (message "Debug mode on")
-       (message "Debug mode off")))))
+  (setq cljr--debug-mode (not cljr--debug-mode))
+  (if cljr--debug-mode
+      (message "Debug mode on")
+    (message "Debug mode off")))
 
 (defun cljr--init-middleware ()
   (unless cljr-suppress-middleware-warnings
     (cljr--check-nrepl-ops)
     (cljr--check-middleware-version))
-  (cljr--configure-middleware)
   ;; Best effort; don't freak people out with errors
   (ignore-errors
     (when cljr-populate-artifact-cache-on-startup
