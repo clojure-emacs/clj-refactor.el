@@ -8,7 +8,7 @@
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;; Version: 1.2.0-SNAPSHOT
 ;; Keywords: convenience, clojure, cider
-;; Package-Requires: ((emacs "24.4") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.10.0-cvs") (edn "1.1.2") (inflections "2.3"))
+;; Package-Requires: ((emacs "24.4") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.10.0-cvs") (edn "1.1.2") (inflections "2.3") (hydra "0.13.2"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -39,6 +39,7 @@
 (require 'edn)
 (require 'sgml-mode)
 (require 'inflections)
+(require 'hydra)
 
 (defcustom cljr-add-ns-to-blank-clj-files t
   "If t, automatically add a ns form to new .clj files."
@@ -308,50 +309,156 @@ Otherwise open the file and do the changes non-interactively."
   (read-kbd-macro (concat prefix " " keys)))
 
 (defvar cljr--all-helpers
-  '(("ai" . (cljr-add-import-to-ns "Add import to ns"))
-    ("am" . (cljr-add-missing-libspec "Add missing libspec"))
-    ("ap" . (cljr-add-project-dependency "Add project dependency"))
-    ("ar" . (cljr-add-require-to-ns "Add require to ns"))
-    ("as" . (cljr-add-stubs "Add stubs for the interface / protocol at point."))
-    ("au" . (cljr-add-use-to-ns "Add use to ns"))
-    ("cc" . (cljr-cycle-coll "Cycle coll"))
-    ("ci" . (cljr-cycle-if "Cycle if"))
-    ("cn" . (cljr-clean-ns "Clean ns"))
-    ("cp" . (cljr-cycle-privacy "Cycle privacy"))
-    ("cs" . (cljr-change-function-signature "Change function signature"))
-    ("ct" . (cljr-cycle-thread "Cycle thread"))
-    ("dk" . (cljr-destructure-keys "Destructure keys"))
-    ("ec" . (cljr-extract-constant "Extract constant"))
-    ("ed" . (cljr-extract-def "Extract form as def"))
-    ("ef" . (cljr-extract-function "Extract function"))
-    ("el" . (cljr-expand-let "Expand let"))
-    ("fe" . (cljr-create-fn-from-example "Create function from example"))
-    ("fu" . (cljr-find-usages "Find usages"))
-    ("hd" . (cljr-hotload-dependency "Hotload dependency"))
-    ("il" . (cljr-introduce-let "Introduce let"))
-    ("is" . (cljr-inline-symbol "Inline symbol"))
-    ("mf" . (cljr-move-form "Move form"))
-    ("ml" . (cljr-move-to-let "Move to let"))
-    ("pc" . (cljr-project-clean "Project clean"))
-    ("pf" . (cljr-promote-function "Promote function"))
-    ("rd" . (cljr-remove-debug-fns "Remove debug fns"))
-    ("rf" . (cljr-rename-file-or-dir "Rename file-or-dir"))
-    ("rl" . (cljr-remove-let "Remove let"))
-    ("rr" . (cljr-remove-unused-requires "Remove unused requires"))
-    ("rs" . (cljr-rename-symbol "Rename symbol"))
-    ("ru" . (cljr-replace-use "Replace use"))
-    ("sn" . (cljr-sort-ns "Sort ns"))
-    ("sc" . (cljr-show-changelog "Show the project's changelog"))
-    ("sp" . (cljr-sort-project-dependencies "Sort project dependencies"))
-    ("sr" . (cljr-stop-referring "Stop referring"))
-    ("tf" . (cljr-thread-first-all "Thread first all"))
-    ("th" . (cljr-thread "Thread"))
-    ("tl" . (cljr-thread-last-all "Thread last all"))
-    ("ua" . (cljr-unwind-all "Unwind all"))
-    ("up" . (cljr-update-project-dependencies "Update project dependencies"))
-    ("uw" . (cljr-unwind "Unwind"))
-    ("ad" . (cljr-add-declaration "Add declaration"))
-    ("?" . (cljr-describe-refactoring))))
+  '(("ai" . (cljr-add-import-to-ns "Add import to ns" ?i ("ns")))
+    ("am" . (cljr-add-missing-libspec "Add missing libspec" ?m ("ns")))
+    ("ap" . (cljr-add-project-dependency "Add project dependency" ?p ("ns" "project")))
+    ("ar" . (cljr-add-require-to-ns "Add require to ns" ?r ("ns")))
+    ("as" . (cljr-add-stubs "Add stubs for the interface/protocol at point" ?s ("toplevel-form")))
+    ("au" . (cljr-add-use-to-ns "Add use to ns" ?U ("ns")))
+    ("cc" . (cljr-cycle-coll "Cycle coll" ?c ("code")))
+    ("ci" . (cljr-cycle-if "Cycle if" ?I ("code")))
+    ("cn" . (cljr-clean-ns "Clean ns" ?c ("ns")))
+    ("cp" . (cljr-cycle-privacy "Cycle privacy" ?P ("toplevel-form")))
+    ("cs" . (cljr-change-function-signature "Change function signature" ?C ("toplevel-form" "project")))
+    ("ct" . (cljr-cycle-thread "Cycle thread" ?t ("code")))
+    ("dk" . (cljr-destructure-keys "Destructure keys" ?d ("code")))
+    ("ec" . (cljr-extract-constant "Extract constant" ?c ("toplevel-form")))
+    ("ed" . (cljr-extract-def "Extract form as def" ?D ("toplevel-form")))
+    ("ef" . (cljr-extract-function "Extract function" ?e ("toplevel-form")))
+    ("el" . (cljr-expand-let "Expand let" ?e ("code")))
+    ("fe" . (cljr-create-fn-from-example "Create function from example" ?f ("toplevel-form")))
+    ("fu" . (cljr-find-usages "Find usages" ?u ("project" "code")))
+    ("hd" . (cljr-hotload-dependency "Hotload dependency" ?h ("project")))
+    ("il" . (cljr-introduce-let "Introduce let" ?l ("code")))
+    ("is" . (cljr-inline-symbol "Inline symbol" ?i ("project" "toplevel-form" "code")))
+    ("mf" . (cljr-move-form "Move form" ?m ("toplevel-form" "project")))
+    ("ml" . (cljr-move-to-let "Move to let" ?m ("code")))
+    ("pc" . (cljr-project-clean "Project clean" ?c ("project")))
+    ("pf" . (cljr-promote-function "Promote function" ?p ("code" "toplevel-form")))
+    ("rd" . (cljr-remove-debug-fns "Remove debug fns" ?d ("project")))
+    ("rf" . (cljr-rename-file-or-dir "Rename file-or-dir" ?r ("project" "toplevel-form")))
+    ("rl" . (cljr-remove-let "Remove let" ?r ("code")))
+    ("rr" . (cljr-remove-unused-requires "Remove unused requires" ?R ("ns")))
+    ("rs" . (cljr-rename-symbol "Rename symbol" ?s ("project" "code")))
+    ("ru" . (cljr-replace-use "Replace use" ?u ("ns")))
+    ("sn" . (cljr-sort-ns "Sort ns" ?s ("ns")))
+    ("sc" . (cljr-show-changelog "Show the project's changelog" ?c ("cljr")))
+    ("sp" . (cljr-sort-project-dependencies "Sort project dependencies" ?S ("project")))
+    ("sr" . (cljr-stop-referring "Stop referring" ?t ("ns")))
+    ("tf" . (cljr-thread-first-all "Thread first all" ?f ("code")))
+    ("th" . (cljr-thread "Thread" ?T ("code")))
+    ("tl" . (cljr-thread-last-all "Thread last all" ?L ("code")))
+    ("ua" . (cljr-unwind-all "Unwind all" ?U ("code")))
+    ("up" . (cljr-update-project-dependencies "Update project dependencies" ?U ("project")))
+    ("uw" . (cljr-unwind "Unwind" ?w ("code")))
+    ("ad" . (cljr-add-declaration "Add declaration" ?d ("toplevel-form")))
+    ("?" . (cljr-describe-refactoring "Describe refactoring" ?d ("cljr")))
+    ("hh" . (hydra-cljr-help-menu/body "Parent menu for hydra menus" ?h ("hydra")))
+    ("hn" . (hydra-cljr-ns-menu/body "Hydra menu for ns refactorings" ?n ("hydra")))
+    ("hc" . (hydra-cljr-code-menu/body "Hydra menu for code refactorings" ?c ("hydra")))
+    ("hp" . (hydra-cljr-project-menu/body "Hydra menu for project refactorings" ?p ("hydra")))
+    ("ht" . (hydra-cljr-toplevel-form-menu/body "Hydra menu for top level refactorings " ?t ("hydra")))
+    ("hs" . (hydra-cljr-cljr-menu/body "Hydra menu for self features" ?s ("hydra")))))
+
+(defun hydra-docstring (type)
+  (apply
+   'concat
+   (cons
+    (format "\n %s related refactorings\n------------------------------------------------------------------------------------------------------------------------------------------------------\n" (s-capitalize (s-replace "-" " " type)))
+    (->> cljr--all-helpers
+         (-filter
+          (lambda (fn-description) (-contains? (-last-item (cdr fn-description)) type)))
+         (-map (lambda (description) (list (car description)
+                                           (nth 1 (cdr description)))))
+         (-map (lambda (tuple) (format "_%s_: %-45s" (car tuple) (cadr tuple))))
+         (-partition-all 3)
+         (-map-first (lambda (line)
+                       (/= 3 (length line)))
+                     (lambda (line)
+                       (cond
+                        ((= 1 (length line))
+                         (cons (car line) '("" "")))
+
+                        ((= 2 (length line))
+                         (list (car line) (cadr line) "")))))
+         (-map (lambda (line) (apply 'format "%s%s%s\n" line)))))))
+
+(defun hydra-heads (type)
+  (->> cljr--all-helpers
+       (-filter
+        (lambda (fn-description) (-contains? (-last-item (cdr fn-description)) type)))
+       (-map (lambda (description) (list (format "%s" (car description))
+                                         (cadr description))))))
+
+(defhydra hydra-cljr-ns-menu (:color pink :hint nil)
+  "
+ Ns related refactorings
+------------------------------------------------------------------------------------------------------------------------------------------------------
+_ai_: Add import to ns                             _am_: Add missing libspec                          _ap_: Add project dependency
+_ar_: Add require to ns                            _au_: Add use to ns                                _cn_: Clean ns
+_rr_: Remove unused requires                       _ru_: Replace use                                  _sn_: Sort ns
+_sr_: Stop referring
+"
+  ("ai" cljr-add-import-to-ns) ("am" cljr-add-missing-libspec) ("ap" cljr-add-project-dependency) ("ar" cljr-add-require-to-ns) ("au" cljr-add-use-to-ns) ("cn" cljr-clean-ns) ("rr" cljr-remove-unused-requires) ("ru" cljr-replace-use) ("sn" cljr-sort-ns) ("sr" cljr-stop-referring) ("q" nil "quit"))
+
+(defhydra hydra-cljr-code-menu (:color pink :hint nil)
+  "
+ Code related refactorings
+------------------------------------------------------------------------------------------------------------------------------------------------------
+_cc_: Cycle coll                                   _ci_: Cycle if                                     _ct_: Cycle thread
+_dk_: Destructure keys                             _el_: Expand let                                   _fu_: Find usages
+_il_: Introduce let                                _is_: Inline symbol                                _ml_: Move to let
+_pf_: Promote function                             _rl_: Remove let                                   _rs_: Rename symbol
+_tf_: Thread first all                             _th_: Thread                                       _tl_: Thread last all
+_ua_: Unwind all                                   _uw_: Unwind
+"
+  ("cc" cljr-cycle-coll) ("ci" cljr-cycle-if) ("ct" cljr-cycle-thread) ("dk" cljr-destructure-keys) ("el" cljr-expand-let) ("fu" cljr-find-usages) ("il" cljr-introduce-let) ("is" cljr-inline-symbol) ("ml" cljr-move-to-let) ("pf" cljr-promote-function) ("rl" cljr-remove-let) ("rs" cljr-rename-symbol) ("tf" cljr-thread-first-all) ("th" cljr-thread) ("tl" cljr-thread-last-all) ("ua" cljr-unwind-all) ("uw" cljr-unwind) ("q" nil "quit"))
+
+(defhydra hydra-cljr-project-menu (:color pink :hint nil)
+  "
+ Project related refactorings
+------------------------------------------------------------------------------------------------------------------------------------------------------
+_ap_: Add project dependency                       _cs_: Change function signature                    _fu_: Find usages
+_hd_: Hotload dependency                           _is_: Inline symbol                                _mf_: Move form
+_pc_: Project clean                                _rd_: Remove debug fns                             _rf_: Rename file-or-dir
+_rs_: Rename symbol                                _sp_: Sort project dependencies                    _up_: Update project dependencies
+"
+  ("ap" cljr-add-project-dependency) ("cs" cljr-change-function-signature) ("fu" cljr-find-usages) ("hd" cljr-hotload-dependency) ("is" cljr-inline-symbol) ("mf" cljr-move-form) ("pc" cljr-project-clean) ("rd" cljr-remove-debug-fns) ("rf" cljr-rename-file-or-dir) ("rs" cljr-rename-symbol) ("sp" cljr-sort-project-dependencies) ("up" cljr-update-project-dependencies) ("q" nil "quit"))
+
+(defhydra hydra-cljr-toplevel-form-menu (:color pink :hint nil)
+  "
+ Toplevel form related refactorings
+------------------------------------------------------------------------------------------------------------------------------------------------------
+_as_: Add stubs for the interface/protocol at point_cp_: Cycle privacy                                _cs_: Change function signature
+_ec_: Extract constant                             _ed_: Extract form as def                          _ef_: Extract function
+_fe_: Create function from example                 _is_: Inline symbol                                _mf_: Move form
+_pf_: Promote function                             _rf_: Rename file-or-dir                           _ad_: Add declaration
+"
+  ("as" cljr-add-stubs) ("cp" cljr-cycle-privacy) ("cs" cljr-change-function-signature) ("ec" cljr-extract-constant) ("ed" cljr-extract-def) ("ef" cljr-extract-function) ("fe" cljr-create-fn-from-example) ("is" cljr-inline-symbol) ("mf" cljr-move-form) ("pf" cljr-promote-function) ("rf" cljr-rename-file-or-dir) ("ad" cljr-add-declaration) ("q" nil "quit"))
+
+(defhydra hydra-cljr-cljr-menu (:color pink :hint nil)
+  "
+ Cljr related refactorings
+------------------------------------------------------------------------------------------------------------------------------------------------------
+_sc_: Show the project's changelog                 _?_: Describe refactoring
+"
+  ("sc" cljr-show-changelog) ("?" cljr-describe-refactoring) ("q" nil "quit"))
+
+(defhydra hydra-cljr-help-menu (:color pink :hint nil)
+  "
+Available refactoring types
+-----------------------------------------------------------------------------
+_n_: Ns related refactorings      _c_: Code related refactorings
+_p_: Project related refactorings _t_: Top level forms related refactorings
+_s_: Refactor related functions
+"
+
+  ("n" hydra-cljr-ns-menu/body :exit t)
+  ("c" hydra-cljr-code-menu/body :exit t)
+  ("p" hydra-cljr-project-menu/body :exit t)
+  ("t" hydra-cljr-toplevel-form-menu/body :exit t)
+  ("s" hydra-cljr-cljr-menu/body :exit t)
+  ("q" nil "quit" :color blue))
 
 (defun cljr--add-keybindings (key-fn)
   "Build the keymap from the list of keys/functions in `cljr--all-helpers'."
