@@ -53,6 +53,8 @@ All functions in clj-refactor have a two-letter mnemonic shortcut. E.g. `rs` for
 
 See the wiki for a complete [list of available refactorings] (https://github.com/clojure-emacs/clj-refactor.el/wiki), demonstrations and customization points.
 
+We also have [hydra](https://github.com/abo-abo/hydra) powered menus to help to learn or refresh the mnemonic shortcuts. See the [wiki](https://github.com/clojure-emacs/clj-refactor.el/wiki/hydra-parent) for details.
+
 ## Changelog
 
 An extensive changelog is available [here](CHANGELOG.md).
