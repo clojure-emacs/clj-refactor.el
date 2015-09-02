@@ -2303,17 +2303,18 @@ the alias in the project."
   (let ((short (buffer-substring-no-properties
                 (cljr--point-after 'paredit-backward)
                 (1- (point)))))
-    (if (s-matches? (cljr--magic-requires-re) short)
-        ;; This when-let might seem unnecessary but the regexp match
-        ;; isn't perfect.
-        (-when-let (long (cljr--aget cljr-magic-require-namespaces short))
-          (list short (list long)))
-      (-when-let (aliases (and cljr--namespace-aliases-cache
-                               (if (cljr--clj-context?)
-                                   (gethash :clj cljr--namespace-aliases-cache)
-                                 (gethash :cljs cljr--namespace-aliases-cache))))
-        (-when-let (candidates (gethash (intern short) aliases))
-          (list short candidates))))))
+    (unless (cljr--resolve-alias short)
+      (if (s-matches? (cljr--magic-requires-re) short)
+          ;; This when-let might seem unnecessary but the regexp match
+          ;; isn't perfect.
+          (-when-let (long (cljr--aget cljr-magic-require-namespaces short))
+            (list short (list long)))
+        (-when-let (aliases (and cljr--namespace-aliases-cache
+                                 (if (cljr--clj-context?)
+                                     (gethash :clj cljr--namespace-aliases-cache)
+                                   (gethash :cljs cljr--namespace-aliases-cache))))
+          (-when-let (candidates (gethash (intern short) aliases))
+            (list short candidates)))))))
 
 ;;;###autoload
 (defun cljr-slash ()
@@ -2327,8 +2328,7 @@ form."
   (-when-let (aliases (and cljr-magic-requires
                            (cljr--magic-requires-lookup-alias)))
     (let ((short (first aliases)))
-      (-when-let (long (and (not (cljr--resolve-alias short))
-                            (cljr--prompt-user-for "Require " (second aliases))))
+      (-when-let (long (cljr--prompt-user-for "Require " (second aliases)))
         (when (and (not (cljr--in-namespace-declaration? (concat ":as " short)))
                    (or (not (eq :prompt cljr-magic-requires))
                        (not (> (length (second aliases)) 1)) ; already prompted
