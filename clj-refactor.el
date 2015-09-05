@@ -3155,7 +3155,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
     (cljr--maybe-rethrow-error response)
     (if candidates-and-types
         (cljr--add-missing-libspec symbol (read candidates-and-types))
-      (error "Can't find %s on classpath" (cljr--symbol-suffix symbol))))
+      (message "Can't find %s on classpath" (cljr--symbol-suffix symbol))))
   (cljr--maybe-clean-or-sort-ns)
   (cljr--maybe-eval-ns-form))
 
