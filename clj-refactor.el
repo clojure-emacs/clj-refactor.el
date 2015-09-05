@@ -864,8 +864,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
 Signal an error if it is not supported."
   (cljr--assert-middleware)
   (unless (cljr--op-supported? op)
-    (error "Can't find nREPL middleware providing op \"%s\".  Please, install (or update) refactor-nrepl %s and restart the REPL."
-           op (upcase (cljr--version :prune-package-version)))))
+    (user-error "Can't find nREPL middleware providing op \"%s\".  Please, install (or update) refactor-nrepl %s and restart the REPL."
+                op (upcase (cljr--version :prune-package-version)))))
 
 (defun cljr--assert-leiningen-project ()
   (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
