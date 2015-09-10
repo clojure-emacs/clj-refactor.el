@@ -1400,7 +1400,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
     (unless (looking-at "\\[")
       (user-error "Place cursor on the namespace whose vars you want to stop referring to."))
     (paredit-backward-up)
-    (unless (looking-at "(:require ")
+    (unless (looking-at "(:require")
       (user-error "Place cursor on the namespace whose vars you want to stop referring to.")))
   (save-excursion
     (paredit-backward-up)
