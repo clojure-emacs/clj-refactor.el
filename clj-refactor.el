@@ -694,17 +694,16 @@ at the opening parentheses of an anonymous function."
   the kv pairs KVS.
 
 All config settings are included in the created msg."
-  (-remove #'null
-           (apply #'list "op" op
-                  "prefix-rewriting"
-                  (if cljr-favor-prefix-notation
-                      "true"
-                    "false")
-                  "debug"
-                  (if cljr--debug-mode
-                      "true"
-                    "false")
-                  kvs)))
+  (apply #'list "op" op
+         "prefix-rewriting"
+         (if cljr-favor-prefix-notation
+             "true"
+           "false")
+         "debug"
+         (if cljr--debug-mode
+             "true"
+           "false")
+         kvs))
 
 ;; ------ reify protocol defrecord -----------
 
