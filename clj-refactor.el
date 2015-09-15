@@ -694,6 +694,8 @@ at the opening parentheses of an anonymous function."
   the kv pairs KVS.
 
 All config settings are included in the created msg."
+  (assert (evenp (length kvs)) nil "Can't create msg to send to the middleware.\
+  Received an uneven number of kv pairs: %s " kvs)
   (apply #'list "op" op
          "prefix-rewriting"
          (if cljr-favor-prefix-notation
