@@ -72,5 +72,5 @@ Feature: Add namespace to blank .clj files
     (ns cljr.core-test
       (:require [cljr.core :as sut]
                 #?(:clj [clojure.test :as t]
-                        :cljs [cljs.test :as t :include-macros true])))
+                   :cljs [cljs.test :as t :include-macros true])))
     """
