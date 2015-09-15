@@ -689,12 +689,16 @@ at the opening parentheses of an anonymous function."
           (when (<= (point) search-bound)
             (error "Can't find definition of anonymous function!")))))))
 
+(defun cljr--even? (n)
+  ;; evenp lives in cl.el...
+  (zerop (mod n 2)))
+
 (defun cljr--create-msg (op &rest kvs)
   "Create a msg for the middleware for OP and optionally include
   the kv pairs KVS.
 
 All config settings are included in the created msg."
-  (assert (evenp (length kvs)) nil "Can't create msg to send to the middleware.\
+  (assert (cljr--evenp (length kvs)) nil "Can't create msg to send to the middleware.\
   Received an uneven number of kv pairs: %s " kvs)
   (apply #'list "op" op
          "prefix-rewriting"
