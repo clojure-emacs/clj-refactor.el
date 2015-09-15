@@ -698,7 +698,7 @@ at the opening parentheses of an anonymous function."
   the kv pairs KVS.
 
 All config settings are included in the created msg."
-  (assert (cljr--evenp (length kvs)) nil "Can't create msg to send to the middleware.\
+  (assert (cljr--even? (length kvs)) nil "Can't create msg to send to the middleware.\
   Received an uneven number of kv pairs: %s " kvs)
   (apply #'list "op" op
          "prefix-rewriting"
