@@ -2305,7 +2305,8 @@ the alias in the project."
                 (cljr--point-after 'paredit-backward)
                 (1- (point)))))
     (unless (cljr--resolve-alias short)
-      (if (s-matches? (cljr--magic-requires-re) short)
+      (if (and cljr-magic-require-namespaces ; a regex against "" always triggers
+               (s-matches? (cljr--magic-requires-re) short))
           ;; This when-let might seem unnecessary but the regexp match
           ;; isn't perfect.
           (-when-let (long (cljr--aget cljr-magic-require-namespaces short))
