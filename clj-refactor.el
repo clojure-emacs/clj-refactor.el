@@ -2821,14 +2821,16 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
          (line (line-number-at-pos))
          (column (1+ (current-column)))
          (dir (cljr--project-dir))
-         (find-symbol-request (cljr--create-msg "find-symbol"
-                                    "ns" ns
-                                    "dir" dir
-                                    "file" filename
-                                    "line" line
-                                    "column" column
-                                    "name" symbol
-                                    "ignore-errors" (when cljr-find-usages-ignore-analyzer-errors "true"))))
+         (find-symbol-request
+          (cljr--create-msg "find-symbol"
+                            "ns" ns
+                            "dir" dir
+                            "file" filename
+                            "line" line
+                            "column" column
+                            "name" symbol
+                            "ignore-errors"
+                            (when cljr-find-usages-ignore-analyzer-errors "true"))))
     (with-current-buffer (cider-current-repl-buffer)
       (setq cjr--occurrence-count 0)
       (setq cljr--num-syms -1))
@@ -3008,7 +3010,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
                          (buffer-file-name)))
          (result (cider-nrepl-send-sync-request
                   (cljr--create-msg "clean-ns"
-                        "path" path-to-file))))
+                                    "path" path-to-file))))
     (cljr--maybe-rethrow-error result)
     (-when-let (new-ns (nrepl-dict-get result "ns"))
       (cljr--replace-ns new-ns))
@@ -3110,8 +3112,8 @@ Date. -> Date
   ;; Just so this part can be mocked out in a step definition
   (cider-nrepl-send-sync-request
    (cljr--create-msg "resolve-missing"
-         "symbol" (cljr--symbol-suffix symbol)
-         "session" (cider-current-session))))
+                     "symbol" (cljr--symbol-suffix symbol)
+                     "session" (cider-current-session))))
 
 (defun cljr--get-error-value (response)
   "Gets the error value from the middleware response.
@@ -3180,7 +3182,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
 (defun cljr--call-middleware-to-hotload-dependency (dep)
   (cider-nrepl-send-request
    (cljr--create-msg "hotload-dependency"
-         "coordinates" dep)
+                     "coordinates" dep)
    #'cljr--hotload-dependency-callback))
 
 (defun cljr--assert-dependency-vector (string)
