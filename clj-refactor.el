@@ -253,7 +253,6 @@ namespace in the project."
 (defvar cljr--change-signature-buffer "*cljr-change-signature*")
 (defvar cljr--manual-intervention-buffer "*cljr-manual-intervention*")
 (defvar cljr--find-symbol-buffer "*cljr-find-usages*")
-(defvar cljr--namespace-aliases-cache nil)
 
 ;;; Buffer Local Declarations
 
@@ -2302,6 +2301,18 @@ FEATURE is either :clj or :cljs."
 (defun cljr--aget (map key)
   (cdr (assoc key map)))
 
+(defun cljr--call-middleware-for-namespace-aliases ()
+  (-> "namespace-aliases"
+      cljr--create-msg
+      (cljr--call-middleware-sync "namespace-aliases")
+      edn-read))
+
+(defun cljr--get-aliases-from-middleware ()
+  (-when-let (aliases (cljr--call-middleware-for-namespace-aliases))
+    (if (cljr--clj-context?)
+        (gethash :clj cljr--namespace-aliases-cache)
+      (gethash :cljs cljr--namespace-aliases-cache))))
+
 (defun cljr--magic-requires-lookup-alias ()
   "Return (alias (ns.candidate1 ns.candidate1)) if we recognize
 the alias in the project."
@@ -2315,12 +2326,9 @@ the alias in the project."
           ;; isn't perfect.
           (-when-let (long (cljr--aget cljr-magic-require-namespaces short))
             (list short (list long)))
-        (-when-let (aliases (and cljr--namespace-aliases-cache
-                                 (if (cljr--clj-context?)
-                                     (gethash :clj cljr--namespace-aliases-cache)
-                                   (gethash :cljs cljr--namespace-aliases-cache))))
-          (-when-let (candidates (gethash (intern short) aliases))
-            (list short candidates)))))))
+        (-when-let* ((aliases (cljr--get-aliases-from-middleware))
+                     (candidates (gethash (intern short) aliases)))
+          (list short candidates))))))
 
 ;;;###autoload
 (defun cljr-slash ()
@@ -2980,16 +2988,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
     (paredit-forward)
     (cljr--just-one-blank-line)))
 
-(defun cljr--update-namespace-aliases-cache-async ()
-  "Update the contents of `cljr--namespace-aliases-cache'."
-  (cljr--call-middleware-async
-   (cljr--create-msg "namespace-aliases")
-   (lambda (response)
-     (ignore-errors
-       (cljr--maybe-rethrow-error response) ; abort; best effort
-       (setq cljr--namespace-aliases-cache
-             (edn-read (nrepl-dict-get response "namespace-aliases")))))))
-
 ;;;###autoload
 (defun cljr-clean-ns ()
   "Clean the ns form for the current buffer.
@@ -3013,8 +3011,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
                                     "path" path-to-file))))
     (cljr--maybe-rethrow-error result)
     (-when-let (new-ns (nrepl-dict-get result "ns"))
-      (cljr--replace-ns new-ns))
-    (cljr--update-namespace-aliases-cache-async)))
+      (cljr--replace-ns new-ns))))
 
 (defun cljr--narrow-candidates (candidates symbol)
   (if (= (length candidates) 0)
@@ -3492,8 +3489,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     (when cljr-populate-artifact-cache-on-startup
       (cljr--update-artifact-cache))
     (when cljr-eagerly-build-asts-on-startup
-      (cljr--warm-ast-cache))
-    (cljr--update-namespace-aliases-cache-async)))
+      (cljr--warm-ast-cache))))
 
 (defvar cljr--list-fold-function-names
   '("map" "mapv" "pmap" "keep" "mapcat" "filter" "remove" "take-while" "drop-while"
