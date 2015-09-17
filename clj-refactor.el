@@ -239,6 +239,7 @@ namespace in the project."
     "find-symbol"
     "find-unbound"
     "hotload-dependency"
+    "namespace-aliases"
     "rename-file-or-dir"
     "resolve-missing"
     "stubs-for-interface"
@@ -865,9 +866,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
 
 (defun cljr--ensure-op-supported (op)
   "Check for support of middleware op OP.
-Signal an error if it is not supported."
+
+Signal an error if it is not supported, otherwise return OP."
   (cljr--assert-middleware)
-  (unless (cljr--op-supported? op)
+  (if (cljr--op-supported? op)
+      op
     (user-error "Can't find nREPL middleware providing op \"%s\".  Please, install (or update) refactor-nrepl %s and restart the REPL."
                 op (upcase (cljr--version :prune-package-version)))))
 
@@ -2303,6 +2306,7 @@ FEATURE is either :clj or :cljs."
 
 (defun cljr--call-middleware-for-namespace-aliases ()
   (-> "namespace-aliases"
+      cljr--ensure-op-supported
       cljr--create-msg
       (cljr--call-middleware-sync "namespace-aliases")
       edn-read))
@@ -2310,8 +2314,8 @@ FEATURE is either :clj or :cljs."
 (defun cljr--get-aliases-from-middleware ()
   (-when-let (aliases (cljr--call-middleware-for-namespace-aliases))
     (if (cljr--clj-context?)
-        (gethash :clj cljr--namespace-aliases-cache)
-      (gethash :cljs cljr--namespace-aliases-cache))))
+        (gethash :clj aliases)
+      (gethash :cljs aliases))))
 
 (defun cljr--magic-requires-lookup-alias ()
   "Return (alias (ns.candidate1 ns.candidate1)) if we recognize
@@ -2320,15 +2324,15 @@ the alias in the project."
                 (cljr--point-after 'paredit-backward)
                 (1- (point)))))
     (unless (cljr--resolve-alias short)
-      (if (and cljr-magic-require-namespaces ; a regex against "" always triggers
-               (s-matches? (cljr--magic-requires-re) short))
+      (-if-let* ((aliases (with-demoted-errors (cljr--get-aliases-from-middleware)))
+                 (candidates (gethash (intern short) aliases)))
+          (list short candidates)
+        (when (and cljr-magic-require-namespaces ; a regex against "" always triggers
+                   (s-matches? (cljr--magic-requires-re) short))
           ;; This when-let might seem unnecessary but the regexp match
           ;; isn't perfect.
           (-when-let (long (cljr--aget cljr-magic-require-namespaces short))
-            (list short (list long)))
-        (-when-let* ((aliases (cljr--get-aliases-from-middleware))
-                     (candidates (gethash (intern short) aliases)))
-          (list short candidates))))))
+            (list short (list long))))))))
 
 ;;;###autoload
 (defun cljr-slash ()
