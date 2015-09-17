@@ -2303,7 +2303,7 @@ FEATURE is either :clj or :cljs."
   (cdr (assoc key map)))
 
 (defun cljr--magic-requires-lookup-alias ()
-  "Return (alias (ns.candidate candidate.ns)) if we recognize
+  "Return (alias (ns.candidate1 ns.candidate1)) if we recognize
 the alias in the project."
   (let ((short (buffer-substring-no-properties
                 (cljr--point-after 'paredit-backward)
