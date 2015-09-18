@@ -3396,6 +3396,19 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
   (save-buffer)
   (cljr--delete-definition definition))
 
+(defun cljr--var-info-at-point (&optional all)
+  "Like `cider-var-info' but also handles locally bound vars.
+
+If the var is bound locally nil will be returned.
+
+All has the same meaning as for `cider-var-info'"
+  (let ((used-locals (s-split " " (cljr--call-middleware-to-find-unbound-vars
+                                   (expand-file-name (buffer-file-name))
+                                   (line-number-at-pos) (1+ (current-column)))))
+        (symbol-at-point (cider-symbol-at-point)))
+    (unless (member symbol-at-point used-locals)
+      (cider-var-info symbol-at-point all))))
+
 ;;;###autoload
 (defun cljr-inline-symbol ()
   "Inline the symbol at point.
@@ -3410,7 +3423,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
            (column (1+ (current-column)))
            (dir (cljr--project-dir))
            (symbol (cider-symbol-at-point))
-           (var-info (cider-var-info symbol))
+           (var-info (cljr--var-info-at-point))
            (ns (or (nrepl-dict-get var-info "ns") (cider-current-ns)))
            (symbol-name (or (nrepl-dict-get var-info "name") symbol))
            (extract-definition-request (list
