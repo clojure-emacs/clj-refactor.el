@@ -2907,7 +2907,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
   (save-buffer)
   (let* ((cljr--find-symbol-buffer "*cljr-find-usages*")
          (symbol (cider-symbol-at-point))
-         (var-info (cider-var-info symbol))
+         (var-info (cljr--var-info))
          (ns (nrepl-dict-get var-info "ns"))
          (symbol-name (nrepl-dict-get var-info "name")))
     (cljr--setup-find-symbol-buffer (or symbol-name symbol))
@@ -2947,7 +2947,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
   (cljr--ensure-op-supported "find-symbol")
   (save-buffer)
   (let* ((symbol (cider-symbol-at-point))
-         (var-info (cider-var-info symbol))
+         (var-info (cljr--var-info))
          (symbol-name (nrepl-dict-get var-info "name"))
          (ns (nrepl-dict-get var-info "ns"))
          (name (or symbol-name symbol))
@@ -3396,18 +3396,25 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
   (save-buffer)
   (cljr--delete-definition definition))
 
-(defun cljr--var-info-at-point (&optional all)
+(defun cljr--var-info (&optional symbol all)
   "Like `cider-var-info' but also handles locally bound vars.
 
-If the var is bound locally nil will be returned.
+If SYMBOL is passed we assume it's a global var and look it up.
 
-All has the same meaning as for `cider-var-info'"
-  (let ((used-locals (s-split " " (cljr--call-middleware-to-find-unbound-vars
-                                   (expand-file-name (buffer-file-name))
-                                   (line-number-at-pos) (1+ (current-column)))))
-        (symbol-at-point (cider-symbol-at-point)))
-    (unless (member symbol-at-point used-locals)
-      (cider-var-info symbol-at-point all))))
+If SYMBOL is nil the symbol at point is used and we consider
+locals in that context.
+
+If the symbol is bound locally nil will be returned.
+
+ALL has the same meaning as for `cider-var-info'"
+  (if symbol
+      (cider-var-info symbol all)
+    (let ((used-locals (s-split " " (cljr--call-middleware-to-find-unbound-vars
+                                     (expand-file-name (buffer-file-name))
+                                     (line-number-at-pos) (1+ (current-column)))))
+          (symbol (cider-symbol-at-point)))
+      (unless (member symbol used-locals)
+        (cider-var-info symbol all)))))
 
 ;;;###autoload
 (defun cljr-inline-symbol ()
@@ -3423,7 +3430,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
            (column (1+ (current-column)))
            (dir (cljr--project-dir))
            (symbol (cider-symbol-at-point))
-           (var-info (cljr--var-info-at-point))
+           (var-info (cljr--var-info))
            (ns (or (nrepl-dict-get var-info "ns") (cider-current-ns)))
            (symbol-name (or (nrepl-dict-get var-info "name") symbol))
            (extract-definition-request (list
@@ -3579,7 +3586,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                (cljr--create-fn-from-list-fold-with-index sexp-forms))
 
               ((and (featurep 'cider) (cider-connected-p)
-                    (cider-var-info example-name :all))
+                    (cljr--var-info example-name :all))
                (cljr--insert-example-fn symbol-at-point (list "args")))
 
               (:else
@@ -3823,8 +3830,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
     (view-mode 1)))
 
 (defun cljr--get-function-params (fn)
-  "Retrieve the parameters for FN"
-  (let* ((info (cider-var-info fn))
+  "Retrieve the parameters for FN."
+  (let* ((info (cljr--var-info fn))
          ;; arglists-str looks like this: ([arg] [arg1 arg2] ...)
          (arglists-str (nrepl-dict-get info "arglists-str")))
     (unless arglists-str
@@ -4235,14 +4242,14 @@ Point is assumed to be at the function being called."
 
 ;;;###autoload
 (defun cljr-change-function-signature ()
-  "Change the function signature of the function at POINT.
+  "Change the function signature of the function at point.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-signature"
   (interactive)
   (cljr--ensure-op-supported "find-symbol")
   (let* ((fn (cider-symbol-at-point))
          (params (cljr--get-function-params fn))
-         (var-info (cider-var-info fn))
+         (var-info (cljr--var-info fn))
          (ns (nrepl-dict-get var-info "ns")))
     (setq cljr--occurrences (cljr--find-symbol-sync fn ns)
           cljr--signature-changes nil)
