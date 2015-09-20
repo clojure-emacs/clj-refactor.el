@@ -3267,8 +3267,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-function
       (insert body ")"))
     (insert "(")
     (when name (insert name))
-    (save-excursion
-      (insert " " unbound ")"))
+    (unless (s-blank? unbound)
+      (save-excursion
+        (insert " " unbound ")")))
     (unless name
       (mc/maybe-multiple-cursors-mode))))
 
