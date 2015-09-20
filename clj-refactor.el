@@ -3007,14 +3007,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   ;; `cljr-project-clean' so we can *not* use the buffer-file-name as
   ;; the file was opened in a temporary buffer with no file
   ;; information attached to it
-  (let* ((path-to-file (if (boundp 'filename)
-                           filename
-                         (buffer-file-name)))
-         (result (cider-nrepl-send-sync-request
-                  (cljr--create-msg "clean-ns"
-                                    "path" path-to-file))))
-    (cljr--maybe-rethrow-error result)
-    (-when-let (new-ns (nrepl-dict-get result "ns"))
+  (let ((path-to-file (if (boundp 'filename)
+                          filename
+                        (buffer-file-name))))
+    (-when-let (new-ns (cljr--call-middleware-sync
+                        (cljr--create-msg "clean-ns"
+                                          "path" path-to-file)
+                        "ns"))
       (cljr--replace-ns new-ns))))
 
 (defun cljr--narrow-candidates (candidates symbol)
@@ -3111,10 +3110,11 @@ Date. -> Date
 
 (defun cljr--call-middleware-to-resolve-missing (symbol)
   ;; Just so this part can be mocked out in a step definition
-  (cider-nrepl-send-sync-request
+  (cljr--call-middleware-sync
    (cljr--create-msg "resolve-missing"
                      "symbol" (cljr--symbol-suffix symbol)
-                     "session" (cider-current-session))))
+                     "session" (cider-current-session))
+   "candidates"))
 
 (defun cljr--get-error-value (response)
   "Gets the error value from the middleware response.
@@ -3159,9 +3159,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
   (interactive)
   (cljr--ensure-op-supported "resolve-missing")
   (let* ((symbol (cider-symbol-at-point))
-         (response (cljr--call-middleware-to-resolve-missing symbol))
-         (candidates-and-types (nrepl-dict-get response "candidates")))
-    (cljr--maybe-rethrow-error response)
+         (candidates-and-types (cljr--call-middleware-to-resolve-missing symbol)))
     (if candidates-and-types
         (cljr--add-missing-libspec symbol (read candidates-and-types))
       (message "Can't find %s on classpath" (cljr--symbol-suffix symbol))))
@@ -3181,7 +3179,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
   (message "Hotloaded %s" (nrepl-dict-get response "dependency")))
 
 (defun cljr--call-middleware-to-hotload-dependency (dep)
-  (cider-nrepl-send-request
+  (cljr--call-middleware-async
    (cljr--create-msg "hotload-dependency"
                      "coordinates" dep)
    #'cljr--hotload-dependency-callback))
@@ -3206,10 +3204,12 @@ Defaults to the dependency vector at point, but prompts if none is found.
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependency"
   (interactive)
   (cljr--ensure-op-supported "hotload-dependency")
-  (-> (or (cljr--dependency-vector-at-point)
-          (cljr--prompt-user-for "Dependency vector: "))
-      cljr--assert-dependency-vector
-      cljr--call-middleware-to-hotload-dependency))
+  (let ((dependency-vector (or (cljr--dependency-vector-at-point)
+                               (cljr--prompt-user-for "Dependency vector: "))))
+    (cljr--assert-dependency-vector dependency-vector)
+    (cljr--call-middleware-async
+     (cljr--create-msg "hotload-dependency" "coordinates" dependency-vector)
+     #'cljr--hotload-dependency-callback)))
 
 (defun cljr--defn-str ()
   (s-concat "(defn"
@@ -3221,10 +3221,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
 
 (defun cljr--call-middleware-to-find-unbound-vars (file line column)
   (s-join " "
-          (-> (cljr--create-msg "find-unbound" "file" file "line" line "column" column)
-              cider-nrepl-send-sync-request
-              cljr--maybe-rethrow-error
-              (nrepl-dict-get "unbound"))))
+          (cljr--call-middleware-sync
+           (cljr--create-msg "find-unbound" "file" file "line" line
+                             "column" column)
+           "unbound")))
 
 (defun cljr--goto-enclosing-sexp ()
   (let ((sexp-regexp (rx (or "(" "#{" "{" "["))))
