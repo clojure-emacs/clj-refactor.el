@@ -2065,7 +2065,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-let"
       (cljr--goto-let)
       (paredit-forward-down 2)
       (dotimes (_ (length (save-excursion (cljr--get-let-bindings))))
-        (cljr-inline-symbol)))))
+        (cljr-inline-symbol)
+        (cljr--skip-past-whitespace-and-comments)))))
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-move-to-let)
 
