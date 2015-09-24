@@ -2356,6 +2356,7 @@ form."
             (cljr--insert-in-ns ":require")
             (let ((libspec (format "[%s :as %s]" long short)))
               (insert libspec)
+              (cljr--maybe-eval-ns-form)
               (message "Required %s" libspec))
             (cljr--maybe-sort-ns)))))))
 
