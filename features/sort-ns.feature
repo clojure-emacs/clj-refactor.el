@@ -202,3 +202,27 @@ Feature: Sort ns form
 
     (walk)
     """
+
+  Scenario: Sort works with :require-macros
+    When I insert:
+    """
+    (ns fancy.ns
+      (:require-macros [my.macros :as  my]
+                       [his.macros :as his])
+      (:require [clojure.string :as   s]
+                [clojure.set :as set]))
+
+    (bar)
+    """
+    And I place the cursor before "bar"
+    And I press "C-! sn"
+    Then I should see:
+    """
+    (ns fancy.ns
+      (:require-macros [his.macros :as his]
+                       [my.macros :as  my])
+      (:require [clojure.set :as set]
+                [clojure.string :as   s]))
+
+    (bar)
+    """

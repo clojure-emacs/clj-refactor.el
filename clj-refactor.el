@@ -538,13 +538,18 @@ _s_: Refactor related functions
 
 (defun cljr--search-forward-within-sexp (s &optional save-excursion)
   "Searches forward for S in the current sexp.
-
-if SAVE-EXCURSION is T POINT does not move."
-  (let ((bound (save-excursion (forward-list 1) (point))))
-    (if save-excursion
-        (save-excursion
-          (search-forward s bound t))
-      (search-forward s bound t))))
+   S must be followed by a space, ), or ] character.
+   If SAVE-EXCURSION is T POINT does not move."
+  (let ((bound (save-excursion (forward-list 1) (point)))
+        (search-regex (concat s "[] )]")))
+    (cl-flet ((do-search ()
+                         (when (search-forward-regexp search-regex bound t)
+                           (backward-char)
+                           (point))))
+      (if save-excursion
+          (save-excursion
+            (do-search))
+        (do-search)))))
 
 (defun cljr--goto-toplevel ()
   (paredit-backward-up (cljr--depth-at-point))
@@ -1061,7 +1066,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-ns"
   (save-excursion
     (let ((buf-already-modified? (buffer-modified-p))
           (comparator (cljr-create-comparator cljr-sort-comparator)))
-      (dolist (statement-type '(":require" ":use" ":import"))
+      (dolist (statement-type '(":require"
+                                ":require-macros"
+                                ":use"
+                                ":use-macros"
+                                ":import"))
         (ignore-errors
           (let* ((statement        (->> (cljr--extract-ns-statements statement-type nil)
                                         (nreverse)
@@ -1334,7 +1343,7 @@ returns (used.ns.lib1 used.ns.lib2)"
 (defun cljr--more-namespaces-in-use-p (nth)
   "Checks for, and moves POINT to, the NTH :use clause."
   (cljr--goto-ns)
-  (cljr--search-forward-within-sexp "(:use ")
+  (cljr--search-forward-within-sexp "(:use")
   (paredit-backward-up)
   (let ((use-end (save-excursion (forward-sexp) (point))))
     (prog1
@@ -1347,7 +1356,7 @@ returns (used.ns.lib1 used.ns.lib2)"
   "Return list of all the namespaces that are :used."
   (let (libs use-start next-use-clause)
     (cljr--goto-ns)
-    (if (not (cljr--search-forward-within-sexp "(:use "))
+    (if (not (cljr--search-forward-within-sexp "(:use"))
         (message "There is no :use clause in the ns declaration.")
       (save-excursion
         (paredit-backward-up)
