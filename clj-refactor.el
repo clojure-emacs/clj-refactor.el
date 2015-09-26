@@ -3073,7 +3073,7 @@ Date. -> Date
   ;; Just so this part can be mocked out in a step definition
   (cljr--call-middleware-sync
    (cljr--create-msg "resolve-missing"
-                     "symbol" (cljr--symbol-suffix symbol)
+                     "symbol" symbol
                      "session" (cider-current-session))
    "candidates"))
 
