@@ -235,12 +235,12 @@
 
 (And "I mock out the call to the middleware to find locals$"
      (lambda ()
-       (defun cljr--call-middleware-to-find-unbound-vars (file line column)
+       (defun cljr--call-middleware-to-find-used-locals (file line column)
          "")))
 
 (And "The middleware is mocked to return foo bar as locals$"
      (lambda ()
-       (defun cljr--call-middleware-to-find-unbound-vars (file line column)
+       (defun cljr--call-middleware-to-find-used-locals (file line column)
          "foo bar")))
 
 (defun cljr--make-signature-change

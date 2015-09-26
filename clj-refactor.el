@@ -6,7 +6,7 @@
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;;         Lars Andersen <expez@expez.com>
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
-;; Version: 1.2.0-SNAPSHOT
+;; Version: 2.0.0-SNAPSHOT
 ;; Keywords: convenience, clojure, cider
 ;; Package-Requires: ((emacs "24.4") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.10.0-cvs") (edn "1.1.2") (inflections "2.3") (hydra "0.13.2"))
 
@@ -237,7 +237,7 @@ namespace in the project."
     "extract-definition"
     "find-debug-fns"
     "find-symbol"
-    "find-unbound"
+    "find-used-locals"
     "hotload-dependency"
     "namespace-aliases"
     "rename-file-or-dir"
@@ -2695,7 +2695,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
 (defun cljr--promote-fn ()
   (save-excursion
     (let* ((locals (save-excursion (paredit-forward-down)
-                                   (cljr--call-middleware-to-find-unbound-vars
+                                   (cljr--call-middleware-to-find-used-locals
                                     (buffer-file-name) (line-number-at-pos)
                                     (1+ (current-column)))))
            (fn (cljr--extract-sexp))
@@ -2778,7 +2778,7 @@ function literal.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function"
   (interactive "P")
-  (cljr--ensure-op-supported "find-unbound")
+  (cljr--ensure-op-supported "find-used-locals")
   (save-excursion
     (cond
      ;; Already in the right place.
@@ -3221,10 +3221,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
                   "- ")
               " ")))
 
-(defun cljr--call-middleware-to-find-unbound-vars (file line column)
+(defun cljr--call-middleware-to-find-used-locals (file line column)
   (s-join " "
           (cljr--call-middleware-sync
-           (cljr--create-msg "find-unbound" "file" file "line" line
+           (cljr--create-msg "find-used-locals" "file" file "line" line
                              "column" column)
            "unbound")))
 
@@ -3241,10 +3241,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-function"
   (interactive)
-  (cljr--ensure-op-supported "find-unbound")
+  (cljr--ensure-op-supported "find-used-locals")
   (save-buffer)
   (cljr--goto-enclosing-sexp)
-  (let* ((unbound (cljr--call-middleware-to-find-unbound-vars
+  (let* ((unbound (cljr--call-middleware-to-find-used-locals
                    (buffer-file-name) (line-number-at-pos)
                    ;; +1 because the middleware expects indexing from 1
                    ;; +1 more because point has to be inside the sexp,
@@ -3412,7 +3412,7 @@ If the symbol is bound locally nil will be returned.
 ALL has the same meaning as for `cider-var-info'"
   (if symbol
       (cider-var-info symbol all)
-    (let ((used-locals (s-split " " (cljr--call-middleware-to-find-unbound-vars
+    (let ((used-locals (s-split " " (cljr--call-middleware-to-find-used-locals
                                      (expand-file-name (buffer-file-name))
                                      (line-number-at-pos) (1+ (current-column)))))
           (symbol (cider-symbol-at-point)))
