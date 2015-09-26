@@ -60,30 +60,40 @@
        (lambda ()
          (setq cljr-use-multiple-cursors nil)))
 
+(defun cljr--plist-to-hash (plist)
+  (let ((h (make-hash-table)))
+    (dolist (k (-filter #'keywordp plist))
+      (puthash k (plist-get plist k) h))
+    h))
+
 (Given "^I call the rename callback directly with mock data for foo->baz"
        (lambda ()
          (cljr--rename-occurrences "example.two"
-                                   '((:line-beg 3 :line-end 4 :col-beg 7 :col-end 9
-                                                :name "foo"
-                                                :file "tmp/src/example/two.clj"
-                                                :match "")
-                                     (:line-beg 5 :line-end 5 :col-beg 15
-                                                :col-end 23 :name "foo"
-                                                :file "tmp/src/example/one.clj"
-                                                :match ""))
+                                   (list (cljr--plist-to-hash
+                                          '(:line-beg 3 :line-end 4 :col-beg 7 :col-end 9
+                                                      :name "foo"
+                                                      :file "tmp/src/example/two.clj"
+                                                      :match ""))
+                                         (cljr--plist-to-hash
+                                          '(:line-beg 5 :line-end 5 :col-beg 15
+                                                      :col-end 23 :name "foo"
+                                                      :file "tmp/src/example/one.clj"
+                                                      :match "")))
                                    "baz")))
 
 (Given "^I call the rename callback directly with mock data for star->asterisk"
        (lambda ()
          (cljr--rename-occurrences "example.two"
-                                   '((:line-beg 6 :line-end 7 :col-beg 7
-                                                :col-end 10 :name "star*"
-                                                :file "tmp/src/example/two.clj"
-                                                :match "")
-                                     (:line-beg 8 :line-end 8 :col-beg 17
-                                                :col-end 27 :name "star*"
-                                                :file "tmp/src/example/one.clj"
-                                                :match ""))
+                                   (list (cljr--plist-to-hash
+                                          '(:line-beg 6 :line-end 7 :col-beg 7
+                                                      :col-end 10 :name "star*"
+                                                      :file "tmp/src/example/two.clj"
+                                                      :match ""))
+                                         (cljr--plist-to-hash
+                                          '(:line-beg 8 :line-end 8 :col-beg 17
+                                                      :col-end 27 :name "star*"
+                                                      :file "tmp/src/example/one.clj"
+                                                      :match "")))
                                    "asterisk*")))
 
 (Given "^I call the add-missing-libspec callback directly with mock data to import"
@@ -302,37 +312,37 @@
 
 (Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a regular call-site"
        (lambda ()
-         (cljr--change-function-signature (list (cl-first cljr--test-occurrences))
+         (cljr--change-function-signature (list (cljr--plist-to-hash (cl-first cljr--test-occurrences)))
                                           cljr--foo-bar-swapped)))
 
 (Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in function definition"
        (lambda ()
-         (cljr--change-function-signature (list (cl-second cljr--test-occurrences))
+         (cljr--change-function-signature (list (cljr--plist-to-hash (cl-second cljr--test-occurrences)))
                                           cljr--foo-bar-swapped)))
 
 (Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a higher-order call-site"
        (lambda ()
-         (cljr--change-function-signature (list (cl-third cljr--test-occurrences))
+         (cljr--change-function-signature (list (cljr--plist-to-hash (cl-third cljr--test-occurrences)))
                                           cljr--foo-bar-swapped)))
 
 (Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a partial call-site"
        (lambda ()
-         (cljr--change-function-signature (list (cl-fourth cljr--test-occurrences))
+         (cljr--change-function-signature (list (cljr--plist-to-hash (cl-fourth cljr--test-occurrences)))
                                           cljr--foo-bar-swapped)))
 
 (Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in in partial application"
        (lambda ()
-         (cljr--change-function-signature (list (cl-fourth cljr--test-occurrences))
+         (cljr--change-function-signature (list (cljr--plist-to-hash (cl-fourth cljr--test-occurrences)))
                                           cljr--foo-bar-swapped)))
 
 (Given "I call the cljr--change-function-signature function directly with mockdata to swap bar and baz in a call-site with apply"
        (lambda ()
-         (cljr--change-function-signature (list (cl-fifth cljr--test-occurrences))
+         (cljr--change-function-signature (list (cljr--plist-to-hash (cl-fifth cljr--test-occurrences)))
                                           cljr--bar-baz-swapped)))
 
 (Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a call-site with apply"
        (lambda ()
-         (cljr--change-function-signature (list (cl-fifth cljr--test-occurrences))
+         (cljr--change-function-signature (list (cljr--plist-to-hash (cl-fifth cljr--test-occurrences)))
                                           cljr--foo-bar-swapped)))
 
 (Given "I call the cljr--change-function-signature function directly with mockdata to rename baz to qux"
@@ -342,7 +352,7 @@
                       (backward-char)
                       (replace-regexp "baz" new-name nil (point)
                                       (cljr--point-after '(paredit-forward-up 2))))))
-           (cljr--change-function-signature (list (cl-second cljr--test-occurrences))
+           (cljr--change-function-signature (list (cljr--plist-to-hash (cl-second cljr--test-occurrences)))
                                             cljr--baz-renamed-to-qux))))
 
 (Given "The cache of namespace aliases is populated"

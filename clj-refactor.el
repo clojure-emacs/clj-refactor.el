@@ -2787,7 +2787,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
       (unless (cljr--empty-buffer?)
         (goto-char (point-min))
         (while (not (cljr--end-of-buffer?))
-          (push (read (current-buffer)) occurrences))))
+          (push (edn-read) occurrences))))
     occurrences))
 
 (defun cljr--find-symbol (symbol ns callback)
@@ -2819,14 +2819,14 @@ root."
   (s-chop-prefix (cljr--project-dir) path))
 
 (defun cljr--format-symbol-occurrence (occurrence)
-  (let ((file (plist-get occurrence :file))
-        (line (plist-get occurrence :line-beg))
-        (match (plist-get occurrence :match )))
+  (let ((file (gethash :file occurrence ))
+        (line (gethash :line-beg occurrence))
+        (match (gethash :match occurrence)))
     (format "%s:%s: %s\n" (cljr--project-relative-path file) line
             (cljr--first-line match))))
 
 (defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
-  (let ((occurrence (nrepl-dict-get occurrence-resp "occurrence"))
+  (let ((occurrence (edn-read (nrepl-dict-get occurrence-resp "occurrence")))
         (count (nrepl-dict-get occurrence-resp "count")))
     (cljr--maybe-rethrow-error occurrence-resp)
     (when count
@@ -2834,7 +2834,6 @@ root."
     (when occurrence
       (incf cjr--occurrence-count)
       (->> occurrence
-           read
            cljr--format-symbol-occurrence
            cljr--insert-in-find-symbol-buffer))
     (when (= cjr--occurrence-count cljr--num-syms)
@@ -2894,10 +2893,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
 
 (defun cljr--rename-occurrences (ns occurrences new-name)
   (dolist (symbol-meta occurrences)
-    (let* ((file (plist-get symbol-meta :file))
-           (line-beg (plist-get symbol-meta :line-beg))
-           (col-beg (plist-get symbol-meta :col-beg))
-           (name (plist-get symbol-meta :name)))
+    (let* ((file (gethash :file symbol-meta))
+           (line-beg (gethash :line-beg symbol-meta))
+           (col-beg (gethash :col-beg symbol-meta))
+           (name (gethash :name symbol-meta)))
       (cljr--rename-occurrence file line-beg col-beg name new-name))))
 
 ;;;###autoload
@@ -3893,12 +3892,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
     (insert new-name)
     (view-mode 1)))
 
-(defun cljr--defn? (occurrence)
+(defun cljr--defn? (match)
   (s-matches? (rx (seq line-start (* whitespace) "("
                        (? (+ (or (in "a-z") (in "A-z") (in "0-9")
                                  (in "-") (in "._/"))))
                        "defn"))
-              (plist-get occurrence :match)))
+              match))
 
 (defun cljr--update-parameter-name (new-name)
   (cljr--skip-past-whitespace-and-comments)
@@ -4138,10 +4137,11 @@ Point is assumed to be at the function being called."
   ;; The OCCURRENCES are the same as those returned by `cljr--find-symbol'
   (let ((*cljr--noninteractive* t))
     (dolist (symbol-meta occurrences)
-      (let ((file (plist-get symbol-meta :file))
-            (line-beg (plist-get symbol-meta :line-beg))
-            (col-beg (plist-get symbol-meta :col-beg))
-            (name (plist-get symbol-meta :name)))
+      (let ((file (gethash :file symbol-meta))
+            (line-beg (gethash :line-beg symbol-meta))
+            (col-beg (gethash :col-beg symbol-meta))
+            (name (gethash :name symbol-meta))
+            (match (gethash :match symbol-meta)))
         (with-current-buffer
             (find-file-noselect file)
           (goto-char (point-min))
@@ -4154,7 +4154,7 @@ Point is assumed to be at the function being called."
             (cljr--update-partial-call-site signature-changes))
            ((cljr--apply-call-site?)
             (cljr--update-apply-call-site signature-changes))
-           ((cljr--defn? symbol-meta)
+           ((cljr--defn? match)
             (cljr--update-function-signature signature-changes))
            (t (cljr--append-to-manual-intervention-buffer)))
           (save-buffer)))))
