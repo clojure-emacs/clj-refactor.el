@@ -11,6 +11,7 @@
 
 ### Changes
 
+- `cljr-remove-debug-fns` has been removed.
 - `cljr-magic-require-namespaces` is now only consulted in the event the namespace alias isn't already used in the project.
 - [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217)When requiring the test framework in test files stop favoring `:refer :all`.
 - [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217)Add a bunch of defcustoms to parameterise what gets inserted into the test namespaces for the various test frameworks.

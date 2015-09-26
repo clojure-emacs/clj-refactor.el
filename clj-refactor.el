@@ -117,12 +117,6 @@ These are called on all .clj files in the project."
   :group 'cljr
   :type '(repeat string))
 
-(defcustom cljr-debug-functions "println,pr,prn"
-  "List of functions used for debug purposes.
-Used in `cljr-remove-debug-fns' feature."
-  :group 'cljr
-  :type 'string)
-
 (defcustom cljr-hotload-dependencies t
   "If t, newly added dependencies are also hotloaded into the repl.
 This only applies to dependencies added by `cljr-add-project-dependency'."
@@ -235,7 +229,6 @@ namespace in the project."
     "artifact-versions"
     "clean-ns"
     "extract-definition"
-    "find-debug-fns"
     "find-symbol"
     "find-used-locals"
     "hotload-dependency"
@@ -335,7 +328,6 @@ Otherwise open the file and do the changes non-interactively."
     ("ml" . (cljr-move-to-let "Move to let" ?m ("code")))
     ("pc" . (cljr-project-clean "Project clean" ?c ("project")))
     ("pf" . (cljr-promote-function "Promote function" ?p ("code" "toplevel-form")))
-    ("rd" . (cljr-remove-debug-fns "Remove debug fns" ?d ("project")))
     ("rf" . (cljr-rename-file-or-dir "Rename file-or-dir" ?r ("project" "toplevel-form")))
     ("rl" . (cljr-remove-let "Remove let" ?r ("code")))
     ("rr" . (cljr-remove-unused-requires "Remove unused requires" ?R ("ns")))
@@ -420,10 +412,10 @@ _ua_: Unwind all                                   _uw_: Unwind
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 _ap_: Add project dependency                       _cs_: Change function signature                    _fu_: Find usages
 _hd_: Hotload dependency                           _is_: Inline symbol                                _mf_: Move form
-_pc_: Project clean                                _rd_: Remove debug fns                             _rf_: Rename file-or-dir
-_rs_: Rename symbol                                _sp_: Sort project dependencies                    _up_: Update project dependencies
+_pc_: Project clean                                _rf_: Rename file-or-dir _rs_: Rename symbol       _sp_: Sort project dependencies
+_up_: Update project dependencies
 "
-  ("ap" cljr-add-project-dependency) ("cs" cljr-change-function-signature) ("fu" cljr-find-usages) ("hd" cljr-hotload-dependency) ("is" cljr-inline-symbol) ("mf" cljr-move-form) ("pc" cljr-project-clean) ("rd" cljr-remove-debug-fns) ("rf" cljr-rename-file-or-dir) ("rs" cljr-rename-symbol) ("sp" cljr-sort-project-dependencies) ("up" cljr-update-project-dependencies) ("q" nil "quit"))
+  ("ap" cljr-add-project-dependency) ("cs" cljr-change-function-signature) ("fu" cljr-find-usages) ("hd" cljr-hotload-dependency) ("is" cljr-inline-symbol) ("mf" cljr-move-form) ("pc" cljr-project-clean) ("rf" cljr-rename-file-or-dir) ("rs" cljr-rename-symbol) ("sp" cljr-sort-project-dependencies) ("up" cljr-update-project-dependencies) ("q" nil "quit"))
 
 (defhydra hydra-cljr-toplevel-form-menu (:color pink :hint nil)
   "
@@ -1099,38 +1091,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-ns"
   (goto-char (point-min))
   (let ((e (cljr--extract-sexp-content name)))
     (when (re-search-forward (cljr--req-element-regexp e "[^[:word:]^-]") nil t) e)))
-
-(defun cljr-remove-debug-fns ()
-  "Remove from current buffer all calls to debugging functions.
-These are functions listed in `cljr-debug-functions'.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-debug-fns"
-  (interactive)
-  (cljr--ensure-op-supported "find-debug-fns")
-  (let* ((body (replace-regexp-in-string "\"" "\"" (buffer-substring-no-properties (point-min) (point-max))))
-         (result (cljr--call-middleware-sync
-                  (cljr--create-msg "find-debug-fns"
-                                    "ns-string" body
-                                    "debug-fns" cljr-debug-functions)
-                  "value"))
-         (debug-fn-tuples (pop result))
-         (removed-lines 0))
-    (while debug-fn-tuples
-      (let ((line (- (1- (car debug-fn-tuples)) removed-lines))
-            (end-line (nth 1 debug-fn-tuples))
-            (column (nth 2 debug-fn-tuples)))
-        (message "removing %s at line %s [%s] column %s (end-line %s end-column %s)"
-                 (-last-item debug-fn-tuples) line (car debug-fn-tuples) column end-line (nth 3 debug-fn-tuples))
-        (save-excursion
-          (goto-char (point-min))
-          (forward-line line)
-          (move-to-column column)
-          (paredit-backward)
-          (cljr--delete-and-extract-sexp)
-          (join-line))
-        (setq removed-lines (+ removed-lines (1+ (- end-line (car debug-fn-tuples))))))
-      (setq debug-fn-tuples (pop result)))))
-
 
 (defun cljr--rectify-refer-type-require (sexp-as-list refer-index as-used as-index)
   (let* ((as-after-refer (and as-used (> as-index refer-index)))
