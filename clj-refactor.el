@@ -3996,7 +3996,7 @@ Updates the ordering of the function parameters."
 (defun cljr--update-function-signature (signature-changes)
   "Point is assumed to be just prior to the function definition
   we're about to update."
-  (paredit-forward-down 2)
+  (cljr--search-forward-within-sexp "[")
   (cljr--update-signature-names signature-changes)
   (cljr--goto-toplevel)
   (paredit-forward-down 2)
