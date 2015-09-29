@@ -3185,7 +3185,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
           (cljr--call-middleware-sync
            (cljr--create-msg "find-used-locals" "file" file "line" line
                              "column" column)
-           "unbound")))
+           "used-locals")))
 
 (defun cljr--goto-enclosing-sexp ()
   (let ((sexp-regexp (rx (or "(" "#{" "{" "["))))
