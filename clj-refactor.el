@@ -845,14 +845,14 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
         (find-file new-path)))))
 
 ;;;###autoload
-(defun cljr-rename-file ()
-  (interactive)
-  (let ((old (buffer-file-name)))
-    (cljr-rename-file-or-dir old
-                             (read-file-name "New path: "
-                                             (file-name-directory old)
-                                             nil nil
-                                             (file-name-nondirectory old)))))
+(defun cljr-rename-file (new-path)
+  (interactive
+   (let ((old (buffer-file-name)))
+     (list (read-file-name "New path: "
+                           (file-name-directory old)
+                           nil nil
+                           (file-name-nondirectory old)))))
+  (cljr-rename-file-or-dir (buffer-file-name) new-path))
 
 (defun cljr--op-supported? (op)
   "Is the OP we require provided by the current middleware stack?"
