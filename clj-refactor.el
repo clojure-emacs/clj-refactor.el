@@ -844,6 +844,16 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
         (kill-buffer active-buffer)
         (find-file new-path)))))
 
+;;;###autoload
+(defun cljr-rename-file ()
+  (interactive)
+  (let ((old (buffer-file-name)))
+    (cljr-rename-file-or-dir old
+                             (read-file-name "New path: "
+                                             (file-name-directory old)
+                                             nil nil
+                                             (file-name-nondirectory old)))))
+
 (defun cljr--op-supported? (op)
   "Is the OP we require provided by the current middleware stack?"
   (cider-nrepl-op-supported-p op))
@@ -4234,10 +4244,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
 (defun cljr-update-artifact-cache ()
   (interactive)
   (message "cljr-update-artifact-cache is deprecated and has been replaced by a customize setting defaulting to true."))
-
-(defun cljr-rename-file ()
-  (interactive)
-  (message "cljr-rename-file has been removed in favor of cljr-rename-file-or-dir"))
 
 (defun cljr-warm-ast-cache ()
   (interactive)
