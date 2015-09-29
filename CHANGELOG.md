@@ -4,7 +4,7 @@
 
 - Get rid of `cljr-reload-config`.  We're now sending the configuration options down to the middleware on each request instead of storing it down there.
 - Make magic requires cljc aware.
-- [#215](https://github.com/clojure-emacs/clj-refactor.el/issues/215)Improve the magic requires feature (when you hit `/`) by asking the middleware for all available namespace aliases.
+- [#215](https://github.com/clojure-emacs/clj-refactor.el/issues/215) Improve the magic requires feature (when you hit `/`) by asking the middleware for all available namespace aliases.
 - Add `cljr-extract-def` which extracts the form at, or around, point as a def.
 - Add `cljr-change-function-signature` to re-order or re-name function parameters.
 - Keep pressing `l` after `cljr-expand-let` to expand further.
@@ -13,8 +13,8 @@
 
 - `cljr-remove-debug-fns` has been removed.
 - `cljr-magic-require-namespaces` is now only consulted in the event the namespace alias isn't already used in the project.
-- [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217)When requiring the test framework in test files stop favoring `:refer :all`.
-- [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217)Add a bunch of defcustoms to parameterise what gets inserted into the test namespaces for the various test frameworks.
+- [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217) When requiring the test framework in test files stop favoring `:refer :all`.
+- [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217) Add a bunch of defcustoms to parameterise what gets inserted into the test namespaces for the various test frameworks.
 - [#216](https://github.com/clojure-emacs/clj-refactor.el/issues/216) Teach our automatic ns generator about cljc files.
 - Teach `cljr-extract-constant` about the `^:const` hint to the compiler.
 - Use yasnippet for placeholder parameters in `cljr-create-fn-from-example`
