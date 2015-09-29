@@ -824,7 +824,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
          (affected-buffers (when (file-directory-p old-path)
                              (cljr--buffers-visiting-dir old-path)))
          (old-path (expand-file-name old-path))
-         (new-path (expand-file-name new-path)))
+         (new-path (cljr--maybe-replace-dash-in-file-name (expand-file-name new-path))))
     (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
       (let* ((changed-files (cljr--call-middleware-sync
                              (cljr--create-msg "rename-file-or-dir"
@@ -988,22 +988,25 @@ word test in it and whether the file lives under the test/ directory."
 
 (add-hook 'find-file-hook 'cljr--add-ns-if-blank-clj-file)
 
-(defun cljr--verify-underscores-in-filename ()
-  (let ((file-name (buffer-file-name)))
-    (when (and
-           file-name
-           (not (file-exists-p file-name)) ;; only new files
-           (s-matches? "-[^/]+\.clj[sxc]?$" file-name)
-           (yes-or-no-p "The file name contains dashes. Replace with underscores?"))
-      (let ((new-name (concat
-                       (file-name-directory file-name)
-                       (s-replace "-" "_" (file-name-nondirectory file-name)))))
-        (rename-buffer new-name)
-        (set-visited-file-name new-name)
-        (message "Changed file name to '%s'"
-                 (file-name-nondirectory new-name))))))
+(defun cljr--dash-in-file-name? (file-name)
+  (and file-name (s-matches? "-[^.]*\.clj[sxc]?$" file-name)))
 
-(add-hook 'find-file-hook 'cljr--verify-underscores-in-filename)
+(defun cljr--maybe-replace-dash-in-file-name (file-name)
+  (if (and (cljr--dash-in-file-name? file-name)
+           (yes-or-no-p "The file name contains dashes. Replace with underscores?"))
+      (concat (file-name-directory file-name)
+              (s-replace "-" "_" (file-name-nondirectory file-name)))
+    file-name))
+
+(defun cljr--ensure-no-dashes-in-filename ()
+  (unless (file-exists-p (buffer-file-name)) ; only new files
+    (let ((new-name (cljr--maybe-replace-dash-in-file-name (buffer-file-name))))
+      (rename-buffer new-name)
+      (set-visited-file-name new-name)
+      (message "Changed file name to '%s'"
+               (file-name-nondirectory new-name)))))
+
+(add-hook 'find-file-hook 'cljr--ensure-no-dashes-in-filename)
 
 (defun cljr--extract-ns-statements (statement-type with-nested)
   (cljr--goto-ns)
