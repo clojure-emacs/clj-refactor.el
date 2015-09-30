@@ -402,3 +402,24 @@ pprint (cljs.pprint)}}"))))
 (When "I run cljr--all-helpers check"
       (lambda ()
         (validate-all-helpers)))
+
+(Given "^I call find usages for \"\\(.*\\)\"$"
+       (lambda (symbol-name)
+         (cljr--setup-find-symbol-buffer symbol-name)
+         (-map 'cljr--format-and-insert-symbol-occurrence
+               (list '(dict "occurrence" "{:line-beg 3 :line-end 4 :col-beg 7 :col-end 9 :name \"foo\" :file \"tmp/src/example/two.clj\" :match \"(defn foo []\"}")
+                     '(dict "occurrence" "{:line-beg 5 :line-end 5 :col-beg 15 :col-end 23 :name \"foo\" :file \"tmp/src/example/one.clj\" :match \"(str \\\"bar\\\" (two/foo) \\\"goo\\\"))\"}")
+                     '(dict "count" 2)))))
+
+(Given "^I call find usages for \"\\(.*\\)\" and the middleware gives me three matches"
+       (lambda (symbol-name)
+         (cljr--setup-find-symbol-buffer symbol-name)
+         (-map 'cljr--format-and-insert-symbol-occurrence
+               (list '(dict "occurrence" "{:line-beg 3 :line-end 4 :col-beg 7 :col-end 9 :name \"foo\" :file \"tmp/src/example/two.clj\" :match \"(defn foo []\"}")
+                     '(dict "occurrence" "{:line-beg 3 :line-end 4 :col-beg 7 :col-end 9 :name \"foo\" :file \"tmp/src/example/two.clj\" :match \"(defn foo []\"}")
+                     '(dict "occurrence" "{:line-beg 5 :line-end 5 :col-beg 15 :col-end 23 :name \"foo\" :file \"tmp/src/example/one.clj\" :match \"(str \\\"bar\\\" (two/foo) \\\"goo\\\"))\"}")
+                     '(dict "count" 3)))))
+
+(And "^I pop to find usages buffer$"
+     (lambda ()
+       (pop-to-buffer cljr--find-symbol-buffer)))

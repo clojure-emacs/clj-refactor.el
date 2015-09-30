@@ -153,7 +153,7 @@ This makes `cljr-add-project-dependency' as snappy as can be."
 
 (defcustom cljr-eagerly-build-asts-on-startup t
   "If t, the middleware will eagerly populate the ast cache.
-This makes `cljr-find-symbol' and `cljr-rename-symbol' as snappy
+This makes `cljr-find-usages' and `cljr-rename-symbol' as snappy
 as can be."
   :group 'cljr
   :type 'boolean)
@@ -255,6 +255,8 @@ namespace in the project."
 (defvar-local cjr--occurrence-count 0 "Counts occurrences of found symbols")
 
 (defvar-local cljr--num-syms -1 "Keeps track of overall number of symbol occurrences")
+
+(defvar-local cljr--occurrence-ids '() "Keeps track of already processed symbol occurrences")
 
 (defmacro cljr--update-file (filename &rest body)
   "If there is an open buffer for FILENAME, then change that.
@@ -2820,7 +2822,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
                             (when cljr-find-usages-ignore-analyzer-errors "true"))))
     (with-current-buffer (cider-current-repl-buffer)
       (setq cjr--occurrence-count 0)
-      (setq cljr--num-syms -1))
+      (setq cljr--num-syms -1)
+      (setq cljr--occurrence-ids '()))
     (cljr--call-middleware-async find-symbol-request callback)))
 
 (defun cljr--first-line (s)
@@ -2839,16 +2842,23 @@ root."
             (cljr--first-line match))))
 
 (defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
-  (let ((occurrence (edn-read (nrepl-dict-get occurrence-resp "occurrence")))
-        (count (nrepl-dict-get occurrence-resp "count")))
+  (let* ((occurrence (edn-read (nrepl-dict-get occurrence-resp "occurrence")))
+         (count (nrepl-dict-get occurrence-resp "count"))
+         (occurrence-id (when occurrence
+                          (format "%s%s"
+                                  (gethash :file occurrence)
+                                  (gethash :line-beg occurrence)))))
     (cljr--maybe-rethrow-error occurrence-resp)
     (when count
       (setq cljr--num-syms count))
     (when occurrence
       (incf cjr--occurrence-count)
-      (->> occurrence
-           cljr--format-symbol-occurrence
-           cljr--insert-in-find-symbol-buffer))
+      (when (not (member occurrence-id cljr--occurrence-ids))
+        (setq cljr--occurrence-ids
+              (cons occurrence-id cljr--occurrence-ids))
+        (->> occurrence
+             cljr--format-symbol-occurrence
+             cljr--insert-in-find-symbol-buffer)))
     (when (= cjr--occurrence-count cljr--num-syms)
       (cljr--finalise-find-symbol-buffer cljr--num-syms))))
 
