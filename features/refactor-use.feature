@@ -11,7 +11,7 @@ Feature: Remove Use from ns form
     When I insert:
     """
     (ns ^{:meta "..."}
-      cljr.foo
+        cljr.foo
       "doc..."
       (:use [cljr.core]
             [cljr.page]
@@ -26,7 +26,7 @@ Feature: Remove Use from ns form
     Then I should see:
     """
     (ns ^{:meta "..."}
-      cljr.foo
+        cljr.foo
       "doc..."
       (:require [cljr.core :refer :all]
                 [cljr.element :refer :all]
