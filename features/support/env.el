@@ -22,7 +22,9 @@
  ;; Used in cljr--maybe-eval-ns-form
  (defun cider-eval-ns-form (&rest _))
  (defun cljr--ensure-op-supported (op) t)
+ (delete-directory (expand-file-name "tmp" clj-refactor-root-path) t)
  (yas-global-mode 1)
+ (setq cljr-use-multiple-cursors t)
  (cljr-add-keybindings-with-prefix "C-!")
  (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode))))
 
@@ -32,27 +34,24 @@
       (when (and name (not (string-equal name ""))
                  (or internal-too (/= (aref name 0) ?\s))
                  (string-match regexp name))
-        (kill-buffer buffer)))))
+        (with-current-buffer buffer
+          (set-buffer-modified-p nil)
+          (kill-buffer))))))
 
-(defun save-all-buffers-dont-ask ()
+(defun kill-all-buffers-dont-ask (&optional internal-too)
   (dolist (buffer (buffer-list))
-    (with-current-buffer buffer
-      (let ((filename (buffer-file-name)))
-        (when (and filename
-                   (or (file-exists-p filename)
-                       (s-ends-with? ".clj" filename)
-                       (s-ends-with? ".cljc" filename)))
-          (save-buffer))))))
+    (let ((name (buffer-name buffer)))
+      (when (and name (not (string-equal name ""))
+                 (or internal-too (/= (aref name 0) ?\s)))
+        (with-current-buffer buffer
+          (set-buffer-modified-p nil)
+          (kill-buffer))))))
 
 (Before
- (save-all-buffers-dont-ask)
- (kill-matching-buffers-dont-ask "cljc?")
- (setq cljr-use-multiple-cursors t))
+ )
 
 (After
- (save-all-buffers-dont-ask)
- (kill-matching-buffers-dont-ask "cljc?")
- (delete-directory (expand-file-name "tmp" clj-refactor-root-path) t))
+ (kill-all-buffers-dont-ask))
 
 (Teardown
  ;; After when everything has been run

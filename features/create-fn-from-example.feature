@@ -485,3 +485,27 @@ Feature: Create Function from Example
     (defn some-fn []
       (foo 1 2))
     """
+
+    Scenario: Create fn in another namespace
+    When I insert:
+    """
+    (ns core
+      (:require [refactor-nrepl.util :as util]))
+
+    (defn some-fn []
+      (util/foo bar baz))
+    """
+    And I have a clojure-file "tmp/src/cljr/util.clj"
+    And cljr--ns-path returns "tmp/src/cljr/util.clj"
+    And I place the cursor before "foo"
+    And I press "C-! fe"
+    And I open file "tmp/src/cljr/util.clj"
+    Then I should see:
+    """
+    (ns cljr.util)
+
+    (defn foo [bar baz]
+      )
+    """
+    And I kill the "util.clj" buffer
+    And I kill the "core.clj" buffer

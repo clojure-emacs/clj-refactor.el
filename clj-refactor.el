@@ -596,10 +596,17 @@ list of (fn args) to pass to `apply''"
         (apply f args)))
     (point)))
 
+(defun cljr--whitespace? (s)
+  "True if S contains only whitespace."
+  (s-blank? (s-trim s)))
+
 (defun cljr--make-room-for-toplevel-form ()
-  (cljr--goto-toplevel)
-  (goto-char (point-at-bol))
-  (open-line 2))
+  (if (cljr--whitespace? (buffer-substring-no-properties (point) (point-max)))
+      ;; make room at end of buffer
+      (unless (looking-back "\n") (open-line 2) (forward-line))
+    (cljr--goto-toplevel)
+    (goto-char (point-at-bol))
+    (open-line 2)))
 
 (defun cljr--new-toplevel-form (form)
   "Insert a new toplevel FORM before the form containing POINT."
@@ -3238,13 +3245,15 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
      (cljr--create-msg "hotload-dependency" "coordinates" dependency-vector)
      #'cljr--hotload-dependency-callback)))
 
-(defun cljr--defn-str ()
-  (s-concat "(defn"
-            (if cljr-favor-private-functions
-                (if cljr-use-metadata-for-privacy
-                    " ^:private "
-                  "- ")
-              " ")))
+(defun cljr--defn-str (&optional public)
+  (if public
+      "(defn "
+    (s-concat "(defn"
+              (if cljr-favor-private-functions
+                  (if cljr-use-metadata-for-privacy
+                      " ^:private "
+                    "- ")
+                " "))))
 
 (defun cljr--call-middleware-to-find-used-locals (file line column)
   (s-join " "
@@ -3551,6 +3560,12 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 (defvar cljr--list-fold-function-names-with-index
   '("map-indexed" "keep-indexed"))
 
+(defun cljr--ns-path (ns-name)
+  "Find the file path to the ns named NS-NAME."
+  (cider-ensure-connected)
+  (cider-ensure-op-supported "ns-path")
+  (cider-sync-request:ns-path ns-name))
+
 ;;;###autoload
 (defun cljr-create-fn-from-example ()
   "Create a top-level defn for the symbol at point.
@@ -3587,73 +3602,80 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                          (setq example-name symbol-at-point)
                          (cljr--unwind-and-extract-this-as-list example-name)))
 
-                      (:else sexp-forms*))))
+                      (:else sexp-forms*)))
+         (prefix (cljr--symbol-prefix symbol-at-point))
+         (path (when (s-present? prefix)
+                 (cljr--ns-path (cljr--resolve-alias prefix)))))
     (push-mark)
     (if (cljr--symbol? symbol-at-point)
         (cond ((string= example-name "update")
-               (cljr--create-fn-from-update sexp-forms))
+               (cljr--create-fn-from-update sexp-forms path))
 
               ((string= example-name "update-in")
-               (cljr--create-fn-from-update-in))
+               (cljr--create-fn-from-update-in path))
 
               ((string= example-name "sort-by")
-               (cljr--create-fn-from-sort-by sexp-forms))
+               (cljr--create-fn-from-sort-by sexp-forms path))
 
               ((string= example-name "sort")
-               (cljr--create-fn-from-sort sexp-forms))
+               (cljr--create-fn-from-sort sexp-forms path))
 
               ((string= example-name "reduce")
-               (cljr--create-fn-from-reduce sexp-forms))
+               (cljr--create-fn-from-reduce sexp-forms path))
 
               ((string= example-name "repeatedly")
-               (cljr--insert-example-fn symbol-at-point nil))
+               (cljr--insert-example-fn symbol-at-point nil path))
 
               ((member example-name cljr--list-fold-function-names)
-               (cljr--create-fn-from-list-fold sexp-forms))
+               (cljr--create-fn-from-list-fold sexp-forms path))
 
               ((member example-name cljr--list-fold-function-names-with-index)
-               (cljr--create-fn-from-list-fold-with-index sexp-forms))
+               (cljr--create-fn-from-list-fold-with-index sexp-forms path))
 
               ((and (featurep 'cider) (cider-connected-p)
                     (cljr--var-info example-name :all))
-               (cljr--insert-example-fn symbol-at-point (list "args")))
+               (cljr--insert-example-fn symbol-at-point (list "args") path))
 
               (:else
-               (cljr--insert-example-fn example-name (cdr sexp-forms))))
-      (cljr--insert-example-fn example-name (cdr sexp-forms)))))
+               (cljr--insert-example-fn example-name (cdr sexp-forms) path)))
+      (cljr--insert-example-fn example-name (cdr sexp-forms) path))))
 
-(defun cljr--create-fn-from-list-fold (sexp-forms)
+(defun cljr--create-fn-from-list-fold (sexp-forms path)
   (cljr--insert-example-fn (cadr sexp-forms)
                            (--map
                             (-when-let (name (cljr--guess-param-name it))
                               (singularize-string name))
-                            (cddr sexp-forms))))
+                            (cddr sexp-forms))
+                           path))
 
-(defun cljr--create-fn-from-list-fold-with-index (sexp-forms)
+(defun cljr--create-fn-from-list-fold-with-index (sexp-forms path)
   (cljr--insert-example-fn (cadr sexp-forms)
                            (cons "index"
                                  (--map
                                   (-when-let (name (cljr--guess-param-name it))
                                     (singularize-string name))
-                                  (cddr sexp-forms)))))
+                                  (cddr sexp-forms)))
+                           path))
 
-(defun cljr--create-fn-from-update (sexp-forms)
+(defun cljr--create-fn-from-update (sexp-forms path)
   (let ((keyfn (nth 2 sexp-forms)))
     (cljr--insert-example-fn (cider-symbol-at-point)
                              (if (cljr--is-keyword? keyfn)
                                  (list (s-chop-prefix ":" keyfn))
-                               (list 0)))))
+                               (list 0))
+                             path)))
 
-(defun cljr--create-fn-from-update-in ()
+(defun cljr--create-fn-from-update-in (path)
   (let ((last-path-entry (save-excursion
                            (paredit-backward-down)
                            (cider-symbol-at-point))))
     (cljr--insert-example-fn (cider-symbol-at-point)
                              (if (cljr--is-keyword? last-path-entry)
                                  (list (s-chop-prefix ":" last-path-entry))
-                               (list 0)))))
+                               (list 0))
+                             path)))
 
-(defun cljr--create-fn-from-sort (sexp-forms)
+(defun cljr--create-fn-from-sort (sexp-forms path)
   (let* ((fn-name (cider-symbol-at-point))
          (param-name (-when-let (coll-name (cljr--guess-param-name (-last-item sexp-forms)))
                        (singularize-string coll-name))))
@@ -3661,9 +3683,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                              (if param-name
                                  (list (concat param-name "-a")
                                        (concat param-name "-b"))
-                               (list "a" "b")))))
+                               (list "a" "b"))
+                             path)))
 
-(defun cljr--create-fn-from-sort-by (sexp-forms)
+(defun cljr--create-fn-from-sort-by (sexp-forms path)
   (let* ((fn-name (cider-symbol-at-point))
          (making-comparator? (and (string= fn-name (nth 2 sexp-forms))
                                   (= 4 (length sexp-forms))))
@@ -3678,16 +3701,18 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                                      (list (concat param-name "-a")
                                            (concat param-name "-b"))
                                    (list "a" "b"))
-                               (list param-name)))))
+                               (list param-name))
+                             path)))
 
-(defun cljr--create-fn-from-reduce (sexp-forms)
+(defun cljr--create-fn-from-reduce (sexp-forms path)
   (cljr--insert-example-fn
    (nth 1 sexp-forms)
    (list (or (and (= 4 (length sexp-forms))
                   (cljr--guess-param-name (nth 2 sexp-forms)))
              "acc")
          (-when-let (name (cljr--guess-param-name (-last-item sexp-forms)))
-           (singularize-string name)))))
+           (singularize-string name)))
+   path))
 
 (defun cljr--unwind-and-extract-this-as-list (name)
   (let* ((parent-sexp (progn
@@ -3817,18 +3842,25 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
     (when (cljr--is-keyword? key)
       (s-chop-prefix ":" key))))
 
-(defun cljr--insert-example-fn (example-name example-words)
-  (let* ((word->arg (lambda (i word)
-                      (format "${%s:%s}" (+ i 1)
-                              (or (and word (cljr--guess-param-name word))
-                                  (format "arg%s" i)))))
-         (stub (s-concat (cljr--defn-str)
-                         example-name
+(defun cljr--insert-example-fn (name args path)
+  "Create a new function from NAME and ARGS.
+
+If PATH is non-nil append the new function to the end of the file
+at PATH."
+  (let* ((params (lambda (i word)
+                   (format "${%s:%s}" (+ i 1)
+                           (or (and word (cljr--guess-param-name word))
+                               (format "arg%s" i)))))
+         (stub (s-concat (cljr--defn-str path)
+                         (if path (cljr--symbol-suffix name) name)
                          " ["
-                         (->> example-words
-                              (-map-indexed word->arg)
+                         (->> args
+                              (-map-indexed params)
                               (s-join " "))
                          "]\n$0)")))
+    (when path
+      (find-file-other-window path)
+      (goto-char (point-max)))
     (cljr--make-room-for-toplevel-form)
     (yas-expand-snippet stub)))
 

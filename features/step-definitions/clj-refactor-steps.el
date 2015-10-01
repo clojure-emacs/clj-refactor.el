@@ -368,7 +368,7 @@ pprint (cljs.pprint)}}"))))
 
 (When "I kill the \"\\(.+\\)\" buffer"
       (lambda (buffer)
-        (kill-buffer buffer)))
+        (kill-matching-buffers-dont-ask buffer)))
 
 (And "^I save the file$"
      (lambda ()
@@ -423,3 +423,11 @@ pprint (cljs.pprint)}}"))))
 (And "^I pop to find usages buffer$"
      (lambda ()
        (pop-to-buffer cljr--find-symbol-buffer)))
+
+(defvar cljr--ns-path-return-value nil)
+(defun cljr--ns-path (&rest _)
+  cljr--ns-path-return-value)
+
+(And "^cljr--ns-path returns \"\\([^\"]+\\)\"$"
+     (lambda (path)
+       (setq cljr--ns-path-return-value path)))
