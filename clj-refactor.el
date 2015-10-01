@@ -3008,6 +3008,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
 
 (defun cljr--insert-libspec-verbosely (libspec)
   (insert libspec)
+  (cljr--indent-defun)
   (message "%s added to ns" libspec))
 
 (defun cljr--insert-missing-import (missing)
