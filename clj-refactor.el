@@ -2332,6 +2332,7 @@ form."
             (let ((libspec (format "[%s :as %s]" long short)))
               (insert libspec)
               (cljr--maybe-eval-ns-form)
+              (cljr--indent-defun)
               (message "Required %s" libspec))
             (cljr--maybe-sort-ns)))))))
 
