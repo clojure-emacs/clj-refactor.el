@@ -1632,6 +1632,35 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-declaration"
 
 ;; ------ extract constant ----------------
 
+(defun cljr--existing-group-of-defs? ()
+  "Is there a group of defs at the beginning of the namespace?"
+  (save-excursion
+    (cljr--goto-ns)
+    (paredit-forward)
+    (cljr--skip-past-whitespace-and-comments)
+    (looking-at-p "(def ")))
+
+(defun cljr--prepare-to-append-to-existing-group-of-defs ()
+  "Place point at the end of the final def form in the group of
+defs appearing at the start of the ns.
+
+Point is assumed to be just after the ns form."
+  (cljr--skip-past-whitespace-and-comments)
+  (while (looking-at-p "(def ")
+    (paredit-forward)
+    (forward-line)
+    (cljr--skip-past-whitespace-and-comments))
+  (paredit-backward)
+  (paredit-forward))
+
+(defun cljr--prepare-to-insert-new-def ()
+  "Skip past all previously defined vars at the beginning of the ns."
+  (cljr--goto-ns)
+  (paredit-forward)
+  (if (cljr--existing-group-of-defs?)
+      (cljr--prepare-to-append-to-existing-group-of-defs)
+    (insert "\n")))
+
 (defun cljr--extract-def-at-point (&optional const?)
   (let ((name (let ((highlight (cljr--highlight-sexp)))
                 (unwind-protect
@@ -1640,9 +1669,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-declaration"
         (body (cljr--delete-and-extract-sexp))
         const-pos)
     (save-excursion
-      (cljr--goto-ns)
-      (paredit-forward)
-      (insert "\n\n(def ")
+      (cljr--prepare-to-insert-new-def)
+      (insert "\n(def ")
       (when const?
         (insert "^:const "))
       (insert name)
