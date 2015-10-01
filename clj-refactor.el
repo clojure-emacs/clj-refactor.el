@@ -2047,14 +2047,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-let"
 
 ;; ------ Destructuring ----
 
-(defun cljr--find-symbol-at-point ()
-  (save-excursion
-    (when (looking-back "\\s_\\|\\sw")
-      (paredit-backward))
-    (let ((beg (point)))
-      (paredit-forward)
-      (buffer-substring-no-properties beg (point)))))
-
 ;;;###autoload
 (defun cljr-destructure-keys ()
   "Change a symbol binding at point to a destructuring bind.
@@ -2067,7 +2059,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-destructure-keys
     (paredit-backward-up)
     (unless (looking-at "\\[")
       (user-error "Place point on the symbol to destructure inside the [let form]")))
-  (let* ((symbol (cljr--find-symbol-at-point))
+  (let* ((symbol (cider-symbol-at-point))
          (re (concat "(:\\(\\sw\\|\\s_\\)+ " (regexp-quote symbol) ")"))
          (bound (save-excursion
                   (paredit-backward-up 2)
@@ -2081,7 +2073,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-destructure-keys
         (paredit-forward-down)
         (paredit-raise-sexp)
         (delete-char 1)
-        (!cons (cljr--find-symbol-at-point) symbols)))
+        (!cons (cider-symbol-at-point) symbols)))
     (save-excursion ;; find new bound
       (paredit-backward-up 2)
       (paredit-forward)
@@ -3527,7 +3519,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
     (paredit-backward-up))
   (let* ((sexp-forms* (cljr--extract-sexp-as-list))
          (example-name (car sexp-forms*))
-         (symbol-at-point (cljr--find-symbol-at-point))
+         (symbol-at-point (cider-symbol-at-point))
          (parent-fn (ignore-errors
                       (save-excursion
                         (paredit-backward-up 2)
@@ -3598,7 +3590,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 
 (defun cljr--create-fn-from-update (sexp-forms)
   (let ((keyfn (nth 2 sexp-forms)))
-    (cljr--insert-example-fn (cljr--find-symbol-at-point)
+    (cljr--insert-example-fn (cider-symbol-at-point)
                              (if (cljr--is-keyword? keyfn)
                                  (list (s-chop-prefix ":" keyfn))
                                (list 0)))))
@@ -3606,14 +3598,14 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 (defun cljr--create-fn-from-update-in ()
   (let ((last-path-entry (save-excursion
                            (paredit-backward-down)
-                           (cljr--find-symbol-at-point))))
-    (cljr--insert-example-fn (cljr--find-symbol-at-point)
+                           (cider-symbol-at-point))))
+    (cljr--insert-example-fn (cider-symbol-at-point)
                              (if (cljr--is-keyword? last-path-entry)
                                  (list (s-chop-prefix ":" last-path-entry))
                                (list 0)))))
 
 (defun cljr--create-fn-from-sort (sexp-forms)
-  (let* ((fn-name (cljr--find-symbol-at-point))
+  (let* ((fn-name (cider-symbol-at-point))
          (param-name (-when-let (coll-name (cljr--guess-param-name (-last-item sexp-forms)))
                        (singularize-string coll-name))))
     (cljr--insert-example-fn fn-name
@@ -3623,7 +3615,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                                (list "a" "b")))))
 
 (defun cljr--create-fn-from-sort-by (sexp-forms)
-  (let* ((fn-name (cljr--find-symbol-at-point))
+  (let* ((fn-name (cider-symbol-at-point))
          (making-comparator? (and (string= fn-name (nth 2 sexp-forms))
                                   (= 4 (length sexp-forms))))
          (param-name (if making-comparator?
@@ -3763,7 +3755,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                            (paredit-forward-down)
                            (paredit-forward 3)
                            (paredit-backward-down)
-                           (cljr--find-symbol-at-point))))
+                           (cider-symbol-at-point))))
     (when (cljr--is-keyword? last-path-entry)
       (s-chop-prefix ":" last-path-entry))))
 
