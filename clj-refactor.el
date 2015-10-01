@@ -655,7 +655,12 @@ Note that this function also moves point from the suffix to the prefix."
               (looking-back "\\["))))
 
 (defun cljr--resolve-alias (alias)
-  "Looks up ALIAS in the ns form."
+  "Look up ALIAS in the ns form.
+
+if alias is util and the ns-from contains
+
+(:require [refactor-nrepl [util s-expresions]])
+refactor-nrepl.util will be returned."
   (save-excursion
     (cljr--goto-ns)
     (when (re-search-forward
