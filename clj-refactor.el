@@ -3548,7 +3548,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 
                       (:else sexp-forms*))))
     (push-mark)
-    (if (cljr--is-symbol? symbol-at-point)
+    (if (cljr--symbol? symbol-at-point)
         (cond ((string= example-name "update")
                (cljr--create-fn-from-update sexp-forms))
 
