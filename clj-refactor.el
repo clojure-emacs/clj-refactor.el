@@ -644,6 +644,16 @@ e.g. `re-search-forward'"
      (t (error "Only know how to search :forward or :backward, you asked for '%s'"
                direction)))))
 
+(defun cljr--inside-prefixed-libspec-vector? ()
+  "If we're inside a prefixed libspec vector then point is
+assumed to be just inside the []
+
+Note that this function also moves point from the suffix to the prefix."
+  (and (looking-back "\\[")
+       (progn (paredit-backward-up 2)
+              (paredit-forward-down)
+              (looking-back "\\["))))
+
 (defun cljr--resolve-alias (alias)
   "Looks up ALIAS in the ns form."
   (save-excursion
@@ -654,8 +664,14 @@ e.g. `re-search-forward'"
            :noerror)
       (paredit-backward-up)
       (paredit-forward-down)
-      (buffer-substring-no-properties (point)
-                                      (cljr--point-after 'paredit-forward)))))
+      (let ((ns (buffer-substring-no-properties
+                 (point)
+                 (cljr--point-after 'paredit-forward))))
+        (if (cljr--inside-prefixed-libspec-vector?)
+            (format "%s.%s" (buffer-substring-no-properties
+                             (point) (cljr--point-after 'paredit-forward))
+                    ns)
+          ns)))))
 
 (defun cljr--point-for-anon-function ()
   "Returns the location of point if the point is currently placed
