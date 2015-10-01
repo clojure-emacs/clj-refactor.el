@@ -3668,7 +3668,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
   (s-matches? "^:[^0-9:[{(\"][^[{(\"]*$"
               (s-replace "\n" " " s)))
 
-(defun cljr--is-symbol? (s)
+(defun cljr--symbol? (s)
+  "True when S is a symbol."
   (s-matches? "^[^0-9:[{(\"][^[{(\"]*$"
               (s-replace "\n" " " s)))
 
@@ -3703,7 +3704,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                         (cljr--unwind-s form)))
          (fn-call (cljr--first-fn-call-s prepped-form)))
     (cond
-     ((cljr--is-symbol? prepped-form)
+     ((cljr--symbol? prepped-form)
       prepped-form)
      ((cljr--keyword-lookup? prepped-form)
       (match-string 1 prepped-form))
