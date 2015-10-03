@@ -2348,7 +2348,7 @@ the alias in the project."
                 (cljr--point-after 'paredit-backward)
                 (1- (point)))))
     (unless (cljr--resolve-alias short)
-      (-if-let* ((aliases (with-demoted-errors (cljr--get-aliases-from-middleware)))
+      (-if-let* ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
                  (candidates (gethash (intern short) aliases)))
           (list short candidates)
         (when (and cljr-magic-require-namespaces ; a regex against "" always triggers
@@ -2379,7 +2379,7 @@ form."
             (cljr--insert-in-ns ":require")
             (let ((libspec (format "[%s :as %s]" long short)))
               (insert libspec)
-              (cljr--maybe-eval-ns-form)
+              (ignore-errors (cljr--maybe-eval-ns-form))
               (cljr--indent-defun)
               (message "Required %s" libspec))
             (cljr--maybe-sort-ns)))))))
