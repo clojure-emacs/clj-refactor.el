@@ -1019,7 +1019,7 @@ word test in it and whether the file lives under the test/ directory."
 (add-hook 'find-file-hook 'cljr--add-ns-if-blank-clj-file)
 
 (defun cljr--dash-in-file-name? (file-name)
-  (and file-name (s-matches? "-[^.]*\.clj[sxc]?$" file-name)))
+  (and file-name (s-matches? "-[^/]+\.clj[sxc]?$" file-name)))
 
 (defun cljr--maybe-replace-dash-in-file-name (file-name)
   (if (and (cljr--dash-in-file-name? file-name)
