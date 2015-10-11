@@ -2897,12 +2897,12 @@ root."
              cljr--format-symbol-occurrence
              cljr--insert-in-find-symbol-buffer)))
     (when (= cjr--occurrence-count cljr--num-syms)
-      (cljr--finalise-find-symbol-buffer cljr--num-syms))))
+      (cljr--finalise-find-symbol-buffer (length cljr--occurrence-ids)))))
 
-(defun cljr--finalise-find-symbol-buffer (num-of-symbols)
+(defun cljr--finalise-find-symbol-buffer (total)
   (with-current-buffer "*cljr-find-usages*"
     (insert (format "\nFind symbol finished: %d occurrence%s found"
-                    num-of-symbols (if (> num-of-symbols 1) "s" "")))
+                    total (if (> total 1) "s" "")))
     ;; Place point on first occurrence
     (goto-char (point-min))
     (forward-line 2)))
@@ -2932,7 +2932,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
          (ns (nrepl-dict-get var-info "ns"))
          (symbol-name (nrepl-dict-get var-info "name")))
     (cljr--setup-find-symbol-buffer (or symbol-name symbol))
-    (cljr--find-symbol (or symbol-name symbol) ns #'cljr--format-and-insert-symbol-occurrence)))
+    (cljr--find-symbol (or symbol-name symbol) ns
+                       #'cljr--format-and-insert-symbol-occurrence)))
 
 (defun cljr--rename-occurrence (file line-beg col-beg name new-name)
   (save-excursion
