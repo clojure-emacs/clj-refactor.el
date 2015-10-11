@@ -797,18 +797,6 @@ A new record is created to define this constructor."
                          "-not -regex \".*svn.*\""
                          1000))))
 
-(defun cljr--indent-ns-forms (changed-files)
-  "The middleware just dumps the new ns into the file and it's up
-to us to make sure it's nicely indented."
-  (save-window-excursion
-    (dolist (f changed-files)
-      (delay-mode-hooks
-        (with-current-buffer (find-file-noselect f :nowarn)
-          (revert-buffer :ignore-auto :no-confirm)
-          (clojure-mode)
-          (indent-region (point-min) (cljr--point-after 'paredit-forward))
-          (save-buffer))))))
-
 (defun cljr--buffers-visiting-dir (dir)
   (-filter (lambda (buf)
              (-when-let (path (buffer-file-name buf))
@@ -862,7 +850,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
                                                "new-path" new-path)
                              "touched"))
              (changed-files-count (length changed-files)))
-        (cljr--indent-ns-forms changed-files)
         (cond
          ((null changed-files) (message "Rename complete! No files affected."))
          ((= changed-files-count 1) (message "Renamed %s to %s." old-path new-path))
