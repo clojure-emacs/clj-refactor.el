@@ -3021,9 +3021,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
     (cljr--goto-ns)
     (cljr--delete-and-extract-sexp)
     (insert new-ns)
-    (cljr--goto-ns)
-    (indent-region (point) (cljr--point-after 'paredit-forward))
-    (paredit-forward)
     (cljr--just-one-blank-line)))
 
 ;;;###autoload
