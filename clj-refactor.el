@@ -2932,7 +2932,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
          (ns (nrepl-dict-get var-info "ns"))
          (symbol-name (nrepl-dict-get var-info "name")))
     (cljr--setup-find-symbol-buffer (or symbol-name symbol))
-    (cljr--find-symbol (or symbol-name symbol) ns 'cljr--format-and-insert-symbol-occurrence)))
+    (cljr--find-symbol (or symbol-name symbol) ns #'cljr--format-and-insert-symbol-occurrence)))
 
 (defun cljr--rename-occurrence (file line-beg col-beg name new-name)
   (save-excursion
