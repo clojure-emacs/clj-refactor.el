@@ -2906,6 +2906,7 @@ root."
 
 (defun cljr--finalise-find-symbol-buffer (total)
   (with-current-buffer "*cljr-find-usages*"
+    (goto-char (point-max))
     (insert (format "\nFind symbol finished: %d occurrence%s found"
                     total (if (> total 1) "s" "")))
     ;; Place point on first occurrence
