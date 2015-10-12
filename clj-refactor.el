@@ -2897,7 +2897,7 @@ root."
              cljr--format-symbol-occurrence
              cljr--insert-in-find-symbol-buffer)))
     (when (= cjr--occurrence-count cljr--num-syms)
-      (cljr--finalise-find-symbol-buffer (length cljr--occurrence-ids)))))
+      (cljr--finalise-find-symbol-buffer cljr--num-syms))))
 
 (defun cljr--finalise-find-symbol-buffer (total)
   (with-current-buffer "*cljr-find-usages*"
