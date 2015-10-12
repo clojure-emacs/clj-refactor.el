@@ -223,6 +223,10 @@ namespace in the project."
 (defvar *cljr--noninteractive* nil
   "t, when our interactive functions are called programmatically.")
 
+(defvar cljr--file-column-pattern
+  "^\\(.+?\\):\\([1-9][0-9]*\\):\\([0-9][0-9]*\\): "
+  "A regexp pattern that groups output into filename, line number and column number.")
+
 (defvar cljr--nrepl-ops
   '(
     "artifact-list"
@@ -2874,8 +2878,9 @@ root."
 (defun cljr--format-symbol-occurrence (occurrence)
   (let ((file (gethash :file occurrence ))
         (line (gethash :line-beg occurrence))
+        (col (1- (gethash :col-beg occurrence)))
         (match (gethash :match occurrence)))
-    (format "%s:%s: %s\n" (cljr--project-relative-path file) line
+    (format "%s:%s:%s: %s\n" (cljr--project-relative-path file) line col
             (cljr--first-line match))))
 
 (defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
@@ -2915,6 +2920,10 @@ root."
     (with-current-buffer "*cljr-find-usages*"
       (insert (format "'%s' occurs in the following places:\n\n" symbol-name))
       (grep-mode)
+      (set (make-local-variable 'compilation-error-regexp-alist)
+           (list 'compilation-cljr-nogroup))
+      (set (make-local-variable 'compilation-error-regexp-alist-alist)
+           (list (cons 'compilation-cljr-nogroup (list cljr--file-column-pattern 1 2 3))))
       (setq buffer-read-only nil)
       (setq-local compilation-search-path (list (cljr--project-dir))))))
 
