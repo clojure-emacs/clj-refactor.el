@@ -4097,13 +4097,26 @@ Updates the ordering of the function parameters."
           (insert " ")))
       (cljr--maybe-wrap-form))))
 
+(defun cljr--goto-lambda-list ()
+  "Move into the lambda list of the function definition beginning
+at point.
+
+E.g. move point from here:  |(defn foo [bar baz] ...)
+to here:  (defn foo [|bar baz] ...)"
+  (paredit-forward-down)
+  (cljr--skip-past-whitespace-and-comments)
+  (while (not (looking-at-p "\\["))
+    (paredit-forward)
+    (cljr--skip-past-whitespace-and-comments))
+  (paredit-forward-down))
+
 (defun cljr--update-function-signature (signature-changes)
   "Point is assumed to be just prior to the function definition
   we're about to update."
-  (cljr--search-forward-within-sexp "[")
+  (cljr--goto-lambda-list)
   (cljr--update-signature-names signature-changes)
   (cljr--goto-toplevel)
-  (paredit-forward-down 2)
+  (cljr--goto-lambda-list)
   (cljr--update-signature-order signature-changes))
 
 (defun cljr--call-site? (fn)
