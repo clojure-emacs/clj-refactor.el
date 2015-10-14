@@ -3931,10 +3931,16 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
     (forward-line)
     (move-to-column col)))
 
+(defun cljr--signature-change-at-index (signature-changes i)
+  (-first (lambda (change) (= (gethash :new-index change) i))
+          signature-changes))
+
 (defun cljr--dec-parameter-index ()
   (let* ((index (1- (line-number-at-pos)))
-         (parameter-info (nth index cljr--signature-changes))
-         (neighbor-info (nth (1- index) cljr--signature-changes)))
+         (parameter-info (cljr--signature-change-at-index
+                          cljr--signature-changes index))
+         (neighbor-info (cljr--signature-change-at-index
+                         cljr--signature-changes (1- index))))
     (puthash :new-index (1- (gethash :new-index parameter-info))
              parameter-info)
     (puthash :new-index (1+ (gethash :new-index neighbor-info))
@@ -3942,8 +3948,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
 
 (defun cljr--inc-parameter-index ()
   (let* ((index (1- (line-number-at-pos)))
-         (parameter-info (nth index cljr--signature-changes))
-         (neighbor-info (nth (1+ index) cljr--signature-changes)))
+         (parameter-info (cljr--signature-change-at-index
+                          cljr--signature-changes index))
+         (neighbor-info (cljr--signature-change-at-index
+                         cljr--signature-changes (1+ index))))
     (puthash :new-index (1+ (gethash :new-index parameter-info))
              parameter-info)
     (puthash :new-index (1- (gethash :new-index neighbor-info))
@@ -4080,8 +4088,8 @@ Updates the ordering of the function parameters."
       ;; insert parameters in new order
       (dotimes (i (length parameters))
         (let ((old-name (gethash :old-name
-                                 (-find (lambda (c) (= (gethash :new-index c) i))
-                                        signature-changes))))
+                                 (cljr--signature-change-at-index
+                                  signature-changes i))))
           (insert (-find (lambda (param)
                            (s-starts-with? old-name param))
                          parameters)))
