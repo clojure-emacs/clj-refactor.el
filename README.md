@@ -47,6 +47,10 @@ That's it!
 
 Check out the much longer [installation](https://github.com/clojure-emacs/clj-refactor.el/wiki/installation) page in the wiki for a less opinionated approach.
 
+cljr-refactor has quite a few settings you can tweak to change the
+behavior of various commands.  You can read more about that
+[here](https://github.com/clojure-emacs/clj-refactor.el/wiki#customization).
+
 ## Usage
 
 All functions in clj-refactor have a two-letter mnemonic shortcut. E.g. `rs` for `cljr-rename-symbol`.  Given the prefix choice in the example setup you'd call this function by hitting `C-c C-m rs`
@@ -61,8 +65,8 @@ An extensive changelog is available [here](CHANGELOG.md).
 
 ## Contribute
 
-Yes, please do. There's a suite of tests, so remember to add tests for your
-specific feature, or I might break it later.
+Yes, please do. There's a suite of tests, so remember to add tests for
+your specific feature, or we might break it later.
 
 You'll find the repo at:
 
