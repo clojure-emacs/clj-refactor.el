@@ -57,7 +57,10 @@ All functions in clj-refactor have a two-letter mnemonic shortcut. E.g. `rs` for
 
 See the wiki for a complete [list of available refactorings] (https://github.com/clojure-emacs/clj-refactor.el/wiki), demonstrations and customization points.
 
-We also have [hydra](https://github.com/abo-abo/hydra) powered menus to help to learn or refresh the mnemonic shortcuts. See the [wiki](https://github.com/clojure-emacs/clj-refactor.el/wiki/hydra-parent) for details.
+If you're having trouble remembering the mnenmic shortcuts, check out
+the [hydra](https://github.com/abo-abo/hydra) powered popup menus.
+They are described
+[here](https://github.com/clojure-emacs/clj-refactor.el/wiki/hydra-parent).
 
 ## Changelog
 
@@ -84,7 +87,7 @@ Run the tests with:
     $ ./run-tests.sh
 
 
-Before submitting a patch or a pull request make sure all tests are
+Before submitting a patch, or a pull request, make sure all tests are
 passing and that your patch is in line with the [contribution
 guidelines](CONTRIBUTING.md).
 
