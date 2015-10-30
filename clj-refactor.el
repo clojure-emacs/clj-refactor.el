@@ -4355,7 +4355,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
       (kill-buffer cljr--manual-intervention-buffer))
     (pop-to-buffer cljr--change-signature-buffer)))
 
-(add-hook 'nrepl-connected-hook #'cljr--init-middleware)
+(add-hook 'cider-connected-hook #'cljr--init-middleware)
 
 ;; ------ minor mode -----------
 ;;;###autoload
