@@ -898,7 +898,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
   (unless (cider-connected-p)
     (user-error "CIDER isn't connected!"))
   (unless (cljr--op-supported? "find-symbol")
-    (user-error "refactor-nrepl middleware not available! Did you remember to install it?")))
+    (user-error "The refactor-nrepl middleware isn't available! \
+Did you remember to install it?")))
 
 (defun cljr--ensure-op-supported (op)
   "Check for support of middleware op OP.
@@ -907,14 +908,14 @@ Signal an error if it is not supported, otherwise return OP."
   (cljr--assert-middleware)
   (if (cljr--op-supported? op)
       op
-    (user-error "Can't find nREPL middleware providing op \"%s\".  Please, install (or update) refactor-nrepl %s and restart the REPL."
+    (user-error "Can't find nREPL middleware providing op \"%s\".  \
+Please, install (or update) refactor-nrepl %s and restart the REPL."
                 op (upcase (cljr--version :prune-package-version)))))
 
 (defun cljr--assert-leiningen-project ()
   (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
                    "project.clj")
     (user-error "Can't find project.clj!")))
-
 
 ;; ------ ns statements -----------
 
