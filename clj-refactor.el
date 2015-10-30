@@ -898,7 +898,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
   (unless (cider-connected-p)
     (user-error "CIDER isn't connected!"))
   (unless (cljr--op-supported? "find-symbol")
-    (user-error "nrepl-refactor middleware not available! Did you remember to install it?")))
+    (user-error "refactor-nrepl middleware not available! Did you remember to install it?")))
 
 (defun cljr--ensure-op-supported (op)
   "Check for support of middleware op OP.
