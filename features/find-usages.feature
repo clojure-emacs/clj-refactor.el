@@ -44,8 +44,8 @@ Feature: find usages of a given symbol; nrepl middleware response(s) mocked (big
     """
     'foo' occurs in the following places:
 
-    tmp/src/example/two.clj:3: (defn foo []
-    tmp/src/example/one.clj:5: (str "bar" (two/foo) "goo"))
+    tmp/src/example/two.clj:3:6: (defn foo []
+    tmp/src/example/one.clj:5:14: (str "bar" (two/foo) "goo"))
 
     Find symbol finished: 2 occurrences found
     """
@@ -57,8 +57,8 @@ Feature: find usages of a given symbol; nrepl middleware response(s) mocked (big
     """
     'foo' occurs in the following places:
 
-    tmp/src/example/two.clj:3: (defn foo []
-    tmp/src/example/one.clj:5: (str "bar" (two/foo) "goo"))
+    tmp/src/example/two.clj:3:6: (defn foo []
+    tmp/src/example/one.clj:5:14: (str "bar" (two/foo) "goo"))
 
-    Find symbol finished: 2 occurrences found
+    Find symbol finished: 3 occurrences found
     """

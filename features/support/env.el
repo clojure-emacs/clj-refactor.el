@@ -22,7 +22,9 @@
  ;; Used in cljr--maybe-eval-ns-form
  (defun cider-eval-ns-form (&rest _))
  (defun cljr--ensure-op-supported (op) t)
- (delete-directory (expand-file-name "tmp" clj-refactor-root-path) t)
+ (let ((tmp-dir(expand-file-name "tmp" clj-refactor-root-path)))
+   (when (file-directory-p tmp-dir)
+     (delete-directory tmp-dir t)))
  (yas-global-mode 1)
  (setq cljr-use-multiple-cursors t)
  (cljr-add-keybindings-with-prefix "C-!")
