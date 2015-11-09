@@ -3510,7 +3510,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
     (when missing-ops
       (cider-repl-emit-interactive-stderr
        (format "WARNING: The following nREPL ops are not supported:
-%s\nPlease, install (or update) refactor-nrepl and restart REPL.
+%s\nPlease, install (or update) refactor-nrepl and restart the REPL.
 You can mute this warning by changing cljr-suppress-middleware-warnings."
                (s-join " " missing-ops ))))))
 
