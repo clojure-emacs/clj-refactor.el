@@ -1861,6 +1861,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-unwind-all"
       (insert contents)
       (newline-and-indent)
       (cljr--remove-superfluous-parens)
+      ;; #255 Fix dangling parens
+      (paredit-backward-up)
+      (paredit-forward)
+      (when (looking-back "^\\s-*)+\\s-*")
+        (join-line))
       t)))
 
 (defun cljr--thread-guard ()

@@ -383,3 +383,17 @@ Feature: Threading and unwinding of macros
     (->> (filter even? (make-things))
          (map square))
     """
+
+  Scenario: Dangling parens #255
+    When I insert:
+    """
+    (map inc
+         (range))
+    """
+    And I place the cursor before "(map"
+    And I press "C-! tl"
+    Then I should see:
+    """
+    (->> (range)
+         (map inc))
+    """
