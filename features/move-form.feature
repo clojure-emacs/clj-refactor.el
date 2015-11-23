@@ -27,6 +27,7 @@ Feature: Move forms
     (add 1 2)
     """
     And the cursor is inside the first defn form
+    And I disable cljr-clean-ns
     And I start an action chain
     And I press "C-! mf"
     And I type "dest.clj"
@@ -71,7 +72,8 @@ Feature: Move forms
     Then I should see:
     """
     (ns cljr.src
-      (:require [cljr.dest :refer [foo]]))
+      (:require [clojure.string :as str]
+                [cljr.dest :refer [foo]]))
 
     (foo 1 2)
     """
@@ -79,7 +81,7 @@ Feature: Move forms
     Then I should see:
     """
     (ns cljr.dest
-      (:require [clojure.string :as str]))
+      (:require  [clojure.string :as str]))
 
     (defn frobinator [a b]
       (+ a b))
@@ -171,7 +173,8 @@ Feature: Move forms
     And I open file "tmp/src/cljr/dest.clj"
     Then I should see:
     """
-    (ns cljr.dest)
+    (ns cljr.dest
+      (:require  [cljr.dest :refer [this that]]))
 
     (defn frobinator [a b]
       (+ a b))
@@ -268,7 +271,9 @@ Feature: Move forms
     And I open file "tmp/src/cljr/dest.clj"
     Then I should see:
     """
-    (ns cljr.dest)
+    (ns cljr.dest
+      (:require  [cljr.foobar :as foo]
+                [cljr.dest :refer [this that]]))
 
     (defn frobinator [a b]
       (+ a b))

@@ -16,6 +16,10 @@
 
 ### Changes
 
+- Make `cljr-clean-ns` the only default function used by `cljr-project-clean`.
+- Remove `cljr-remove-unused-requires` which is replaced by `cljr-clean-ns`.
+- Remove `cljr-replace-use` which is replaced by `cljr-clean-ns`.
+- Remove `cljr-sort-ns` which is replaced by `cljr-clean-ns`.
 - `cljr-remove-debug-fns` has been removed.
 - `cljr-magic-require-namespaces` is now only consulted in the event the namespace alias isn't already used in the project.
 - [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217) When requiring the test framework in test files stop favoring `:refer :all`.

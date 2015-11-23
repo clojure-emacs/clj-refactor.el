@@ -10,18 +10,19 @@ Feature: Add to namespace
     And I press "C-! ar"
     And I press "TAB"
     And I press "TAB"
-    And I type "clojure.strings"
+    And I type "clojure.string"
     And I press "TAB"
     And I type "s"
     And I press "TAB"
     And I press "C-! ar"
     And I type "[clj-time.core :refer :all]"
     And I press "TAB"
+    And cljr--clean-ns sorts stuff
     Then I should see:
     """
     (ns cljr.core
       (:require [clj-time.core :refer :all]
-                [clojure.strings :as s]))
+                [clojure.string :as s]))
     """
 
   Scenario: Add use to namespace
@@ -30,7 +31,7 @@ Feature: Add to namespace
     And I press "TAB"
     And I press ":all"
     And I press "C-! au"
-    And I type "clojure.strings"
+    And I type "clojure.string"
     And I press "TAB"
     And I press "TAB"
     And I type "join"
@@ -38,7 +39,7 @@ Feature: Add to namespace
     """
     (ns cljr.core
       (:require [clj-time.core :refer :all]
-                [clojure.strings :refer [join]]))
+                [clojure.string :refer [join]]))
     """
 
   Scenario: Add import to namespace
