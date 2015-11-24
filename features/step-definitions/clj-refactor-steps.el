@@ -403,6 +403,21 @@ pprint (cljs.pprint)}}"))))
       (lambda ()
         (validate-all-helpers)))
 
+(Given "^I call replace refer all with referred list with mock data for \"\\(.*\\)\"$"
+       (lambda (ns-name)
+         (cljr--replace-refer-all-with-referred-syms
+          ns-name
+          (edn-read
+           "({:line-beg 5 :line-end 5 :col-beg 13 :col-end 16 :file\"tmp/src/example/one.clj\" :name \"foo\"} {:line-beg 8 :line-end 8 :col-beg 15 :col-end 20 :file \"tmp/src/example/one.clj\" :name \"star*\"})"))))
+
+(Given "^I call replace refer all with alias with mock data for \"\\(.*\\)\"$"
+       (lambda (ns-name)
+         (cljr--replace-refer-all-with-alias
+          ns-name
+          (edn-read
+           "({:line-beg 5 :line-end 5 :col-beg 13 :col-end 30 :file\"one.clj\" :name \"foo\"} {:line-beg 8 :line-end 8 :col-beg 15 :col-end 28 :file \"one.clj\" :name \"star*\"})")
+          "two")))
+
 (Given "^I call find usages for \"\\(.*\\)\"$"
        (lambda (symbol-name)
          (cljr--setup-find-symbol-buffer symbol-name)

@@ -149,6 +149,12 @@ as can be."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-eagerly-cache-macro-occurrences-on-startup t
+  "If t, the middleware will eagerly populate the macro occurrences cache.
+This makes `cljr-replace-refer-all' as snappy as it can be."
+  :group 'cljr
+  :type 'boolean)
+
 (defcustom cljr-suppress-middleware-warnings nil
   "If t, no middleware warnings are printed to the repl."
   :group 'cljr
@@ -249,8 +255,10 @@ won't run if there is a broken namespace in the project."
     "rename-file-or-dir"
     "resolve-missing"
     "stubs-for-interface"
+    "find-used-publics"
     "version"
     "warm-ast-cache"
+    "warm-macro-occurrences-cache"
     ))
 
 (defvar cljr--debug-mode nil)
@@ -344,6 +352,7 @@ Otherwise open the file and do the changes non-interactively."
     ("ml" . (cljr-move-to-let "Move to let" ?m ("code")))
     ("pc" . (cljr-project-clean "Project clean" ?c ("project")))
     ("pf" . (cljr-promote-function "Promote function" ?p ("code" "toplevel-form")))
+    ("ra" . (cljr-replace-refer-all "Replace refer all" ?a ("ns")))
     ("rf" . (cljr-rename-file-or-dir "Rename file-or-dir" ?r ("project" "toplevel-form")))
     ("rl" . (cljr-remove-let "Remove let" ?r ("code")))
     ("rm" . (cljr-require-macro "Add to or extend the require-macros form" ?M ("ns")))
@@ -402,12 +411,13 @@ Otherwise open the file and do the changes non-interactively."
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 _ai_: Add import to ns                             _am_: Add missing libspec                          _ap_: Add project dependency
 _ar_: Add require to ns                            _au_: Add use to ns                                _cn_: Clean ns
-_rm_: Require a macro into the ns                  _sr_: Stop referring
+_rm_: Require a macro into the ns                  _sr_: Stop referring                               _ra_: Replace refer all
 "
   ("ai" cljr-add-import-to-ns) ("am" cljr-add-missing-libspec)
   ("ap" cljr-add-project-dependency) ("ar" cljr-add-require-to-ns)
   ("au" cljr-add-use-to-ns) ("cn" cljr-clean-ns)
   ("rm" cljr-require-macro) ("sr" cljr-stop-referring)
+  ("ra" cljr-replace-refer-all)
   ("q" nil "quit"))
 
 (defhydra hydra-cljr-code-menu (:color pink :hint nil)
@@ -1163,6 +1173,37 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-import-to-ns
   (cljr--pop-tmp-marker-after-yasnippet)
   (cljr--add-yas-ns-updated-hook)
   (yas-expand-snippet "$1"))
+
+(defun cljr--extract-refer-all-namespaces ()
+  "Returns a list of all the namespaces that are required with :refer :all"
+  (cljr--goto-ns)
+  (when (search-forward ":require" nil t)
+    (let (nses
+          (require-end (save-excursion
+                         (progn
+                           (paredit-backward-up)
+                           (paredit-forward)
+                           (point)))))
+      (if (not (save-excursion (re-search-forward ":refer\s:all" require-end t)))
+          (message "There is no :refer :all in the ns declaration.")
+        (while (re-search-forward ":refer\s:all" require-end t)
+          (paredit-backward-up)
+          (let ((prefix (save-excursion
+                          (when (progn
+                                  (paredit-backward-up)
+                                  (not (looking-at-p "(:require")))
+                            (paredit-forward-down)
+                            (buffer-substring (point) (cljr--point-after 'paredit-forward)))))
+                (ns (progn
+                      (paredit-forward-down)
+                      (buffer-substring (point) (cljr--point-after 'paredit-forward)))))
+            (push
+             (if prefix
+                 (concat prefix "." ns)
+               ns)
+             nses)
+            (paredit-forward-up)))
+        (nreverse nses)))))
 
 ;;;###autoload
 (defun cljr-require-macro ()
@@ -2744,11 +2785,17 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
       (cljr--find-symbol (or symbol-name symbol) ns
                          #'cljr--format-and-insert-symbol-occurrence))))
 
-(defun cljr--rename-occurrence (file line-beg col-beg name new-name)
+(defun cljr--rename-occurrence (file line-beg col-beg line-end col-end name new-name)
   (save-excursion
     (with-current-buffer
         (find-file-noselect file)
-      (let* ((name (->> name cljr--symbol-suffix regexp-quote)))
+      (let* ((name (->> name cljr--symbol-suffix regexp-quote))
+             (search-limit (save-excursion
+                             (progn
+                               (goto-char (point-min))
+                               (forward-line (1- line-end))
+                               (move-to-column (1- col-end))
+                               (point)))))
         (goto-char (point-min))
         (forward-line (1- line-beg))
         (move-to-column (1- col-beg))
@@ -2757,8 +2804,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
         (when (looking-at-p "(\\s-*def")
           (re-search-forward name)
           (paredit-backward))
-        (when (looking-at (format "\\(.+/\\)?\\(%s\\)" name))
-          (replace-match (format "\\1%s" new-name))))
+        (when (re-search-forward (format "\\(.+/\\)?\\(%s\\)" name) search-limit t)
+          (replace-match (format "\\1%s" new-name) t)))
       (save-buffer))))
 
 (defun cljr--rename-occurrences (ns occurrences new-name)
@@ -2766,8 +2813,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
     (let* ((file (gethash :file symbol-meta))
            (line-beg (gethash :line-beg symbol-meta))
            (col-beg (gethash :col-beg symbol-meta))
-           (name (gethash :name symbol-meta)))
-      (cljr--rename-occurrence file line-beg col-beg name new-name))))
+           (line-end (gethash :line-end symbol-meta))
+           (col-end (gethash :col-end symbol-meta))
+           (name (gethash :name symbol-meta))
+           (new-name* (if (stringp new-name)
+                          new-name
+                        (funcall new-name name))))
+      (cljr--rename-occurrence file line-beg col-beg line-end col-end name new-name*))))
 
 ;;;###autoload
 (defun cljr-rename-symbol (&optional new-name)
@@ -2794,6 +2846,51 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
       (when (and (> (length occurrences) 0) (not cljr-warn-on-eval))
         (cljr--warm-ast-cache)))))
 
+(defun cljr--replace-refer-all-with-referred-syms (ns publics-occurrences)
+  (when (re-search-forward
+         (format "\\(%s\s:refer\s\\):all"
+                 (-last-item (s-split "\\." ns)))
+         nil
+         t)
+    (replace-match
+     (format "\\1[%s]" (s-join
+                        " "
+                        (delete-dups
+                         (--map (gethash :name it) publics-occurrences)))))))
+
+(defun cljr--replace-refer-all-with-alias (ns publics-occurrences alias)
+  (let ((ns-last-token (-last-item (s-split "\\." ns))))
+    (when (re-search-forward (format "\\(%s\s\\):refer\s:all" ns-last-token) nil t)
+      (replace-match (format "\\1:as %s" alias)))
+    (cljr--rename-occurrences ns publics-occurrences (lambda (old-name) (concat alias "/" old-name)))))
+
+;;;###autoload
+(defun cljr-replace-refer-all (with-referred-syms?)
+  "Replaces :refer :all style require with alias :as style require.
+
+Also adds the alias prefix to all occurrences of public symbols in the namespace.
+
+With prefix WITH-REFERRED-SYMS? replaces refer all with the list of public symbols used in the namespace.
+
+wiki: todo"
+  (interactive "P")
+  (cljr--ensure-op-supported "find-used-publics")
+  (let ((refer-all-nses (cljr--extract-refer-all-namespaces))
+        (filename (buffer-file-name)))
+    (dolist (refer-all-ns refer-all-nses)
+      (cljr--goto-ns)
+      (let* ((alias (when (not with-referred-syms?)
+                      (cljr--prompt-user-for (format "alias for [%s]: " refer-all-ns))))
+             (request
+              (cljr--create-msg "find-used-publics"
+                                "used-ns" refer-all-ns
+                                "file" filename))
+             (occurrences (->>  (cljr--call-middleware-sync request "used-publics")
+                                (edn-read))))
+        (if with-referred-syms?
+            (cljr--replace-refer-all-with-referred-syms refer-all-ns occurrences)
+          (cljr--replace-refer-all-with-alias refer-all-ns occurrences alias))))))
+
 (defun cljr--maybe-nses-in-bad-state (response)
   (let ((asts-in-bad-state (->> (nrepl-dict-get response "ast-statuses")
                                 edn-read
@@ -2813,6 +2910,14 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
      (cljr--maybe-nses-in-bad-state res)
      (when cljr--debug-mode
        (message "AST index updated")))))
+
+(defun cljr--warm-macro-occurrences-cache ()
+  (cljr--call-middleware-async
+   (cljr--create-msg "warm-macro-occurrences-cache")
+   (lambda (res)
+     (cljr--maybe-rethrow-error res)
+     (when cljr--debug-mode
+       (message "Macro occurrences index updated")))))
 
 (defun cljr--replace-ns (new-ns)
   (save-excursion
@@ -3369,7 +3474,10 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
       (cljr--update-artifact-cache))
     (when (and (not cljr-warn-on-eval)
                cljr-eagerly-build-asts-on-startup)
-      (cljr--warm-ast-cache))))
+      (cljr--warm-ast-cache))
+    (when cljr-eagerly-cache-macro-occurrences-on-startup
+      (cljr--warm-macro-occurrences-cache))))
+
 
 (defvar cljr--list-fold-function-names
   '("map" "mapv" "pmap" "keep" "mapcat" "filter" "remove" "take-while" "drop-while"
