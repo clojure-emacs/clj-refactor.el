@@ -2654,7 +2654,6 @@ possible choices. If the choice is trivial, return it."
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-dependency"
   (interactive "P")
-  (cljr--assert-leiningen-project)
   (cljr--ensure-op-supported "artifact-list")
   (-when-let* ((lib-name (->> (cljr--get-artifacts-from-middleware force)
                               (cljr--prompt-user-for "Artifact: ")))
