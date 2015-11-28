@@ -794,16 +794,18 @@ A new record is created to define this constructor."
          (locate-dominating-file default-directory "project.clj")))
       (ignore-errors
         (file-truename
-         (locate-dominating-file default-directory "boot.clj")))
+         (locate-dominating-file default-directory "build.boot")))
       (ignore-errors (file-truename
                       (locate-dominating-file default-directory "pom.xml")))))
 
 (defun cljr--project-file ()
-  (or (ignore-errors
-        (expand-file-name "project.clj" (cljr--project-dir)))
-      (ignore-errors
-        (expand-file-name "boot.clj" (cljr--project-dir)))
-      (ignore-errors (expand-file-name "pom.xml" (cljr--project-dir)))))
+  (let ((project-dir (cljr--project-dir)))
+    (or (let ((file (expand-file-name "project.clj" project-dir)))
+          (and (file-exists-p file) file))
+        (let ((file (expand-file-name "build.boot" project-dir)))
+          (and (file-exists-p file) file))
+        (let ((file (expand-file-name "pom.xml" project-dir)))
+          (and (file-exists-p file) file)))))
 
 (defun cljr--project-files ()
   (split-string (shell-command-to-string
