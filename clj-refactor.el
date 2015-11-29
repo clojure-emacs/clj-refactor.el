@@ -3046,7 +3046,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   (interactive)
-  (cljr--assert-leiningen-project)
   (cljr--ensure-op-supported "clean-ns")
   ;; don't save the buffer preliminarily if we are called from project clean
   (when (not (boundp 'filename))

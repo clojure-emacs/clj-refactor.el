@@ -2,6 +2,7 @@
 
 ## Up next
 
+- Boot support for `cljr-clean-ns`.
 - Boot support for `cljr-sort-project-dependencies`.
 - Boot support for `cljr-update-project-dependencies`.
 - Boot support for `cljr-update-project-dependency`.
