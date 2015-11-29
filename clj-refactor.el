@@ -2529,7 +2529,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dependencies"
   (interactive)
-  (cljr--assert-leiningen-project)
   (cljr--update-file (cljr--project-file)
     (goto-char (point-min))
     (while (re-search-forward ":dependencies" (point-max) t)

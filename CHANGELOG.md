@@ -2,6 +2,7 @@
 
 ## Up next
 
+- Boot support for `cljr-sort-project-dependencies`.
 - Boot support for `cljr-update-project-dependencies`.
 - Boot support for `cljr-update-project-dependency`.
 - [#228](https://github.com/clojure-emacs/clj-refactor.el/issues/238) Boot support for `cljr-add-project-dependency`.
