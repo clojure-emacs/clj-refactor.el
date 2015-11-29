@@ -2691,7 +2691,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-dependencies"
   (interactive)
-  (cljr--assert-leiningen-project)
   (cljr--ensure-op-supported "artifact-list")
   (find-file (cljr--project-file))
   (goto-char (point-min))
