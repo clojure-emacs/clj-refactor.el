@@ -2667,7 +2667,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
 (defun cljr-update-project-dependency ()
   "Update the version of the dependency at point."
   (interactive)
-  (cljr--assert-leiningen-project)
   (cljr--ensure-op-supported "artifact-list")
   (unless (cljr--looking-at-dependency-vector-p)
     (user-error "Place cursor in front of dependency vector to update."))
