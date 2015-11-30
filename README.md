@@ -15,8 +15,7 @@ Here's a small teaser, helping you add a missing libspec:
 
 I highly recommend installing clj-refactor through elpa.
 
-It's available on [marmalade](http://marmalade-repo.org/) and
-[melpa](http://melpa.org/):
+It's available on [melpa](http://melpa.org/) and [melpa-stable](http://stable.melpa.org/):
 
     M-x package-install clj-refactor
 
