@@ -2371,6 +2371,12 @@ the alias in the project."
           (-when-let (long (cljr--aget cljr-magic-require-namespaces short))
             (list short (list long))))))))
 
+(defun cljr--inside-string? ()
+  (nth 3 (syntax-ppss)))
+
+(defun cljr--inside-comment? ()
+  (nth 4 (syntax-ppss)))
+
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts / as normal, but also checks for common namespace shorthands to require.
@@ -2381,6 +2387,8 @@ form."
   (interactive)
   (insert "/")
   (-when-let (aliases (and cljr-magic-requires
+                           (not (cljr--inside-comment?))
+                           (not (cljr--inside-string?))
                            (cljr--magic-requires-lookup-alias)))
     (let ((short (first aliases)))
       (-when-let (long (cljr--prompt-user-for "Require " (second aliases)))
