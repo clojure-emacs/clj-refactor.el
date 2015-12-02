@@ -921,11 +921,6 @@ Please, install (or update) refactor-nrepl %s and restart the REPL."
 
 ;; ------ ns statements -----------
 
-(defun cljr--any-ns-declaration? ()
-  (save-excursion
-    (goto-char (point-min))
-    (re-search-forward clojure-namespace-name-regex nil t)))
-
 (defun cljr--goto-ns ()
   (goto-char (point-min))
   (if (re-search-forward clojure-namespace-name-regex nil t)
@@ -2376,12 +2371,6 @@ the alias in the project."
           (-when-let (long (cljr--aget cljr-magic-require-namespaces short))
             (list short (list long))))))))
 
-(defun cljr--inside-string? ()
-  (nth 3 (syntax-ppss)))
-
-(defun cljr--inside-comment? ()
-  (nth 4 (syntax-ppss)))
-
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts / as normal, but also checks for common namespace shorthands to require.
@@ -2392,9 +2381,9 @@ form."
   (interactive)
   (insert "/")
   (-when-let (aliases (and cljr-magic-requires
-                           (not (cljr--inside-comment?))
-                           (not (cljr--inside-string?))
-                           (cljr--any-ns-declaration?)
+                           (not (cider-in-comment-p))
+                           (not (cider-in-string-p))
+                           (clojure-find-ns)
                            (cljr--magic-requires-lookup-alias)))
     (let ((short (first aliases)))
       (-when-let (long (cljr--prompt-user-for "Require " (second aliases)))
