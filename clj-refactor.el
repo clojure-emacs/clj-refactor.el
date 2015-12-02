@@ -921,6 +921,11 @@ Please, install (or update) refactor-nrepl %s and restart the REPL."
 
 ;; ------ ns statements -----------
 
+(defun cljr--any-ns-declaration? ()
+  (save-excursion
+    (goto-char (point-min))
+    (re-search-forward clojure-namespace-name-regex nil t)))
+
 (defun cljr--goto-ns ()
   (goto-char (point-min))
   (if (re-search-forward clojure-namespace-name-regex nil t)
@@ -2389,6 +2394,7 @@ form."
   (-when-let (aliases (and cljr-magic-requires
                            (not (cljr--inside-comment?))
                            (not (cljr--inside-string?))
+                           (cljr--any-ns-declaration?)
                            (cljr--magic-requires-lookup-alias)))
     (let ((short (first aliases)))
       (-when-let (long (cljr--prompt-user-for "Require " (second aliases)))
