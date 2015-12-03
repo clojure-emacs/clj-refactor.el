@@ -2801,9 +2801,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
       (setq replacement (read-string (format "%s => " var)))
       (cljr--append-fn-parameter replacement)
       (goto-char (1+ fn-start))
-      (re-search-forward (format "\\s-%s\\(\\s-\\|\\|\n)\\)" var)
-                         (save-excursion (paredit-forward-up 2) (point)))
-      (replace-match (format " %s\\1" replacement))
+      (let ((end (cljr--point-after '(paredit-forward-up 2))))
+        (while (re-search-forward (format "\\s-%s\\(\\s-\\|\\|\n)\\)" var)
+                                  end :no-error)
+          (replace-match (format " %s\\1" replacement))))
       (goto-char fn-start))))
 
 ;;;###autoload
