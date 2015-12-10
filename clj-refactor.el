@@ -4370,14 +4370,5 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
   "A mode to keep the clj-refactor keybindings."
   nil " cljr" clj-refactor-map)
 
-;; Deprecated
-(defun cljr-update-artifact-cache ()
-  (interactive)
-  (message "cljr-update-artifact-cache is deprecated and has been replaced by a customize setting defaulting to true."))
-
-(defun cljr-warm-ast-cache ()
-  (interactive)
-  (message "cljr-warm-ast-cache has been deprecated and replaced by a defcustom defaulting to true."))
-
 (provide 'clj-refactor)
 ;;; clj-refactor.el ends here
