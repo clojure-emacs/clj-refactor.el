@@ -2754,10 +2754,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   (if (= (length candidates) 0)
       (error "Couldn't find any symbols matching %s on classpath."
              (cljr--symbol-suffix symbol))
-    (cljr--prompt-user-for "Require: " candidates)))
+    (let* ((names (-map (lambda (c) (gethash :name c)) candidates))
+           (name (intern-soft (cljr--prompt-user-for "Require: " names))))
+      (-find (lambda (c) (equal name (gethash :name c))) candidates))))
 
 (defun cljr--insert-libspec-verbosely (libspec)
-  (insert libspec)
+  (insert (format "%s" libspec))
   (cljr--indent-defun)
   (message "%s added to ns" libspec))
 
@@ -2766,19 +2768,27 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
     (cljr--insert-in-ns ":import")
     (cljr--insert-libspec-verbosely missing)))
 
+(defun cljr--qualified-symbol? (symbol)
+  (s-contains? "/" (format "%s" symbol)))
+
 (defun cljr--symbol-prefix (symbol)
   "java.util.Date => java.util
 str/split => str
 split => ''"
-  (cond ((s-contains? "/" symbol) (car (s-split "/" symbol)))
+  (cond ((cljr--qualified-symbol? symbol) (car (s-split "/" symbol)))
         ((s-matches? "\\w+\\.\\w+" symbol)
          (s-join "." (butlast (s-split "\\." symbol))))
         (t "")))
 
-(defun cljr--insert-missing-require (symbol missing)
+(defun cljr--insert-missing-require (symbol missing-symbol)
+  "Require MISSING-SYMBOL.
+
+Inspect SYMBOL, the thing at point, to find out whether we have
+to create an alias or refer."
   (save-excursion
     (cljr--insert-in-ns ":require")
-    (let ((alias? (s-contains? "/" symbol)))
+    (let ((missing (format "%s" missing-symbol))
+          (alias? (cljr--qualified-symbol? symbol)))
       (if alias?
           (cljr--insert-libspec-verbosely (format "[%s :as %s]" missing
                                                   (cljr--symbol-prefix symbol)))
@@ -2788,22 +2798,22 @@ split => ''"
           (cljr--insert-libspec-verbosely (format "[%s :refer [%s]]"
                                                   missing symbol)))))))
 
-(defun cljr--add-missing-libspec (symbol candidates-and-types)
-  (let* ((candidates (mapcar (lambda (pair) (symbol-name (car pair)))
-                             candidates-and-types))
-         (missing (cljr--narrow-candidates candidates symbol))
-         (type (cadr (assoc (intern missing) candidates-and-types))))
-    (cond ((eq type :ns) (cljr--insert-missing-require symbol missing))
+(defun cljr--add-missing-libspec (symbol candidates)
+  (let* ((candidate (cljr--narrow-candidates candidates symbol))
+         (missing-symbol (gethash :name candidate))
+         (type (gethash :type candidate)))
+    (cond ((eq type :ns) (cljr--insert-missing-require symbol missing-symbol))
           ((eq type :type)
            ;; We need to both require the ns, to trigger compilation,
            ;; and then import the java class
 
            ;; In the line below we're assuming that all clojure code
            ;; will prefer - over _ when naming namespaces :(
-           (progn (cljr--insert-missing-require (s-replace "_" "-" missing)
-                                                missing)
-                  (cljr--insert-missing-import missing)))
-          ((eq type :class) (cljr--insert-missing-import missing))
+           (progn (cljr--insert-missing-require
+                   (s-replace "_" "-" (format "%s" missing-symbol))
+                   missing-symbol)
+                  (cljr--insert-missing-import missing-symbol)))
+          ((eq type :class) (cljr--insert-missing-import missing-symbol))
           (t (error (format "Uknown type %s" type))))))
 
 (defun cljr--symbol-suffix (symbol)
@@ -2815,7 +2825,7 @@ str/split => split"
     (cond
      ((s-matches? "\\w+\\.\\w+" name)
       (->> name (s-split "\\.") last car cljr--symbol-suffix))
-     ((s-contains? "/" name)
+     ((cljr--qualified-symbol? name)
       (->> name (s-split "/") cadr cljr--symbol-suffix))
      (t name))))
 
@@ -2845,11 +2855,12 @@ Date. -> Date
 
 (defun cljr--call-middleware-to-resolve-missing (symbol)
   ;; Just so this part can be mocked out in a step definition
-  (cljr--call-middleware-sync
-   (cljr--create-msg "resolve-missing"
-                     "symbol" symbol
-                     "session" (cider-current-session))
-   "candidates"))
+  (-> (cljr--create-msg "resolve-missing"
+                        "symbol" symbol
+                        "session" (cider-current-session))
+      (cljr--call-middleware-sync
+       "candidates")
+      edn-read))
 
 (defun cljr--get-error-value (response)
   "Gets the error value from the middleware response.
@@ -2894,9 +2905,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
   (interactive)
   (cljr--ensure-op-supported "resolve-missing")
   (let* ((symbol (cider-symbol-at-point))
-         (candidates-and-types (cljr--call-middleware-to-resolve-missing symbol)))
-    (if candidates-and-types
-        (cljr--add-missing-libspec symbol (read candidates-and-types))
+         (candidates (cljr--call-middleware-to-resolve-missing symbol)))
+    (if (and candidates (< 0 (length candidates)))
+        (cljr--add-missing-libspec symbol candidates)
       (message "Can't find %s on classpath" (cljr--symbol-suffix symbol))))
   (cljr--maybe-clean-ns)
   (cljr--maybe-eval-ns-form))

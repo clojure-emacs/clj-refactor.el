@@ -76,21 +76,37 @@
                                                       :match "")))
                                    "asterisk*")))
 
+(defun cljr--make-seeded-hash-table (&rest keys-and-values)
+  (let ((m (make-hash-table :test #'equal))
+        (kv-pairs (-partition 2 keys-and-values)))
+    (dolist (pair kv-pairs)
+      (puthash (car pair) (cadr pair) m))
+    m))
+
 (Given "^I call the add-missing-libspec callback directly with mock data to import"
        (lambda ()
-         (cljr--add-missing-libspec "Date" '((java.util.Date :class)))))
+         (cljr--add-missing-libspec
+          "Date" (list (cljr--make-seeded-hash-table
+                        :name 'java.util.Date :type :class)))))
 
 (Given "^I call the add-missing-libspec callback directly with mock data to refer split"
        (lambda ()
-         (cljr--add-missing-libspec "split" '((clojure.string  :ns)))))
+         (cljr--add-missing-libspec
+          "split" (list (cljr--make-seeded-hash-table
+                         :name 'clojure.string :type :ns)))))
 
 (Given "^I call the add-missing-libspec callback directly with mock data to alias clojure.string"
        (lambda ()
-         (cljr--add-missing-libspec "str/split" '((clojure.string :ns)))))
+         (cljr--add-missing-libspec "str/split"
+                                    (list (cljr--make-seeded-hash-table
+                                           :name 'clojure.string :type :ns)))))
 
 (Given "^I call the add-missing-libspec callback directly with mock data to require WebrequestHandler"
        (lambda ()
-         (cljr--add-missing-libspec "WebrequestHandler" '((modular.ring.WebrequestHandler :type)))))
+         (cljr--add-missing-libspec
+          "WebrequestHandler"
+          (list (cljr--make-seeded-hash-table
+                 :name 'modular.ring.WebrequestHandler :type :type)))))
 
 (Then "^the file should be named \"\\([^\"]+\\)\"$"
       (lambda (file-name-postfix)
