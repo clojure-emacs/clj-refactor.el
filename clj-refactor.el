@@ -895,8 +895,24 @@ Please, install (or update) refactor-nrepl %s and restart the REPL."
       (cljr--goto-toplevel)
     (error "No namespace declaration found")))
 
-(defun cljr--insert-in-ns (type)
+(defun cljr--goto-cljs-branch ()
+  "Move POINT to the cljs branch of the reader conditional following point."
+  (if (re-search-forward ":cljs" (cljr--point-after 'paredit-forward) :no-error)
+      (save-excursion
+        (paredit-backward-up)
+        (unless (looking-back "#\?@?")
+          (error "No cljs branch found")))
+    (error "No cljs branch found")))
+
+(defun cljr--insert-in-ns (type &optional cljs?)
+  "Insert another clause into the TYPE clause of the ns statement.
+
+TYPE is :require, :use etc
+
+If CLJS? is T we insert in the cljs part of the ns declaration."
   (cljr--goto-ns)
+  (when cljs?
+    (cljr--goto-cljs-branch))
   (if (cljr--search-forward-within-sexp (concat "(" type))
       (if (looking-at " *)")
           (progn
@@ -1051,7 +1067,7 @@ word test in it and whether the file lives under the test/ directory."
 (defun cljr--sort-ns ()
   (cljr--assert-leiningen-project)
   (cljr--ensure-op-supported "clean-ns")
-  (cljr--clean-ns :no-pruning))
+  (cljr--clean-ns nil :no-pruning))
 
 (defun cljr--sort-and-remove-hook (&rest ignore)
   (when cljr-auto-sort-ns
@@ -1065,37 +1081,43 @@ word test in it and whether the file lives under the test/ directory."
             'cljr--maybe-eval-ns-form-and-remove-hook nil :local))
 
 ;;;###autoload
-(defun cljr-add-require-to-ns ()
+(defun cljr-add-require-to-ns (cljs?)
   "Add a require statement to the ns form in current buffer.
 
+With a prefix act on the cljs part of the ns declaration.
+
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-require-to-ns"
-  (interactive)
+  (interactive "P")
   (set-marker cljr--tmp-marker (point))
-  (cljr--insert-in-ns ":require")
+  (cljr--insert-in-ns ":require" cljs?)
   (cljr--pop-tmp-marker-after-yasnippet)
   (cljr--add-yas-ns-updated-hook)
   (yas-expand-snippet cljr--add-require-snippet))
 
 ;;;###autoload
-(defun cljr-add-use-to-ns ()
+(defun cljr-add-use-to-ns (cljs?)
   "Add a use statement to the buffer's ns form.
 
+With a prefix act on the cljs part of the ns declaration.
+
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-use-to-ns"
-  (interactive)
+  (interactive "P")
   (set-marker cljr--tmp-marker (point))
-  (cljr--insert-in-ns ":require")
+  (cljr--insert-in-ns ":require" cljs?)
   (cljr--pop-tmp-marker-after-yasnippet)
   (cljr--add-yas-ns-updated-hook)
   (yas-expand-snippet cljr--add-use-snippet))
 
 ;;;###autoload
-(defun cljr-add-import-to-ns ()
+(defun cljr-add-import-to-ns (&optional cljs?)
   "Add an import statement to the buffer's ns form.
 
+With a prefix act on the cljs part of the ns declaration.
+
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-import-to-ns"
-  (interactive)
+  (interactive "P")
   (set-marker cljr--tmp-marker (point))
-  (cljr--insert-in-ns ":import")
+  (cljr--insert-in-ns ":import" cljs?)
   (cljr--pop-tmp-marker-after-yasnippet)
   (cljr--add-yas-ns-updated-hook)
   (yas-expand-snippet "$1"))
