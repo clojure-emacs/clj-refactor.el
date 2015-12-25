@@ -51,6 +51,12 @@ cljr-refactor has quite a few settings you can tweak to change the
 behavior of various commands.  You can read more about that
 [here](https://github.com/clojure-emacs/clj-refactor.el/wiki#customization).
 
+### In case `refactor-nrepl` used for advanced refactorings
+
+The [analyzer](https://github.com/clojure/tools.analyzer) `refactor-nrepl` uses needs to eval the code too in order to be able to build the AST we can work with. If that causes side effects like writing files, opening connections to servers, modifying databases, etc. performing certain refactoring functions on your code will do that, too.
+
+By default we also create ASTs for all the namespaces at REPL start up. If that is not desired set `cljr-eagerly-build-asts-on-startup` to `nil` in your emacs configuration. However, be aware that the ASTs will be built on demand if a refactoring function that needs them is run. These are `find usages`, `rename symbol`, `extract function`, `inline symbol`, `rename file or dir`, `extract definition`, `promote function`.
+
 ## Usage
 
 All functions in clj-refactor have a two-letter mnemonic shortcut. E.g. `rs` for `cljr-rename-symbol`.  Given the prefix choice in the example setup you'd call this function by hitting `C-c C-m rs`
