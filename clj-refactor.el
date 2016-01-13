@@ -46,19 +46,6 @@
   :group 'cljr
   :type 'boolean)
 
-(defcustom cljr-sort-comparator #'cljr--string-natural-comparator
-  "The comparator function to use to sort ns declaration.
-Set your own if you see fit. Comparator is called with two
-elements of the sub section of the ns declaration, and should
-return non-nil if the first element should sort before the
-second.
-
-The following functions are also provided for use with this:
-`cljr--string-length-comparator', `cljr--semantic-comparator',
-and `cljr--string-natural-comparator'"
-  :group 'cljr
-  :type 'function)
-
 (defcustom cljr-auto-sort-ns t
   "If t, sort ns form after any command that changes it."
   :group 'cljr
@@ -101,16 +88,11 @@ If nil, the project clean functions are run without warning."
   :type 'boolean)
 
 (defcustom cljr-project-clean-functions
-  (list #'cljr-remove-unused-requires #'cljr-sort-ns)
+  (list #'cljr-clean-ns)
   "List of functions called by `cljr-project-clean'.
 These are called on all .clj files in the project."
   :group 'cljr
   :type '(repeat function))
-
-(defcustom cljr-project-clean-sorts-project-dependencies nil
-  "If t, `cljr-project-clean' sorts project dependencies."
-  :group 'cljr
-  :type 'boolean)
 
 (defcustom cljr-project-clean-exceptions '("dev/user.clj" "project.clj" "boot.clj")
   "A list of files that `cljr-project-clean' should avoid."
@@ -349,10 +331,7 @@ Otherwise open the file and do the changes non-interactively."
     ("pf" . (cljr-promote-function "Promote function" ?p ("code" "toplevel-form")))
     ("rf" . (cljr-rename-file-or-dir "Rename file-or-dir" ?r ("project" "toplevel-form")))
     ("rl" . (cljr-remove-let "Remove let" ?r ("code")))
-    ("rr" . (cljr-remove-unused-requires "Remove unused requires" ?R ("ns")))
     ("rs" . (cljr-rename-symbol "Rename symbol" ?s ("project" "code")))
-    ("ru" . (cljr-replace-use "Replace use" ?u ("ns")))
-    ("sn" . (cljr-sort-ns "Sort ns" ?s ("ns")))
     ("sc" . (cljr-show-changelog "Show the project's changelog" ?c ("cljr")))
     ("sp" . (cljr-sort-project-dependencies "Sort project dependencies" ?S ("project")))
     ("sr" . (cljr-stop-referring "Stop referring" ?t ("ns")))
@@ -407,10 +386,9 @@ Otherwise open the file and do the changes non-interactively."
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 _ai_: Add import to ns                             _am_: Add missing libspec                          _ap_: Add project dependency
 _ar_: Add require to ns                            _au_: Add use to ns                                _cn_: Clean ns
-_rr_: Remove unused requires                       _ru_: Replace use                                  _sn_: Sort ns
 _sr_: Stop referring
 "
-  ("ai" cljr-add-import-to-ns) ("am" cljr-add-missing-libspec) ("ap" cljr-add-project-dependency) ("ar" cljr-add-require-to-ns) ("au" cljr-add-use-to-ns) ("cn" cljr-clean-ns) ("rr" cljr-remove-unused-requires) ("ru" cljr-replace-use) ("sn" cljr-sort-ns) ("sr" cljr-stop-referring) ("q" nil "quit"))
+  ("ai" cljr-add-import-to-ns) ("am" cljr-add-missing-libspec) ("ap" cljr-add-project-dependency) ("ar" cljr-add-require-to-ns) ("au" cljr-add-use-to-ns) ("cn" cljr-clean-ns) ("sr" cljr-stop-referring) ("q" nil "quit"))
 
 (defhydra hydra-cljr-code-menu (:color pink :hint nil)
   "
@@ -526,26 +504,6 @@ _s_: Refactor related functions
   (save-excursion
     (goto-char (point-at-bol))
     (looking-at "\\s-*;+")))
-
-(defun cljr--delete-and-extract-sexp-with-nested-sexps ()
-  "Returns list of strings representing the nested sexps if there is any.
-   In case there are no nested sexp the list will have only one element.
-   Not recursive, does not drill down into nested sexps
-   inside the first level nested sexps."
-  (let* ((beg (point))
-         (sexp-start beg)
-         (end (progn (paredit-forward)
-                     (point)))
-         nested)
-    (paredit-backward)
-    (when (looking-at "\\[\\|(")
-      (paredit-forward-down))
-    (while (/= sexp-start end)
-      (paredit-move-forward)
-      (push (s-trim (buffer-substring sexp-start (point))) nested)
-      (setq sexp-start (point)))
-    (delete-region beg end)
-    (nreverse (cons (concat (nth 1 nested) (car nested)) (or (nthcdr 2 nested) '())))))
 
 (defun cljr--search-forward-within-sexp (s &optional save-excursion)
   "Searches forward for S in the current sexp.
@@ -1046,18 +1004,6 @@ word test in it and whether the file lives under the test/ directory."
 
 (add-hook 'find-file-hook 'cljr--ensure-no-dashes-in-filename)
 
-(defun cljr--extract-ns-statements (statement-type with-nested)
-  (cljr--goto-ns)
-  (if (or (not (cljr--search-forward-within-sexp (concat "(" statement-type)))
-          (cljr--comment-line?))
-      '()
-    (let (statements)
-      (while (not (looking-at " *)"))
-        (push (if with-nested
-                  (cljr--delete-and-extract-sexp-with-nested-sexps)
-                (cljr--delete-and-extract-sexp)) statements))
-      statements)))
-
 (defun cljr--get-ns-statements (statement-type)
   (save-excursion
     (cljr--goto-ns)
@@ -1067,191 +1013,13 @@ word test in it and whether the file lives under the test/ directory."
         (paredit-backward-down)
         (buffer-substring-no-properties beg (point))))))
 
-(defun cljr--only-alpha-chars (s)
-  (replace-regexp-in-string "[^[:alnum:]]" "" s))
-
-(defun cljr--string-natural-comparator (s1 s2)
-  (string< (cljr--only-alpha-chars s1)
-           (cljr--only-alpha-chars s2)))
-
-(defun cljr--string-length-comparator (s1 s2)
-  (> (length s1)
-     (length s2)))
-
-(defun cljr--semantic-comparator (ns s1 s2)
-  "Sorts used, required namespaces closer to the ns of the current buffer
-   before the rest.
-   When above is not applicable falls back to natural comparator."
-  (let ((shared-length-s1
-         (length (s-shared-start ns (cljr--extract-sexp-content s1))))
-        (shared-length-s2
-         (length (s-shared-start ns (cljr--extract-sexp-content s2)))))
-    (if (/= shared-length-s1 shared-length-s2)
-        (> shared-length-s1 shared-length-s2)
-      (cljr--string-natural-comparator s1 s2))))
-
-(defun cljr-create-comparator (comparator-fn)
-  (if (eq comparator-fn 'cljr--semantic-comparator)
-      (-partial 'cljr--semantic-comparator (clojure-find-ns))
-    comparator-fn))
-
-;;;###autoload
-(defun cljr-sort-ns ()
-  "Sort the `ns' form according to `cljr-sort-comparator'.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-ns"
-  (interactive)
-  (save-excursion
-    (let ((buf-already-modified? (buffer-modified-p))
-          (comparator (cljr-create-comparator cljr-sort-comparator)))
-      (dolist (statement-type '(":require" ":use" ":import"))
-        (ignore-errors
-          (let* ((statement        (->> (cljr--extract-ns-statements statement-type nil)
-                                        (nreverse)
-                                        (-map 's-trim)))
-                 (sorted-statement (->> statement
-                                        (-sort comparator)
-                                        (-distinct))))
-            (dolist (it sorted-statement)
-              (cljr--insert-in-ns statement-type)
-              (insert it))
-            (when (and (not buf-already-modified?)
-                       (buffer-modified-p)
-                       (->> (-interleave statement sorted-statement)
-                            (-partition 2)
-                            (--map (apply 's-equals? it))
-                            (--every? (eq it t))))
-              (not-modified))))))))
-
-(defun cljr--is-require-flag (req-statement)
-  (let ((t-req (s-trim req-statement)))
-    (or (string= t-req ":reload")
-        (string= t-req ":reload-all")
-        (string= t-req ":verbose"))))
-
-(defun cljr--req-element-regexp (refered postfix)
-  (concat "^[[:space:]]*[^;]*"
-          "[^[:word:]^-]"
-          (regexp-quote refered)
-          postfix))
-
 (defun cljr--extract-sexp-content (sexp)
   (replace-regexp-in-string "\\[?(?]?)?" "" sexp))
 
-(defun cljr--is-name-in-use-p (name)
-  (goto-char (point-min))
-  (let ((e (cljr--extract-sexp-content name)))
-    (when (re-search-forward (cljr--req-element-regexp e "[^[:word:]^-]") nil t) e)))
-
-(defun cljr--rectify-refer-type-require (sexp-as-list refer-index as-used as-index)
-  (let* ((as-after-refer (and as-used (> as-index refer-index)))
-         (sexp-wo-as (if as-after-refer
-                         (-take as-index sexp-as-list)
-                       sexp-as-list))
-         (referred-names (->> sexp-wo-as
-                              (nthcdr (1+ refer-index))
-                              (-map 'cljr--is-name-in-use-p)
-                              (delq nil))))
-    (cond (referred-names
-           (format "%s [%s]%s"
-                   (s-join " " (if (and as-used (< as-index refer-index))
-                                   (-take (1+ refer-index) sexp-as-list)
-                                 (list (replace-regexp-in-string "(" "[" (car sexp-as-list)) ":refer")))
-                   (s-join " " referred-names)
-                   (if as-after-refer
-                       (concat " " (s-join " " (list ":as" (nth (1+ as-index) sexp-as-list))))
-                     "]")))
-          (as-used
-           (format "%s]" (s-join " " (list (car sexp-as-list)
-                                           (nth as-index sexp-as-list)
-                                           (cljr--extract-sexp-content (nth (1+ as-index) sexp-as-list)))))))))
-
-(defun cljr--is-simple-req-statement-in-use (sexp as-list alias-used refer-used)
-  (or (s-match ":refer[[:space:]]+:all" sexp)
-      (cljr--is-require-flag (cljr--extract-sexp-content sexp))
-      (and (= 1 (safe-length as-list))
-           (re-search-forward (cljr--req-element-regexp (cljr--extract-sexp-content (car as-list)) "/") nil t))
-      (and alias-used (not refer-used))))
-
-(defun cljr--rectify-simple-req-statement (req sexp-as-list)
-  (save-excursion
-    (goto-char (point-min))
-    (let* ((refer-index (-elem-index ":refer" sexp-as-list))
-           (as-index (-elem-index ":as" sexp-as-list))
-           (as-used (and as-index
-                         (re-search-forward (cljr--req-element-regexp (cljr--extract-sexp-content (nth (1+ as-index) sexp-as-list)) "/") nil t))))
-      (cond ((cljr--is-simple-req-statement-in-use req sexp-as-list as-used refer-index) req)
-            (refer-index
-             (cljr--rectify-refer-type-require sexp-as-list refer-index as-used as-index))))))
-
-(defun cljr--is-prefix-element-in-use (f-elem p-elem)
-  (goto-char (point-min))
-  (let ((elem (replace-regexp-in-string "]]]?" "]" p-elem)))
-    (if (s-matches? "^\\[\\|(" elem)
-        (let ((result (cljr--rectify-simple-req-statement elem (split-string elem))))
-          (when result (concat "\n" result)))
-      (when (re-search-forward (cljr--req-element-regexp (s-join "." (list f-elem (cljr--extract-sexp-content elem))) "/") nil t) (cljr--extract-sexp-content elem)))))
-
-(defun cljr--rectify-prefix-list-req-statement (require-as-list)
-  (let* ((first-element (cljr--extract-sexp-content (car require-as-list)))
-         (used-elements (->> require-as-list
-                             (nthcdr 1)
-                             (-map (apply-partially 'cljr--is-prefix-element-in-use first-element))
-                             (delq nil))))
-    (when used-elements
-      (format "[%s %s]" first-element (s-join " " used-elements)))))
-
-(defun cljr--rectify-req-statement (require-as-list)
-  (save-excursion
-    (let ((sexp-as-list (-flatten (-map (lambda (sexp) (split-string sexp)) require-as-list))))
-      (if (or (= 1 (safe-length sexp-as-list))
-              (string= ":refer" (nth 1 sexp-as-list))
-              (string= ":as" (nth 1 sexp-as-list)))
-          (cljr--rectify-simple-req-statement (s-join " " require-as-list) sexp-as-list)
-        (cljr--rectify-prefix-list-req-statement require-as-list)))))
-
-(defun cljr--remove-require ()
-  (search-backward "(")
-  (cljr--delete-and-extract-sexp)
-  (join-line))
-
-(defun cljr--req-statement-is-for-current-ns (s)
-  (string= (cljr--current-namespace)
-           (car (split-string (cljr--extract-sexp-content (s-join " " s))))))
-
-(defun cljr--maybe-sort-ns ()
-  (when cljr-auto-sort-ns
-    (cljr-sort-ns)))
-
-(defun cljr--maybe-clean-or-sort-ns ()
-  (if (and cljr-auto-clean-ns (cider-connected-p)
-           (cljr--op-supported? "clean-ns"))
-      (cljr-clean-ns)
-    (when cljr-auto-sort-ns
-      (cljr-sort-ns))))
-
-;;;###autoload
-(defun cljr-remove-unused-requires ()
-  "Remove from the ns form any requires not being used.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-unused-requires"
-  (interactive)
-  (save-excursion
-    (let (req-exists)
-      (dolist (statement (->> (cljr--extract-ns-statements ":require" t)
-                              (-remove 'cljr--req-statement-is-for-current-ns)
-                              (-map 'cljr--rectify-req-statement)
-                              (delq nil)
-                              (nreverse)))
-        (cljr--insert-in-ns ":require")
-        (insert statement)
-        (setq req-exists t))
-      (when (not req-exists) (cljr--remove-require)))
-    (paredit-backward-up)
-    (let ((beg (point))
-          (end (progn (paredit-forward) (point))))
-      (delete-trailing-whitespace beg end)
-      (indent-region beg end))))
+(defun cljr--maybe-clean-ns ()
+  (when (and cljr-auto-clean-ns (cider-connected-p)
+             (cljr--op-supported? "clean-ns"))
+    (cljr-clean-ns)))
 
 (defvar cljr--tmp-marker (make-marker))
 
@@ -1265,16 +1033,21 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-unused-re
   (add-hook 'yas/after-exit-snippet-hook
             'cljr--pop-tmp-marker-after-yasnippet-1 nil :local))
 
-(defun cljr--sort-and-remove-hook (&rest ignore)
-  (when cljr-auto-sort-ns
-    (cljr-sort-ns))
-  (remove-hook 'yas/after-exit-snippet-hook
-               'cljr--sort-and-remove-hook :local))
-
 (defun cljr--maybe-eval-ns-form-and-remove-hook ()
   (cljr--maybe-eval-ns-form)
   (remove-hook 'yas/after-exit-snippet-hook
                'cljr--maybe-eval-ns-form-and-remove-hook :local))
+
+(defun cljr--sort-ns ()
+  (cljr--assert-leiningen-project)
+  (cljr--ensure-op-supported "clean-ns")
+  (cljr--clean-ns :no-pruning))
+
+(defun cljr--sort-and-remove-hook (&rest ignore)
+  (when cljr-auto-sort-ns
+    (cljr--sort-ns))
+  (remove-hook 'yas/after-exit-snippet-hook
+               'cljr--sort-and-remove-hook :local))
 
 (defun cljr--add-yas-ns-updated-hook ()
   (add-hook 'yas/after-exit-snippet-hook 'cljr--sort-and-remove-hook nil :local)
@@ -1316,96 +1089,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-import-to-ns
   (cljr--pop-tmp-marker-after-yasnippet)
   (cljr--add-yas-ns-updated-hook)
   (yas-expand-snippet "$1"))
-
-(defun cljr--extract-ns-from-use ()
-  "Let point be denoted by |.  Then, when called on: |[used.ns ...]
-returns used.ns, when called on (:use some.ns) returns some.ns"
-  (let* ((form (format "%s" (sexp-at-point))))
-    (if (looking-at "(:use [A-z.0-9-]+)")
-        (s-chop-suffix ")" (cadr (s-split " " form)))
-      (substring form 1 (min (or (s-index-of " " form) (1- (length form))
-                                 (1- (length form))))))))
-
-(defun cljr--extract-multiple-ns-from-use ()
-  "Let point be denoted by |.  Then, when called on: |[used.ns lib1 lib2]
-returns (used.ns.lib1 used.ns.lib2)"
-  (let* ((form (format "%s" (sexp-at-point)))
-         (form (substring form 1 (1- (length form))))
-         (words (s-split " " form))
-         (prefix (pop words))
-         (libs (nreverse words)))
-    (-map (lambda (lib) (concat prefix "." lib)) libs)))
-
-(defun cljr--multiple-namespaces-p (use-form)
-  "Returns t if the use form looks like [some.lib ns1 ns2 ...]"
-  (unless (s-contains? ":only" (format "%s" use-form))
-    (s-matches-p "\\[[A-z0-9.]+ \\(\\([A-z0-9]+ \\)\\|\\([A-z0-9]+\\)\\)+\\]"
-                 (format "%s" use-form))))
-
-(defun cljr--more-namespaces-in-use-p (nth)
-  "Checks for, and moves POINT to, the NTH :use clause."
-  (cljr--goto-ns)
-  (cljr--search-forward-within-sexp "(:use ")
-  (paredit-backward-up)
-  (let ((use-end (save-excursion (forward-sexp) (point))))
-    (prog1
-        (re-search-forward "\\(\\(\\( \\)\\{2,\\}\\|:use \\)\\(\\[\\(.\\|\n\\)*?\\]\\)\\)\\|\\((:use [^]]+?)\\)" use-end t nth)
-      (if (and (looking-back "\\]") (looking-at "\\]"))
-          (paredit-backward-up)
-        (paredit-backward)))))
-
-(defun cljr--extract-used-namespaces ()
-  "Return list of all the namespaces that are :used."
-  (let (libs use-start next-use-clause)
-    (cljr--goto-ns)
-    (if (not (cljr--search-forward-within-sexp "(:use "))
-        (message "There is no :use clause in the ns declaration.")
-      (save-excursion
-        (paredit-backward-up)
-        (paredit-forward))
-      (let ((next-use-clause 1))
-        (while (cljr--more-namespaces-in-use-p next-use-clause)
-          (push (if (cljr--multiple-namespaces-p (sexp-at-point))
-                    (cljr--extract-multiple-ns-from-use)
-                  (cljr--extract-ns-from-use))
-                libs)
-          (setq next-use-clause (1+ next-use-clause)))
-        (nreverse (-flatten libs))))))
-
-;;;###autoload
-(defun cljr-replace-use ()
-  "Replace any :use clause with the equivalent :require clause.
-
-Presently, there's no support for :use clauses containing :exclude.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-replace-use"
-  (interactive)
-  (save-excursion
-    (dolist (used-ns (cljr--extract-used-namespaces))
-      (cljr--goto-ns)
-      (cljr--search-forward-within-sexp used-ns)
-      (if (ignore-errors (cljr--search-forward-within-sexp ":only"))
-          (progn
-            (paredit-forward-down)
-            (let ((names (buffer-substring-no-properties (point)
-                                                         (progn
-                                                           (paredit-forward-up)
-                                                           (1- (point))))))
-              (cljr--insert-in-ns ":require")
-              (insert (format "[%s :refer [%s]]" used-ns names))))
-        (cljr--insert-in-ns ":require")
-        (insert (format "[%s :refer :all]" used-ns))))
-    (cljr--goto-ns)
-    (cljr--search-forward-within-sexp ":use")
-    (paredit-backward-up)
-    (cljr--delete-and-extract-sexp)
-    (join-line)
-    (when (looking-at " ")
-      (delete-char 1))
-    (cljr--goto-ns)
-    (paredit-forward)
-    (indent-region (point-min) (point)))
-  (cljr--maybe-clean-or-sort-ns))
 
 ;;;###autoload
 (defun cljr-stop-referring ()
@@ -1501,12 +1184,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
         (when requires
           (cljr--insert-in-ns ":require")
           (insert requires)
-          (cljr-remove-unused-requires))
+          (cljr-clean-ns))
         (save-buffer)
         (setq ns (cljr--current-namespace)
               names (cljr--name-of-defns forms)))
       (cljr--update-ns-after-moving-fns ns (nreverse names))
-      (cljr-remove-unused-requires)))
+      (cljr-clean-ns)))
   (cljr--just-one-blank-line))
 
 (defun cljr--update-ns-after-moving-fns (ns &optional refer-names)
@@ -2397,8 +2080,7 @@ form."
               (insert libspec)
               (ignore-errors (cljr--maybe-eval-ns-form))
               (cljr--indent-defun)
-              (message "Required %s" libspec))
-            (cljr--maybe-sort-ns)))))))
+              (message "Required %s" libspec))))))))
 
 (defun cljr--in-namespace-declaration? (s)
   (save-excursion
@@ -2422,13 +2104,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
   (interactive)
   (when (or (not cljr-project-clean-prompt)
             (yes-or-no-p "Cleaning your project might change many of your clj files. Do you want to proceed?"))
-    (dolist (filename (cljr--project-files))
-      (when (and (cljr--clojure-filename-p filename)
-                 (not (cljr--excluded-from-project-clean? filename)))
-        (cljr--update-file filename
-          (ignore-errors (-map 'funcall cljr-project-clean-functions)))))
-    (when cljr-project-clean-sorts-project-dependencies
-      (cljr-sort-project-dependencies))
+    (let ((*cljr--noninteractive* t))
+      (dolist (filename (cljr--project-files))
+        (when (and (cljr--clojure-filename-p filename)
+                   (not (cljr--excluded-from-project-clean? filename)))
+          (cljr--update-file filename
+            (ignore-errors (-map 'funcall cljr-project-clean-functions))))))
     (if (and (cider-connected-p) (cljr--op-supported? "warm-ast-cache"))
         (cljr--warm-ast-cache))
     (message "Project clean done.")))
@@ -3044,6 +2725,22 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
     (insert new-ns)
     (cljr--just-one-blank-line)))
 
+(defun cljr--clean-ns (&optional path no-prune?)
+  "If PATH is passed use that instead of the path to the current buffer
+
+If NO-PRUNE is passed, the default is overridden and unused stuff isn't \
+removed."
+  ;; Don't save prematurely when called from `cljr-project-clean'
+  (unless *cljr--noninteractive*
+    (save-buffer))
+  (-when-let (new-ns (cljr--call-middleware-sync
+                      (cljr--create-msg "clean-ns"
+                                        "path" (or path (buffer-file-name))
+                                        "prune-ns-form" (if no-prune? "false"
+                                                          "true"))
+                      "ns"))
+    (cljr--replace-ns new-ns)))
+
 ;;;###autoload
 (defun cljr-clean-ns ()
   "Clean the ns form for the current buffer.
@@ -3051,21 +2748,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   (interactive)
   (cljr--ensure-op-supported "clean-ns")
-  ;; don't save the buffer preliminarily if we are called from project clean
-  (when (not (boundp 'filename))
-    (save-buffer))
-  ;; if filename *is* bound `cljr-clean-ns' was called from
-  ;; `cljr-project-clean' so we can *not* use the buffer-file-name as
-  ;; the file was opened in a temporary buffer with no file
-  ;; information attached to it
-  (let ((path-to-file (if (boundp 'filename)
-                          filename
-                        (buffer-file-name))))
-    (-when-let (new-ns (cljr--call-middleware-sync
-                        (cljr--create-msg "clean-ns"
-                                          "path" path-to-file)
-                        "ns"))
-      (cljr--replace-ns new-ns))))
+  (cljr--clean-ns))
 
 (defun cljr--narrow-candidates (candidates symbol)
   (if (= (length candidates) 0)
@@ -3215,7 +2898,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
     (if candidates-and-types
         (cljr--add-missing-libspec symbol (read candidates-and-types))
       (message "Can't find %s on classpath" (cljr--symbol-suffix symbol))))
-  (cljr--maybe-clean-or-sort-ns)
+  (cljr--maybe-clean-ns)
   (cljr--maybe-eval-ns-form))
 
 (defun cljr--dependency-vector-at-point ()
