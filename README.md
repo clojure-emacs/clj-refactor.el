@@ -55,7 +55,9 @@ behavior of various commands.  You can read more about that
 
 The [analyzer](https://github.com/clojure/tools.analyzer) `refactor-nrepl` uses needs to eval the code too in order to be able to build the AST we can work with. If that causes side effects like writing files, opening connections to servers, modifying databases, etc. performing certain refactoring functions on your code will do that, too.
 
-By default we also create ASTs for all the namespaces at REPL start up. If that is not desired set `cljr-eagerly-build-asts-on-startup` to `nil` in your emacs configuration. However, be aware that the ASTs will be built on demand if a refactoring function that needs them is run. These are `find usages`, `rename symbol`, `extract function`, `inline symbol`, `rename file or dir`, `extract definition`, `promote function`.
+By default the user is warned about this when an AST dependent feature is invoked. If this warning is an annoyance and the project can be evalled without any risks set `cljr-warn-on-analyzer-needs-eval` to nil so `cljr-eagerly-build-asts-on-startup` can take effect.
+
+We create ASTs for all the namespaces at REPL start up if `cljr-warn-on-analyzer-needs-eval` is set to nil. If that is not desired set `cljr-eagerly-build-asts-on-startup` to `nil` in your emacs configuration. AST dependent features at the moment are `find usages`, `rename symbol`, `extract function`, `inline symbol`, `rename file or dir`, `change function signature`, `promote function`.
 
 ## Usage
 

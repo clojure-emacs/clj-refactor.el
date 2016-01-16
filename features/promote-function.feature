@@ -6,6 +6,7 @@ Feature: Tests for some minor features
     And I open file "tmp/src/cljr/core.clj"
     And I clear the buffer
     And I don't use multiple-cursors
+    And I switch warn-on-analyzer-needs-eval off
     And I mock out the call to the middleware to find locals
 
   Scenario: Promote fn to defn

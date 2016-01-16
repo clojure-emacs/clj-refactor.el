@@ -32,6 +32,10 @@
        (lambda ()
          (setq cljr-project-clean-prompt nil)))
 
+(Given "^I switch warn-on-analyzer-needs-eval off$"
+       (lambda ()
+         (setq cljr-warn-on-analyzer-needs-eval nil)))
+
 (Given "^I exit multiple-cursors-mode"
        (lambda ()
          (multiple-cursors-mode 0)))

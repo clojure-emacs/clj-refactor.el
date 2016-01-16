@@ -133,6 +133,15 @@ This makes `cljr-add-project-dependency' as snappy as can be."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-warn-on-analyzer-needs-eval t
+  "If t, warn the user before running any op that requires ASTs to be built
+   that the project will be evaled. If this is not preferred the op will
+   be aborted. Also effectively overrides `cljr-eagerly-build-asts-on-startup'
+   so if warn is on the AST cache is not warmed at startup or after certain
+   operations."
+  :group 'cljr
+  :type 'boolean)
+
 (defcustom cljr-eagerly-build-asts-on-startup t
   "If t, the middleware will eagerly populate the ast cache.
 This makes `cljr-find-usages' and `cljr-rename-symbol' as snappy
@@ -815,28 +824,29 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
                              nil nil
                              (file-name-nondirectory old))))))
   (cljr--ensure-op-supported "rename-file-or-dir")
-  (let* ((active-buffer (current-buffer))
-         (affected-buffers (when (file-directory-p old-path)
-                             (cljr--buffers-visiting-dir old-path)))
-         (old-path (expand-file-name old-path))
-         (new-path (cljr--maybe-replace-dash-in-file-name (expand-file-name new-path))))
-    (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
-      (let* ((changed-files (cljr--call-middleware-sync
-                             (cljr--create-msg "rename-file-or-dir"
-                                               "old-path" old-path
-                                               "new-path" new-path)
-                             "touched"))
-             (changed-files-count (length changed-files)))
-        (cond
-         ((null changed-files) (message "Rename complete! No files affected."))
-         ((= changed-files-count 1) (message "Renamed %s to %s." old-path new-path))
-         (t (message "Rename complete! %s files affected." changed-files-count)))
-        (when (> changed-files-count 0)
-          (cljr--warm-ast-cache)))
-      (if affected-buffers
-          (cljr--revisit-buffers affected-buffers new-path active-buffer)
-        (kill-buffer active-buffer)
-        (find-file new-path)))))
+  (when (cljr--asts-p)
+    (let* ((active-buffer (current-buffer))
+           (affected-buffers (when (file-directory-p old-path)
+                               (cljr--buffers-visiting-dir old-path)))
+           (old-path (expand-file-name old-path))
+           (new-path (cljr--maybe-replace-dash-in-file-name (expand-file-name new-path))))
+      (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
+        (let* ((changed-files (cljr--call-middleware-sync
+                               (cljr--create-msg "rename-file-or-dir"
+                                                 "old-path" old-path
+                                                 "new-path" new-path)
+                               "touched"))
+               (changed-files-count (length changed-files)))
+          (cond
+           ((null changed-files) (message "Rename complete! No files affected."))
+           ((= changed-files-count 1) (message "Renamed %s to %s." old-path new-path))
+           (t (message "Rename complete! %s files affected." changed-files-count)))
+          (when (and (> changed-files-count 0) (not cljr-warn-on-analyzer-needs-eval))
+            (cljr--warm-ast-cache)))
+        (if affected-buffers
+            (cljr--revisit-buffers affected-buffers new-path active-buffer)
+          (kill-buffer active-buffer)
+          (find-file new-path))))))
 
 ;;;###autoload
 (defun cljr-rename-file (new-path)
@@ -2110,7 +2120,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
                    (not (cljr--excluded-from-project-clean? filename)))
           (cljr--update-file filename
             (ignore-errors (-map 'funcall cljr-project-clean-functions))))))
-    (if (and (cider-connected-p) (cljr--op-supported? "warm-ast-cache"))
+    (if (and (cider-connected-p) (not cljr-warn-on-analyzer-needs-eval) (cljr--op-supported? "warm-ast-cache"))
         (cljr--warm-ast-cache))
     (message "Project clean done.")))
 
@@ -2231,7 +2241,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
   "Call the middleware with REQUEST.
 
 If it's present KEY indicates the key to extract from the response."
-  (let ((response (-> request cider-nrepl-send-sync-request cljr--maybe-rethrow-error)))
+  (let* ((nrepl-sync-request-timeout (if cljr-warn-on-analyzer-needs-eval nil 25))
+         (response (-> request cider-nrepl-send-sync-request cljr--maybe-rethrow-error)))
     (if key
         (nrepl-dict-get response key)
       response)))
@@ -2497,23 +2508,24 @@ function literal.
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function"
   (interactive "P")
   (cljr--ensure-op-supported "find-used-locals")
-  (save-excursion
-    (cond
-     ;; Already in the right place.
-     ((or (looking-at-p "#(")
-          (looking-at-p "(fn")))
-     ;; Right after the #.
-     ((and (eq (char-after) ?\()
-           (eq (char-before) ?#))
-      (forward-char -1))
-     ;; Possibly inside a function.
-     (t (cljr--goto-fn-definition)))
-    ;; Now promote it.
-    (if (looking-at "#(")
-        (cljr--promote-function-literal)
-      (cljr--promote-fn)))
-  (when current-prefix-arg
-    (cljr--promote-fn)))
+  (when (cljr--asts-p)
+    (save-excursion
+      (cond
+       ;; Already in the right place.
+       ((or (looking-at-p "#(")
+            (looking-at-p "(fn")))
+       ;; Right after the #.
+       ((and (eq (char-after) ?\()
+             (eq (char-before) ?#))
+        (forward-char -1))
+       ;; Possibly inside a function.
+       (t (cljr--goto-fn-definition)))
+      ;; Now promote it.
+      (if (looking-at "#(")
+          (cljr--promote-function-literal)
+        (cljr--promote-fn)))
+    (when current-prefix-arg
+      (cljr--promote-fn))))
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-promote-function)
 
@@ -2632,6 +2644,11 @@ root."
       (setq buffer-read-only nil)
       (setq-local compilation-search-path (list (cljr--project-dir))))))
 
+(defun cljr--asts-p ()
+  (or
+   (not cljr-warn-on-analyzer-needs-eval)
+   (y-or-n-p "To perform this op the project needs to be evaluated.\n  Analyzing a large project might take a while: hit C-g to abort.\n  (Set cljr-warn-on-analyzer-needs-eval to nil to analyze the project without warning)\n  Do you want to proceed?")))
+
 ;;;###autoload
 (defun cljr-find-usages ()
   "Find all usages of the symbol at point in the project.
@@ -2639,15 +2656,16 @@ root."
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
   (interactive)
   (cljr--ensure-op-supported "find-symbol")
-  (save-buffer)
-  (let* ((cljr--find-symbol-buffer "*cljr-find-usages*")
-         (symbol (cider-symbol-at-point))
-         (var-info (cljr--var-info symbol))
-         (ns (nrepl-dict-get var-info "ns"))
-         (symbol-name (nrepl-dict-get var-info "name")))
-    (cljr--setup-find-symbol-buffer (or symbol-name symbol))
-    (cljr--find-symbol (or symbol-name symbol) ns
-                       #'cljr--format-and-insert-symbol-occurrence)))
+  (when (cljr--asts-p)
+    (save-buffer)
+    (let* ((cljr--find-symbol-buffer "*cljr-find-usages*")
+           (symbol (cider-symbol-at-point))
+           (var-info (cljr--var-info symbol))
+           (ns (nrepl-dict-get var-info "ns"))
+           (symbol-name (nrepl-dict-get var-info "name")))
+      (cljr--setup-find-symbol-buffer (or symbol-name symbol))
+      (cljr--find-symbol (or symbol-name symbol) ns
+                         #'cljr--format-and-insert-symbol-occurrence))))
 
 (defun cljr--rename-occurrence (file line-beg col-beg name new-name)
   (save-excursion
@@ -2681,22 +2699,23 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
   (interactive)
   (cljr--ensure-op-supported "find-symbol")
-  (save-buffer)
-  (let* ((symbol (cider-symbol-at-point))
-         (var-info (cljr--var-info symbol))
-         (symbol-name (nrepl-dict-get var-info "name"))
-         (ns (nrepl-dict-get var-info "ns"))
-         (name (or symbol-name symbol))
-         (_ (unless *cljr--noninteractive* (message "Fetching symbol occurrences...")))
-         (occurrences (cljr--find-symbol-sync name ns))
-         (new-name (or new-name (read-from-minibuffer "New name: "
-                                                      (cljr--symbol-suffix symbol))))
-         (buffer-of-symbol (cider-find-var-file (concat ns "/" symbol-name)))
-         (tooling-buffer-p (cider--tooling-file-p (buffer-name buffer-of-symbol))))
-    (cljr--rename-occurrences ns occurrences new-name)
-    (message "Renamed %s occurrences of %s" (length occurrences) name)
-    (when (> (length occurrences) 0)
-      (cljr--warm-ast-cache))))
+  (when (cljr--asts-p)
+    (save-buffer)
+    (let* ((symbol (cider-symbol-at-point))
+           (var-info (cljr--var-info symbol))
+           (symbol-name (nrepl-dict-get var-info "name"))
+           (ns (nrepl-dict-get var-info "ns"))
+           (name (or symbol-name symbol))
+           (_ (unless *cljr--noninteractive* (message "Fetching symbol occurrences...")))
+           (occurrences (cljr--find-symbol-sync name ns))
+           (new-name (or new-name (read-from-minibuffer "New name: "
+                                                        (cljr--symbol-suffix symbol))))
+           (buffer-of-symbol (cider-find-var-file (concat ns "/" symbol-name)))
+           (tooling-buffer-p (cider--tooling-file-p (buffer-name buffer-of-symbol))))
+      (cljr--rename-occurrences ns occurrences new-name)
+      (message "Renamed %s occurrences of %s" (length occurrences) name)
+      (when (and (> (length occurrences) 0) (not cljr-warn-on-analyzer-needs-eval))
+        (cljr--warm-ast-cache)))))
 
 (defun cljr--maybe-nses-in-bad-state (response)
   (let ((asts-in-bad-state (->> (nrepl-dict-get response "ast-statuses")
@@ -2988,39 +3007,40 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-function"
   (interactive)
   (cljr--ensure-op-supported "find-used-locals")
-  (save-buffer)
-  (cljr--goto-enclosing-sexp)
-  (let* ((unbound (cljr--call-middleware-to-find-used-locals
-                   (buffer-file-name) (line-number-at-pos)
-                   ;; +1 because the middleware expects indexing from 1
-                   ;; +1 more because point has to be inside the sexp,
-                   ;; not on the opening paren
-                   (+ (current-column) 2)))
-         (name (unless (cljr--use-multiple-cursors?)
-                 (let ((highlight (cljr--highlight-sexp)))
-                   (unwind-protect
-                       (cljr--prompt-user-for "Name: ")
-                     (delete-overlay highlight)))))
-         (body (cljr--delete-and-extract-sexp)))
-    (save-excursion
-      (cljr--make-room-for-toplevel-form)
-      (insert (cljr--defn-str))
-      (if name
-          (insert name)
-        (mc/create-fake-cursor-at-point))
-      (newline)
-      (indent-according-to-mode)
-      (insert "[" unbound "]")
-      (newline-and-indent)
-      (insert body ")"))
-    (insert "(")
-    (when name (insert name))
-    (save-excursion
-      (unless (s-blank? unbound)
-        (insert " " unbound))
-      (insert ")"))
-    (unless name
-      (mc/maybe-multiple-cursors-mode))))
+  (when (cljr--asts-p)
+    (save-buffer)
+    (cljr--goto-enclosing-sexp)
+    (let* ((unbound (cljr--call-middleware-to-find-used-locals
+                     (buffer-file-name) (line-number-at-pos)
+                     ;; +1 because the middleware expects indexing from 1
+                     ;; +1 more because point has to be inside the sexp,
+                     ;; not on the opening paren
+                     (+ (current-column) 2)))
+           (name (unless (cljr--use-multiple-cursors?)
+                   (let ((highlight (cljr--highlight-sexp)))
+                     (unwind-protect
+                         (cljr--prompt-user-for "Name: ")
+                       (delete-overlay highlight)))))
+           (body (cljr--delete-and-extract-sexp)))
+      (save-excursion
+        (cljr--make-room-for-toplevel-form)
+        (insert (cljr--defn-str))
+        (if name
+            (insert name)
+          (mc/create-fake-cursor-at-point))
+        (newline)
+        (indent-according-to-mode)
+        (insert "[" unbound "]")
+        (newline-and-indent)
+        (insert body ")"))
+      (insert "(")
+      (when name (insert name))
+      (save-excursion
+        (unless (s-blank? unbound)
+          (insert " " unbound))
+        (insert ")"))
+      (unless name
+        (mc/maybe-multiple-cursors-mode)))))
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-extract-function)
 
@@ -3173,36 +3193,37 @@ ALL has the same meaning as for `cider-var-info'"
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
   (interactive)
   (cljr--ensure-op-supported "extract-definition")
-  (save-buffer)
-  (save-excursion
-    (let* ((filename (buffer-file-name))
-           (line (line-number-at-pos))
-           (column (1+ (current-column)))
-           (dir (cljr--project-dir))
-           (symbol (cider-symbol-at-point))
-           (var-info (cljr--var-info))
-           (ns (or (nrepl-dict-get var-info "ns") (cider-current-ns)))
-           (symbol-name (or (nrepl-dict-get var-info "name") symbol))
-           (extract-definition-request (list
-                                        "op" "extract-definition"
-                                        "ns" ns
-                                        "dir" dir
-                                        "file" filename
-                                        "line" line
-                                        "column" column
-                                        "name" symbol-name
-                                        "ignore-errors"
-                                        (when cljr-ignore-analyzer-errors "true")))
-           (response (edn-read (cljr--call-middleware-sync
-                                extract-definition-request "definition")))
-           (definition (gethash :definition response))
-           (occurrences (gethash :occurrences response)))
-      (cljr--inline-symbol ns definition occurrences)
-      (unless *cljr--noninteractive* ; don't spam when called from `cljr-remove-let'
-        (if occurrences
-            (message "Inlined %s occurrence(s) of '%s'" (length occurrences) symbol)
-          (message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
-  (cljr--indent-defun))
+  (when (cljr--asts-p)
+    (save-buffer)
+    (save-excursion
+      (let* ((filename (buffer-file-name))
+             (line (line-number-at-pos))
+             (column (1+ (current-column)))
+             (dir (cljr--project-dir))
+             (symbol (cider-symbol-at-point))
+             (var-info (cljr--var-info))
+             (ns (or (nrepl-dict-get var-info "ns") (cider-current-ns)))
+             (symbol-name (or (nrepl-dict-get var-info "name") symbol))
+             (extract-definition-request (list
+                                          "op" "extract-definition"
+                                          "ns" ns
+                                          "dir" dir
+                                          "file" filename
+                                          "line" line
+                                          "column" column
+                                          "name" symbol-name
+                                          "ignore-errors"
+                                          (when cljr-ignore-analyzer-errors "true")))
+             (response (edn-read (cljr--call-middleware-sync
+                                  extract-definition-request "definition")))
+             (definition (gethash :definition response))
+             (occurrences (gethash :occurrences response)))
+        (cljr--inline-symbol ns definition occurrences)
+        (unless *cljr--noninteractive* ; don't spam when called from `cljr-remove-let'
+          (if occurrences
+              (message "Inlined %s occurrence(s) of '%s'" (length occurrences) symbol)
+            (message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
+    (cljr--indent-defun)))
 
 (defun cljr--check-nrepl-ops ()
   "Check whether all nREPL ops are present and emit a warning when not."
@@ -3264,7 +3285,8 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   (ignore-errors
     (when cljr-populate-artifact-cache-on-startup
       (cljr--update-artifact-cache))
-    (when cljr-eagerly-build-asts-on-startup
+    (when (and (not cljr-warn-on-analyzer-needs-eval)
+               cljr-eagerly-build-asts-on-startup)
       (cljr--warm-ast-cache))))
 
 (defvar cljr--list-fold-function-names
@@ -4045,16 +4067,17 @@ Point is assumed to be at the function being called."
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-signature"
   (interactive)
   (cljr--ensure-op-supported "find-symbol")
-  (let* ((fn (cider-symbol-at-point))
-         (params (cljr--get-function-params fn))
-         (var-info (cljr--var-info fn))
-         (ns (nrepl-dict-get var-info "ns")))
-    (setq cljr--occurrences (cljr--find-symbol-sync fn ns)
-          cljr--signature-changes nil)
-    (cljr--setup-change-signature-buffer cljr--change-signature-buffer params)
-    (when (get-buffer cljr--manual-intervention-buffer)
-      (kill-buffer cljr--manual-intervention-buffer))
-    (pop-to-buffer cljr--change-signature-buffer)))
+  (when (cljr--asts-p)
+    (let* ((fn (cider-symbol-at-point))
+           (params (cljr--get-function-params fn))
+           (var-info (cljr--var-info fn))
+           (ns (nrepl-dict-get var-info "ns")))
+      (setq cljr--occurrences (cljr--find-symbol-sync fn ns)
+            cljr--signature-changes nil)
+      (cljr--setup-change-signature-buffer cljr--change-signature-buffer params)
+      (when (get-buffer cljr--manual-intervention-buffer)
+        (kill-buffer cljr--manual-intervention-buffer))
+      (pop-to-buffer cljr--change-signature-buffer))))
 
 (add-hook 'cider-connected-hook #'cljr--init-middleware)
 
