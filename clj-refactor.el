@@ -133,11 +133,11 @@ This makes `cljr-add-project-dependency' as snappy as can be."
   :group 'cljr
   :type 'boolean)
 
-(defcustom cljr-warn-on-analyzer-needs-eval t
+(defcustom cljr-warn-on-eval t
   "If t, warn the user before running any op that requires ASTs to be built
    that the project will be evaled. If this is not preferred the op will
    be aborted. Also effectively overrides `cljr-eagerly-build-asts-on-startup'
-   so if warn is on the AST cache is not warmed at startup or after certain
+   so if this is on the AST cache is not warmed at startup or after certain
    operations."
   :group 'cljr
   :type 'boolean)
@@ -841,7 +841,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
            ((null changed-files) (message "Rename complete! No files affected."))
            ((= changed-files-count 1) (message "Renamed %s to %s." old-path new-path))
            (t (message "Rename complete! %s files affected." changed-files-count)))
-          (when (and (> changed-files-count 0) (not cljr-warn-on-analyzer-needs-eval))
+          (when (and (> changed-files-count 0) (not cljr-warn-on-eval))
             (cljr--warm-ast-cache)))
         (if affected-buffers
             (cljr--revisit-buffers affected-buffers new-path active-buffer)
@@ -2120,7 +2120,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
                    (not (cljr--excluded-from-project-clean? filename)))
           (cljr--update-file filename
             (ignore-errors (-map 'funcall cljr-project-clean-functions))))))
-    (if (and (cider-connected-p) (not cljr-warn-on-analyzer-needs-eval) (cljr--op-supported? "warm-ast-cache"))
+    (if (and (cider-connected-p) (not cljr-warn-on-eval) (cljr--op-supported? "warm-ast-cache"))
         (cljr--warm-ast-cache))
     (message "Project clean done.")))
 
@@ -2241,7 +2241,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
   "Call the middleware with REQUEST.
 
 If it's present KEY indicates the key to extract from the response."
-  (let* ((nrepl-sync-request-timeout (if cljr-warn-on-analyzer-needs-eval nil 25))
+  (let* ((nrepl-sync-request-timeout (if cljr-warn-on-eval nil 25))
          (response (-> request cider-nrepl-send-sync-request cljr--maybe-rethrow-error)))
     (if key
         (nrepl-dict-get response key)
@@ -2646,8 +2646,8 @@ root."
 
 (defun cljr--asts-p ()
   (or
-   (not cljr-warn-on-analyzer-needs-eval)
-   (y-or-n-p "To perform this op the project needs to be evaluated.\n  Analyzing a large project might take a while: hit C-g to abort.\n  (Set cljr-warn-on-analyzer-needs-eval to nil to analyze the project without warning)\n  Do you want to proceed?")))
+   (not cljr-warn-on-eval)
+   (y-or-n-p "To perform this op the project needs to be evaluated.\n  Analyzing a large project might take a while: hit C-g to abort.\n  (Set cljr-warn-on-eval to nil to analyze the project without warning)\n  Do you want to proceed?")))
 
 ;;;###autoload
 (defun cljr-find-usages ()
@@ -2714,7 +2714,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
            (tooling-buffer-p (cider--tooling-file-p (buffer-name buffer-of-symbol))))
       (cljr--rename-occurrences ns occurrences new-name)
       (message "Renamed %s occurrences of %s" (length occurrences) name)
-      (when (and (> (length occurrences) 0) (not cljr-warn-on-analyzer-needs-eval))
+      (when (and (> (length occurrences) 0) (not cljr-warn-on-eval))
         (cljr--warm-ast-cache)))))
 
 (defun cljr--maybe-nses-in-bad-state (response)
@@ -3285,7 +3285,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   (ignore-errors
     (when cljr-populate-artifact-cache-on-startup
       (cljr--update-artifact-cache))
-    (when (and (not cljr-warn-on-analyzer-needs-eval)
+    (when (and (not cljr-warn-on-eval)
                cljr-eagerly-build-asts-on-startup)
       (cljr--warm-ast-cache))))
 

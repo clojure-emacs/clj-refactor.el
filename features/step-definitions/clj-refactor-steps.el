@@ -34,7 +34,7 @@
 
 (Given "^I switch warn-on-analyzer-needs-eval off$"
        (lambda ()
-         (setq cljr-warn-on-analyzer-needs-eval nil)))
+         (setq cljr-warn-on-eval nil)))
 
 (Given "^I exit multiple-cursors-mode"
        (lambda ()
