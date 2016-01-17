@@ -1051,7 +1051,7 @@ word test in it and whether the file lives under the test/ directory."
 (defun cljr--sort-ns ()
   (cljr--assert-leiningen-project)
   (cljr--ensure-op-supported "clean-ns")
-  (cljr--clean-ns :no-pruning))
+  (cljr--clean-ns nil :no-pruning))
 
 (defun cljr--sort-and-remove-hook (&rest ignore)
   (when cljr-auto-sort-ns
