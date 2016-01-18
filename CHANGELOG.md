@@ -2,6 +2,9 @@
 
 ## Up next
 
+- Add prefix variant to `cljr-add-import-to-ns` for insertion of imports in the cljs part of the ns declaration.
+- Add prefix variant to `cljr-add-use-to-ns` for insertion of 'use' in the cljs part of the ns declaration.
+- Add prefix variant to `cljr-add-require` for insertion of requires in the cljs part of the ns declaration.
 - Boot support for `cljr-clean-ns`.
 - Boot support for `cljr-sort-project-dependencies`.
 - Boot support for `cljr-update-project-dependencies`.
