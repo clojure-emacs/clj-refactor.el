@@ -2292,8 +2292,8 @@ If it's present KEY indicates the key to extract from the response."
 (splitting the string at numbers and doing numeric compare with them).
 It is optimized for version comparisons, in that empty strings are sorted
 before non-empty. This lets 1.7.0 be sorted above 1.7.0-RC1."
-  (let ((str1-components (cljr--dict-split str1))
-        (str2-components (cljr--dict-split str2)))
+  (let ((str1-components (cljr--dict-split (s-downcase str1)))
+        (str2-components (cljr--dict-split (s-downcase str2))))
     (cljr--dict-lessp str1-components str2-components)))
 
 (defun cljr--dict-lessp (slist1 slist2)
