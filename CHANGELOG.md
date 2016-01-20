@@ -16,6 +16,8 @@
 - Add `cljr-extract-def` which extracts the form at, or around, point as a def.
 - Add `cljr-change-function-signature` to re-order or re-name function parameters.
 - Keep pressing `l` after `cljr-expand-let` to expand further.
+- [refactor-nrepl#99](https://github.com/clojure-emacs/refactor-nrepl/issues/99) if cljr-thread-first-all or cljr-thread-last-all is called with a prefix the last expression is not threaded. cljr-thread-all-but-last defcustom has the same effect without the prefix
+- [hydra](https://github.com/abo-abo/hydra) menus for discoverability: they help to (re)learn clj-refactor key bindings. See: [parent hydra](https://github.com/clojure-emacs/clj-refactor.el/wiki/Hydra).
 
 ### Changes
 
@@ -35,6 +37,10 @@
 - `cljr-create-fn-from-example` is now significantly smarter about guessing parameter numbers and names.
 - `cljr-sort-ns` no longer marks the buffer as changed if it did no work.
 - `cljr-rename-symbol` now fails earlier, before prompting the user for a new name if an AST can't be built due to errors.
+- support for emacs 24.3 and older is dropped
+- [refactor-nrepl#85](https://github.com/clojure-emacs/refactor-nrepl/issues/85) Eliminate some find usages duplicates
+- Some AST based features (find usages, rename symbol, inline symbol) ignore namespaces that cannot be analyzed if `cljr-ignore-analyzer-errors` set to true instead of failing entirely.
+- By default warning is given when AST based feature is used and clj-refactor only proceeds with it if the user allowed evalling the project as the analyzer also evals first level forms. To disable the warning set `cljr-warn-on-eval` to `nil`. This also reenables warming AST cache at startup of the REPL.
 
 ## 1.1.0
 
