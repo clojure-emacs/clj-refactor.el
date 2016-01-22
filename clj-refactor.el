@@ -2774,13 +2774,14 @@ removed."
   ;; Don't save prematurely when called from `cljr-project-clean'
   (unless *cljr--noninteractive*
     (save-buffer))
-  (-when-let (new-ns (cljr--call-middleware-sync
-                      (cljr--create-msg "clean-ns"
-                                        "path" (or path (buffer-file-name))
-                                        "prune-ns-form" (if no-prune? "false"
-                                                          "true"))
-                      "ns"))
-    (cljr--replace-ns new-ns)))
+  (let ((path (or path (cljr--project-relative-path (buffer-file-name)))))
+    (-when-let (new-ns (cljr--call-middleware-sync
+                        (cljr--create-msg "clean-ns"
+                                          "path" path
+                                          "prune-ns-form" (if no-prune? "false"
+                                                            "true"))
+                        "ns"))
+      (cljr--replace-ns new-ns))))
 
 ;;;###autoload
 (defun cljr-clean-ns ()
