@@ -1,7 +1,9 @@
 # Changelog
 
 ## Up next
-
+- [#267](https://github.com/clojure-emacs/clj-refactor.el/issues/267)
+ Add `cljr-require-macro` which requires a macro into the current
+ namespace.
 - Add prefix variant to `cljr-add-import-to-ns` for insertion of imports in the cljs part of the ns declaration.
 - Add prefix variant to `cljr-add-use-to-ns` for insertion of 'use' in the cljs part of the ns declaration.
 - Add prefix variant to `cljr-add-require` for insertion of requires in the cljs part of the ns declaration.
