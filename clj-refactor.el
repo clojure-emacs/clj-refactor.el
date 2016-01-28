@@ -1081,7 +1081,8 @@ word test in it and whether the file lives under the test/ directory."
 (defun cljr--maybe-clean-ns ()
   (when (and cljr-auto-clean-ns (cider-connected-p)
              (cljr--op-supported? "clean-ns"))
-    (cljr-clean-ns)))
+    (let ((*cljr--noninteractive* t))
+      (cljr-clean-ns))))
 
 (defvar cljr--tmp-marker (make-marker))
 
@@ -2831,7 +2832,8 @@ removed."
                                                             "true"))
                         "ns"))
       (cljr--replace-ns new-ns))
-    (cljr--post-command-message "Namespace form cleaned!")))
+    (unless *cljr--noninteractive*
+      (cljr--post-command-message "Namespace form cleaned!"))))
 
 ;;;###autoload
 (defun cljr-clean-ns ()
