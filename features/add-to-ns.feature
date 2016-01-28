@@ -32,11 +32,11 @@ Feature: Add to namespace
     (ns cljr.core
       #?@(:clj
           [(:require
-            [clj-time.core :refer :all]
-            [clojure.string :as s])]
+             [clj-time.core :refer :all]
+             [clojure.string :as s])]
           :cljs
           [(:require
-            [cljs-time.core :refer :all])]))
+             [cljs-time.core :refer :all])]))
     """
     And I press "C-u C-! ar"
     And I press "TAB"
@@ -49,12 +49,12 @@ Feature: Add to namespace
     (ns cljr.core
       #?@(:clj
           [(:require
-            [clj-time.core :refer :all]
-            [clojure.string :as s])]
+             [clj-time.core :refer :all]
+             [clojure.string :as s])]
           :cljs
           [(:require
-            [cljs-time.core :refer :all]
-            [cljs.string :as s])]))
+             [cljs-time.core :refer :all]
+             [cljs.string :as s])]))
     """
 
   Scenario: Add use to namespace
@@ -81,11 +81,11 @@ Feature: Add to namespace
     (ns cljr.core
       #?@(:clj
           [(:require
-            [clj-time.core :refer :all]
-            [clojure.string :as s])]
+             [clj-time.core :refer :all]
+             [clojure.string :as s])]
           :cljs
           [(:require
-            [cljs.string :refer :all])]))
+             [cljs.string :refer :all])]))
     """
     When I press "C-u C-! au"
     And I type "cljs-time.core"
@@ -96,12 +96,12 @@ Feature: Add to namespace
     (ns cljr.core
       #?@(:clj
           [(:require
-            [clj-time.core :refer :all]
-            [clojure.string :as s])]
+             [clj-time.core :refer :all]
+             [clojure.string :as s])]
           :cljs
           [(:require
-            [cljs.string :refer :all]
-            [cljs-time.core :refer :all])]))
+             [cljs.string :refer :all]
+             [cljs-time.core :refer :all])]))
     """
 
   Scenario: Add import to namespace
@@ -124,12 +124,12 @@ Feature: Add to namespace
     (ns cljr.core
       #?@(:clj
           [(:require
-            [clj-time.core :refer :all]
-            [clojure.string :as s])
+             [clj-time.core :refer :all]
+             [clojure.string :as s])
            (:import java.util.Date)]
           :cljs
           [(:require
-            [cljs.string :refer :all])]))
+             [cljs.string :refer :all])]))
     """
     When I press "C-u C-! ai"
     And I type "goog.string"
@@ -139,11 +139,11 @@ Feature: Add to namespace
     (ns cljr.core
       #?@(:clj
           [(:require
-            [clj-time.core :refer :all]
-            [clojure.string :as s])
+             [clj-time.core :refer :all]
+             [clojure.string :as s])
            (:import java.util.Date)]
           :cljs
           [(:require
-            [cljs.string :refer :all])
+             [cljs.string :refer :all])
            (:import goog.string)]))
     """
