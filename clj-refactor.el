@@ -2830,7 +2830,8 @@ removed."
                                           "prune-ns-form" (if no-prune? "false"
                                                             "true"))
                         "ns"))
-      (cljr--replace-ns new-ns))))
+      (cljr--replace-ns new-ns))
+    (cljr--post-command-message "Namespace form cleaned!")))
 
 ;;;###autoload
 (defun cljr-clean-ns ()
