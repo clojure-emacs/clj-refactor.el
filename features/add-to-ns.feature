@@ -147,3 +147,17 @@ Feature: Add to namespace
              [cljs.string :refer :all])
            (:import goog.string)]))
     """
+
+  Scenario: Add require macros to namespace
+    When I press "C-! rm"
+    And I press "TAB"
+    And I press "TAB"
+    And I type "clojure.test"
+    And I press "TAB"
+    And I type "t"
+    And I press "TAB"
+    Then I should see:
+    """
+    (ns cljr.core
+      (:require-macros [clojure.test :as t]))
+    """

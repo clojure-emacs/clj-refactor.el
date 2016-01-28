@@ -340,6 +340,7 @@ Otherwise open the file and do the changes non-interactively."
     ("pf" . (cljr-promote-function "Promote function" ?p ("code" "toplevel-form")))
     ("rf" . (cljr-rename-file-or-dir "Rename file-or-dir" ?r ("project" "toplevel-form")))
     ("rl" . (cljr-remove-let "Remove let" ?r ("code")))
+    ("rm" . (cljr-require-macro "Add to or extend the require-macros form" ?M ("ns")))
     ("rs" . (cljr-rename-symbol "Rename symbol" ?s ("project" "code")))
     ("sc" . (cljr-show-changelog "Show the project's changelog" ?c ("cljr")))
     ("sp" . (cljr-sort-project-dependencies "Sort project dependencies" ?S ("project")))
@@ -395,9 +396,13 @@ Otherwise open the file and do the changes non-interactively."
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 _ai_: Add import to ns                             _am_: Add missing libspec                          _ap_: Add project dependency
 _ar_: Add require to ns                            _au_: Add use to ns                                _cn_: Clean ns
-_sr_: Stop referring
+_rm_: Require a macro into the ns                  _sr_: Stop referring
 "
-  ("ai" cljr-add-import-to-ns) ("am" cljr-add-missing-libspec) ("ap" cljr-add-project-dependency) ("ar" cljr-add-require-to-ns) ("au" cljr-add-use-to-ns) ("cn" cljr-clean-ns) ("sr" cljr-stop-referring) ("q" nil "quit"))
+  ("ai" cljr-add-import-to-ns) ("am" cljr-add-missing-libspec)
+  ("ap" cljr-add-project-dependency) ("ar" cljr-add-require-to-ns)
+  ("au" cljr-add-use-to-ns) ("cn" cljr-clean-ns)
+  ("rm" cljr-require-macro) ("sr" cljr-stop-referring)
+  ("q" nil "quit"))
 
 (defhydra hydra-cljr-code-menu (:color pink :hint nil)
   "
@@ -410,7 +415,15 @@ _pf_: Promote function                             _rl_: Remove let             
 _tf_: Thread first all                             _th_: Thread                                       _tl_: Thread last all
 _ua_: Unwind all                                   _uw_: Unwind
 "
-  ("cc" cljr-cycle-coll) ("ci" cljr-cycle-if) ("ct" cljr-cycle-thread) ("dk" cljr-destructure-keys) ("el" cljr-expand-let) ("fu" cljr-find-usages) ("il" cljr-introduce-let) ("is" cljr-inline-symbol) ("ml" cljr-move-to-let) ("pf" cljr-promote-function) ("rl" cljr-remove-let) ("rs" cljr-rename-symbol) ("tf" cljr-thread-first-all) ("th" cljr-thread) ("tl" cljr-thread-last-all) ("ua" cljr-unwind-all) ("uw" cljr-unwind) ("q" nil "quit"))
+  ("cc" cljr-cycle-coll) ("ci" cljr-cycle-if)
+  ("ct" cljr-cycle-thread) ("dk" cljr-destructure-keys)
+  ("el" cljr-expand-let) ("fu" cljr-find-usages)
+  ("il" cljr-introduce-let) ("is" cljr-inline-symbol)
+  ("ml" cljr-move-to-let) ("pf" cljr-promote-function)
+  ("rl" cljr-remove-let) ("rs" cljr-rename-symbol)
+  ("tf" cljr-thread-first-all) ("th" cljr-thread)
+  ("tl" cljr-thread-last-all) ("ua" cljr-unwind-all)
+  ("uw" cljr-unwind) ("q" nil "quit"))
 
 (defhydra hydra-cljr-project-menu (:color pink :hint nil)
   "
@@ -421,7 +434,12 @@ _hd_: Hotload dependency                           _is_: Inline symbol          
 _pc_: Project clean                                _rf_: Rename file-or-dir _rs_: Rename symbol       _sp_: Sort project dependencies
 _up_: Update project dependencies
 "
-  ("ap" cljr-add-project-dependency) ("cs" cljr-change-function-signature) ("fu" cljr-find-usages) ("hd" cljr-hotload-dependency) ("is" cljr-inline-symbol) ("mf" cljr-move-form) ("pc" cljr-project-clean) ("rf" cljr-rename-file-or-dir) ("rs" cljr-rename-symbol) ("sp" cljr-sort-project-dependencies) ("up" cljr-update-project-dependencies) ("q" nil "quit"))
+  ("ap" cljr-add-project-dependency) ("cs" cljr-change-function-signature)
+  ("fu" cljr-find-usages) ("hd" cljr-hotload-dependency)
+  ("is" cljr-inline-symbol) ("mf" cljr-move-form)
+  ("pc" cljr-project-clean) ("rf" cljr-rename-file-or-dir)
+  ("rs" cljr-rename-symbol) ("sp" cljr-sort-project-dependencies)
+  ("up" cljr-update-project-dependencies) ("q" nil "quit"))
 
 (defhydra hydra-cljr-toplevel-form-menu (:color pink :hint nil)
   "
@@ -432,7 +450,12 @@ _ec_: Extract constant                             _ed_: Extract form as def    
 _fe_: Create function from example                 _is_: Inline symbol                                _mf_: Move form
 _pf_: Promote function                             _rf_: Rename file-or-dir                           _ad_: Add declaration
 "
-  ("as" cljr-add-stubs) ("cp" cljr-cycle-privacy) ("cs" cljr-change-function-signature) ("ec" cljr-extract-constant) ("ed" cljr-extract-def) ("ef" cljr-extract-function) ("fe" cljr-create-fn-from-example) ("is" cljr-inline-symbol) ("mf" cljr-move-form) ("pf" cljr-promote-function) ("rf" cljr-rename-file-or-dir) ("ad" cljr-add-declaration) ("q" nil "quit"))
+  ("as" cljr-add-stubs) ("cp" cljr-cycle-privacy)
+  ("cs" cljr-change-function-signature) ("ec" cljr-extract-constant)
+  ("ed" cljr-extract-def) ("ef" cljr-extract-function)
+  ("fe" cljr-create-fn-from-example) ("is" cljr-inline-symbol)
+  ("mf" cljr-move-form) ("pf" cljr-promote-function)
+  ("rf" cljr-rename-file-or-dir) ("ad" cljr-add-declaration) ("q" nil "quit"))
 
 (defhydra hydra-cljr-cljr-menu (:color pink :hint nil)
   "
@@ -1121,6 +1144,18 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-import-to-ns
   (cljr--pop-tmp-marker-after-yasnippet)
   (cljr--add-yas-ns-updated-hook)
   (yas-expand-snippet "$1"))
+
+;;;###autoload
+(defun cljr-require-macro ()
+  "Add a require statement for a macro to the ns form in current buffer.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-require-macro"
+  (interactive)
+  (set-marker cljr--tmp-marker (point))
+  (cljr--insert-in-ns ":require-macros")
+  (cljr--pop-tmp-marker-after-yasnippet)
+  (cljr--add-yas-ns-updated-hook)
+  (yas-expand-snippet cljr--add-require-snippet))
 
 ;;;###autoload
 (defun cljr-stop-referring ()
