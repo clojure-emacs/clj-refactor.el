@@ -2622,25 +2622,26 @@ root."
             (cljr--first-line match))))
 
 (defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
-  (let* ((occurrence (edn-read (nrepl-dict-get occurrence-resp "occurrence")))
-         (count (nrepl-dict-get occurrence-resp "count"))
-         (occurrence-id (when occurrence
-                          (format "%s%s"
-                                  (gethash :file occurrence)
-                                  (gethash :line-beg occurrence)))))
-    (cljr--maybe-rethrow-error occurrence-resp)
-    (when count
-      (setq cljr--num-syms count))
-    (when occurrence
-      (incf cjr--occurrence-count)
-      (when (not (member occurrence-id cljr--occurrence-ids))
-        (setq cljr--occurrence-ids
-              (cons occurrence-id cljr--occurrence-ids))
-        (->> occurrence
-             cljr--format-symbol-occurrence
-             cljr--insert-in-find-symbol-buffer)))
-    (when (= cjr--occurrence-count cljr--num-syms)
-      (cljr--finalise-find-symbol-buffer cljr--num-syms))))
+  ;; The middleware sends either an occurrence or a final count, never
+  ;; both in the same message.
+  (cljr--maybe-rethrow-error occurrence-resp)
+  (-if-let (count (nrepl-dict-get occurrence-resp "count"))
+      (progn
+        (setq cljr--num-syms count)
+        (when (= cjr--occurrence-count cljr--num-syms)
+          (cljr--finalise-find-symbol-buffer cljr--num-syms)))
+    (-when-let (occurrence-data (nrepl-dict-get occurrence-resp "occurrence"))
+      (let* ((occurrence (edn-read occurrence-data))
+             (occurrence-id (format "%s%s"
+                                    (gethash :file occurrence)
+                                    (gethash :line-beg occurrence))))
+        (incf cjr--occurrence-count)
+        (unless (member occurrence-id cljr--occurrence-ids)
+          (setq cljr--occurrence-ids
+                (cons occurrence-id cljr--occurrence-ids))
+          (->> occurrence
+               cljr--format-symbol-occurrence
+               cljr--insert-in-find-symbol-buffer))))))
 
 (defun cljr--finalise-find-symbol-buffer (total)
   (with-current-buffer "*cljr-find-usages*"
