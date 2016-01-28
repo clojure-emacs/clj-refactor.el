@@ -21,6 +21,10 @@
 - [refactor-nrepl#99](https://github.com/clojure-emacs/refactor-nrepl/issues/99) if cljr-thread-first-all or cljr-thread-last-all is called with a prefix the last expression is not threaded. cljr-thread-all-but-last defcustom has the same effect without the prefix
 - [hydra](https://github.com/abo-abo/hydra) menus for discoverability: they help to (re)learn clj-refactor key bindings. See: [parent hydra](https://github.com/clojure-emacs/clj-refactor.el/wiki/Hydra).
 
+# Bugs fixed
+
+- [#285](https://github.com/clojure-emacs/clj-refactor.el/issues/285) clean-ns did the wrong thing unless the code was loaded.
+
 ### Changes
 
 - [#265](https://github.com/clojure-emacs/clj-refactor.el/issues/265) Feedback to the user is lost among other general messages from emacs.

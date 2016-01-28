@@ -2842,6 +2842,7 @@ removed."
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   (interactive)
   (cljr--ensure-op-supported "clean-ns")
+  (cider-eval-ns-form :sync)
   (cljr--clean-ns))
 
 (defun cljr--narrow-candidates (candidates symbol)
