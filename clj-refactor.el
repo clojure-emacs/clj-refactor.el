@@ -1391,9 +1391,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-declaration"
   (save-excursion
     (-if-let (def (cljr--name-of-current-def))
         (if (cljr--already-declared? def)
-            (message "%s is already declared" def)
+            (user-error "%s is already declared" def)
           (cljr--add-declaration def))
-      (message "Not inside a def form."))))
+      (user-error "Not inside a def form."))))
 
 ;; ------ extract constant ----------------
 
@@ -1976,7 +1976,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-cycle-coll"
       (insert "#{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
 
      ((equal 1 (point))
-      (message "beginning of file reached, this was probably a mistake.")))))
+      (error "Beginning of file reached, this was probably a mistake.")))))
 
 (defun cljr--goto-if ()
   (while (not (or (cljr--toplevel-p)
