@@ -2985,7 +2985,7 @@ itself might be `nil'."
     response))
 
 (defun cljr--maybe-eval-ns-form ()
-  (when cljr-auto-eval-ns-form
+  (when (and cljr-auto-eval-ns-form (cider-connected-p))
     (cider-eval-ns-form :synchronously)))
 
 ;;;###autoload
