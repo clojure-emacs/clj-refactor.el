@@ -23,6 +23,7 @@
 
 ### Changes
 
+- [#265](https://github.com/clojure-emacs/clj-refactor.el/issues/265) Feedback to the user is lost among other general messages from emacs.
 - Make `cljr-clean-ns` the only default function used by `cljr-project-clean`.
 - Remove `cljr-remove-unused-requires` which is replaced by `cljr-clean-ns`.
 - Remove `cljr-replace-use` which is replaced by `cljr-clean-ns`.

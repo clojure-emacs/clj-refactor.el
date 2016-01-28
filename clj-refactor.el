@@ -255,6 +255,7 @@ won't run if there is a broken namespace in the project."
 (defvar cljr--change-signature-buffer "*cljr-change-signature*")
 (defvar cljr--manual-intervention-buffer "*cljr-manual-intervention*")
 (defvar cljr--find-symbol-buffer "*cljr-find-usages*")
+(defvar cljr--post-command-messages nil "Message(s) to display after the current command is done.")
 
 ;;; Buffer Local Declarations
 
@@ -498,6 +499,7 @@ _s_: Refactor related functions
   "Bind keys in `cljr--all-helpers' under a MODIFIER key."
   (cljr--add-keybindings (-partial 'cljr--key-pairs-with-modifier modifier)))
 
+
 ;; ------ utilities -----------
 
 (defun cljr--extract-sexp ()
@@ -620,16 +622,6 @@ list of (fn args) to pass to `apply''"
   (cljr--make-room-for-toplevel-form)
   (insert form))
 
-(defun cljr-show-changelog ()
-  "Show the changelog for `clj-refactor'.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-show-changelog"
-  (interactive)
-  (find-file (format "%s/CHANGELOG.md" (file-name-directory (locate-library "clj-refactor"))))
-  (when (fboundp 'markdown-mode)
-    (markdown-mode))
-  (view-mode 1))
-
 (defun cljr--goto-toplevel-forward ()
   "Move forward and up until we reach toplevel."
   (paredit-forward-up (cljr--depth-at-point)))
@@ -740,6 +732,27 @@ All config settings are included in the created msg."
            "false")
          kvs))
 
+(defun cljr--post-command-message (format-string &rest args)
+  "Display msg in a post command hook, to ensure it doesn't drown
+  in emacs' general chatter."
+  (push (apply #'format format-string args)
+        cljr--post-command-messages))
+
+(defun cljr--post-command-hook ()
+  (-map #'message cljr--post-command-messages)
+  (setq cljr--post-command-messages nil))
+
+(defun cljr-show-changelog ()
+  "Show the changelog for `clj-refactor'.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-show-changelog"
+  (interactive)
+  (find-file (format "%s/CHANGELOG.md" (file-name-directory (locate-library "clj-refactor"))))
+  (when (fboundp 'markdown-mode)
+    (markdown-mode))
+  (view-mode 1))
+
+
 ;; ------ reify protocol defrecord -----------
 
 (defun cljr--goto-reify ()
@@ -861,9 +874,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
                                "touched"))
                (changed-files-count (length changed-files)))
           (cond
-           ((null changed-files) (message "Rename complete! No files affected."))
-           ((= changed-files-count 1) (message "Renamed %s to %s." old-path new-path))
-           (t (message "Rename complete! %s files affected." changed-files-count)))
+           ((null changed-files) (cljr--post-command-message "Rename complete! No files affected."))
+           ((= changed-files-count 1) (cljr--post-command-message "Renamed %s to %s." old-path new-path))
+           (t (cljr--post-command-message "Rename complete! %s files affected." changed-files-count)))
           (when (and (> changed-files-count 0) (not cljr-warn-on-eval))
             (cljr--warm-ast-cache)))
         (if affected-buffers
@@ -1380,7 +1393,7 @@ optionally including those that are declared private."
   (cljr--goto-declare)
   (backward-char)
   (insert " " def)
-  (message "Added declaration for %s" def))
+  (cljr--post-command-message "Added declaration for %s" def))
 
 ;;;###autoload
 (defun cljr-add-declaration ()
@@ -2147,7 +2160,7 @@ form."
               (insert libspec)
               (ignore-errors (cljr--maybe-eval-ns-form))
               (cljr--indent-defun)
-              (message "Required %s" libspec))))))))
+              (cljr--post-command-message "Required %s" libspec))))))))
 
 (defun cljr--in-namespace-declaration? (s)
   (save-excursion
@@ -2179,7 +2192,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
             (ignore-errors (-map 'funcall cljr-project-clean-functions))))))
     (if (and (cider-connected-p) (not cljr-warn-on-eval) (cljr--op-supported? "warm-ast-cache"))
         (cljr--warm-ast-cache))
-    (message "Project clean done.")))
+    (cljr--post-command-message "Project clean done.")))
 
 (defun cljr--extract-dependency-name ()
   (assert (cljr--looking-at-dependency-vector-p))
@@ -2396,7 +2409,7 @@ possible choices. If the choice is trivial, return it."
     (paredit-backward-down)
     (newline-and-indent)
     (insert "[" artifact " \"" version "\"]")
-    (message "Added %s version %s as a project dependency" artifact version)
+    (cljr--post-command-message "Added %s version %s as a project dependency" artifact version)
     (when cljr-hotload-dependencies
       (paredit-backward-down)
       (cljr-hotload-dependency))))
@@ -2771,7 +2784,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
            (buffer-of-symbol (cider-find-var-file (concat ns "/" symbol-name)))
            (tooling-buffer-p (cider--tooling-file-p (buffer-name buffer-of-symbol))))
       (cljr--rename-occurrences ns occurrences new-name)
-      (message "Renamed %s occurrences of %s" (length occurrences) name)
+      (cljr--post-command-message "Renamed %s occurrences of %s" (length occurrences) name)
       (when (and (> (length occurrences) 0) (not cljr-warn-on-eval))
         (cljr--warm-ast-cache)))))
 
@@ -2839,7 +2852,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
 (defun cljr--insert-libspec-verbosely (libspec)
   (insert (format "%s" libspec))
   (cljr--indent-defun)
-  (message "%s added to ns" libspec))
+  (cljr--post-command-message "%s added to ns" libspec))
 
 (defun cljr--insert-missing-import (missing)
   (save-excursion
@@ -2986,7 +2999,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
          (candidates (cljr--call-middleware-to-resolve-missing symbol)))
     (if (and candidates (< 0 (length candidates)))
         (cljr--add-missing-libspec symbol candidates)
-      (message "Can't find %s on classpath" (cljr--symbol-suffix symbol))))
+      (cljr--post-command-message "Can't find %s on classpath" (cljr--symbol-suffix symbol))))
   (cljr--maybe-clean-ns)
   (cljr--maybe-eval-ns-form))
 
@@ -3000,7 +3013,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
 
 (defun cljr--hotload-dependency-callback (response)
   (cljr--maybe-rethrow-error response)
-  (message "Hotloaded %s" (nrepl-dict-get response "dependency")))
+  (cljr--post-command-message "Hotloaded %s" (nrepl-dict-get response "dependency")))
 
 (defun cljr--call-middleware-to-hotload-dependency (dep)
   (cljr--call-middleware-async
@@ -3280,8 +3293,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
         (cljr--inline-symbol ns definition occurrences)
         (unless *cljr--noninteractive* ; don't spam when called from `cljr-remove-let'
           (if occurrences
-              (message "Inlined %s occurrence(s) of '%s'" (length occurrences) symbol)
-            (message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
+              (cljr--post-command-message "Inlined %s occurrence(s) of '%s'" (length occurrences) symbol)
+            (cljr--post-command-message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
     (cljr--indent-defun)))
 
 (defun cljr--check-nrepl-ops ()
@@ -4087,7 +4100,7 @@ Point is assumed to be at the function being called."
   (kill-buffer cljr--change-signature-buffer))
 
 (define-derived-mode cljr--change-signature-mode fundamental-mode
-  "Change Signature"
+                     "Change Signature"
   "Major mode for refactoring function signatures.")
 
 (defun cljr--setup-change-signature-buffer (control-buffer params)
@@ -4144,7 +4157,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
 ;;;###autoload
 (define-minor-mode clj-refactor-mode
   "A mode to keep the clj-refactor keybindings."
-  nil " cljr" clj-refactor-map)
+  nil " cljr" clj-refactor-map
+  (if clj-refactor-mode
+      (add-hook 'post-command-hook #'cljr--post-command-hook :append :local)
+    (remove-hook 'post-command-hook #'cljr--post-command-hook :local)))
 
 (provide 'clj-refactor)
 ;;; clj-refactor.el ends here
