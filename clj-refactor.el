@@ -2897,12 +2897,12 @@ Date. -> Date
 
 (defun cljr--call-middleware-to-resolve-missing (symbol)
   ;; Just so this part can be mocked out in a step definition
-  (-> (cljr--create-msg "resolve-missing"
-                        "symbol" symbol
-                        "session" (cider-current-session))
-      (cljr--call-middleware-sync
-       "candidates")
-      edn-read))
+  (-when-let (candidates (-> (cljr--create-msg "resolve-missing"
+                                               "symbol" symbol
+                                               "session" (cider-current-session))
+                             (cljr--call-middleware-sync
+                              "candidates")))
+    (edn-read candidates)))
 
 (defun cljr--get-error-value (response)
   "Gets the error value from the middleware response.
