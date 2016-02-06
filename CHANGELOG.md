@@ -1,6 +1,9 @@
 # Changelog
 
 ## Up next
+
+## 2.0.0
+
 - [#267](https://github.com/clojure-emacs/clj-refactor.el/issues/267)
  Add `cljr-require-macro` which requires a macro into the current
  namespace.
