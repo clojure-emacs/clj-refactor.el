@@ -3395,7 +3395,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
     (paredit-backward-up))
   (let* ((sexp-forms* (cljr--extract-sexp-as-list))
          (fn-name (car sexp-forms*))
-         (symbol-at-point (cider-symbol-at-point))
+         (symbol-at-point (or (cider-symbol-at-point) ""))
          (parent-fn (ignore-errors
                       (save-excursion
                         (paredit-backward-up 2)
