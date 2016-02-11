@@ -2822,7 +2822,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
 If NO-PRUNE is passed, the default is overridden and unused stuff isn't \
 removed."
   ;; Don't save prematurely when called from `cljr-project-clean'
-  (unless *cljr--noninteractive*
+  (unless (and *cljr--noninteractive*
+               (not (buffer-modified-p)))
     (save-buffer))
   (let ((path (or path (cljr--project-relative-path (buffer-file-name)))))
     (-when-let (new-ns (cljr--call-middleware-sync
