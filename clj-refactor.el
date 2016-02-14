@@ -211,6 +211,11 @@ won't run if there is a broken namespace in the project."
   :group 'cljr
   :type 'string)
 
+(defcustom cljr-inject-dependencies-at-jack-in t
+  "When nil, do not inject repl dependencies (most likely nREPL middlewares) at `cider-jack-in' time."
+  :group 'cljr
+  :type 'boolean)
+
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
 (defvar cljr--add-require-snippet
@@ -4155,6 +4160,23 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
       (when (get-buffer cljr--manual-intervention-buffer)
         (kill-buffer cljr--manual-intervention-buffer))
       (pop-to-buffer cljr--change-signature-buffer))))
+
+(defun cljr--inject-jack-in-dependencies ()
+  "Inject the REPL dependencies of clj-refactor at `cider-jack-in' time. Returns nil. If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-jack-in' to nil."
+  (setq
+   cider-jack-in-lein-plugins
+   (seq-concatenate 'list cider-jack-in-lein-plugins `(("refactor-nrepl" ,(cljr--version t)))))
+  (setq
+   cider-jack-in-nrepl-middlewares
+   (seq-concatenate 'list cider-jack-in-nrepl-middlewares '("refactor-nrepl.middleware/wrap-refactor")))
+  nil)
+
+;;;###autoload
+(eval-after-load 'cider
+  (when (and cljr-inject-dependencies-at-jack-in
+             (boundp 'cider-jack-in-lein-plugins)
+             (boundp 'cider-jack-in-nrepl-middlewares))
+    (cljr--inject-jack-in-dependencies)))
 
 (add-hook 'cider-connected-hook #'cljr--init-middleware)
 

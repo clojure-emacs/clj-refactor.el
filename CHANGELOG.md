@@ -4,7 +4,8 @@
 
 ### Changes
 
-- Compatible with Cider 0.11
+- Compatible with CIDER 0.11
+- Follow up CIDER 0.11 injecting its own dependencies at `cider-jack-in` by adding clj-refactor's own dependencies to the approriate vars in CIDER. Both leiningen and boot are supported. Set `cljr-inject-dependencies-at-jack-in` to nil to opt out.
 
 ## 2.0.0
 

@@ -33,9 +33,15 @@ It's available on [melpa](http://melpa.org/) and [melpa-stable](http://stable.me
 (add-hook 'clojure-mode-hook #'my-clojure-mode-hook)
 ```
 
-The more advanced refactorings require our nREPL middleware [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl).
+The more advanced refactorings require our nREPL middleware [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). From version *2.2.0* onwards if `cider-jack-in` is used it is injecting automatically.
 
-To install it add the following, either in your project's `project.clj` or in the `:user`
+**`profiles.clj` or `profile.boot` don't need to be modified anymore for the above usecase!**
+
+On the other hand if a standalone REPL or an embedded nREPL server is used you will need to manually add this dependency (see below).
+
+**You also still need to do this if you are using the current latest stable release 2.0.0!**
+
+Either in your project's `project.clj` or in the `:user`
 profile found at `~/.lein/profiles.clj`:
 
 ```clojure
