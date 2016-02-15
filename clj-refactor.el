@@ -4168,15 +4168,14 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
    (seq-concatenate 'list cider-jack-in-lein-plugins `(("refactor-nrepl" ,(cljr--version t)))))
   (setq
    cider-jack-in-nrepl-middlewares
-   (seq-concatenate 'list cider-jack-in-nrepl-middlewares '("refactor-nrepl.middleware/wrap-refactor")))
-  nil)
+   (seq-concatenate 'list cider-jack-in-nrepl-middlewares '("refactor-nrepl.middleware/wrap-refactor"))))
 
 ;;;###autoload
 (eval-after-load 'cider
-  (when (and cljr-inject-dependencies-at-jack-in
-             (boundp 'cider-jack-in-lein-plugins)
-             (boundp 'cider-jack-in-nrepl-middlewares))
-    (cljr--inject-jack-in-dependencies)))
+  '(when (and cljr-inject-dependencies-at-jack-in
+              (boundp 'cider-jack-in-lein-plugins)
+              (boundp 'cider-jack-in-nrepl-middlewares))
+     (cljr--inject-jack-in-dependencies)))
 
 (add-hook 'cider-connected-hook #'cljr--init-middleware)
 
