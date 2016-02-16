@@ -2,10 +2,14 @@
 
 ## Up next
 
+- Replace `:refer :all` style require with alias or optionally with list of referred syms style require.
+
 ### Changes
 
 - Compatible with CIDER 0.11
 - Follow up CIDER 0.11 injecting its own dependencies at `cider-jack-in` by adding clj-refactor's own dependencies to the approriate vars in CIDER. Both leiningen and boot are supported. Set `cljr-inject-dependencies-at-jack-in` to nil to opt out.
+- Add macro-occurrence cache. If warming this cache at REPL startup is not preferred set `cljr-eagerly-cache-macro-occurrences-on-startup` to nil.
+
 
 ## 2.0.0
 
