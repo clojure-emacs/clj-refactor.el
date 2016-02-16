@@ -4161,21 +4161,19 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
         (kill-buffer cljr--manual-intervention-buffer))
       (pop-to-buffer cljr--change-signature-buffer))))
 
+;;;###autoload
 (defun cljr--inject-jack-in-dependencies ()
-  "Inject the REPL dependencies of clj-refactor at `cider-jack-in' time. Returns nil. If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-jack-in' to nil."
-  (setq
-   cider-jack-in-lein-plugins
-   (seq-concatenate 'list cider-jack-in-lein-plugins `(("refactor-nrepl" ,(cljr--version t)))))
-  (setq
-   cider-jack-in-nrepl-middlewares
-   (seq-concatenate 'list cider-jack-in-nrepl-middlewares '("refactor-nrepl.middleware/wrap-refactor"))))
+  "Inject the REPL dependencies of clj-refactor at `cider-jack-in'.
+If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-jack-in' to nil."
+  (when (and cljr-inject-dependencies-at-jack-in
+              (boundp 'cider-jack-in-lein-plugins)
+              (boundp 'cider-jack-in-nrepl-middlewares))
+    (add-to-list 'cider-jack-in-lein-plugins `("refactor-nrepl" ,(cljr--version t)))
+    (add-to-list 'cider-jack-in-nrepl-middlewares "refactor-nrepl.middleware/wrap-refactor")))
 
 ;;;###autoload
 (eval-after-load 'cider
-  '(when (and cljr-inject-dependencies-at-jack-in
-              (boundp 'cider-jack-in-lein-plugins)
-              (boundp 'cider-jack-in-nrepl-middlewares))
-     (cljr--inject-jack-in-dependencies)))
+  '(cljr--inject-jack-in-dependencies))
 
 (add-hook 'cider-connected-hook #'cljr--init-middleware)
 
