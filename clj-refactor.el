@@ -1001,6 +1001,11 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
     (when src-ns
       (mapconcat 'identity (append (butlast ns-chunks) (list src-ns)) "."))))
 
+(defun cljr--cljs-file? (&optional buf)
+  "Is BUF, or the current buffer, visiting a cljc file?"
+  (s-equals? (file-name-extension (buffer-file-name (or buf (current-buffer))))
+             "cljs"))
+
 (defun cljr--cljc-file? (&optional buf)
   "Is BUF, or the current buffer, visiting a cljc file?"
   (s-equals? (file-name-extension (buffer-file-name (or buf (current-buffer))))
@@ -2164,13 +2169,18 @@ FEATURE is either :clj or :cljs."
         (gethash :clj aliases)
       (gethash :cljs aliases))))
 
+(defun cljr--is-global-alias (alias)
+  (and (cljr--cljs-file?)
+       (s-equals? "js" alias)))
+
 (defun cljr--magic-requires-lookup-alias ()
   "Return (alias (ns.candidate1 ns.candidate1)) if we recognize
 the alias in the project."
   (let ((short (buffer-substring-no-properties
                 (cljr--point-after 'paredit-backward)
                 (1- (point)))))
-    (unless (cljr--resolve-alias short)
+    (unless (or (cljr--resolve-alias short)
+                (cljr--is-global-alias short))
       (-if-let* ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
                  (candidates (gethash (intern short) aliases)))
           (list short candidates)
