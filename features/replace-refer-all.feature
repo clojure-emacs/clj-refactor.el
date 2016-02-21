@@ -1,4 +1,4 @@
-Feature: replace refer all with referred list or aliases
+Feature: replace refer all with aliases
 
   Background:
     Given I have a project "example" in "tmp"
@@ -19,21 +19,6 @@ Feature: replace refer all with referred list or aliases
     """
     And I press "C-x C-s"
     And I press "C-x k"
-
-  Scenario: replace refer all with referred list
-    Given I open file "tmp/src/example/one.clj"
-    And I call replace refer all with referred list with mock data for "example.two"
-    Then I should see:
-    """
-    (ns example.one
-      (:require [example.two :refer [foo star*]]))
-
-    (defn bar []
-      (str "bar" (foo) "goo"))
-
-    (defn sky []
-      (str "sky: " (star*)))
-    """
 
   Scenario: replace refer all with aliased refer
     Given I open file "tmp/src/example/one.clj"

@@ -33,7 +33,7 @@ It's available on [melpa](http://melpa.org/) and [melpa-stable](http://stable.me
 (add-hook 'clojure-mode-hook #'my-clojure-mode-hook)
 ```
 
-The more advanced refactorings require our nREPL middleware [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). From version *2.2.0* onwards if `cider-jack-in` is used it is injecting automatically.
+The more advanced refactorings require our nREPL middleware [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). From version *2.2.0* onwards if `cider-jack-in` is used it is injected automatically.
 
 **`profiles.clj` or `profile.boot` don't need to be modified anymore for the above usecase!**
 

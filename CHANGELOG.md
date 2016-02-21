@@ -2,7 +2,7 @@
 
 ## Up next
 
-- Replace `:refer :all` style require with alias or optionally with list of referred syms style require.
+- Smarten up `cljr-stop-referring` to replace `:refer :all` style require with alias and apply the alias to all occurrences of symbols from the referred namespace.
 
 ### Changes
 

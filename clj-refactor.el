@@ -151,7 +151,7 @@ as can be."
 
 (defcustom cljr-eagerly-cache-macro-occurrences-on-startup t
   "If t, the middleware will eagerly populate the macro occurrences cache.
-This makes `cljr-replace-refer-all' as snappy as it can be."
+This makes `cljr--replace-refer-all' as snappy as it can be."
   :group 'cljr
   :type 'boolean)
 
@@ -352,7 +352,6 @@ Otherwise open the file and do the changes non-interactively."
     ("ml" . (cljr-move-to-let "Move to let" ?m ("code")))
     ("pc" . (cljr-project-clean "Project clean" ?c ("project")))
     ("pf" . (cljr-promote-function "Promote function" ?p ("code" "toplevel-form")))
-    ("ra" . (cljr-replace-refer-all "Replace refer all" ?a ("ns")))
     ("rf" . (cljr-rename-file-or-dir "Rename file-or-dir" ?r ("project" "toplevel-form")))
     ("rl" . (cljr-remove-let "Remove let" ?r ("code")))
     ("rm" . (cljr-require-macro "Add to or extend the require-macros form" ?M ("ns")))
@@ -411,13 +410,12 @@ Otherwise open the file and do the changes non-interactively."
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 _ai_: Add import to ns                             _am_: Add missing libspec                          _ap_: Add project dependency
 _ar_: Add require to ns                            _au_: Add use to ns                                _cn_: Clean ns
-_rm_: Require a macro into the ns                  _sr_: Stop referring                               _ra_: Replace refer all
+_rm_: Require a macro into the ns                  _sr_: Stop referring
 "
   ("ai" cljr-add-import-to-ns) ("am" cljr-add-missing-libspec)
   ("ap" cljr-add-project-dependency) ("ar" cljr-add-require-to-ns)
   ("au" cljr-add-use-to-ns) ("cn" cljr-clean-ns)
   ("rm" cljr-require-macro) ("sr" cljr-stop-referring)
-  ("ra" cljr-replace-refer-all)
   ("q" nil "quit"))
 
 (defhydra hydra-cljr-code-menu (:color pink :hint nil)
@@ -1242,26 +1240,33 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
                     (point)))
            (ns (save-excursion
                  (paredit-forward-down)
-                 (search-forward " :as " bound t)
                  (let ((beg (point)))
                    (paredit-forward)
-                   (buffer-substring-no-properties beg (point))))))
+                   (buffer-substring-no-properties beg (point)))))
+           (alias (save-excursion
+                    (paredit-forward-down)
+                    (when (search-forward " :as " bound t)
+                      (let ((beg (point)))
+                        (paredit-forward)
+                        (buffer-substring-no-properties beg (point)))))))
       (unless (re-search-forward " :refer " bound t)
         (user-error "No :refer clause found."))
-      (when (looking-at ":all")
-        (user-error "Not smart enough to stop referring to :all unfortunately."))
-      (paredit-forward-down)
-      (let* ((beg (point))
-             (str (progn (paredit-forward-up)
-                         (paredit-backward-down)
-                         (buffer-substring-no-properties beg (point))))
-             (symbols (s-split " " (s-trim str) t)))
-        (paredit-backward-up)
-        (paredit-backward)
-        (cljr--delete-and-extract-sexp)
-        (cljr--delete-and-extract-sexp)
-        (just-one-space 0)
-        (cljr--add-ns-prefix ns symbols)))))
+      (if (looking-at "\s*:all")
+          (progn
+            (paredit-backward-up)
+            (cljr--replace-refer-all ns alias))
+        (paredit-forward-down)
+        (let* ((beg (point))
+               (str (progn (paredit-forward-up)
+                           (paredit-backward-down)
+                           (buffer-substring-no-properties beg (point))))
+               (symbols (s-split " " (s-trim str) t)))
+          (paredit-backward-up)
+          (paredit-backward)
+          (cljr--delete-and-extract-sexp)
+          (cljr--delete-and-extract-sexp)
+          (just-one-space 0)
+          (cljr--add-ns-prefix (or alias ns) symbols))))))
 
 (defun cljr--add-ns-prefix (ns symbols)
   "Adds an NS prefix to every symbol in SYMBOLS."
@@ -2856,50 +2861,29 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
       (when (and (> (length occurrences) 0) (not cljr-warn-on-eval))
         (cljr--warm-ast-cache)))))
 
-(defun cljr--replace-refer-all-with-referred-syms (ns publics-occurrences)
-  (when (re-search-forward
-         (format "\\(%s\s:refer\s\\):all"
-                 (-last-item (s-split "\\." ns)))
-         nil
-         t)
-    (replace-match
-     (format "\\1[%s]" (s-join
-                        " "
-                        (delete-dups
-                         (--map (gethash :name it) publics-occurrences)))))))
-
 (defun cljr--replace-refer-all-with-alias (ns publics-occurrences alias)
   (let ((ns-last-token (-last-item (s-split "\\." ns))))
-    (when (re-search-forward (format "\\(%s\s\\):refer\s:all" ns-last-token) nil t)
-      (replace-match (format "\\1:as %s" alias)))
+    (when (re-search-forward (format "\\(%s\\).*?\\([\]\)]\\)" ns-last-token) nil t)
+      (replace-match (format "\\1 :as %s\\2" alias)))
+    (perform-replace (format "%s/" alias) "" nil nil t)
     (cljr--rename-occurrences ns publics-occurrences (lambda (old-name) (concat alias "/" old-name)))))
 
-;;;###autoload
-(defun cljr-replace-refer-all (with-referred-syms?)
+(defun cljr--replace-refer-all (ns alias)
   "Replaces :refer :all style require with alias :as style require.
 
 Also adds the alias prefix to all occurrences of public symbols in the namespace.
-
-With prefix WITH-REFERRED-SYMS? replaces refer all with the list of public symbols used in the namespace.
-
-wiki: todo"
-  (interactive "P")
+"
   (cljr--ensure-op-supported "find-used-publics")
-  (let ((refer-all-nses (cljr--extract-refer-all-namespaces))
-        (filename (buffer-file-name)))
-    (dolist (refer-all-ns refer-all-nses)
-      (cljr--goto-ns)
-      (let* ((alias (when (not with-referred-syms?)
-                      (cljr--prompt-user-for (format "alias for [%s]: " refer-all-ns))))
-             (request
-              (cljr--create-msg "find-used-publics"
-                                "used-ns" refer-all-ns
-                                "file" filename))
-             (occurrences (->>  (cljr--call-middleware-sync request "used-publics")
-                                (edn-read))))
-        (if with-referred-syms?
-            (cljr--replace-refer-all-with-referred-syms refer-all-ns occurrences)
-          (cljr--replace-refer-all-with-alias refer-all-ns occurrences alias))))))
+  (let ((filename (buffer-file-name)))
+    (let* ((alias (or alias
+                    (cljr--prompt-user-for (format "alias for [%s]: " ns))))
+           (request
+            (cljr--create-msg "find-used-publics"
+                              "used-ns" ns
+                              "file" filename))
+           (occurrences (->> (cljr--call-middleware-sync request "used-publics")
+                             (edn-read))))
+      (cljr--replace-refer-all-with-alias ns occurrences alias))))
 
 (defun cljr--maybe-nses-in-bad-state (response)
   (let ((asts-in-bad-state (->> (nrepl-dict-get response "ast-statuses")
