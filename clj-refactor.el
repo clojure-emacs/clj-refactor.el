@@ -625,7 +625,10 @@ list of (fn args) to pass to `apply''"
 (defun cljr--make-room-for-toplevel-form ()
   (if (cljr--whitespace? (buffer-substring-no-properties (point) (point-max)))
       ;; make room at end of buffer
-      (unless (looking-back "\n") (open-line 2) (forward-line))
+      (progn (open-line 2)
+             (delete-blank-lines)
+             (open-line 1)
+             (forward-line))
     (cljr--goto-toplevel)
     (goto-char (point-at-bol))
     (open-line 2)))
