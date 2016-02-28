@@ -3685,6 +3685,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 (defvar cljr--fns-that-get-item-out-of-coll
   (list "first" "second" "last" "fnext" "nth" "rand-nth"))
 
+(defun cljr--strip-keyword-ns (s)
+  (car (s-match "[^/]+$" s)))
+
 (defun cljr--guess-param-name (form)
   (let* ((prepped-form (cljr--strip-off-semantic-noops
                         (cljr--unwind-s form)))
@@ -3693,7 +3696,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
      ((cljr--symbol? prepped-form)
       prepped-form)
      ((cljr--keyword-lookup? prepped-form)
-      (match-string 1 prepped-form))
+      (cljr--strip-keyword-ns (match-string 1 prepped-form)))
      ((and fn-call (s-ends-with? "." fn-call))
       (s-dashed-words (-last-item (s-split "\\." fn-call t))))
      ((and fn-call (s-starts-with? "create-" fn-call))
