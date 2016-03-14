@@ -74,7 +74,7 @@ See the wiki for a complete [list of available refactorings] (https://github.com
 If you're having trouble remembering the mnenmic shortcuts, check out
 the [hydra](https://github.com/abo-abo/hydra) powered popup menus.
 They are described
-[here](https://github.com/clojure-emacs/clj-refactor.el/wiki/hydra-parent).
+[here](https://github.com/clojure-emacs/clj-refactor.el/wiki/Hydra).
 
 ## Changelog
 
