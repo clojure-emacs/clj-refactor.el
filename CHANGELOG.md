@@ -3,13 +3,15 @@
 ## Up next
 
 - Smarten up `cljr-stop-referring` to replace `:refer :all` style require with alias and apply the alias to all occurrences of symbols from the referred namespace.
+- [#292](https://github.com/clojure-emacs/clj-refactor.el/issues/292) The buffer wasn't saved after adding a missing libspec causing clean-ns
+to act on stale data.
+- Don't try to resolve `js/` in cljs-mode
+- `cljr-create-fn-from-example` improvements: strip ns off keywords when making param name; always include a blank line over new function
 
 ### Changes
 
 - Compatible with CIDER 0.11
 - Follow up CIDER 0.11 injecting its own dependencies at `cider-jack-in` by adding clj-refactor's own dependencies to the approriate vars in CIDER. Both leiningen and boot are supported. Set `cljr-inject-dependencies-at-jack-in` to nil to opt out.
-- Add macro-occurrence cache. If warming this cache at REPL startup is not preferred set `cljr-eagerly-cache-macro-occurrences-on-startup` to nil.
-
 
 ## 2.0.0
 
