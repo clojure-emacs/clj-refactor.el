@@ -149,12 +149,6 @@ as can be."
   :group 'cljr
   :type 'boolean)
 
-(defcustom cljr-eagerly-cache-macro-occurrences-on-startup t
-  "If t, the middleware will eagerly populate the macro occurrences cache.
-This makes `cljr--replace-refer-all' as snappy as it can be."
-  :group 'cljr
-  :type 'boolean)
-
 (defcustom cljr-suppress-middleware-warnings nil
   "If t, no middleware warnings are printed to the repl."
   :group 'cljr
@@ -258,7 +252,6 @@ won't run if there is a broken namespace in the project."
     "find-used-publics"
     "version"
     "warm-ast-cache"
-    "warm-macro-occurrences-cache"
     ))
 
 (defvar cljr--debug-mode nil)
@@ -2908,14 +2901,6 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
      (when cljr--debug-mode
        (message "AST index updated")))))
 
-(defun cljr--warm-macro-occurrences-cache ()
-  (cljr--call-middleware-async
-   (cljr--create-msg "warm-macro-occurrences-cache")
-   (lambda (res)
-     (cljr--maybe-rethrow-error res)
-     (when cljr--debug-mode
-       (message "Macro occurrences index updated")))))
-
 (defun cljr--replace-ns (new-ns)
   (save-excursion
     (cljr--goto-ns)
@@ -3471,9 +3456,7 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
       (cljr--update-artifact-cache))
     (when (and (not cljr-warn-on-eval)
                cljr-eagerly-build-asts-on-startup)
-      (cljr--warm-ast-cache))
-    (when cljr-eagerly-cache-macro-occurrences-on-startup
-      (cljr--warm-macro-occurrences-cache))))
+      (cljr--warm-ast-cache))))
 
 
 (defvar cljr--list-fold-function-names
