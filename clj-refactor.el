@@ -1122,14 +1122,14 @@ word test in it and whether the file lives under the test/ directory."
   (remove-hook 'yas/after-exit-snippet-hook
                'cljr--maybe-eval-ns-form-and-remove-hook :local))
 
-(defun cljr--sort-ns ()
-  (cljr--assert-leiningen-project)
-  (cljr--ensure-op-supported "clean-ns")
-  (cljr--clean-ns nil :no-pruning))
+(defun cljr--maybe-sort-ns ()
+  (when (and cljr-auto-sort-ns (cider-connected-p)
+             (cljr--op-supported? "clean-ns"))
+    (cljr--assert-leiningen-project)
+    (cljr--clean-ns nil :no-pruning)))
 
 (defun cljr--sort-and-remove-hook (&rest ignore)
-  (when cljr-auto-sort-ns
-    (cljr--sort-ns))
+  (cljr--maybe-sort-ns)
   (remove-hook 'yas/after-exit-snippet-hook
                'cljr--sort-and-remove-hook :local))
 
