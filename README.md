@@ -39,17 +39,13 @@ The more advanced refactorings require our nREPL middleware [refactor-nrepl](htt
 
 On the other hand if a standalone REPL or an embedded nREPL server is used you will need to manually add this dependency (see below).
 
-**You also still need to do this if you are using the current latest stable release 2.0.0!**
-
 Either in your project's `project.clj` or in the `:user`
 profile found at `~/.lein/profiles.clj`:
 
 ```clojure
-:plugins [[refactor-nrepl "2.0.0"]
-          [cider/cider-nrepl "0.10.2"]]
+:plugins [[refactor-nrepl "2.2.0"]
+          [cider/cider-nrepl "0.11.0"]]
 ```
-
-That's it!
 
 Check out the much longer [installation](https://github.com/clojure-emacs/clj-refactor.el/wiki/installation) page in the wiki for a less opinionated approach.
 

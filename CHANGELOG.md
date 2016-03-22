@@ -2,11 +2,14 @@
 
 ## Up next
 
+## 2.2.0
+
 - Smarten up `cljr-stop-referring` to replace `:refer :all` style require with alias and apply the alias to all occurrences of symbols from the referred namespace.
 - [#292](https://github.com/clojure-emacs/clj-refactor.el/issues/292) The buffer wasn't saved after adding a missing libspec causing clean-ns
 to act on stale data.
 - Don't try to resolve `js/` in cljs-mode
 - `cljr-create-fn-from-example` improvements: strip ns off keywords when making param name; always include a blank line over new function
+- [#306](https://github.com/clojure-emacs/clj-refactor.el/issues/306) Add-require doesn't jump back if there is no REPL connection with refactor-nrepl configured
 
 ### Changes
 
