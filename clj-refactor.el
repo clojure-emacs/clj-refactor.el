@@ -211,6 +211,11 @@ won't run if there is a broken namespace in the project."
   :group 'cljr
   :type 'string)
 
+(defcustom cljr-clojure-test-namespace-under-test-alias  "sut"
+  "The package alias to use for the namespace under test."
+  :group 'cljr
+  :type 'string)
+
 (defcustom cljr-inject-dependencies-at-jack-in t
   "When nil, do not inject repl dependencies (most likely nREPL middlewares) at `cider-jack-in' time."
   :group 'cljr
@@ -1017,7 +1022,8 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
            (source-ns (cljr--find-source-ns-of-test-ns ns (buffer-file-name))))
       (cljr--insert-in-ns ":require")
       (when source-ns
-        (insert "[" source-ns " :as sut]"))
+        (insert "[" source-ns " :as "
+		cljr-clojure-test-namespace-under-test-alias "]"))
       (cljr--insert-in-ns ":require")
       (insert (cond
                ((cljr--project-depends-on-p "midje")
