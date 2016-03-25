@@ -1058,8 +1058,7 @@ word test in it and whether the file lives under the test/ directory."
     (when (and cljr-add-ns-to-blank-clj-files
                (cljr--clojure-ish-filename-p (buffer-file-name))
                (= (point-min) (point-max)))
-      (clojure-insert-ns-form)
-      (newline 2)
+      (insert (format "(ns %s)\n\n" (cider-expected-ns)))
       (when (cljr--in-tests-p)
         (cljr--add-test-declarations)))))
 
