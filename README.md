@@ -5,7 +5,7 @@
 
 # clj-refactor.el
 
-`clj-refactor` provides refactoring support for clojure projects.
+`clj-refactor` provides refactoring support for Clojure projects.
 
 Here's a small teaser, helping you add a missing libspec:
 
@@ -13,9 +13,9 @@ Here's a small teaser, helping you add a missing libspec:
 
 ## Installation
 
-I highly recommend installing clj-refactor through elpa.
+It's highly recommended to install `clj-refactor` through `package.el`.
 
-It's available on [melpa](http://melpa.org/) and [melpa-stable](http://stable.melpa.org/):
+It's available on [MELPA](http://melpa.org/) and [MELPA Stable](http://stable.melpa.org/):
 
     M-x package-install clj-refactor
 
@@ -49,7 +49,7 @@ profile found at `~/.lein/profiles.clj`:
 
 Check out the much longer [installation](https://github.com/clojure-emacs/clj-refactor.el/wiki/installation) page in the wiki for a less opinionated approach.
 
-cljr-refactor has quite a few settings you can tweak to change the
+`clj-refactor` has quite a few settings you can tweak to change the
 behavior of various commands.  You can read more about that
 [here](https://github.com/clojure-emacs/clj-refactor.el/wiki#customization).
 
@@ -63,11 +63,11 @@ We create ASTs for all the namespaces at REPL start up if `cljr-warn-on-eval` is
 
 ## Usage
 
-All functions in clj-refactor have a two-letter mnemonic shortcut. E.g. `rs` for `cljr-rename-symbol`.  Given the prefix choice in the example setup you'd call this function by hitting `C-c C-m rs`
+All functions in `clj-refactor` have a two-letter mnemonic shortcut. E.g. `rs` for `cljr-rename-symbol`.  Given the prefix choice in the example setup you'd call this function by hitting `C-c C-m rs`
 
 See the wiki for a complete [list of available refactorings] (https://github.com/clojure-emacs/clj-refactor.el/wiki), demonstrations and customization points.
 
-If you're having trouble remembering the mnenmic shortcuts, check out
+If you're having trouble remembering the mnemonic shortcuts, check out
 the [hydra](https://github.com/abo-abo/hydra) powered popup menus.
 They are described
 [here](https://github.com/clojure-emacs/clj-refactor.el/wiki/Hydra).
