@@ -1,4 +1,4 @@
-;;; clj-refactor.el --- A collection of clojure refactoring functions
+;;; clj-refactor.el --- A collection of clojure refactoring functions -*- lexical-binding: t -*-
 
 ;; Copyright © 2012-2016 Magnar Sveen
 ;; Copyright © 2014-2016 Magnar Sveen, Lars Andersen, Benedek Fazekas
