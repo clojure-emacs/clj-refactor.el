@@ -241,24 +241,6 @@ won't run if there is a broken namespace in the project."
   "^\\(.+?\\):\\([1-9][0-9]*\\):\\([0-9][0-9]*\\): "
   "A regexp pattern that groups output into filename, line number and column number.")
 
-(defvar cljr--nrepl-ops
-  '(
-    "artifact-list"
-    "artifact-versions"
-    "clean-ns"
-    "extract-definition"
-    "find-symbol"
-    "find-used-locals"
-    "hotload-dependency"
-    "namespace-aliases"
-    "rename-file-or-dir"
-    "resolve-missing"
-    "stubs-for-interface"
-    "find-used-publics"
-    "version"
-    "warm-ast-cache"
-    ))
-
 (defvar cljr--debug-mode nil)
 
 (defvar cljr--occurrences nil)
@@ -3399,16 +3381,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
             (cljr--post-command-message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
     (cljr--indent-defun)))
 
-(defun cljr--check-nrepl-ops ()
-  "Check whether all nREPL ops are present and emit a warning when not."
-  (let ((missing-ops (-remove #'cljr--op-supported? cljr--nrepl-ops)))
-    (when missing-ops
-      (cider-repl-emit-interactive-stderr
-       (format "WARNING: The following nREPL ops are not supported:
-%s\nPlease, install (or update) refactor-nrepl and restart the REPL.
-You can mute this warning by changing cljr-suppress-middleware-warnings."
-               (s-join " " missing-ops ))))))
-
 (defun cljr--version (&optional remove-package-version)
   "Get the version of `clj-refactor' from the package header.
 
@@ -3453,7 +3425,6 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
 
 (defun cljr--init-middleware ()
   (unless cljr-suppress-middleware-warnings
-    (cljr--check-nrepl-ops)
     (cljr--check-middleware-version))
   ;; Best effort; don't freak people out with errors
   (ignore-errors
