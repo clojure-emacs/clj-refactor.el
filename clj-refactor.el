@@ -285,7 +285,7 @@ Otherwise open the file and do the changes non-interactively."
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-forward] 'cljr-splice-sexp-killing-forward)
 (define-key clj-refactor-map (kbd "/") 'cljr-slash)
 
-(defun cljr--use-multiple-cursors? ()
+(defun cljr--use-multiple-cursors-p ()
   (and cljr-use-multiple-cursors
        (not (bound-and-true-p evil-mode))))
 
@@ -361,7 +361,7 @@ Otherwise open the file and do the changes non-interactively."
     (format "\n %s related refactorings\n------------------------------------------------------------------------------------------------------------------------------------------------------\n" (s-capitalize (s-replace "-" " " type)))
     (->> cljr--all-helpers
          (-filter
-          (lambda (fn-description) (-contains? (-last-item (cdr fn-description)) type)))
+          (lambda (fn-description) (-contains-p (-last-item (cdr fn-description)) type)))
          (-map (lambda (description) (list (car description)
                                            (nth 1 (cdr description)))))
          (-map (lambda (tuple) (format "_%s_: %-45s" (car tuple) (cadr tuple))))
@@ -380,7 +380,7 @@ Otherwise open the file and do the changes non-interactively."
 (defun hydra-heads (type)
   (->> cljr--all-helpers
        (-filter
-        (lambda (fn-description) (-contains? (-last-item (cdr fn-description)) type)))
+        (lambda (fn-description) (-contains-p (-last-item (cdr fn-description)) type)))
        (-map (lambda (description) (list (format "%s" (car description))
                                          (cadr description))))))
 
@@ -527,7 +527,7 @@ _s_: Refactor related functions
       (buffer-substring-no-properties beg end)
     (delete-region beg end)))
 
-(defun cljr--comment-line? ()
+(defun cljr--comment-line-p ()
   (save-excursion
     (goto-char (point-at-bol))
     (looking-at "\\s-*;+")))
@@ -547,7 +547,7 @@ if SAVE-EXCURSION is T POINT does not move."
   (when (looking-back "#")
     (backward-char)))
 
-(defun cljr--toplevel-p ()
+(defun cljr--top-level-p ()
   "T unless we're in an s-expression or string."
   (= (cljr--depth-at-point) 0))
 
@@ -598,12 +598,12 @@ list of (fn args) to pass to `apply''"
         (apply f args)))
     (point)))
 
-(defun cljr--whitespace? (s)
+(defun cljr--whitespacep (s)
   "True if S contains only whitespace."
   (s-blank? (s-trim s)))
 
 (defun cljr--make-room-for-toplevel-form ()
-  (if (cljr--whitespace? (buffer-substring-no-properties (point) (point-max)))
+  (if (cljr--whitespacep (buffer-substring-no-properties (point) (point-max)))
       ;; make room at end of buffer
       (progn (open-line 2)
              (delete-blank-lines)
@@ -646,7 +646,7 @@ e.g. `re-search-forward'"
      (t (error "Only know how to search :forward or :backward, you asked for '%s'"
                direction)))))
 
-(defun cljr--inside-prefixed-libspec-vector? ()
+(defun cljr--inside-prefixed-libspec-vector-p ()
   "If we're inside a prefixed libspec vector then point is
 assumed to be just inside the []
 
@@ -674,7 +674,7 @@ refactor-nrepl.util will be returned."
       (let ((ns (buffer-substring-no-properties
                  (point)
                  (cljr--point-after 'paredit-forward))))
-        (if (cljr--inside-prefixed-libspec-vector?)
+        (if (cljr--inside-prefixed-libspec-vector-p)
             (format "%s.%s" (buffer-substring-no-properties
                              (point) (cljr--point-after 'paredit-forward))
                     ns)
@@ -706,7 +706,7 @@ at the opening parentheses of an anonymous function."
           (when (<= (point) search-bound)
             (error "Can't find definition of anonymous function!")))))))
 
-(defun cljr--even? (n)
+(defun cljr--evenp (n)
   ;; evenp lives in cl.el...
   (zerop (mod n 2)))
 
@@ -715,7 +715,7 @@ at the opening parentheses of an anonymous function."
   the kv pairs KVS.
 
 All config settings are included in the created msg."
-  (assert (cljr--even? (length kvs)) nil "Can't create msg to send to the middleware.\
+  (assert (cljr--evenp (length kvs)) nil "Can't create msg to send to the middleware.\
   Received an uneven number of kv pairs: %s " kvs)
   (apply #'list "op" op
          "prefix-rewriting"
@@ -753,7 +753,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-show-changelog"
 
 (defun cljr--goto-reify ()
   (let ((point (point)))
-    (while (not (or (cljr--toplevel-p)
+    (while (not (or (cljr--top-level-p)
                     (looking-at-p "(reify")))
       (paredit-backward-up))
     (unless (looking-at-p "(reify")
@@ -818,7 +818,7 @@ A new record is created to define this constructor."
 (defun cljr--buffers-visiting-dir (dir)
   (-filter (lambda (buf)
              (-when-let (path (buffer-file-name buf))
-               (s-starts-with? dir path :ignore-case)))
+               (s-starts-with-p dir path :ignore-case)))
            (buffer-list)))
 
 (defun cljr--revisit-buffers (buffers new-dir active)
@@ -828,7 +828,7 @@ A new record is created to define this constructor."
 ACTIVE is the buffer the user was looking at when the command was
 issued, and should be left focused."
   (let ((files (directory-files new-dir))
-        (new-dir (if (s-ends-with? "/" new-dir) new-dir (format "%s/" new-dir)))
+        (new-dir (if (s-ends-with-p "/" new-dir) new-dir (format "%s/" new-dir)))
         (same-file (lambda (buf f)
                      (when (string= (file-name-nondirectory f)
                                     (file-name-nondirectory (buffer-file-name buf)))
@@ -856,7 +856,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
                              nil nil
                              (file-name-nondirectory old))))))
   (cljr--ensure-op-supported "rename-file-or-dir")
-  (when (cljr--asts-p)
+  (when (cljr--asts-y-or-n-p)
     (let* ((active-buffer (current-buffer))
            (affected-buffers (when (file-directory-p old-path)
                                (cljr--buffers-visiting-dir old-path)))
@@ -890,7 +890,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
                            (file-name-nondirectory old)))))
   (cljr-rename-file-or-dir (buffer-file-name) new-path))
 
-(defun cljr--op-supported? (op)
+(defun cljr--op-supported-p (op)
   "Is the OP we require provided by the current middleware stack?"
   (cider-nrepl-op-supported-p op))
 
@@ -899,7 +899,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
     (user-error "CIDER isn't installed!"))
   (unless (cider-connected-p)
     (user-error "CIDER isn't connected!"))
-  (unless (cljr--op-supported? "find-symbol")
+  (unless (cljr--op-supported-p "find-symbol")
     (user-error "The refactor-nrepl middleware isn't available! \
 Did you remember to install it?")))
 
@@ -908,7 +908,7 @@ Did you remember to install it?")))
 
 Signal an error if it is not supported, otherwise return OP."
   (cljr--assert-middleware)
-  (if (cljr--op-supported? op)
+  (if (cljr--op-supported-p op)
       op
     (user-error "Can't find nREPL middleware providing op \"%s\".  \
 Please, install (or update) refactor-nrepl %s and restart the REPL."
@@ -982,20 +982,20 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
     (when src-ns
       (mapconcat 'identity (append (butlast ns-chunks) (list src-ns)) "."))))
 
-(defun cljr--cljs-file? (&optional buf)
+(defun cljr--cljs-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a cljc file?"
-  (s-equals? (file-name-extension (buffer-file-name (or buf (current-buffer))))
+  (s-equals-p (file-name-extension (buffer-file-name (or buf (current-buffer))))
              "cljs"))
 
-(defun cljr--cljc-file? (&optional buf)
+(defun cljr--cljc-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a cljc file?"
-  (s-equals? (file-name-extension (buffer-file-name (or buf (current-buffer))))
+  (s-equals-p (file-name-extension (buffer-file-name (or buf (current-buffer))))
              "cljc"))
 
-(defun cljr--clj-file? (&optional buf)
+(defun cljr--clj-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a clj file?"
   (or (eq major-mode 'clojure-mode)
-      (s-equals? (file-name-extension (buffer-file-name (or buf (current-buffer))))
+      (s-equals-p (file-name-extension (buffer-file-name (or buf (current-buffer))))
                  "clj")))
 
 (defun cljr--add-test-declarations ()
@@ -1012,7 +1012,7 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
                 cljr-midje-test-declaration)
                ((cljr--project-depends-on-p "expectations")
                 cljr-expectations-test-declaration)
-               ((cljr--cljc-file?)
+               ((cljr--cljc-file-p)
                 cljr-cljc-clojure-test-declaration)
                (t cljr-clojure-test-declaration))))
     (indent-region (point-min) (point-max))))
@@ -1026,14 +1026,14 @@ word test in it and whether the file lives under the test/ directory."
       (string-match-p "/test" (buffer-file-name))))
 
 (defun cljr--clojure-ish-filename-p (file-name)
-  (or (s-ends-with? ".clj" file-name)
-      (s-ends-with? ".cljs" file-name)
-      (s-ends-with? ".cljx" file-name)
-      (s-ends-with? ".cljc" file-name)))
+  (or (s-ends-with-p ".clj" file-name)
+      (s-ends-with-p ".cljs" file-name)
+      (s-ends-with-p ".cljx" file-name)
+      (s-ends-with-p ".cljc" file-name)))
 
 (defun cljr--clojure-filename-p (file-name)
-  (or (s-ends-with? ".clj" (buffer-file-name))
-      (s-ends-with? ".cljc" (buffer-file-name))))
+  (or (s-ends-with-p ".clj" (buffer-file-name))
+      (s-ends-with-p ".cljc" (buffer-file-name))))
 
 (defun cljr--add-ns-if-blank-clj-file ()
   (ignore-errors
@@ -1046,11 +1046,11 @@ word test in it and whether the file lives under the test/ directory."
 
 (add-hook 'find-file-hook 'cljr--add-ns-if-blank-clj-file)
 
-(defun cljr--dash-in-file-name? (file-name)
-  (and file-name (s-matches? "-[^/]+\.clj[sxc]?$" file-name)))
+(defun cljr--dash-in-file-name-p (file-name)
+  (and file-name (s-matches-p "-[^/]+\.clj[sxc]?$" file-name)))
 
 (defun cljr--maybe-replace-dash-in-file-name (file-name)
-  (if (and (cljr--dash-in-file-name? file-name)
+  (if (and (cljr--dash-in-file-name-p file-name)
            (yes-or-no-p "The file name contains dashes. Replace with underscores?"))
       (concat (file-name-directory file-name)
               (s-replace "-" "_" (file-name-nondirectory file-name)))
@@ -1058,7 +1058,7 @@ word test in it and whether the file lives under the test/ directory."
 
 (defun cljr--ensure-no-dashes-in-filename ()
   (when (and (not (file-exists-p (buffer-file-name))) ; only new files
-             (cljr--dash-in-file-name? (buffer-file-name)))
+             (cljr--dash-in-file-name-p (buffer-file-name)))
     (let ((new-name (cljr--maybe-replace-dash-in-file-name (buffer-file-name))))
       (rename-buffer new-name)
       (set-visited-file-name new-name)
@@ -1081,7 +1081,7 @@ word test in it and whether the file lives under the test/ directory."
 
 (defun cljr--maybe-clean-ns ()
   (when (and cljr-auto-clean-ns (cider-connected-p)
-             (cljr--op-supported? "clean-ns"))
+             (cljr--op-supported-p "clean-ns"))
     (let ((*cljr--noninteractive* t))
       (cljr-clean-ns))))
 
@@ -1104,7 +1104,7 @@ word test in it and whether the file lives under the test/ directory."
 
 (defun cljr--maybe-sort-ns ()
   (when (and cljr-auto-sort-ns (cider-connected-p)
-             (cljr--op-supported? "clean-ns"))
+             (cljr--op-supported-p "clean-ns"))
     (cljr--assert-leiningen-project)
     (cljr--clean-ns nil :no-pruning)))
 
@@ -1424,7 +1424,7 @@ optionally including those that are declared private."
           (end (cljr--point-after 'paredit-forward)))
       (buffer-substring-no-properties beg end))))
 
-(defun cljr--already-declared? (def)
+(defun cljr--already-declared-p (def)
   (save-excursion
     (cljr--goto-declare)
     (re-search-backward def (cljr--point-after 'paredit-backward) :no-error)))
@@ -1443,14 +1443,14 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-declaration"
   (interactive)
   (save-excursion
     (-if-let (def (cljr--name-of-current-def))
-        (if (cljr--already-declared? def)
+        (if (cljr--already-declared-p def)
             (user-error "%s is already declared" def)
           (cljr--add-declaration def))
       (user-error "Not inside a def form."))))
 
 ;; ------ extract constant ----------------
 
-(defun cljr--existing-group-of-defs? ()
+(defun cljr--existing-group-of-defs-p ()
   "Is there a group of defs at the beginning of the namespace?"
   (save-excursion
     (cljr--goto-ns)
@@ -1475,7 +1475,7 @@ Point is assumed to be just after the ns form."
   "Skip past all previously defined vars at the beginning of the ns."
   (cljr--goto-ns)
   (paredit-forward)
-  (if (cljr--existing-group-of-defs?)
+  (if (cljr--existing-group-of-defs-p)
       (cljr--prepare-to-append-to-existing-group-of-defs)
     (insert "\n")))
 
@@ -1566,7 +1566,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-def"
   (paredit-raise-sexp))
 
 (defun cljr--goto-thread ()
-  (while (not (or (cljr--toplevel-p)
+  (while (not (or (cljr--top-level-p)
                   (looking-at "\(.*->>?[\n\r\t ]")))
     (paredit-backward-up)))
 
@@ -1739,7 +1739,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-introduce-let"
   (paredit-wrap-square)
   (insert " ")
   (backward-char)
-  (let ((name (unless (cljr--use-multiple-cursors?)
+  (let ((name (unless (cljr--use-multiple-cursors-p)
                 (cljr--prompt-user-for "Name: "))))
     (if name
         (insert name)
@@ -1754,7 +1754,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-introduce-let"
 
 (defun cljr--goto-let ()
   (let ((target-expr "\(\\(when-let\\|if-let\\|let\\)\\( \\|\\[\\)"))
-    (while (not (or (cljr--toplevel-p)
+    (while (not (or (cljr--top-level-p)
                     (looking-at target-expr)))
       (paredit-backward-up))
     (looking-at target-expr)))
@@ -1829,7 +1829,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-to-let"
   (interactive)
   (if (not (save-excursion (cljr--goto-let)))
       (cljr-introduce-let)
-    (let ((name (unless (cljr--use-multiple-cursors?)
+    (let ((name (unless (cljr--use-multiple-cursors-p)
                   (cljr--prompt-user-for "Name: "))))
       (save-excursion
         (let ((contents (cljr--delete-and-extract-sexp)))
@@ -2032,7 +2032,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-cycle-coll"
       (error "Beginning of file reached, this was probably a mistake.")))))
 
 (defun cljr--goto-if ()
-  (while (not (or (cljr--toplevel-p)
+  (while (not (or (cljr--top-level-p)
                   (looking-at "\\((if \\)\\|\\((if-not \\)")))
     (paredit-backward-up)))
 
@@ -2097,7 +2097,7 @@ front of function literals and sets."
 Return the value of point if we moved."
   (let ((start (point))
         found)
-    (while (not (or found (cljr--toplevel-p)))
+    (while (not (or found (cljr--top-level-p)))
       (paredit-backward-up)
       (when (looking-back (regexp-opt (list "#\?@" "#\?")) (point-at-bol))
         (paredit-backward)
@@ -2107,12 +2107,12 @@ Return the value of point if we moved."
       (goto-char start)
       nil)))
 
-(defun cljr--point-in-reader-conditional? ()
+(defun cljr--point-in-reader-conditional-p ()
   "Return t if point is inside a reader conditional."
   (save-excursion
     (cljr--goto-reader-conditional)))
 
-(defun cljr--point-in-reader-conditional-branch? (feature)
+(defun cljr--point-in-reader-conditional-branch-p (feature)
   "Is point in a reader conditional branch for FEATURE?
 
 FEATURE is either :clj or :cljs."
@@ -2131,13 +2131,13 @@ FEATURE is either :clj or :cljs."
           (paredit-backward))
         found))))
 
-(defun cljr--clj-context? ()
+(defun cljr--clj-context-p ()
   "Is point in a clj context?"
-  (or (cljr--clj-file?)
-      (when (cljr--cljc-file?)
-        (if (cljr--point-in-reader-conditional?)
-            (cljr--point-in-reader-conditional-branch? :clj)
-          (s-equals? (cljr--prompt-user-for "Language context at point? "
+  (or (cljr--clj-file-p)
+      (when (cljr--cljc-file-p)
+        (if (cljr--point-in-reader-conditional-p)
+            (cljr--point-in-reader-conditional-branch-p :clj)
+          (s-equals-p (cljr--prompt-user-for "Language context at point? "
                                             (list "clj" "cljs"))
                      "clj")))))
 
@@ -2153,13 +2153,13 @@ FEATURE is either :clj or :cljs."
 
 (defun cljr--get-aliases-from-middleware ()
   (-when-let (aliases (cljr--call-middleware-for-namespace-aliases))
-    (if (cljr--clj-context?)
+    (if (cljr--clj-context-p)
         (gethash :clj aliases)
       (gethash :cljs aliases))))
 
-(defun cljr--is-global-alias (alias)
-  (and (cljr--cljs-file?)
-       (s-equals? "js" alias)))
+(defun cljr--js-alias-p (alias)
+  (and (cljr--cljs-file-p)
+       (s-equals-p "js" alias)))
 
 (defun cljr--magic-requires-lookup-alias ()
   "Return (alias (ns.candidate1 ns.candidate1)) if we recognize
@@ -2169,12 +2169,12 @@ the alias in the project."
                      (1- (point)))
                     (s-chop-prefix "::"))))
     (unless (or (cljr--resolve-alias short)
-                (cljr--is-global-alias short))
+                (cljr--js-alias-p short))
       (-if-let* ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
                  (candidates (gethash (intern short) aliases)))
           (list short candidates)
         (when (and cljr-magic-require-namespaces ; a regex against "" always triggers
-                   (s-matches? (cljr--magic-requires-re) short))
+                   (s-matches-p (cljr--magic-requires-re) short))
           ;; This when-let might seem unnecessary but the regexp match
           ;; isn't perfect.
           (-when-let (long (cljr--aget cljr-magic-require-namespaces short))
@@ -2183,7 +2183,7 @@ the alias in the project."
 (defun cljr--in-keyword-sans-alias-p ()
   "Checks if thing at point is keyword without an alias."
   (let ((sym (cider-symbol-at-point)))
-    (and (cljr--keyword? sym)
+    (and (cljr--keywordp sym)
          (not (s-matches-p "::.+" (cljr--symbol-prefix sym))))))
 
 ;;;###autoload
@@ -2203,7 +2203,7 @@ form."
                            (cljr--magic-requires-lookup-alias)))
     (let ((short (first aliases)))
       (-when-let (long (cljr--prompt-user-for "Require " (second aliases)))
-        (when (and (not (cljr--in-namespace-declaration? (concat ":as " short)))
+        (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short)))
                    (or (not (eq :prompt cljr-magic-requires))
                        (not (> (length (second aliases)) 1)) ; already prompted
                        (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
@@ -2215,14 +2215,14 @@ form."
               (cljr--indent-defun)
               (cljr--post-command-message "Required %s" libspec))))))))
 
-(defun cljr--in-namespace-declaration? (s)
+(defun cljr--in-namespace-declaration-p (s)
   (save-excursion
     (cljr--goto-ns)
     (cljr--search-forward-within-sexp s)))
 
 ;; ------ project clean --------
 
-(defun cljr--excluded-from-project-clean? (filename)
+(defun cljr--excluded-from-project-clean-p (filename)
   (member (s-with filename
             (s-chop-prefix (cljr--project-dir))
             (s-chop-prefix "/"))
@@ -2240,10 +2240,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
     (let ((*cljr--noninteractive* t))
       (dolist (filename (cljr--project-files))
         (when (and (cljr--clojure-filename-p filename)
-                   (not (cljr--excluded-from-project-clean? filename)))
+                   (not (cljr--excluded-from-project-clean-p filename)))
           (cljr--update-file filename
             (ignore-errors (-map 'funcall cljr-project-clean-functions))))))
-    (if (and (cider-connected-p) (not cljr-warn-on-eval) (cljr--op-supported? "warm-ast-cache"))
+    (if (and (cider-connected-p) (not cljr-warn-on-eval) (cljr--op-supported-p "warm-ast-cache"))
         (cljr--warm-ast-cache))
     (cljr--post-command-message "Project clean done.")))
 
@@ -2260,13 +2260,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
     (forward-line)
     (join-line)))
 
-(defun cljr--empty-buffer? (&optional buffer)
+(defun cljr--empty-buffer-p (&optional buffer)
   (let ((buffer (or buffer (current-buffer))))
     (with-current-buffer buffer
       (s-blank? (s-trim (buffer-substring-no-properties (point-min) (point-max)))))))
 
 (defun cljr--extract-next-dependency-name ()
-  (while (not (or (cljr--empty-buffer?)
+  (while (not (or (cljr--empty-buffer-p)
                   (cljr--looking-at-dependency-vector-p)))
     (delete-char 1))
   (when (cljr--looking-at-dependency-vector-p)
@@ -2278,7 +2278,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
     (let ((names (list)))
       (insert (->> deps (s-chop-prefix "[") (s-chop-suffix "]")))
       (goto-char (point-min))
-      (while (not (cljr--empty-buffer?))
+      (while (not (cljr--empty-buffer-p))
         (push (cljr--extract-next-dependency-name) names))
       (s-join "\n "(-sort #'string< names)))))
 
@@ -2312,7 +2312,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
       (paredit-backward-up 2)
       (while (not (looking-back "^\\s-*"))
         (forward-char -1))
-      (while (save-excursion (forward-line -1) (cljr--comment-line?))
+      (while (save-excursion (forward-line -1) (cljr--comment-line-p))
         (forward-line -1))
       (setq start (point))
       (re-search-forward (s-concat "\\[" dep "\\s-+\""))
@@ -2552,7 +2552,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
            (fn (cljr--extract-sexp))
            (namedp (cljr--extract-anon-fn-name fn))
            (name (or namedp
-                     (unless (cljr--use-multiple-cursors?)
+                     (unless (cljr--use-multiple-cursors-p)
                        (let ((highlight (cljr--highlight-sexp)))
                          (unwind-protect
                              (read-string "Name: ")
@@ -2631,7 +2631,7 @@ function literal.
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function"
   (interactive "P")
   (cljr--ensure-op-supported "find-used-locals")
-  (when (cljr--asts-p)
+  (when (cljr--asts-y-or-n-p)
     (save-excursion
       (cond
        ;; Already in the right place.
@@ -2658,7 +2658,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
     (goto-char (point-max))
     (insert occurrence)))
 
-(defun cljr--end-of-buffer? ()
+(defun cljr--end-of-buffer-p ()
   "True if point is at end of buffer"
   (= (point) (cljr--point-after 'end-of-buffer)))
 
@@ -2679,9 +2679,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
          occurrences)
     (with-temp-buffer
       (insert (cljr--call-middleware-sync request "occurrence"))
-      (unless (cljr--empty-buffer?)
+      (unless (cljr--empty-buffer-p)
         (goto-char (point-min))
-        (while (not (cljr--end-of-buffer?))
+        (while (not (cljr--end-of-buffer-p))
           (push (edn-read) occurrences))))
     occurrences))
 
@@ -2768,7 +2768,7 @@ root."
       (setq buffer-read-only nil)
       (setq-local compilation-search-path (list (cljr--project-dir))))))
 
-(defun cljr--asts-p ()
+(defun cljr--asts-y-or-n-p ()
   (or
    (not cljr-warn-on-eval)
    (y-or-n-p "To perform this op the project needs to be evaluated.\n  Analyzing a large project might take a while: hit C-g to abort.\n  (Set cljr-warn-on-eval to nil to analyze the project without warning)\n  Do you want to proceed?")))
@@ -2780,7 +2780,7 @@ root."
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
   (interactive)
   (cljr--ensure-op-supported "find-symbol")
-  (when (cljr--asts-p)
+  (when (cljr--asts-y-or-n-p)
     (save-buffer)
     (let* ((cljr--find-symbol-buffer "*cljr-find-usages*")
            (symbol (cider-symbol-at-point))
@@ -2834,7 +2834,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
   (interactive)
   (cljr--ensure-op-supported "find-symbol")
-  (when (cljr--asts-p)
+  (when (cljr--asts-y-or-n-p)
     (save-buffer)
     (let* ((symbol (cider-symbol-at-point))
            (var-info (cljr--var-info symbol))
@@ -2951,15 +2951,15 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
     (cljr--insert-in-ns ":import")
     (cljr--insert-libspec-verbosely missing)))
 
-(defun cljr--qualified-symbol? (symbol)
-  (s-contains? "/" (format "%s" symbol)))
+(defun cljr--qualified-symbol-p (symbol)
+  (s-contains-p "/" (format "%s" symbol)))
 
 (defun cljr--symbol-prefix (symbol)
   "java.util.Date => java.util
 str/split => str
 split => ''"
-  (cond ((cljr--qualified-symbol? symbol) (car (s-split "/" symbol)))
-        ((s-matches? "\\w+\\.\\w+" symbol)
+  (cond ((cljr--qualified-symbol-p symbol) (car (s-split "/" symbol)))
+        ((s-matches-p "\\w+\\.\\w+" symbol)
          (s-join "." (butlast (s-split "\\." symbol))))
         (t "")))
 
@@ -2971,11 +2971,11 @@ to create an alias or refer."
   (save-excursion
     (cljr--insert-in-ns ":require")
     (let ((missing (format "%s" missing-symbol))
-          (alias? (cljr--qualified-symbol? symbol)))
+          (alias? (cljr--qualified-symbol-p symbol)))
       (if alias?
           (cljr--insert-libspec-verbosely (format "[%s :as %s]" missing
                                                   (cljr--symbol-prefix symbol)))
-        (if (and (s-contains? "." missing)
+        (if (and (s-contains-p "." missing)
                  (s-uppercase? (s-left 1 (cljr--symbol-suffix missing))))
             (cljr--insert-libspec-verbosely  (cljr--symbol-prefix symbol))
           (cljr--insert-libspec-verbosely (format "[%s :refer [%s]]"
@@ -3006,9 +3006,9 @@ clojure.string/split => split
 str/split => split"
   (let ((name (cljr--normalize-symbol-name symbol)))
     (cond
-     ((s-matches? "\\w+\\.\\w+" name)
+     ((s-matches-p "\\w+\\.\\w+" name)
       (->> name (s-split "\\.") last car cljr--symbol-suffix))
-     ((cljr--qualified-symbol? name)
+     ((cljr--qualified-symbol-p name)
       (->> name (s-split "/") cadr cljr--symbol-suffix))
      (t name))))
 
@@ -3022,17 +3022,17 @@ Date. -> Date
 ~sym => sym
 ~@sym => sym"
   (cond
-   ((s-ends-with? "." name)
+   ((s-ends-with-p "." name)
     (->> name (s-chop-suffix ".") cljr--normalize-symbol-name))
-   ((s-starts-with? "#'" name)
+   ((s-starts-with-p "#'" name)
     (-> name (s-chop-prefix "#'") cljr--normalize-symbol-name))
-   ((s-starts-with? "'" name)
+   ((s-starts-with-p "'" name)
     (->> name (s-chop-prefix "'") cljr--normalize-symbol-name))
-   ((s-starts-with? "~" name)
+   ((s-starts-with-p "~" name)
     (->> name (s-chop-prefix "~") cljr--normalize-symbol-name))
-   ((s-starts-with? "~@" name)
+   ((s-starts-with-p "~@" name)
     (->> name (s-chop-prefix "~@") cljr--normalize-symbol-name))
-   ((s-starts-with? "@" name)
+   ((s-starts-with-p "@" name)
     (->> name (s-chop-prefix "@") cljr--normalize-symbol-name))
    (t name)))
 
@@ -3056,10 +3056,10 @@ itself might be `nil'."
       (error (format "Error in nrepl-refactor: %s" err))
     (let* ((maybe-error-and-rest
             (-drop-while (lambda (e)
-                           (not (and (stringp e) (s-equals? e "error"))))
+                           (not (and (stringp e) (s-equals-p e "error"))))
                          response))
            (maybe-error (car maybe-error-and-rest)))
-      (when (and (stringp maybe-error) (s-equals? maybe-error "error"))
+      (when (and (stringp maybe-error) (s-equals-p maybe-error "error"))
         (or (cadr maybe-error-and-rest)
             (format "Error 'nil' returned from middleware. %s"
                     "Please contact your local administrator."))))))
@@ -3171,7 +3171,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-function"
   (interactive)
   (cljr--ensure-op-supported "find-used-locals")
-  (when (cljr--asts-p)
+  (when (cljr--asts-y-or-n-p)
     (save-buffer)
     (cljr--goto-enclosing-sexp)
     (let* ((unbound (cljr--call-middleware-to-find-used-locals
@@ -3180,7 +3180,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-function
                      ;; +1 more because point has to be inside the sexp,
                      ;; not on the opening paren
                      (+ (current-column) 2)))
-           (name (unless (cljr--use-multiple-cursors?)
+           (name (unless (cljr--use-multiple-cursors-p)
                    (let ((highlight (cljr--highlight-sexp)))
                      (unwind-protect
                          (cljr--prompt-user-for "Name: ")
@@ -3357,7 +3357,7 @@ ALL has the same meaning as for `cider-var-info'"
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
   (interactive)
   (cljr--ensure-op-supported "extract-definition")
-  (when (cljr--asts-p)
+  (when (cljr--asts-y-or-n-p)
     (save-buffer)
     (save-excursion
       (let* ((filename (buffer-file-name))
@@ -3406,7 +3406,7 @@ if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
   "Check whether clj-refactor and nrepl-refactor versions are the same"
   (let ((refactor-nrepl-version (or (cljr--middleware-version)
                                     "n/a")))
-    (unless (s-equals? (s-downcase refactor-nrepl-version)
+    (unless (s-equals-p (s-downcase refactor-nrepl-version)
                        (s-downcase (cljr--version :remove-package-version)))
       (cider-repl-emit-interactive-stderr
        (format "WARNING: clj-refactor and refactor-nrepl are out of sync.
@@ -3469,7 +3469,7 @@ argument of a `reduce', the defn will take two arguments.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-example"
   (interactive)
-  (while (cljr--keyword? (car (cljr--extract-sexp-as-list)))
+  (while (cljr--keywordp (car (cljr--extract-sexp-as-list)))
     (paredit-backward-up))
   (let* ((sexp-forms* (cljr--extract-sexp-as-list))
          (fn-name (car sexp-forms*))
@@ -3497,7 +3497,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
          (path (when (s-present? prefix)
                  (cljr--ns-path (cljr--resolve-alias prefix)))))
     (push-mark)
-    (if (cljr--symbol? symbol-at-point)
+    (if (cljr--symbolp symbol-at-point)
         (cond ((string= fn-name "update")
                (cljr--create-fn-from-update args path))
 
@@ -3550,7 +3550,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 (defun cljr--create-fn-from-update (args path)
   (let ((keyfn (cadr args)))
     (cljr--insert-example-fn (cider-symbol-at-point)
-                             (if (cljr--keyword? keyfn)
+                             (if (cljr--keywordp keyfn)
                                  (list (s-chop-prefix ":" keyfn))
                                (list 0))
                              path)))
@@ -3560,7 +3560,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                            (paredit-backward-down)
                            (cider-symbol-at-point))))
     (cljr--insert-example-fn (cider-symbol-at-point)
-                             (if (cljr--keyword? last-path-entry)
+                             (if (cljr--keywordp last-path-entry)
                                  (list (s-chop-prefix ":" last-path-entry))
                                (list 0))
                              path)))
@@ -3581,7 +3581,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
          (making-comparator? (and (string= fn-name (cadr args))
                                   (= 3 (length args))))
          (param-name (if making-comparator?
-                         (when (cljr--keyword? (car args))
+                         (when (cljr--keywordp (car args))
                            (s-chop-prefix ":" (car args)))
                        (-when-let (coll-name (cljr--guess-param-name (-last-item args)))
                          (singularize-string coll-name)))))
@@ -3614,22 +3614,22 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
       (cljr--extract-sexp-as-list))))
 
 (defun cljr--unwind-s (s)
-  (if (s-starts-with? "(->" s)
+  (if (s-starts-with-p "(->" s)
       (cljr--with-string-content s
         (cljr-unwind-all)
         (buffer-substring (point-min) (point-max)))
     s))
 
-(defun cljr--keyword? (s)
-  (s-matches? "^::?[^0-9:[{(\"][^[{(\"]*$"
-              (s-replace "\n" " " s)))
+(defun cljr--keywordp (s)
+  (s-matches-p "^::?[^0-9:[{(\"][^[{(\"]*$"
+               (s-replace "\n" " " s)))
 
-(defun cljr--symbol? (s)
+(defun cljr--symbolp (s)
   "True when S is a symbol."
-  (s-matches? "^[^0-9:[{(\"][^[{(\"]*$"
+  (s-matches-p "^[^0-9:[{(\"][^[{(\"]*$"
               (s-replace "\n" " " s)))
 
-(defun cljr--keyword-lookup? (s)
+(defun cljr--keyword-lookup-p (s)
   (string-match "^(:\\([^ 0-9:[{(\"][^[{(\"]+\\) " s))
 
 (defun cljr--first-fn-call-s (s)
@@ -3663,15 +3663,15 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                         (cljr--unwind-s form)))
          (fn-call (cljr--first-fn-call-s prepped-form)))
     (cond
-     ((cljr--symbol? prepped-form)
+     ((cljr--symbolp prepped-form)
       prepped-form)
-     ((cljr--keyword-lookup? prepped-form)
+     ((cljr--keyword-lookup-p prepped-form)
       (cljr--strip-keyword-ns (match-string 1 prepped-form)))
-     ((and fn-call (s-ends-with? "." fn-call))
+     ((and fn-call (s-ends-with-p "." fn-call))
       (s-dashed-words (-last-item (s-split "\\." fn-call t))))
-     ((and fn-call (s-starts-with? "create-" fn-call))
+     ((and fn-call (s-starts-with-p "create-" fn-call))
       (s-chop-prefix "create-" fn-call))
-     ((and fn-call (s-starts-with? ".get" fn-call))
+     ((and fn-call (s-starts-with-p ".get" fn-call))
       (s-dashed-words (s-chop-prefix ".get" fn-call)))
      ((string= "get-in" fn-call)
       (cljr--find-param-name-from-get-in prepped-form))
@@ -3723,7 +3723,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                            (paredit-forward 3)
                            (paredit-backward-down)
                            (cider-symbol-at-point))))
-    (when (cljr--keyword? last-path-entry)
+    (when (cljr--keywordp last-path-entry)
       (s-chop-prefix ":" last-path-entry))))
 
 (defun cljr--find-param-name-from-get (form)
@@ -3732,7 +3732,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                (paredit-forward 2)
                (cljr--skip-past-whitespace-and-comments)
                (cljr--extract-sexp))))
-    (when (cljr--keyword? key)
+    (when (cljr--keywordp key)
       (s-chop-prefix ":" key))))
 
 (defun cljr--insert-example-fn (name args path)
@@ -3792,7 +3792,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
     (unless arglists-str
       (error "Couldn't retrieve the parameter list for %s" fn))
     (let* ((arglists-str (substring arglists-str 1 -1)))
-      (unless (s-matches? "^\\[[^]]+\\]$" arglists-str)
+      (unless (s-matches-p "^\\[[^]]+\\]$" arglists-str)
         (error "Can't do work on functions of multiple arities"))
       (s-split " " (substring arglists-str 1 -1)))))
 
@@ -3893,8 +3893,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
     (insert new-name)
     (view-mode 1)))
 
-(defun cljr--defn? (match)
-  (s-matches? (rx (seq line-start (* whitespace) "("
+(defun cljr--defnp (match)
+  (s-matches-p (rx (seq line-start (* whitespace) "("
                        (? (+ (or (in "a-z") (in "A-z") (in "0-9")
                                  (in "-") (in "._/"))))
                        "defn"))
@@ -3970,7 +3970,7 @@ Point is assumed to be at the end of the form."
   "Point is assumed to be at the first character in the lambda list.
 
 Updates the ordering of the function parameters."
-  (unless (-every? (lambda (c) (= (gethash :new-index c) (gethash :old-index c)))
+  (unless (-every-p (lambda (c) (= (gethash :new-index c) (gethash :old-index c)))
                    signature-changes)
     (let (parameters)
       ;; extract parameters
@@ -3988,7 +3988,7 @@ Updates the ordering of the function parameters."
                                  (cljr--signature-change-at-index
                                   signature-changes i))))
           (insert (-find (lambda (param)
-                           (s-starts-with? old-name param))
+                           (s-starts-with-p old-name param))
                          parameters)))
         (unless (= (1+ i) (length parameters))
           (insert " ")))
@@ -4016,22 +4016,22 @@ to here:  (defn foo [|bar baz] ...)"
   (cljr--goto-lambda-list)
   (cljr--update-signature-order signature-changes))
 
-(defun cljr--call-site? (fn)
+(defun cljr--call-site-p (fn)
   "Is point at a call-site for FN?"
   (save-excursion
     (ignore-errors
       (paredit-backward-up)
       (paredit-forward-down)
-      (s-ends-with? (cljr--symbol-suffix fn) (cider-symbol-at-point)))))
+      (s-ends-with-p (cljr--symbol-suffix fn) (cider-symbol-at-point)))))
 
-(defun cljr--no-changes-to-parameter-order? (signature-changes)
-  (-every? (lambda (e) (= (gethash :new-index e) (gethash :old-index e)))
+(defun cljr--no-changes-to-parameter-order-p (signature-changes)
+  (-every-p (lambda (e) (= (gethash :new-index e) (gethash :old-index e)))
            signature-changes))
 
 (defun cljr--update-call-site (signature-changes)
   "Point is assumed to be at the name of the function being
 called."
-  (unless (cljr--no-changes-to-parameter-order? signature-changes)
+  (unless (cljr--no-changes-to-parameter-order-p signature-changes)
     (cljr--forward-parameter)
     (let (args)
       (dotimes (_ (length signature-changes))
@@ -4062,7 +4062,7 @@ manual intervention."
   whose signature we're currently editing.
 
 point is assumed to be at the function name"
-  (unless (cljr--no-changes-to-parameter-order? signature-changes)
+  (unless (cljr--no-changes-to-parameter-order-p signature-changes)
     (let ((num-args 0)
           (max-index (->> signature-changes
                           (-map (lambda (c) (let ((new  (gethash :new-index c))
@@ -4093,7 +4093,7 @@ This only handles the case where we have (partial my-fn a b c)
 and only parameters a b or c are affected.
 
 point is assumed to be at the function name"
-  (unless (cljr--no-changes-to-parameter-order? signature-changes)
+  (unless (cljr--no-changes-to-parameter-order-p signature-changes)
     (let ((num-partials 0)
           (max-index (->> signature-changes
                           (-map (lambda (c) (let ((new  (gethash :new-index c))
@@ -4117,7 +4117,7 @@ point is assumed to be at the function name"
                                            (>= (gethash :new-index c) num-partials))
                                          signature-changes))))))
 
-(defun cljr--apply-call-site? ()
+(defun cljr--apply-call-site-p ()
   "Is the function invocation at this place being done using
   apply?
 
@@ -4128,7 +4128,7 @@ Point is assumed to be at the function being called."
       (paredit-forward-down)
       (looking-at-p "apply"))))
 
-(defun cljr--partial-call-site? ()
+(defun cljr--partial-call-site-p ()
   "Is the function invocation at this place being done using
   partial.
 
@@ -4139,7 +4139,7 @@ Point is assumed to be at the function being called."
       (paredit-forward-down)
       (looking-at-p "partial"))))
 
-(defun cljr--ignorable-occurrence? ()
+(defun cljr--ignorable-occurrence-p ()
   (save-excursion
     (cljr--goto-toplevel)
     (looking-at-p "\\s-*(ns")))
@@ -4162,17 +4162,17 @@ Point is assumed to be at the function being called."
           (forward-line (1- line-beg))
           (move-to-column (1- col-beg))
           (cond
-           ((cljr--ignorable-occurrence?) :do-nothing)
-           ((cljr--call-site? name) (cljr--update-call-site signature-changes))
-           ((cljr--partial-call-site?)
+           ((cljr--ignorable-occurrence-p) :do-nothing)
+           ((cljr--call-site-p name) (cljr--update-call-site signature-changes))
+           ((cljr--partial-call-site-p)
             (cljr--update-partial-call-site signature-changes))
-           ((cljr--apply-call-site?)
+           ((cljr--apply-call-site-p)
             (cljr--update-apply-call-site signature-changes))
-           ((cljr--defn? match)
+           ((cljr--defnp match)
             (cljr--update-function-signature signature-changes))
            (t (cljr--append-to-manual-intervention-buffer)))
           (save-buffer)))))
-  (unless (cljr--empty-buffer? (get-buffer-create cljr--manual-intervention-buffer))
+  (unless (cljr--empty-buffer-p (get-buffer-create cljr--manual-intervention-buffer))
     (pop-to-buffer cljr--manual-intervention-buffer)
     (goto-char (point-min))
     (insert "The following occurrence(s) couldn't be handled automatically:\n\n")
@@ -4224,7 +4224,7 @@ Point is assumed to be at the function being called."
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-signature"
   (interactive)
   (cljr--ensure-op-supported "find-symbol")
-  (when (cljr--asts-p)
+  (when (cljr--asts-y-or-n-p)
     (let* ((fn (cider-symbol-at-point))
            (params (cljr--get-function-params fn))
            (var-info (cljr--var-info fn))
