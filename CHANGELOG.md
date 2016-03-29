@@ -2,7 +2,13 @@
 
 ## Up next
 
+- [#312](https://github.com/clojure-emacs/clj-refactor.el/issues/312) Allow `sut` alias to be customized.
+- [#305](https://github.com/clojure-emacs/clj-refactor.el/issues/305) Don't call lookup-alias for non namespaced keywords at all when slash is typed. However trigger lookup alias with the leading :: stripped off the prefix if the keyword is namespaced.
+
+### Changes
+
 - When inserting ns form to blank clojure-ish file, check if cider is available and connected for better detecting the expected namespace.
+- Remove the warning about missing nREPl ops.
 
 ## 2.2.0
 
