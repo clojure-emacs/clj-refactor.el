@@ -1,8 +1,10 @@
 # Contributing
 
-If you discover issues, have ideas for improvements or new features,
-please report them to the [issue tracker][1] of the repository or
-submit a pull request. Please, try to follow these guidelines when you do so.
+Do you have an issue to report or an idea to submit? That's great!
+We're eager to make clj-refactor better. Please report issues to
+the [issue tracker][1] of the repository or submit a pull request.
+
+To help us, please, follow these guidelines:
 
 ## Issue reporting
 
@@ -10,9 +12,10 @@ submit a pull request. Please, try to follow these guidelines when you do so.
 * Check that the issue has not already been fixed in the latest code
   (a.k.a. `master`).
 * Be clear, concise and precise in your description of the problem.
-* Open an issue with a descriptive title and a summary in grammatically correct, complete sentences.
-* Mention your Emacs version and operating system.
 * Mention the version you're running. You can call `cljr-version` to obtain this information.
+* Mention the CIDER version you're running.
+* Mention the leiningen or boot version you're using.
+* Mention your Emacs version and operating system.
 * Include any relevant code to the issue summary.
 
 ## Pull requests
@@ -23,7 +26,6 @@ submit a pull request. Please, try to follow these guidelines when you do so.
 * Mention related tickets in the commit messages (e.g. `[Fix #N] Add command ...`)
 * Update the [changelog][6].
 * Use the same coding conventions as the rest of the project.
-* Verify your Emacs Lisp code with `checkdoc` (<kbd>C-c ? d</kbd>).
 * [Squash related commits together][5].
 * Open a [pull request][4] that relates to *only* one subject with a clear title and description in grammatically correct, complete sentences.
 
