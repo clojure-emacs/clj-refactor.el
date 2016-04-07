@@ -985,18 +985,18 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
 (defun cljr--cljs-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a cljc file?"
   (s-equals-p (file-name-extension (buffer-file-name (or buf (current-buffer))))
-             "cljs"))
+              "cljs"))
 
 (defun cljr--cljc-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a cljc file?"
   (s-equals-p (file-name-extension (buffer-file-name (or buf (current-buffer))))
-             "cljc"))
+              "cljc"))
 
 (defun cljr--clj-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a clj file?"
   (or (eq major-mode 'clojure-mode)
       (s-equals-p (file-name-extension (buffer-file-name (or buf (current-buffer))))
-                 "clj")))
+                  "clj")))
 
 (defun cljr--add-test-declarations ()
   (save-excursion
@@ -1005,7 +1005,7 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
       (cljr--insert-in-ns ":require")
       (when source-ns
         (insert "[" source-ns " :as "
-		cljr-clojure-test-namespace-under-test-alias "]"))
+                cljr-clojure-test-namespace-under-test-alias "]"))
       (cljr--insert-in-ns ":require")
       (insert (cond
                ((cljr--project-depends-on-p "midje")
@@ -2138,8 +2138,8 @@ FEATURE is either :clj or :cljs."
         (if (cljr--point-in-reader-conditional-p)
             (cljr--point-in-reader-conditional-branch-p :clj)
           (s-equals-p (cljr--prompt-user-for "Language context at point? "
-                                            (list "clj" "cljs"))
-                     "clj")))))
+                                             (list "clj" "cljs"))
+                      "clj")))))
 
 (defun cljr--aget (map key)
   (cdr (assoc key map)))
@@ -2867,7 +2867,7 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
   (cljr--ensure-op-supported "find-used-publics")
   (let ((filename (buffer-file-name)))
     (let* ((alias (or alias
-                    (cljr--prompt-user-for (format "alias for [%s]: " ns))))
+                      (cljr--prompt-user-for (format "alias for [%s]: " ns))))
            (request
             (cljr--create-msg "find-used-publics"
                               "used-ns" ns
@@ -3407,7 +3407,7 @@ if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
   (let ((refactor-nrepl-version (or (cljr--middleware-version)
                                     "n/a")))
     (unless (s-equals-p (s-downcase refactor-nrepl-version)
-                       (s-downcase (cljr--version :remove-package-version)))
+                        (s-downcase (cljr--version :remove-package-version)))
       (cider-repl-emit-interactive-stderr
        (format "WARNING: clj-refactor and refactor-nrepl are out of sync.
 Their versions are %s and %s, respectively.
@@ -3627,7 +3627,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 (defun cljr--symbolp (s)
   "True when S is a symbol."
   (s-matches-p "^[^0-9:[{(\"][^[{(\"]*$"
-              (s-replace "\n" " " s)))
+               (s-replace "\n" " " s)))
 
 (defun cljr--keyword-lookup-p (s)
   (string-match "^(:\\([^ 0-9:[{(\"][^[{(\"]+\\) " s))
@@ -3895,10 +3895,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
 
 (defun cljr--defnp (match)
   (s-matches-p (rx (seq line-start (* whitespace) "("
-                       (? (+ (or (in "a-z") (in "A-z") (in "0-9")
-                                 (in "-") (in "._/"))))
-                       "defn"))
-              match))
+                        (? (+ (or (in "a-z") (in "A-z") (in "0-9")
+                                  (in "-") (in "._/"))))
+                        "defn"))
+               match))
 
 (defun cljr--update-parameter-name (new-name)
   (cljr--skip-past-whitespace-and-comments)
@@ -3971,7 +3971,7 @@ Point is assumed to be at the end of the form."
 
 Updates the ordering of the function parameters."
   (unless (-every-p (lambda (c) (= (gethash :new-index c) (gethash :old-index c)))
-                   signature-changes)
+                    signature-changes)
     (let (parameters)
       ;; extract parameters
       (dolist (_ signature-changes)
@@ -4026,7 +4026,7 @@ to here:  (defn foo [|bar baz] ...)"
 
 (defun cljr--no-changes-to-parameter-order-p (signature-changes)
   (-every-p (lambda (e) (= (gethash :new-index e) (gethash :old-index e)))
-           signature-changes))
+            signature-changes))
 
 (defun cljr--update-call-site (signature-changes)
   "Point is assumed to be at the name of the function being
@@ -4185,7 +4185,7 @@ Point is assumed to be at the function being called."
   (kill-buffer cljr--change-signature-buffer))
 
 (define-derived-mode cljr--change-signature-mode fundamental-mode
-                     "Change Signature"
+  "Change Signature"
   "Major mode for refactoring function signatures.")
 
 (defun cljr--setup-change-signature-buffer (control-buffer params)
@@ -4241,8 +4241,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
   "Inject the REPL dependencies of clj-refactor at `cider-jack-in'.
 If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-jack-in' to nil."
   (when (and cljr-inject-dependencies-at-jack-in
-              (boundp 'cider-jack-in-lein-plugins)
-              (boundp 'cider-jack-in-nrepl-middlewares))
+             (boundp 'cider-jack-in-lein-plugins)
+             (boundp 'cider-jack-in-nrepl-middlewares))
     (add-to-list 'cider-jack-in-lein-plugins `("refactor-nrepl" ,(cljr--version t)))
     (add-to-list 'cider-jack-in-nrepl-middlewares "refactor-nrepl.middleware/wrap-refactor")))
 
