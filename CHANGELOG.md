@@ -16,6 +16,7 @@
 
 - [#299](https://github.com/clojure-emacs/clj-refactor.el/issues/299) `ml` moves cursor
 - [#309](https://github.com/clojure-emacs/clj-refactor.el/issues/309)  `am` creates alias for fully-qualified symbols.
+- [#313](https://github.com/clojure-emacs/clj-refactor.el/issues/313)  teach `pf` about function literals using `%&`.
 - [#320](https://github.com/clojure-emacs/clj-refactor.el/issues/320) `*data-readers*` ignored when searching for macros.
 
 ## 2.2.0
