@@ -10,6 +10,10 @@
 - When inserting ns form to blank clojure-ish file, check if cider is available and connected for better detecting the expected namespace.
 - Remove the warning about missing nREPl ops.
 
+### Bugs fixed
+
+- [#320](https://github.com/clojure-emacs/clj-refactor.el/issues/320) `*data-readers*` ignored when searching for macros.
+
 ## 2.2.0
 
 - Smarten up `cljr-stop-referring` to replace `:refer :all` style require with alias and apply the alias to all occurrences of symbols from the referred namespace.
