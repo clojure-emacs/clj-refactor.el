@@ -1415,7 +1415,7 @@ optionally including those that are declared private."
 (defun cljr--name-of-current-def ()
   (cljr--goto-toplevel)
   (ignore-errors (forward-char))
-  (when (looking-at "def")
+  (when (looking-at "\\(.+/\\)?def")
     (paredit-forward)
     (while (looking-at " ^")
       (paredit-forward))

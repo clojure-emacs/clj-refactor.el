@@ -49,3 +49,25 @@ Feature: Declare current top-level form
       [a b]
       (+ a b))
     """
+
+  Scenario: Declare a schema def
+    When I insert:
+    """
+    (ns cljr.core)
+
+    (s/defn foo
+      [a b]
+      (+ a b))
+    """
+    And the cursor is inside the first defn form
+    And I press "C-! ad"
+    Then I should see:
+    """
+    (ns cljr.core)
+
+    (declare foo)
+
+    (s/defn foo
+      [a b]
+      (+ a b))
+    """

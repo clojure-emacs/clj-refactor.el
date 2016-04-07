@@ -7,6 +7,7 @@
 
 ### Changes
 
+- [#302] (https://github.com/clojure-emacs/clj-refactor.el/issues/302) `ad` now understands def-like things, e.g. defs created by Schema.
 - When inserting ns form to blank clojure-ish file, check if cider is available and connected for better detecting the expected namespace.
 - Remove the warning about missing nREPl ops.
 
