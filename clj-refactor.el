@@ -1819,7 +1819,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-expand-let"
 
 (defun cljr--replace-sexp-with-binding-in-let ()
   (remove-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
-  (-each (cljr--get-let-bindings) 'cljr--replace-sexp-with-binding))
+  (save-excursion
+    (-each (cljr--get-let-bindings) 'cljr--replace-sexp-with-binding)))
 
 ;;;###autoload
 (defun cljr-move-to-let ()

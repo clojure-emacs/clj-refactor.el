@@ -12,6 +12,7 @@
 
 ### Bugs fixed
 
+-[#299](https://github.com/clojure-emacs/clj-refactor.el/issues/299) `ml` moves cursor
 - [#320](https://github.com/clojure-emacs/clj-refactor.el/issues/320) `*data-readers*` ignored when searching for macros.
 
 ## 2.2.0
