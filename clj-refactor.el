@@ -1446,12 +1446,10 @@ With a prefix add a declaration for the symbol under the cursor instead.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-declaration"
   (interactive "P")
-  (if for-thing-at-point-p
-      (cljr--add-declaration (cider-symbol-at-point))
-    (save-excursion
-      (-if-let (def (cljr--name-of-current-def))
-          (cljr--add-declaration def)
-        (user-error "Not inside a def form.")))))
+  (-if-let (def (and (not for-thing-at-point-p)
+                     (save-excursion (cljr--name-of-current-def))))
+      (cljr--add-declaration def)
+    (cljr--add-declaration (cider-symbol-at-point))))
 
 ;; ------ extract constant ----------------
 

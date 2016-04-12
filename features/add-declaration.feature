@@ -72,7 +72,7 @@ Feature: Declare current top-level form
       (+ a b))
     """
 
-  Scenario: Declare the thing at point
+  Scenario: Declare the thing at point if outside a def
     When I insert:
     """
     (ns cljr.core)
@@ -80,7 +80,7 @@ Feature: Declare current top-level form
     (foo :bar)
     """
     And I place the cursor before " :bar"
-    And I press "C-u C-! ad"
+    And I press "C-! ad"
     Then I should see:
     """
     (ns cljr.core)
@@ -88,4 +88,28 @@ Feature: Declare current top-level form
     (declare foo)
 
     (foo :bar)
+    """
+
+  Scenario: Declare the thing at point if inside a def
+    When I insert:
+    """
+    (ns cljr.core)
+
+    (declare foo)
+
+    (defn- ^{:meta :data} add
+      [a b]
+      (bar a b))
+    """
+    And I place the cursor before " a b"
+    And I press "C-u C-! ad"
+    Then I should see:
+    """
+    (ns cljr.core)
+
+    (declare foo bar)
+
+    (defn- ^{:meta :data} add
+      [a b]
+      (bar a b))
     """
