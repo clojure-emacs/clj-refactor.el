@@ -2977,14 +2977,20 @@ to create an alias or refer."
   (save-excursion
     (cljr--insert-in-ns ":require")
     (let ((missing (format "%s" missing-symbol))
-          (alias? (cljr--qualified-symbol-p symbol)))
-      (if alias?
-          (cljr--insert-libspec-verbosely (format "[%s :as %s]" missing
-                                                  (cljr--symbol-prefix symbol)))
-        (if (and (s-contains-p "." missing)
-                 (s-uppercase? (s-left 1 (cljr--symbol-suffix missing))))
-            (cljr--insert-libspec-verbosely  (cljr--symbol-prefix symbol))
-          (cljr--insert-libspec-verbosely (format "[%s :refer [%s]]"
+           (alias? (cljr--qualified-symbol-p symbol)))
+      (cond
+       ;;  defrecord / deftype where the package must be required
+       ((and (s-contains-p "." missing)
+             (s-uppercase? (s-left 1 (cljr--symbol-suffix symbol))))
+        (cljr--insert-libspec-verbosely (cljr--symbol-prefix missing)))
+       ;; Fully qualified symbol
+       ((and (cljr--qualified-symbol-p symbol)
+             (string= (cljr--symbol-prefix symbol) missing))
+        (cljr--insert-libspec-verbosely missing))
+       (alias?
+        (cljr--insert-libspec-verbosely (format "[%s :as %s]" missing
+                                                (cljr--symbol-prefix symbol))))
+       (t (cljr--insert-libspec-verbosely (format "[%s :refer [%s]]"
                                                   missing symbol)))))))
 
 (defun cljr--add-missing-libspec (symbol candidates)
@@ -2999,11 +3005,11 @@ to create an alias or refer."
            ;; In the line below we're assuming that all clojure code
            ;; will prefer - over _ when naming namespaces :(
            (progn (cljr--insert-missing-require
-                   (s-replace "_" "-" (format "%s" missing-symbol))
-                   missing-symbol)
+                   symbol
+                   (s-replace "_" "-" (format "%s" missing-symbol)))
                   (cljr--insert-missing-import missing-symbol)))
           ((eq type :class) (cljr--insert-missing-import missing-symbol))
-          (t (error (format "Uknown type %s" type))))))
+          (t (error (format "Unknown type %s" type))))))
 
 (defun cljr--symbol-suffix (symbol)
   "java.util.Date => Date

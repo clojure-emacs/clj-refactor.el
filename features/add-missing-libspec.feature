@@ -43,3 +43,11 @@ Feature: resolve-missing; nrepl middleware response mocked
       (:require modular.ring)
       (:import modular.ring.WebrequestHandler)
     """
+
+  Scenario: Require fully qualified without aliasing #309
+    Given I call the add-missing-libspec callback directly with mock data to require schema.test
+    Then I should see:
+    """
+    (ns example.core
+      (:require schema.test))
+    """

@@ -112,6 +112,12 @@
           (list (cljr--make-seeded-hash-table
                  :name 'modular.ring.WebrequestHandler :type :type)))))
 
+(Given "^I call the add-missing-libspec callback directly with mock data to require schema.test"
+       (lambda ()
+         (cljr--add-missing-libspec "schema.test/validate-schemas"
+                                    (list (cljr--make-seeded-hash-table
+                                           :name 'schema.test :type :ns)))))
+
 (Then "^the file should be named \"\\([^\"]+\\)\"$"
       (lambda (file-name-postfix)
         (assert (s-ends-with? file-name-postfix (buffer-file-name)) nil "Expected %S to end with %S" (buffer-file-name) file-name-postfix)))
