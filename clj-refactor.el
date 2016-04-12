@@ -2204,7 +2204,7 @@ form."
                            (cljr--magic-requires-lookup-alias)))
     (let ((short (first aliases)))
       (-when-let (long (cljr--prompt-user-for "Require " (second aliases)))
-        (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short)))
+        (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
                    (or (not (eq :prompt cljr-magic-requires))
                        (not (> (length (second aliases)) 1)) ; already prompted
                        (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
