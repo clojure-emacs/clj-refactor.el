@@ -1430,23 +1430,28 @@ optionally including those that are declared private."
     (re-search-backward def (cljr--point-after 'paredit-backward) :no-error)))
 
 (defun cljr--add-declaration (def)
-  (cljr--goto-declare)
-  (backward-char)
-  (insert " " def)
-  (cljr--post-command-message "Added declaration for %s" def))
+  (when (cljr--already-declared-p def)
+    (user-error "%s is already declared" def))
+  (save-excursion
+    (cljr--goto-declare)
+    (backward-char)
+    (insert " " def)
+    (cljr--post-command-message "Added declaration for %s" def)))
 
 ;;;###autoload
-(defun cljr-add-declaration ()
+(defun cljr-add-declaration (for-thing-at-point-p)
   "Add a declare for the current def near the top of the buffer.
 
+With a prefix add a declaration for the symbol under the cursor instead.
+
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-declaration"
-  (interactive)
-  (save-excursion
-    (-if-let (def (cljr--name-of-current-def))
-        (if (cljr--already-declared-p def)
-            (user-error "%s is already declared" def)
-          (cljr--add-declaration def))
-      (user-error "Not inside a def form."))))
+  (interactive "P")
+  (if for-thing-at-point-p
+      (cljr--add-declaration (cider-symbol-at-point))
+    (save-excursion
+      (-if-let (def (cljr--name-of-current-def))
+          (cljr--add-declaration def)
+        (user-error "Not inside a def form.")))))
 
 ;; ------ extract constant ----------------
 

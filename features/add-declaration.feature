@@ -71,3 +71,21 @@ Feature: Declare current top-level form
       [a b]
       (+ a b))
     """
+
+  Scenario: Declare the thing at point
+    When I insert:
+    """
+    (ns cljr.core)
+
+    (foo :bar)
+    """
+    And I place the cursor before " :bar"
+    And I press "C-u C-! ad"
+    Then I should see:
+    """
+    (ns cljr.core)
+
+    (declare foo)
+
+    (foo :bar)
+    """
