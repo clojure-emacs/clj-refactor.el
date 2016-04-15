@@ -1090,16 +1090,16 @@ word test in it and whether the file lives under the test/ directory."
 (defun cljr--pop-tmp-marker-after-yasnippet-1 (&rest ignore)
   (goto-char cljr--tmp-marker)
   (set-marker cljr--tmp-marker nil)
-  (remove-hook 'yas/after-exit-snippet-hook
+  (remove-hook 'yas-after-exit-snippet-hook
                'cljr--pop-tmp-marker-after-yasnippet-1 :local))
 
 (defun cljr--pop-tmp-marker-after-yasnippet ()
-  (add-hook 'yas/after-exit-snippet-hook
+  (add-hook 'yas-after-exit-snippet-hook
             'cljr--pop-tmp-marker-after-yasnippet-1 nil :local))
 
 (defun cljr--maybe-eval-ns-form-and-remove-hook ()
   (cljr--maybe-eval-ns-form)
-  (remove-hook 'yas/after-exit-snippet-hook
+  (remove-hook 'yas-after-exit-snippet-hook
                'cljr--maybe-eval-ns-form-and-remove-hook :local))
 
 (defun cljr--maybe-sort-ns ()
@@ -1110,12 +1110,12 @@ word test in it and whether the file lives under the test/ directory."
 
 (defun cljr--sort-and-remove-hook (&rest ignore)
   (cljr--maybe-sort-ns)
-  (remove-hook 'yas/after-exit-snippet-hook
+  (remove-hook 'yas-after-exit-snippet-hook
                'cljr--sort-and-remove-hook :local))
 
 (defun cljr--add-yas-ns-updated-hook ()
-  (add-hook 'yas/after-exit-snippet-hook 'cljr--sort-and-remove-hook nil :local)
-  (add-hook 'yas/after-exit-snippet-hook
+  (add-hook 'yas-after-exit-snippet-hook 'cljr--sort-and-remove-hook nil :local)
+  (add-hook 'yas-after-exit-snippet-hook
             'cljr--maybe-eval-ns-form-and-remove-hook nil :local))
 
 ;;;###autoload
