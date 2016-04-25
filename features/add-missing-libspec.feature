@@ -51,3 +51,11 @@ Feature: resolve-missing; nrepl middleware response mocked
     (ns example.core
       (:require schema.test))
     """
+
+ Scenario: Require schema
+   Given I call the add-missing-libspec callback directly with mock data to require a schema
+   Then I should see:
+   """
+   (ns example.core
+     (:require [my.schemas :refer [CustomerId]]))
+   """

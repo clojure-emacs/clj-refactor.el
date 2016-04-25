@@ -2969,7 +2969,7 @@ split => ''"
          (s-join "." (butlast (s-split "\\." symbol))))
         (t "")))
 
-(defun cljr--insert-missing-require (symbol missing-symbol)
+(defun cljr--insert-missing-require (symbol missing-symbol type)
   "Require MISSING-SYMBOL.
 
 Inspect SYMBOL, the thing at point, to find out whether we have
@@ -2980,8 +2980,7 @@ to create an alias or refer."
            (alias? (cljr--qualified-symbol-p symbol)))
       (cond
        ;;  defrecord / deftype where the package must be required
-       ((and (s-contains-p "." missing)
-             (s-uppercase? (s-left 1 (cljr--symbol-suffix symbol))))
+       ((eq type :type)
         (cljr--insert-libspec-verbosely (cljr--symbol-prefix missing)))
        ;; Fully qualified symbol
        ((and (cljr--qualified-symbol-p symbol)
@@ -2997,7 +2996,7 @@ to create an alias or refer."
   (let* ((candidate (cljr--narrow-candidates candidates symbol))
          (missing-symbol (gethash :name candidate))
          (type (gethash :type candidate)))
-    (cond ((eq type :ns) (cljr--insert-missing-require symbol missing-symbol))
+    (cond ((eq type :ns) (cljr--insert-missing-require symbol missing-symbol type))
           ((eq type :type)
            ;; We need to both require the ns, to trigger compilation,
            ;; and then import the java class
@@ -3006,7 +3005,7 @@ to create an alias or refer."
            ;; will prefer - over _ when naming namespaces :(
            (progn (cljr--insert-missing-require
                    symbol
-                   (s-replace "_" "-" (format "%s" missing-symbol)))
+                   (s-replace "_" "-" (format "%s" missing-symbol)) type)
                   (cljr--insert-missing-import missing-symbol)))
           ((eq type :class) (cljr--insert-missing-import missing-symbol))
           (t (error (format "Unknown type %s" type))))))
