@@ -221,6 +221,15 @@ won't run if there is a broken namespace in the project."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-libspec-whitelist
+  '("^cljsns" "^slingshot.test" "^monger.joda-time" "^monger.json")
+  "List of regexes to match against libspec names which shouldn't be pruned.
+
+This is useful when `clean-ns' should leave a libspec alone even
+if it appears to be unused."
+  :group 'cljr
+  :type '(repeat string))
+
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
 (defvar cljr--add-require-snippet
@@ -2922,6 +2931,7 @@ removed."
     (-when-let (new-ns (cljr--call-middleware-sync
                         (cljr--create-msg "clean-ns"
                                           "path" path
+                                          "libspec-whitelist" cljr-libspec-whitelist
                                           "prune-ns-form" (if no-prune? "false"
                                                             "true"))
                         "ns"))
