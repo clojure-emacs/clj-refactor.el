@@ -8,7 +8,7 @@
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;; Version: 2.3.0-SNAPSHOT
 ;; Keywords: convenience, clojure, cider
-;; Package-Requires: ((emacs "24.4") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (cider "0.11.0") (edn "1.1.2") (inflections "2.3") (hydra "0.13.2"))
+;; Package-Requires: ((emacs "24.4") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.4.0") (cider "0.11.0") (edn "1.1.2") (inflections "2.3") (hydra "0.13.2"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -184,12 +184,6 @@ won't run if there is a broken namespace in the project."
   :group 'cljr
   :type 'boolean)
 
-(defcustom cljr-thread-all-but-last nil
-  "When true cljr-thread-first-all and cljr-thread-last-all don't thread
-   the last expression."
-  :group 'cljr
-  :type 'boolean)
-
 (defcustom cljr-midje-test-declaration "[midje.sweet :as midje]"
   "The require form to use when midje is in use."
   :group 'cljr
@@ -348,12 +342,12 @@ Otherwise open the file and do the changes non-interactively."
     ("sc" . (cljr-show-changelog "Show the project's changelog" ?c ("cljr")))
     ("sp" . (cljr-sort-project-dependencies "Sort project dependencies" ?S ("project")))
     ("sr" . (cljr-stop-referring "Stop referring" ?t ("ns")))
-    ("tf" . (cljr-thread-first-all "Thread first all" ?f ("code")))
-    ("th" . (cljr-thread "Thread" ?T ("code")))
-    ("tl" . (cljr-thread-last-all "Thread last all" ?L ("code")))
-    ("ua" . (cljr-unwind-all "Unwind all" ?U ("code")))
+    ("tf" . (clojure-thread-first-all "Thread first all" ?f ("code")))
+    ("th" . (clojure-thread "Thread" ?T ("code")))
+    ("tl" . (clojure-thread-last-all "Thread last all" ?L ("code")))
+    ("ua" . (clojure-unwind-all "Unwind all" ?U ("code")))
     ("up" . (cljr-update-project-dependencies "Update project dependencies" ?U ("project")))
-    ("uw" . (cljr-unwind "Unwind" ?w ("code")))
+    ("uw" . (clojure-unwind "Unwind" ?w ("code")))
     ("ad" . (cljr-add-declaration "Add declaration" ?d ("toplevel-form")))
     ("?" . (cljr-describe-refactoring "Describe refactoring" ?d ("cljr")))
     ("hh" . (hydra-cljr-help-menu/body "Parent menu for hydra menus" ?h ("hydra")))
@@ -424,9 +418,9 @@ _ua_: Unwind all                                   _uw_: Unwind
   ("il" cljr-introduce-let) ("is" cljr-inline-symbol)
   ("ml" cljr-move-to-let) ("pf" cljr-promote-function)
   ("rl" cljr-remove-let) ("rs" cljr-rename-symbol)
-  ("tf" cljr-thread-first-all) ("th" cljr-thread)
-  ("tl" cljr-thread-last-all) ("ua" cljr-unwind-all)
-  ("uw" cljr-unwind) ("q" nil "quit"))
+  ("tf" clojure-thread-first-all) ("th" clojure-thread)
+  ("tl" clojure-thread-last-all) ("ua" clojure-unwind-all)
+  ("uw" clojure-unwind) ("q" nil "quit"))
 
 (defhydra hydra-cljr-project-menu (:color pink :hint nil)
   "
@@ -1530,53 +1524,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-def"
   (interactive)
   (cljr--extract-def-at-point))
 
-;; ------ threading and unwinding -----------
-
-(defun cljr--unwind-first ()
-  (paredit-forward)
-  (save-excursion
-    (let ((contents (cljr--delete-and-extract-sexp)))
-      (when (looking-at " *\n")
-        (join-line -1))
-      (cljr--ensure-parens-around-function-names)
-      (paredit-forward-down)
-      (paredit-forward)
-      (insert contents)))
-  (forward-char))
-
-(defun cljr--ensure-parens-around-function-names ()
-  (unless (looking-at "[\n\r\t ]?(")
-    (skip-syntax-forward " ")
-    (paredit-wrap-round)
-    (paredit-backward-up)))
-
-(defun cljr--unwind-last ()
-  (paredit-forward)
-  (save-excursion
-    (let ((contents (cljr--delete-and-extract-sexp)))
-      (when (looking-at " *\n")
-        (join-line -1))
-      (cljr--ensure-parens-around-function-names)
-      (paredit-forward)
-      (paredit-backward-down)
-      (insert contents)))
-  (forward-char))
-
-(defun cljr--nothing-more-to-unwind ()
-  (save-excursion
-    (let ((beg (point)))
-      (paredit-forward)
-      (paredit-backward-down)
-      (paredit-backward) ;; the last sexp
-      (paredit-backward) ;; the threading macro
-      (paredit-backward) ;; and the paren
-      (= beg (point)))))
-
-(defun cljr--pop-out-of-threading ()
-  (paredit-forward-down)
-  (paredit-forward)
-  (paredit-raise-sexp))
-
 (defun cljr--goto-thread ()
   (while (not (or (cljr--top-level-p)
                   (looking-at "\(.*->>?[\n\r\t ]")))
@@ -1610,132 +1557,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-cycle-thread"
       (paredit-forward)
       (insert ">")
       (cljr--reindent-thread)))))
-
-;;;###autoload
-(defun cljr-unwind ()
-  "Unwind thread at point or above point by one level.
-Return nil if there are no more levels to unwind.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-unwind"
-  (interactive)
-  (ignore-errors
-    (forward-char 3))
-  (search-backward-regexp "([^-]*->")
-  (if (cljr--nothing-more-to-unwind)
-      (progn (cljr--pop-out-of-threading)
-             nil)
-    (paredit-forward-down)
-    (cond
-     ((looking-at "[^-]*->[\n\r\t ]")  (cljr--unwind-first))
-     ((looking-at "[^-]*->>[\n\r\t ]") (cljr--unwind-last)))
-    t))
-
-;;;###autoload
-(defun cljr-unwind-all ()
-  "Fully unwind thread at point or above point.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-unwind-all"
-  (interactive)
-  (while (cljr-unwind)
-    t))
-
-(defun cljr--remove-superfluous-parens ()
-  (when (looking-at "([^ )]+)")
-    (paredit-forward-down)
-    (paredit-raise-sexp)))
-
-(defun cljr--thread-first ()
-  (paredit-forward-down)
-  (paredit-forward)
-  (let* ((beg (point))
-         (end (progn (paredit-forward)
-                     (point)))
-         (contents (buffer-substring beg end)))
-    (if (string= contents ")")
-        (progn (message "Nothing more to thread.") nil)
-      (delete-region beg end)
-      (paredit-backward-up)
-      (just-one-space 0)
-      (insert contents)
-      (newline-and-indent)
-      (cljr--remove-superfluous-parens)
-      t)))
-
-(defun cljr--thread-last ()
-  (paredit-forward 2)
-  (paredit-backward-down)
-  (let* ((end (point))
-         (beg (progn (paredit-backward)
-                     (point)))
-         (contents (buffer-substring beg end)))
-    (if (looking-back "(")
-        (progn
-          (message "Nothing more to thread.")
-          nil)
-      (delete-region beg end)
-      (just-one-space 0)
-      (paredit-backward-up)
-      (insert contents)
-      (newline-and-indent)
-      (cljr--remove-superfluous-parens)
-      ;; #255 Fix dangling parens
-      (paredit-backward-up)
-      (paredit-forward)
-      (when (looking-back "^\\s-*)+\\s-*")
-        (join-line))
-      t)))
-
-(defun cljr--thread-guard ()
-  (save-excursion
-    (paredit-forward)
-    (if (looking-at "[\n\r\t ]*(")
-        t
-      (message "Can only thread into lists.")
-      nil)))
-
-;;;###autoload
-(defun cljr-thread ()
-  "Thread by one more level an existing threading macro.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-thread"
-  (interactive)
-  (when (looking-at "(?[^-]*-?>")
-    (goto-char (match-end 0)))
-  (search-backward-regexp "([^-]*->")
-  (paredit-forward-down)
-  (if (not (cljr--thread-guard))
-      nil
-    (cond
-     ((looking-at "[^-]*->[\n\r\t ]")  (cljr--thread-first))
-     ((looking-at "[^-]*->>[\n\r\t ]") (cljr--thread-last)))))
-
-;;;###autoload
-(defun cljr-thread-first-all (but-last)
-  "Fully thread the form at point using ->.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-thread-first-all"
-  (interactive "P")
-  (save-excursion
-    (paredit-wrap-round)
-    (insert "-> "))
-  (while (save-excursion (cljr-thread))
-    t)
-  (when (or but-last cljr-thread-all-but-last)
-    (cljr-unwind)))
-
-;;;###autoload
-(defun cljr-thread-last-all (but-last)
-  "Fully thread the form at point using ->>.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-thread-last-all"
-  (interactive "P")
-  (save-excursion
-    (paredit-wrap-round)
-    (insert "->> "))
-  (while (save-excursion (cljr-thread))
-    t)
-  (when (or but-last cljr-thread-all-but-last)
-    (cljr-unwind)))
 
 ;; ------ let binding ----------
 
@@ -3637,7 +3458,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 (defun cljr--unwind-s (s)
   (if (s-starts-with-p "(->" s)
       (cljr--with-string-content s
-        (cljr-unwind-all)
+        (clojure-unwind-all)
         (buffer-substring (point-min) (point-max)))
     s))
 
@@ -4272,6 +4093,15 @@ If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-
   '(cljr--inject-jack-in-dependencies))
 
 (add-hook 'cider-connected-hook #'cljr--init-middleware)
+
+;; moved to Clojure mode, made obsolete here
+(define-obsolete-variable-alias 'cljr-thread-all-but-last 'clojure-thread-all-but-last "2.3.0-SNAPSHOT")
+
+(define-obsolete-function-alias 'cljr-thread 'clojure-thread "2.3.0-SNAPSHOT")
+(define-obsolete-function-alias 'cljr-thread-first-all 'clojure-thread-first-all "2.3.0-SNAPSHOT")
+(define-obsolete-function-alias 'cljr-thread-last-all 'clojure-thread-last-all "2.3.0-SNAPSHOT")
+(define-obsolete-function-alias 'cljr-unwind 'clojure-unwind "2.3.0-SNAPSHOT")
+(define-obsolete-function-alias 'cljr-unwind-all 'clojure-unwind-all "2.3.0-SNAPSHOT")
 
 ;; ------ minor mode -----------
 ;;;###autoload
