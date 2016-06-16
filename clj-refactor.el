@@ -1735,6 +1735,18 @@ This function only does the actual removal."
   (paredit-forward 2)
   (paredit-splice-sexp-killing-backward))
 
+(defun cljr--maybe-eliminate-let ()
+  "If the nearest containing let binding is empty, remove it."
+  (unless (save-excursion (cljr--get-let-bindings))
+    (while (looking-at-p "\s*\n")
+      (forward-line)
+      (join-line))
+    (when (and (looking-at-p "]")
+               (not (looking-back "\\[")))
+      (join-line))
+    (cljr--eliminate-let)
+    :truthy-return-value))
+
 (defun cljr-remove-let ()
   "Inlines all variables in the let form and removes it.
 
@@ -2376,7 +2388,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
 (defun cljr--highlight-sexp ()
   (cljr--highlight (point) (cljr--point-after 'paredit-forward)))
 
-(defun cljr--promote-fn ()
+(defun cljr--promote-fn (&optional call-site?)
   (save-excursion
     (let* ((locals (save-excursion (paredit-forward-down)
                                    (cljr--call-middleware-to-find-used-locals
@@ -2423,7 +2435,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
       (when (s-present? locals)
         (insert (format "(partial  %s)" locals))
         (backward-char (length (concat " " locals ")"))))
-      (if name
+      (if (and name call-site?)
           (insert name)
         (mc/maybe-multiple-cursors-mode)))))
 
@@ -2457,6 +2469,28 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
           (replace-match (format " %s\\1" replacement))))
       (goto-char fn-start))))
 
+
+(defun cljr--promote-let-bound-fn ()
+  "Promote a function bound in a let.
+
+POINT is assumed to be at the beginning of the function declaration."
+  (paredit-backward)
+  (let ((fn-name (cljr--delete-and-extract-sexp)))
+    (paredit-forward-delete)
+    (paredit-forward-down)
+    (paredit-forward)
+    (insert (format " %s " fn-name))
+    (cljr--goto-fn-definition)
+    (let ((fn (cljr--delete-and-extract-sexp)))
+      (cljr--maybe-eliminate-let)
+      (cljr--goto-toplevel)
+      (cljr--make-room-for-toplevel-form)
+      (insert fn)
+      (paredit-backward)
+      (cljr--promote-fn)
+      (paredit-forward)
+      (cljr--just-one-blank-line))))
+
 ;;;###autoload
 (defun cljr-promote-function (promote-to-defn)
   "Promote a function literal to an fn, or an fn to a defn.
@@ -2479,11 +2513,15 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
        ;; Possibly inside a function.
        (t (cljr--goto-fn-definition)))
       ;; Now promote it.
-      (if (looking-at "#(")
-          (cljr--promote-function-literal)
-        (cljr--promote-fn)))
+      (cond
+       ((looking-at-p "#(") (cljr--promote-function-literal))
+       ((and (save-excursion (paredit-backward-up)
+                             (looking-at-p "\\["))
+             (save-excursion (paredit-backward-up 2) (looking-at-p "(let")))
+        (cljr--promote-let-bound-fn))
+       ((looking-at-p "(fn" (cljr--promote-fn :call-site)))))
     (when current-prefix-arg
-      (cljr--promote-fn))))
+      (cljr--promote-fn :call-site))))
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-promote-function)
 
@@ -3097,16 +3135,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
       (cljr--delete-and-extract-sexp)
       (when (cljr--inside-let-binding-form-p)
         (cljr--delete-and-extract-sexp)
-        (if (save-excursion (cljr--get-let-bindings))
-            (progn
-              (while (looking-at-p "\s*\n")
-                (forward-line)
-                (join-line))
-              (when (looking-at-p "]")
-                ;; we just deleted the last binding in the vector
-                (join-line)))
-          (cljr--eliminate-let))
-        (cljr--indent-defun))
+        (unless (cljr--maybe-eliminate-let)
+          (cljr--indent-defun)))
       (when (looking-at-p "\s*\n")
         (cljr--just-one-blank-line))
       (save-buffer))))
