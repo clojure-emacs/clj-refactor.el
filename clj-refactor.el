@@ -1108,7 +1108,6 @@ word test in it and whether the file lives under the test/ directory."
 (defun cljr--maybe-sort-ns ()
   (when (and cljr-auto-sort-ns (cider-connected-p)
              (cljr--op-supported-p "clean-ns"))
-    (cljr--assert-leiningen-project)
     (cljr--clean-ns nil :no-pruning)))
 
 (defun cljr--sort-and-remove-hook (&rest ignore)
@@ -2808,7 +2807,7 @@ to create an alias or refer."
   (save-excursion
     (cljr--insert-in-ns ":require")
     (let ((missing (format "%s" missing-symbol))
-           (alias? (cljr--qualified-symbol-p symbol)))
+          (alias? (cljr--qualified-symbol-p symbol)))
       (cond
        ;;  defrecord / deftype where the package must be required
        ((eq type :type)
