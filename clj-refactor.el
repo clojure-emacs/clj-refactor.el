@@ -8,7 +8,7 @@
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;; Version: 2.3.0-SNAPSHOT
 ;; Keywords: convenience, clojure, cider
-;; Package-Requires: ((emacs "24.4") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.4.0") (cider "0.11.0") (edn "1.1.2") (inflections "2.3") (hydra "0.13.2"))
+;; Package-Requires: ((emacs "24.4") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "20160604") (cider "0.11.0") (edn "1.1.2") (inflections "2.3") (hydra "0.13.2"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -74,12 +74,6 @@ Any other non-nil value means to add the form without asking."
   :type '(repeat (cons (string :tag "Short alias")
                        (string :tag "Full namespace")))
   :group 'cljr)
-
-(defcustom cljr-use-metadata-for-privacy nil
-  "If nil, `cljr-cycle-privacy' will use (defn- f []).
-If t, it will use (defn ^:private f [])."
-  :group 'cljr
-  :type 'boolean)
 
 (defcustom cljr-project-clean-prompt t
   "If t, `cljr-project-clean' asks before doing anything.
@@ -315,10 +309,9 @@ Otherwise open the file and do the changes non-interactively."
     ("ar" . (cljr-add-require-to-ns "Add require to ns" ?r ("ns")))
     ("as" . (cljr-add-stubs "Add stubs for the interface/protocol at point" ?s ("toplevel-form")))
     ("au" . (cljr-add-use-to-ns "Add use to ns" ?U ("ns")))
-    ("cc" . (cljr-cycle-coll "Cycle coll" ?c ("code")))
-    ("ci" . (cljr-cycle-if "Cycle if" ?I ("code")))
+    ("ci" . (clojure-cycle-if "Cycle if" ?I ("code")))
     ("cn" . (cljr-clean-ns "Clean ns" ?c ("ns")))
-    ("cp" . (cljr-cycle-privacy "Cycle privacy" ?P ("toplevel-form")))
+    ("cp" . (clojure-cycle-privacy "Cycle privacy" ?P ("toplevel-form")))
     ("cs" . (cljr-change-function-signature "Change function signature" ?C ("toplevel-form" "project")))
     ("ct" . (cljr-cycle-thread "Cycle thread" ?t ("code")))
     ("dk" . (cljr-destructure-keys "Destructure keys" ?d ("code")))
@@ -405,22 +398,22 @@ _rm_: Require a macro into the ns                  _sr_: Stop referring
   "
  Code related refactorings
 ------------------------------------------------------------------------------------------------------------------------------------------------------
-_cc_: Cycle coll                                   _ci_: Cycle if                                     _ct_: Cycle thread
+_ci_: Cycle if                                     _ct_: Cycle thread
 _dk_: Destructure keys                             _el_: Expand let                                   _fu_: Find usages
 _il_: Introduce let                                _is_: Inline symbol                                _ml_: Move to let
 _pf_: Promote function                             _rl_: Remove let                                   _rs_: Rename symbol
 _tf_: Thread first all                             _th_: Thread                                       _tl_: Thread last all
 _ua_: Unwind all                                   _uw_: Unwind
 "
-  ("cc" cljr-cycle-coll) ("ci" cljr-cycle-if)
-  ("ct" cljr-cycle-thread) ("dk" cljr-destructure-keys)
-  ("el" cljr-expand-let) ("fu" cljr-find-usages)
-  ("il" cljr-introduce-let) ("is" cljr-inline-symbol)
-  ("ml" cljr-move-to-let) ("pf" cljr-promote-function)
-  ("rl" cljr-remove-let) ("rs" cljr-rename-symbol)
-  ("tf" clojure-thread-first-all) ("th" clojure-thread)
-  ("tl" clojure-thread-last-all) ("ua" clojure-unwind-all)
-  ("uw" clojure-unwind) ("q" nil "quit"))
+  ("ci" clojure-cycle-if) ("ct" cljr-cycle-thread)
+  ("dk" cljr-destructure-keys) ("el" cljr-expand-let)
+  ("fu" cljr-find-usages) ("il" cljr-introduce-let)
+  ("is" cljr-inline-symbol) ("ml" cljr-move-to-let)
+  ("pf" cljr-promote-function) ("rl" cljr-remove-let)
+  ("rs" cljr-rename-symbol) ("tf" clojure-thread-first-all)
+  ("th" clojure-thread) ("tl" clojure-thread-last-all)
+  ("ua" clojure-unwind-all) ("uw" clojure-unwind)
+  ("q" nil "quit"))
 
 (defhydra hydra-cljr-project-menu (:color pink :hint nil)
   "
@@ -447,7 +440,7 @@ _ec_: Extract constant                             _ed_: Extract form as def    
 _fe_: Create function from example                 _is_: Inline symbol                                _mf_: Move form
 _pf_: Promote function                             _rf_: Rename file-or-dir                           _ad_: Add declaration
 "
-  ("as" cljr-add-stubs) ("cp" cljr-cycle-privacy)
+  ("as" cljr-add-stubs) ("cp" clojure-cycle-privacy)
   ("cs" cljr-change-function-signature) ("ec" cljr-extract-constant)
   ("ed" cljr-extract-def) ("ef" cljr-extract-function)
   ("fe" cljr-create-fn-from-example) ("is" cljr-inline-symbol)
@@ -1795,101 +1788,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-destructure-keys
 
 ;; ------ Cycling ----------
 
-;;;###autoload
-(defun cljr-cycle-privacy ()
-  "Make public the current private def, or vice-versa.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-cycle-privacy"
-  (interactive)
-  (save-excursion
-    (ignore-errors (forward-char 7))
-    (search-backward-regexp "\\((defn-? \\)\\|\\((def \\)")
-    (cond
-     ((and cljr-use-metadata-for-privacy
-           (looking-at "(defn ^:private"))
-      (forward-char 5)
-      (delete-char 10))
-     ((and (not cljr-use-metadata-for-privacy)
-           (looking-at "(defn-"))
-      (forward-char 5)
-      (delete-char 1))
-     ((and cljr-use-metadata-for-privacy
-           (looking-at "(defn"))
-      (forward-char 5)
-      (insert " ^:private"))
-     ((and (not cljr-use-metadata-for-privacy)
-           (looking-at "(defn"))
-      (forward-char 5)
-      (insert "-"))
-     ((looking-at "(def ^:private")
-      (forward-char 5)
-      (delete-char 10))
-     ((looking-at "(def ")
-      (forward-char 5)
-      (insert "^:private ")))))
-
-;;;###autoload
-(defun cljr-cycle-coll ()
-  "Convert the coll at (point) from (x) -> {x} -> [x] -> -> #{x} -> (x) recur
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-cycle-coll"
-  (interactive)
-  (save-excursion
-    (while (and
-            (> (point) 1)
-            (not (eq (string-to-char "(") (char-after)))
-            (not (string= "#{" (buffer-substring (point) (+ 2 (point)))))
-            (not (eq (string-to-char "{") (char-after)))
-            (not (eq (string-to-char "[") (char-after))))
-      (backward-char))
-
-    (cond
-     ((eq (string-to-char "(") (char-after))
-      (insert "{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
-
-     ((eq (string-to-char "#") (char-after))
-      (delete-char 1)
-      (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")"))
-
-     ((eq (string-to-char "{") (char-after))
-      (if (not (equal (string-to-char "#") (char-before)))
-          (insert "[" (substring (cljr--delete-and-extract-sexp) 1 -1) "]")
-        (backward-char)
-        (delete-char 1)
-        (insert "(" (substring (cljr--delete-and-extract-sexp) 1 -1) ")")))
-
-     ((eq (string-to-char "[") (char-after))
-      (insert "#{" (substring (cljr--delete-and-extract-sexp) 1 -1) "}"))
-
-     ((equal 1 (point))
-      (error "Beginning of file reached, this was probably a mistake.")))))
-
 (defun cljr--goto-if ()
   (while (not (or (cljr--top-level-p)
                   (looking-at "\\((if \\)\\|\\((if-not \\)")))
     (paredit-backward-up)))
-
-;;;###autoload
-(defun cljr-cycle-if ()
-  "Change a surrounding if to if-not, or vice-versa.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-cycle-if"
-  (interactive)
-  (save-excursion
-    (cljr--goto-if)
-    (cond
-     ((looking-at "(if-not")
-      (forward-char 3)
-      (delete-char 4)
-      (paredit-forward)
-      (paredit-forward)
-      (transpose-sexps 1))
-     ((looking-at "(if")
-      (forward-char 3)
-      (insert "-not")
-      (paredit-forward)
-      (paredit-forward)
-      (transpose-sexps 1)))))
 
 ;;;###autoload
 (defun cljr-raise-sexp (&optional argument)
@@ -2401,7 +2303,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
         (insert "de")
         (paredit-forward)
         (when cljr-favor-private-functions
-          (if cljr-use-metadata-for-privacy
+          (if clojure-use-metadata-for-privacy
               (insert " ^:private")
             (insert "-")))
         (when (not namedp)
@@ -2986,7 +2888,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
       "(defn "
     (s-concat "(defn"
               (if cljr-favor-private-functions
-                  (if cljr-use-metadata-for-privacy
+                  (if clojure-use-metadata-for-privacy
                       " ^:private "
                     "- ")
                 " "))))
@@ -4095,12 +3997,16 @@ If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-
 
 ;; moved to Clojure mode, made obsolete here
 (define-obsolete-variable-alias 'cljr-thread-all-but-last 'clojure-thread-all-but-last "2.3.0-SNAPSHOT")
+(define-obsolete-variable-alias 'cljr-use-metadata-for-privacy 'clojure-use-metadata-for-privacy "2.3.0-SNAPSHOT")
 
 (define-obsolete-function-alias 'cljr-thread 'clojure-thread "2.3.0-SNAPSHOT")
 (define-obsolete-function-alias 'cljr-thread-first-all 'clojure-thread-first-all "2.3.0-SNAPSHOT")
 (define-obsolete-function-alias 'cljr-thread-last-all 'clojure-thread-last-all "2.3.0-SNAPSHOT")
 (define-obsolete-function-alias 'cljr-unwind 'clojure-unwind "2.3.0-SNAPSHOT")
 (define-obsolete-function-alias 'cljr-unwind-all 'clojure-unwind-all "2.3.0-SNAPSHOT")
+(define-obsolete-function-alias 'cljr-cycle-privacy 'clojure-cycle-privacy "2.3.0-SNAPSHOT")
+(define-obsolete-function-alias 'cljr-cycle-if 'clojure-cycle-if "2.3.0-SNAPSHOT")
+(make-obsolete 'cljr-cycle-coll "reworked into convert collection to list, quoted list, map, vector, set in Clojure mode." "2.3.0-SNAPSHOT")
 
 ;; ------ minor mode -----------
 ;;;###autoload

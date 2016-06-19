@@ -13,6 +13,7 @@
 - When inserting ns form to blank clojure-ish file, check if cider is available and connected for better detecting the expected namespace.
 - Remove the warning about missing nREPl ops.
 - Remove threading macro related features because they are moved to Clojure mode. However, the usual mnemonics for these features still work only they reference the Clojure mode implementations.
+- Remove cycle privacy, cycle if and cycle collection type features. They are moved to Clojure mode. The usual mnemonics for cycle privacy and cycle if features still work only they refer the Clojure mode implementations. Cycle collection type got reworked into convert collection to list, quoted list, map, vector and set. *Cycle* collection type is no longer supported.
 
 ### Bugs fixed
 
