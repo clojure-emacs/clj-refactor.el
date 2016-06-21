@@ -1028,8 +1028,8 @@ word test in it and whether the file lives under the test/ directory."
       (s-ends-with-p ".cljc" file-name)))
 
 (defun cljr--clojure-filename-p (file-name)
-  (or (s-ends-with-p ".clj" (buffer-file-name))
-      (s-ends-with-p ".cljc" (buffer-file-name))))
+  (or (s-ends-with-p ".clj" file-name)
+      (s-ends-with-p ".cljc" file-name)))
 
 (defun cljr--add-ns-if-blank-clj-file ()
   (ignore-errors
