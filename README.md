@@ -122,7 +122,7 @@ Run the tests with:
 
 Before submitting a patch, or a pull request, make sure all tests are
 passing and that your patch is in line with the [contribution
-guidelines](CONTRIBUTING.md).
+guidelines](.github/CONTRIBUTING.md).
 
 Thanks to [everyone](https://github.com/clojure-emacs/clj-refactor.el/graphs/contributors) who's contributed so far!
 
