@@ -1227,7 +1227,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
                       (let ((beg (point)))
                         (paredit-forward)
                         (buffer-substring-no-properties beg (point)))))))
-      (unless (re-search-forward " :refer " bound t)
+      (unless (re-search-forward ":refer" bound t)
         (user-error "No :refer clause found."))
       (if (looking-at "\s*:all")
           (progn
@@ -1243,7 +1243,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
           (paredit-backward)
           (cljr--delete-and-extract-sexp)
           (cljr--delete-and-extract-sexp)
-          (just-one-space 0)
+          (if (looking-back "\\w+ ")
+              (just-one-space 0)
+            (join-line))
           (cljr--add-ns-prefix (or alias ns) symbols))))))
 
 (defun cljr--add-ns-prefix (ns symbols)
