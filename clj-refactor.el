@@ -504,8 +504,10 @@ _s_: Refactor related functions
     (delete-region beg end)
     contents))
 
-(defun cljr--extract-sexp-as-list ()
-  "Returns list of strings representing the elements of the SEXP at point."
+(defun cljr--extract-sexp-as-list (&optional with-whitespace)
+  "Returns list of strings representing the elements of the SEXP at point.
+
+If optional `with-whitespace' is T sexp elements are not trimmed."
   (save-excursion
     (let* ((beg (progn (paredit-backward-up)
                        (forward-char)
@@ -514,7 +516,8 @@ _s_: Refactor related functions
            sexp-elems)
       (while (/= (point) end)
         (paredit-forward)
-        (push (s-trim (buffer-substring-no-properties beg (point))) sexp-elems)
+        (let ((sexp-elem (buffer-substring-no-properties beg (point))))
+          (push (if with-whitespace sexp-elem (s-trim sexp-elem)) sexp-elems))
         (setq beg (point)))
       (nreverse sexp-elems))))
 
@@ -1072,6 +1075,12 @@ word test in it and whether the file lives under the test/ directory."
         (paredit-backward-down)
         (buffer-substring-no-properties beg (point))))))
 
+(defun cljr--get-ns-statements-as-list (statement-type)
+  (save-excursion
+    (cljr--goto-ns)
+    (when (cljr--search-forward-within-sexp (concat "(" statement-type))
+      (cljr--extract-sexp-as-list t))))
+
 (defun cljr--extract-sexp-content (sexp)
   (replace-regexp-in-string "\\[?(?]?)?" "" sexp))
 
@@ -1292,22 +1301,39 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
                     (join-line)
                     (delete-char 1))))
          (forms (cljr--cleanup-whitespace forms))
-         (requires (cljr--get-ns-statements ":require")))
-    (let (ns names)
+         (requires (rest (cljr--get-ns-statements-as-list ":require"))))
+    (let (ns names target-ns-alias
+             (target-ns-regexp-template "[\(\[]\\s-*%s")
+             (target-ns-alias-template ":as\\s-*\n*\\s-*\\(.*\\)\\_>\\s-*\n*\\s-*[\]\)]"))
       (save-window-excursion
         (ido-find-file)
+        (setq ns (cljr--current-namespace)
+              names (cljr--name-of-defns forms)
+              target-ns-alias (-some->>
+                               (--filter (s-matches-p (format target-ns-regexp-template ns) it) requires)
+                               (car)
+                               (s-slice-at ":as")
+                               (-last-item)
+                               (replace-regexp-in-string (format target-ns-alias-template ns) "\\1")
+                               (s-trim)))
         (goto-char (point-max))
-        (cljr--insert-with-proper-whitespace forms)
+        (cljr--insert-with-proper-whitespace
+         (cljr--remove-references-of-target-ns forms ns target-ns-alias))
         (when requires
           (cljr--insert-in-ns ":require")
-          (insert requires)
+          (->> (--remove (s-matches-p (format target-ns-regexp-template ns) it) requires)
+               (apply #'concat)
+               (s-trim)
+               (insert))
           (cljr-clean-ns))
-        (save-buffer)
-        (setq ns (cljr--current-namespace)
-              names (cljr--name-of-defns forms)))
+        (save-buffer))
       (cljr--update-ns-after-moving-fns ns (nreverse names))
       (cljr-clean-ns)))
   (cljr--just-one-blank-line))
+
+(defun cljr--remove-references-of-target-ns (forms ns alias)
+  (->> (replace-regexp-in-string (format "\\_<%s/" alias) "" forms)
+       (replace-regexp-in-string (format "\\_<%s/" ns) "")))
 
 (defun cljr--update-ns-after-moving-fns (ns &optional refer-names)
   "Updates the current ns declaration after moving defn forms out of the
