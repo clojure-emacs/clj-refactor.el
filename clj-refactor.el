@@ -1050,7 +1050,7 @@ word test in it and whether the file lives under the test/ directory."
 
 (defun cljr--maybe-replace-dash-in-file-name (file-name)
   (if (and (cljr--dash-in-file-name-p file-name)
-           (yes-or-no-p "The file name contains dashes. Replace with underscores?"))
+           (yes-or-no-p "The file name contains dashes. Replace with underscores? "))
       (concat (file-name-directory file-name)
               (s-replace "-" "_" (file-name-nondirectory file-name)))
     file-name))
