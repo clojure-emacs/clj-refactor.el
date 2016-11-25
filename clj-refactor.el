@@ -40,6 +40,7 @@
 (require 'sgml-mode)
 (require 'inflections)
 (require 'hydra)
+(require 'cl-lib)
 
 (defcustom cljr-add-ns-to-blank-clj-files t
   "If t, automatically add a ns form to new .clj files."
@@ -287,7 +288,7 @@ Otherwise open the file and do the changes non-interactively."
        (not (bound-and-true-p evil-mode))))
 
 (defun cljr--fix-special-modifier-combinations (key)
-  (case key
+  (cl-case key
     ("C-s-i" "s-TAB")
     ("C-s-m" "s-RET")
     (otherwise key)))
@@ -714,7 +715,7 @@ at the opening parentheses of an anonymous function."
   the kv pairs KVS.
 
 All config settings are included in the created msg."
-  (assert (cljr--evenp (length kvs)) nil "Can't create msg to send to the middleware.\
+  (cl-assert (cljr--evenp (length kvs)) nil "Can't create msg to send to the middleware.\
   Received an uneven number of kv pairs: %s " kvs)
   (apply #'list "op" op
          "prefix-rewriting"
@@ -1301,7 +1302,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
                     (join-line)
                     (delete-char 1))))
          (forms (cljr--cleanup-whitespace forms))
-         (requires (rest (cljr--get-ns-statements-as-list ":require"))))
+         (requires (cl-rest (cljr--get-ns-statements-as-list ":require"))))
     (let (ns names target-ns-alias
              (target-ns-regexp-template "[\(\[]\\s-*%s")
              (target-ns-alias-template ":as\\s-*\n*\\s-*\\(.*\\)\\_>\\s-*\n*\\s-*[\]\)]"))
@@ -1879,7 +1880,7 @@ Return the value of point if we moved."
   "Is point in a reader conditional branch for FEATURE?
 
 FEATURE is either :clj or :cljs."
-  (assert (or (eq feature :clj) (eq feature :cljs)) nil
+  (cl-assert (or (eq feature :clj) (eq feature :cljs)) nil
           "FEATURE has to be either :clj or :cljs.  Received: %s" feature)
   (save-excursion
     (let ((start (point))
@@ -1964,11 +1965,11 @@ form."
                            (not (cljr--in-keyword-sans-alias-p))
                            (clojure-find-ns)
                            (cljr--magic-requires-lookup-alias)))
-    (let ((short (first aliases)))
-      (-when-let (long (cljr--prompt-user-for "Require " (second aliases)))
+    (let ((short (cl-first aliases)))
+      (-when-let (long (cljr--prompt-user-for "Require " (cl-second aliases)))
         (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
                    (or (not (eq :prompt cljr-magic-requires))
-                       (not (> (length (second aliases)) 1)) ; already prompted
+                       (not (> (length (cl-second aliases)) 1)) ; already prompted
                        (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
           (save-excursion
             (cljr--insert-in-ns ":require")
@@ -2011,7 +2012,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
     (cljr--post-command-message "Project clean done.")))
 
 (defun cljr--extract-dependency-name ()
-  (assert (cljr--looking-at-dependency-vector-p))
+  (cl-assert (cljr--looking-at-dependency-vector-p))
   (forward-char)
   (prog1
       (buffer-substring-no-properties
@@ -2213,7 +2214,7 @@ If CHOICES is provided provide a completed read among the
 possible choices. If the choice is trivial, return it."
   (if choices
       (if (= (length choices) 1)
-          (first choices)
+          (cl-first choices)
         (completing-read prompt choices))
     (read-from-minibuffer prompt)))
 
@@ -2501,7 +2502,7 @@ root."
              (occurrence-id (format "%s%s"
                                     (gethash :file occurrence)
                                     (gethash :line-beg occurrence))))
-        (incf cjr--occurrence-count)
+        (cl-incf cjr--occurrence-count)
         (unless (member occurrence-id cljr--occurrence-ids)
           (setq cljr--occurrence-ids
                 (cons occurrence-id cljr--occurrence-ids))
@@ -2821,7 +2822,7 @@ Date. -> Date
 
 We can't simply call `nrepl-dict-get' because the error value
 itself might be `nil'."
-  (assert (nrepl-dict-p response) nil
+  (cl-assert (nrepl-dict-p response) nil
           "Response from middleware isn't an nrepl-dict!")
   (-if-let (err (nrepl-dict-get response "err"))
       (error (format "Error in nrepl-refactor: %s" err))
@@ -2888,7 +2889,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
   (with-temp-buffer
     (insert string)
     (goto-char (point-min))
-    (assert (cljr--looking-at-dependency-vector-p) nil
+    (cl-assert (cljr--looking-at-dependency-vector-p) nil
             (format
              (s-concat "Expected dependency vector of type "
                        "[org.clojure \"1.7.0\"], but got '%s'")
@@ -3060,7 +3061,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
 (defun cljr--inline-fn-at-call-site (def call-site)
   "Point is at a call site, where the sexp call-site has just
   been extracted."
-  (let ((args (rest call-site))
+  (let ((args (cl-rest call-site))
         (params (with-temp-buffer
                   (insert def)
                   (goto-char (point-min))
@@ -3250,20 +3251,20 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                         (paredit-backward-up 2)
                         (forward-char)
                         (cljr--extract-sexp))))
-         (args (rest (cond
-                      ((or (string= parent-fn "->")
-                           (string= parent-fn "->>"))
-                       (save-excursion
-                         (paredit-backward-up)
-                         (cljr--unwind-and-extract-this-as-list fn-name)))
+         (args (cl-rest (cond
+                         ((or (string= parent-fn "->")
+                              (string= parent-fn "->>"))
+                          (save-excursion
+                            (paredit-backward-up)
+                            (cljr--unwind-and-extract-this-as-list fn-name)))
 
-                      ((or (string= fn-name "->")
-                           (string= fn-name "->>"))
-                       (save-excursion
-                         (setq fn-name symbol-at-point)
-                         (cljr--unwind-and-extract-this-as-list fn-name)))
+                         ((or (string= fn-name "->")
+                              (string= fn-name "->>"))
+                          (save-excursion
+                            (setq fn-name symbol-at-point)
+                            (cljr--unwind-and-extract-this-as-list fn-name)))
 
-                      (:else sexp-forms*))))
+                         (:else sexp-forms*))))
          (prefix (cljr--symbol-prefix symbol-at-point))
          (path (when (s-present? prefix)
                  (cljr--ns-path (cljr--resolve-alias prefix)))))
@@ -3305,7 +3306,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
   (cljr--insert-example-fn (car args)
                            (--map
                             (-when-let (name (cljr--guess-param-name it))
-                              (singularize-string name))
+                              (inflection-singularize-string name))
                             (cdr args))
                            path))
 
@@ -3314,7 +3315,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                            (cons "index"
                                  (--map
                                   (-when-let (name (cljr--guess-param-name it))
-                                    (singularize-string name))
+                                    (inflection-singularize-string name))
                                   (cdr args)))
                            path))
 
@@ -3339,7 +3340,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 (defun cljr--create-fn-from-sort (args path)
   (let* ((fn-name (cider-symbol-at-point))
          (param-name (-when-let (coll-name (cljr--guess-param-name (-last-item args)))
-                       (singularize-string coll-name))))
+                       (inflection-singularize-string coll-name))))
     (cljr--insert-example-fn fn-name
                              (if param-name
                                  (list (concat param-name "-a")
@@ -3355,7 +3356,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                          (when (cljr--keywordp (car args))
                            (s-chop-prefix ":" (car args)))
                        (-when-let (coll-name (cljr--guess-param-name (-last-item args)))
-                         (singularize-string coll-name)))))
+                         (inflection-singularize-string coll-name)))))
     (cljr--insert-example-fn fn-name
                              (if making-comparator?
                                  (if param-name
@@ -3372,7 +3373,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                   (cljr--guess-param-name (nth 1 args)))
              "acc")
          (-when-let (name (cljr--guess-param-name (-last-item args)))
-           (singularize-string name)))
+           (inflection-singularize-string name)))
    path))
 
 (defun cljr--unwind-and-extract-this-as-list (name)
@@ -3449,10 +3450,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
      ((string= "get" fn-call)
       (cljr--find-param-name-from-get prepped-form))
      ((string= "repeat" fn-call)
-      (pluralize-string
+      (inflection-pluralize-string
        (cljr--guess-param-name (cljr--last-arg-s prepped-form))))
      ((member fn-call cljr--fns-that-get-item-out-of-coll)
-      (singularize-string
+      (inflection-singularize-string
        (cljr--guess-param-name (cljr--first-arg-s prepped-form)))))))
 
 (defvar cljr--semantic-noops--first-position
