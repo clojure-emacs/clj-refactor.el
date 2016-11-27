@@ -40,7 +40,6 @@
 (require 'sgml-mode)
 (require 'inflections)
 (require 'hydra)
-(require 'cl-lib)
 
 (defcustom cljr-add-ns-to-blank-clj-files t
   "If t, automatically add a ns form to new .clj files."
@@ -1656,6 +1655,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-introduce-let"
      (define-key map (kbd key) command)
      map) t))
 
+(defun cljr--paredit-convolute-no-advice ()
+  (if (not (advice-member-p #'clojure--replace-let-bindings-and-indent 'paredit-convolute-sexp))
+      (paredit-convolute-sexp)
+    (advice-remove 'paredit-convolute-sexp #'clojure--replace-let-bindings-and-indent)
+    (paredit-convolute-sexp)
+    (advice-add 'paredit-convolute-sexp :after #'clojure--replace-let-bindings-and-indent)))
+
 ;;;###autoload
 (defun cljr-expand-let ()
   "Expand the let form above point by one level.
@@ -1667,7 +1673,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-expand-let"
   (paredit-forward-down 2)
   (paredit-forward-up)
   (cljr--skip-past-whitespace-and-comments)
-  (paredit-convolute-sexp)
+  (cljr--paredit-convolute-no-advice)
   (-each (cljr--get-let-bindings) 'cljr--replace-sexp-with-binding)
   (cljr--one-shot-keybinding "l" 'cljr-expand-let))
 
