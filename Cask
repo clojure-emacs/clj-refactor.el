@@ -8,4 +8,5 @@
   (depends-on "espuds")
   (depends-on "cider")
   (depends-on "edn")
-  (depends-on "clojure-mode"))
+  (depends-on "clojure-mode")
+  (depends-on "cl-lib"))
