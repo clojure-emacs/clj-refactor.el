@@ -1030,9 +1030,9 @@ word test in it and whether the file lives under the test/ directory."
       (s-ends-with-p ".cljx" file-name)
       (s-ends-with-p ".cljc" file-name)))
 
-(defun cljr--clojure-filename-p (file-name)
-  (or (s-ends-with-p ".clj" file-name)
-      (s-ends-with-p ".cljc" file-name)))
+(defun cljr--clojure-filename-p (&optional file-name)
+  (or (s-ends-with-p ".clj" (or file-name (buffer-file-name)))
+      (s-ends-with-p ".cljc" (or file-name (buffer-file-name)))))
 
 (defun cljr--add-ns-if-blank-clj-file ()
   (ignore-errors
@@ -1092,7 +1092,7 @@ word test in it and whether the file lives under the test/ directory."
 
 (defvar cljr--tmp-marker (make-marker))
 
-(defun cljr--pop-tmp-marker-after-yasnippet-1 (&rest ignore)
+(defun cljr--pop-tmp-marker-after-yasnippet-1 (&rest _)
   (goto-char cljr--tmp-marker)
   (set-marker cljr--tmp-marker nil)
   (remove-hook 'yas-after-exit-snippet-hook
@@ -1112,7 +1112,7 @@ word test in it and whether the file lives under the test/ directory."
              (cljr--op-supported-p "clean-ns"))
     (cljr--clean-ns nil :no-pruning)))
 
-(defun cljr--sort-and-remove-hook (&rest ignore)
+(defun cljr--sort-and-remove-hook (&rest _)
   (cljr--maybe-sort-ns)
   (remove-hook 'yas-after-exit-snippet-hook
                'cljr--sort-and-remove-hook :local))
@@ -1340,9 +1340,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
   current file and to NS.  Optionally referring the names in REFER-NAMES."
   (save-excursion
     (cljr--goto-ns)
-    (paredit-forward)
-    (let* ((end-of-ns-form (prog1 (point) (paredit-backward)))
-           (ns-present-p (cljr--search-forward-within-sexp ns :save-excursion))
+    (let* ((ns-present-p (cljr--search-forward-within-sexp ns :save-excursion))
            (refer-present-p (cljr--search-forward-within-sexp ":refer" :save-excursion))
            (refer-all-p (cljr--search-forward-within-sexp ":refer :all" :save-excursion))
            (require-present-p (cljr--search-forward-within-sexp
@@ -1889,8 +1887,7 @@ FEATURE is either :clj or :cljs."
   (cl-assert (or (eq feature :clj) (eq feature :cljs)) nil
           "FEATURE has to be either :clj or :cljs.  Received: %s" feature)
   (save-excursion
-    (let ((start (point))
-          (start-reader-conditional
+    (let ((start-reader-conditional
            (cljr--point-after 'cljr--goto-reader-conditional))
           (other (if (eq feature :clj) ":cljs\\b" ":clj\\b"))
           found)
@@ -2258,12 +2255,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
   (unless (cljr--looking-at-dependency-vector-p)
     (user-error "Place cursor in front of dependency vector to update."))
   (save-excursion
-    (let (lib-name current-version)
+    (let (lib-name)
       (paredit-forward-down)
       (setq lib-name (cljr--extract-sexp))
       (paredit-forward)
       (skip-syntax-forward " ")
-      (setq current-version (cljr--extract-sexp))
       (let ((version (->> (cljr--get-versions-from-middleware lib-name)
                           (cljr--prompt-user-for (concat lib-name " version: ")))))
         (cljr--delete-sexp)
@@ -2419,7 +2415,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
       (if (looking-at "#(")
           (cljr--promote-function-literal)
         (cljr--promote-fn)))
-    (when current-prefix-arg
+    (when promote-to-defn
       (cljr--promote-fn))))
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-promote-function)
@@ -2586,7 +2582,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
           (replace-match (format "\\1%s" new-name) t)))
       (save-buffer))))
 
-(defun cljr--rename-occurrences (ns occurrences new-name)
+(defun cljr--rename-occurrences (occurrences new-name)
   (dolist (symbol-meta occurrences)
     (let* ((file (gethash :file symbol-meta))
            (line-beg (gethash :line-beg symbol-meta))
@@ -2616,10 +2612,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
            (_ (unless *cljr--noninteractive* (message "Fetching symbol occurrences...")))
            (occurrences (cljr--find-symbol-sync name ns))
            (new-name (or new-name (read-from-minibuffer "New name: "
-                                                        (cljr--symbol-suffix symbol))))
-           (buffer-of-symbol (cider-find-var-file ns symbol-name))
-           (tooling-buffer-p (cider--tooling-file-p (buffer-name buffer-of-symbol))))
-      (cljr--rename-occurrences ns occurrences new-name)
+                                                        (cljr--symbol-suffix symbol)))))
+      (cljr--rename-occurrences occurrences new-name)
       (cljr--post-command-message "Renamed %s occurrences of %s" (length occurrences) name)
       (when (and (> (length occurrences) 0) (not cljr-warn-on-eval))
         (cljr--warm-ast-cache)))))
@@ -2629,7 +2623,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
     (when (re-search-forward (format "\\(%s\\).*?\\([\]\)]\\)" ns-last-token) nil t)
       (replace-match (format "\\1 :as %s\\2" alias)))
     (perform-replace (format "%s/" alias) "" nil nil t)
-    (cljr--rename-occurrences ns publics-occurrences (lambda (old-name) (concat alias "/" old-name)))))
+    (cljr--rename-occurrences publics-occurrences (lambda (old-name) (concat alias "/" old-name)))))
 
 (defun cljr--replace-refer-all (ns alias)
   "Replaces :refer :all style require with alias :as style require.
@@ -3085,13 +3079,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
                                           (nth i args) def t t)))
     (insert def)))
 
-(defun cljr--inline-symbol (ns definition occurrences)
+(defun cljr--inline-symbol (definition occurrences)
   (dolist (symbol-meta (cljr--sort-occurrences occurrences))
     (let* ((file (gethash :file symbol-meta))
            (line-beg (gethash :line-beg symbol-meta))
            (col-beg (gethash :col-beg symbol-meta))
-           (def (gethash :definition definition))
-           (fn? (s-matches-p "^.+fn" def)))
+           (def (gethash :definition definition)))
       (with-current-buffer (find-file-noselect file)
         (goto-char (point-min))
         (forward-line (1- line-beg))
@@ -3160,7 +3153,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
                                   extract-definition-request "definition")))
              (definition (gethash :definition response))
              (occurrences (gethash :occurrences response)))
-        (cljr--inline-symbol ns definition occurrences)
+        (cljr--inline-symbol definition occurrences)
         (unless *cljr--noninteractive* ; don't spam when called from `cljr-remove-let'
           (if occurrences
               (cljr--post-command-message "Inlined %s occurrence(s) of '%s'" (length occurrences) symbol)

@@ -52,33 +52,33 @@
 
 (Given "^I call the rename callback directly with mock data for foo->baz"
        (lambda ()
-         (cljr--rename-occurrences "example.two"
-                                   (list (cljr--plist-to-hash
-                                          '(:line-beg 3 :line-end 4 :col-beg 7 :col-end 9
-                                                      :name "foo"
-                                                      :file "tmp/src/example/two.clj"
-                                                      :match ""))
-                                         (cljr--plist-to-hash
-                                          '(:line-beg 5 :line-end 5 :col-beg 15
-                                                      :col-end 23 :name "foo"
-                                                      :file "tmp/src/example/one.clj"
-                                                      :match "")))
-                                   "baz")))
+         (cljr--rename-occurrences
+          (list (cljr--plist-to-hash
+                 '(:line-beg 3 :line-end 4 :col-beg 7 :col-end 9
+                             :name "foo"
+                             :file "tmp/src/example/two.clj"
+                             :match ""))
+                (cljr--plist-to-hash
+                 '(:line-beg 5 :line-end 5 :col-beg 15
+                             :col-end 23 :name "foo"
+                             :file "tmp/src/example/one.clj"
+                             :match "")))
+          "baz")))
 
 (Given "^I call the rename callback directly with mock data for star->asterisk"
        (lambda ()
-         (cljr--rename-occurrences "example.two"
-                                   (list (cljr--plist-to-hash
-                                          '(:line-beg 6 :line-end 7 :col-beg 7
-                                                      :col-end 10 :name "star*"
-                                                      :file "tmp/src/example/two.clj"
-                                                      :match ""))
-                                         (cljr--plist-to-hash
-                                          '(:line-beg 8 :line-end 8 :col-beg 17
-                                                      :col-end 27 :name "star*"
-                                                      :file "tmp/src/example/one.clj"
-                                                      :match "")))
-                                   "asterisk*")))
+         (cljr--rename-occurrences
+          (list (cljr--plist-to-hash
+                 '(:line-beg 6 :line-end 7 :col-beg 7
+                             :col-end 10 :name "star*"
+                             :file "tmp/src/example/two.clj"
+                             :match ""))
+                (cljr--plist-to-hash
+                 '(:line-beg 8 :line-end 8 :col-beg 17
+                             :col-end 27 :name "star*"
+                             :file "tmp/src/example/one.clj"
+                             :match "")))
+          "asterisk*")))
 
 (defun cljr--make-seeded-hash-table (&rest keys-and-values)
   (let ((m (make-hash-table :test #'equal))
@@ -192,7 +192,7 @@
 :file \"core.clj\"
 :match \"(def my-constant 123)\"
 :definition \"123\"}}")))
-           (cljr--inline-symbol "fake-ns" (gethash :definition response)
+           (cljr--inline-symbol (gethash :definition response)
                                 (gethash :occurrences response)))))
 
 (Given "I call the cljr--inline-symbol function directly with mockdata to inline another-val"
@@ -212,7 +212,7 @@
 :col-beg 38
 :line-end 5
 :line-beg 5})}")))
-           (cljr--inline-symbol "fake-ns" (gethash :definition response)
+           (cljr--inline-symbol (gethash :definition response)
                                 (gethash :occurrences response)))))
 
 (Given "I call the cljr--inline-symbol function directly with mockdata to inline some-val"
@@ -226,7 +226,7 @@
 :match \"some-val 110]\"
 :definition \"110\"}
 :occurrences ()}")))
-           (cljr--inline-symbol "fake-ns" (gethash :definition response)
+           (cljr--inline-symbol (gethash :definition response)
                                 (gethash :occurrences response)))))
 
 (Given "I call the cljr--inline-symbol function directly with mockdata to inline my-inc"
@@ -252,7 +252,7 @@
 :name \"refactor-nrepl.foo/my-inc\"
 :file \"core.clj\"
 :match \"(map my-inc (range 10))\"})}")))
-           (cljr--inline-symbol "fake-ns" (gethash :definition response)
+           (cljr--inline-symbol (gethash :definition response)
                                 (gethash :occurrences response)))))
 
 (And "I mock out the call to the middleware to find locals$"
