@@ -543,7 +543,7 @@ if SAVE-EXCURSION is T POINT does not move."
 
 (defun cljr--goto-toplevel ()
   (paredit-backward-up (cljr--depth-at-point))
-  (when (looking-back "#")
+  (when (looking-back "#" 1)
     (backward-char)))
 
 (defun cljr--top-level-p ()
@@ -650,10 +650,10 @@ e.g. `re-search-forward'"
 assumed to be just inside the []
 
 Note that this function also moves point from the suffix to the prefix."
-  (and (looking-back "\\[")
+  (and (looking-back "\\[" 1)
        (progn (paredit-backward-up 2)
               (paredit-forward-down)
-              (looking-back "\\["))))
+              (looking-back "\\[" 1))))
 
 (defun cljr--resolve-alias (alias)
   "Look up ALIAS in the ns form.
@@ -700,7 +700,7 @@ at the opening parentheses of an anonymous function."
             (let ((fn-end (save-excursion (paredit-forward) (point))))
               (when (and (< fn-beg pt-orig) (< pt-orig fn-end))
                 (setq found-fn-p t)
-                (when (looking-back "#")
+                (when (looking-back "#" 1)
                   (backward-char))))
           (when (<= (point) search-bound)
             (error "Can't find definition of anonymous function!")))))))
@@ -931,7 +931,7 @@ Please, install (or update) refactor-nrepl %s and restart the REPL."
   (if (re-search-forward ":cljs" (cljr--point-after 'paredit-forward) :no-error)
       (save-excursion
         (paredit-backward-up)
-        (unless (looking-back "#\?@?")
+        (unless (looking-back "#\?@?" 3)
           (error "No cljs branch found")))
     (error "No cljs branch found")))
 
@@ -1252,7 +1252,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
           (paredit-backward)
           (cljr--delete-and-extract-sexp)
           (cljr--delete-and-extract-sexp)
-          (if (looking-back "\\w+ ")
+          (if (looking-back "\\w+ " 3)
               (just-one-space 0)
             (join-line))
           (cljr--add-ns-prefix (or alias ns) symbols))))))
@@ -1815,7 +1815,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-destructure-keys
       (paredit-forward-up)
       (when (re-search-forward (regexp-opt (list symbol) 'symbols) bound t)
         (setq include-as t)))
-    (when (looking-back "\\s_\\|\\sw")
+    (when (looking-back "\\s_\\|\\sw" 3)
       (paredit-backward))
     (kill-sexp)
     (insert "{:keys [" (s-join " " (-distinct (reverse symbols))) "]"
@@ -1833,7 +1833,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-destructure-keys
   "Like paredit-raise-sexp, but removes # in front of function literals and sets."
   (interactive "P")
   (paredit-raise-sexp argument)
-  (when (looking-back " #")
+  (when (looking-back " #" 2)
     (delete-char -1)))
 
 ;;;###autoload
@@ -1842,7 +1842,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-destructure-keys
 front of function literals and sets."
   (interactive "P")
   (paredit-splice-sexp-killing-backward argument)
-  (when (looking-back " #")
+  (when (looking-back " #" 2)
     (delete-char -1)))
 
 ;;;###autoload
@@ -1852,7 +1852,7 @@ front of function literals and sets."
   (interactive "P")
   (save-excursion
     (paredit-backward-up)
-    (when (looking-back " #")
+    (when (looking-back " #" 2)
       (delete-char -1)))
   (paredit-splice-sexp-killing-forward argument))
 
@@ -2080,7 +2080,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
       (re-search-forward dividing-line)
       (re-search-forward (s-concat "\\[" dep "\\s-+\""))
       (paredit-backward-up 2)
-      (while (not (looking-back "^\\s-*"))
+      (while (not (looking-back "^\\s-*" (point-at-bol)))
         (forward-char -1))
       (while (save-excursion (forward-line -1) (cljr--comment-line-p))
         (forward-line -1))
@@ -2369,7 +2369,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
   (paredit-forward-down)
   (paredit-forward 2)
   (paredit-backward-down)
-  (if (looking-back "\\[")
+  (if (looking-back "\\[" 1)
       (insert param)
     (insert " " param)))
 
@@ -2939,7 +2939,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
   (let ((sexp-regexp (rx (or "(" "#{" "{" "["))))
     (unless (looking-at sexp-regexp)
       (paredit-backward-up))
-    (when (looking-back "#")
+    (when (looking-back "#" 1)
       (forward-char -1))))
 
 ;;;###autoload
@@ -3096,7 +3096,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
         (goto-char (point-min))
         (forward-line (1- line-beg))
         (forward-char (1- col-beg))
-        (let* ((call-site? (looking-back "(\s*"))
+        (let* ((call-site? (looking-back "(\s*" (point-at-bol)))
                (sexp (if call-site?
                          (prog1 (cljr--extract-sexp-as-list)
                            (paredit-backward-up)
@@ -3735,7 +3735,7 @@ Point is assumed to be at the end of the form."
                         80)))
     (when (> (current-column) breakpoint)
       (paredit-backward-up)
-      (if (and (not (looking-back "^\\s-*")) (looking-at-p "\\["))
+      (if (and (not (looking-back "^\\s-*" (point-at-bol))) (looking-at-p "\\["))
           (newline-and-indent) ; Put lambdalist on its own line
         (paredit-forward-down)
         (cljr--forward-parameter) ; don't break right after ( or [
