@@ -1956,6 +1956,14 @@ the alias in the project."
     (and (cljr--keywordp sym)
          (not (s-matches-p "::.+" (cljr--symbol-prefix sym))))))
 
+(defun cljr--in-map-destructuring? ()
+  "True when `point' is inside a destructuring form."
+  (ignore-errors
+    (save-excursion
+      (paredit-backward-up 2)
+      (paredit-forward-down)
+      (looking-at-p ":keys"))))
+
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts / as normal, but also checks for common namespace shorthands to require.
@@ -1965,25 +1973,26 @@ command will add the corresponding require statement to the ns
 form."
   (interactive)
   (insert "/")
-  (-when-let (aliases (and cljr-magic-requires
-                           (not (cider-in-comment-p))
-                           (not (cider-in-string-p))
-                           (not (cljr--in-keyword-sans-alias-p))
-                           (clojure-find-ns)
-                           (cljr--magic-requires-lookup-alias)))
-    (let ((short (cl-first aliases)))
-      (-when-let (long (cljr--prompt-user-for "Require " (cl-second aliases)))
-        (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
-                   (or (not (eq :prompt cljr-magic-requires))
-                       (not (> (length (cl-second aliases)) 1)) ; already prompted
-                       (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
-          (save-excursion
-            (cljr--insert-in-ns ":require")
-            (let ((libspec (format "[%s :as %s]" long short)))
-              (insert libspec)
-              (ignore-errors (cljr--maybe-eval-ns-form))
-              (cljr--indent-defun)
-              (cljr--post-command-message "Required %s" libspec))))))))
+  (unless (cljr--in-map-destructuring?)
+    (-when-let (aliases (and cljr-magic-requires
+                             (not (cider-in-comment-p))
+                             (not (cider-in-string-p))
+                             (not (cljr--in-keyword-sans-alias-p))
+                             (clojure-find-ns)
+                             (cljr--magic-requires-lookup-alias)))
+      (let ((short (cl-first aliases)))
+        (-when-let (long (cljr--prompt-user-for "Require " (cl-second aliases)))
+          (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
+                     (or (not (eq :prompt cljr-magic-requires))
+                         (not (> (length (cl-second aliases)) 1)) ; already prompted
+                         (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
+            (save-excursion
+              (cljr--insert-in-ns ":require")
+              (let ((libspec (format "[%s :as %s]" long short)))
+                (insert libspec)
+                (ignore-errors (cljr--maybe-eval-ns-form))
+                (cljr--indent-defun)
+                (cljr--post-command-message "Required %s" libspec)))))))))
 
 (defun cljr--in-namespace-declaration-p (s)
   (save-excursion

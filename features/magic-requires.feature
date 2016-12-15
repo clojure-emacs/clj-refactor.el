@@ -69,7 +69,6 @@ Feature: Magic requires
     (::util/some-keyword)
     """
 
-
   Scenario: If alias exists nothing happens
     When I insert:
     """
@@ -89,4 +88,23 @@ Feature: Magic requires
       (:require [refactor-nrepl.util :as util]))
 
     (util/get-last-sexp)
+    """
+
+Scenario: Nothing happens when destructuring a map
+    When I insert:
+    """
+    (ns cljr.core)
+
+    (defn f [{:keys [set]}])
+    """
+    And the cache of namespace aliases is populated
+    And I place the cursor after "set"
+    And I start an action chain
+    And I type "/union"
+    And I execute the action chain
+    Then I should see:
+    """
+    (ns cljr.core)
+
+    (defn f [{:keys [set/union]}])
     """
