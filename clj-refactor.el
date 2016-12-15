@@ -3209,22 +3209,29 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   (if-let ((clojure-version (cider--clojure-version)))
       (when (version< clojure-version cljr-minimum-clojure-version)
         (cider-repl-emit-interactive-stderr
-         (format "WARNING: Clojure version (%s) is not supported (minimum %s). The refactor-nrepl middleware won't work!"
+         (format "WARNING: Clojure version (%s) is not supported (minimum %s). The refactor-nrepl middleware won't work and has been disabled!"
                  clojure-version cljr-minimum-clojure-version)))
     (cider-repl-emit-interactive-stderr
-     (format "Can't determine Clojure version.  The refactor-nrepl middleware requires clojure %s (or newer)" cljr-minimum-clojure-version))))
+     (format "WARNING: Can't determine Clojure version.  The refactor-nrepl middleware requires clojure %s (or newer)" cljr-minimum-clojure-version))))
+
+(defun cljr--check-project-context ()
+  (unless (cljr--project-dir)
+    (cider-repl-emit-interactive-stderr
+     (format "WARNING: No clojure project detected.  The refactor-nrepl middleware won't work and has been disabled!"))))
 
 (defun cljr--init-middleware ()
   (unless cljr-suppress-middleware-warnings
     (cljr--check-clojure-version)
     (cljr--check-middleware-version))
+  (cljr--check-project-context)
   ;; Best effort; don't freak people out with errors
   (ignore-errors
-    (when cljr-populate-artifact-cache-on-startup
-      (cljr--update-artifact-cache))
-    (when (and (not cljr-warn-on-eval)
-               cljr-eagerly-build-asts-on-startup)
-      (cljr--warm-ast-cache))))
+    (when (cljr--middleware-version) ; check if middleware is running
+      (when cljr-populate-artifact-cache-on-startup
+        (cljr--update-artifact-cache))
+      (when (and (not cljr-warn-on-eval)
+                 cljr-eagerly-build-asts-on-startup)
+        (cljr--warm-ast-cache)))))
 
 (defvar cljr--list-fold-function-names
   '("map" "mapv" "pmap" "keep" "mapcat" "filter" "remove" "take-while" "drop-while"
