@@ -218,6 +218,9 @@ if it appears to be unused."
   :group 'cljr
   :type '(repeat string))
 
+(defvar cljr-minimum-clojure-version "1.7.0"
+  "The oldest clojure version our middleware can tolerate.")
+
 (defvar clj-refactor-map (make-sparse-keymap) "")
 
 (defvar cljr--add-require-snippet
@@ -3202,8 +3205,18 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
       (message "Debug mode on")
     (message "Debug mode off")))
 
+(defun cljr--check-clojure-version ()
+  (if-let ((clojure-version (cider--clojure-version)))
+      (when (version< clojure-version cljr-minimum-clojure-version)
+        (cider-repl-emit-interactive-stderr
+         (format "WARNING: Clojure version (%s) is not supported (minimum %s). The refactor-nrepl middleware won't work!"
+                 clojure-version cljr-minimum-clojure-version)))
+    (cider-repl-emit-interactive-stderr
+     (format "Can't determine Clojure version.  The refactor-nrepl middleware requires clojure %s (or newer)" cljr-minimum-clojure-version))))
+
 (defun cljr--init-middleware ()
   (unless cljr-suppress-middleware-warnings
+    (cljr--check-clojure-version)
     (cljr--check-middleware-version))
   ;; Best effort; don't freak people out with errors
   (ignore-errors
@@ -3212,7 +3225,6 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     (when (and (not cljr-warn-on-eval)
                cljr-eagerly-build-asts-on-startup)
       (cljr--warm-ast-cache))))
-
 
 (defvar cljr--list-fold-function-names
   '("map" "mapv" "pmap" "keep" "mapcat" "filter" "remove" "take-while" "drop-while"
