@@ -2230,7 +2230,7 @@ possible choices. If the choice is trivial, return it."
   (if choices
       (if (= (length choices) 1)
           (cl-first choices)
-        (completing-read prompt choices))
+        (completing-read prompt choices nil nil nil nil (car choices)))
     (read-from-minibuffer prompt)))
 
 (defun cljr--add-project-dependency (artifact version)
