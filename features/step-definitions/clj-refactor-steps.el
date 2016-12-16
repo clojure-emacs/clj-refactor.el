@@ -36,10 +36,6 @@
        (lambda ()
          (setq cljr-warn-on-eval nil)))
 
-(Given "^I exit multiple-cursors-mode"
-       (lambda ()
-         (multiple-cursors-mode 0)))
-
 (Given "^I don't use multiple-cursors"
        (lambda ()
          (setq cljr-use-multiple-cursors nil)))

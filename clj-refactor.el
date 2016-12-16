@@ -8,7 +8,7 @@
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;; Version: 2.3.0-SNAPSHOT
 ;; Keywords: convenience, clojure, cider
-;; Package-Requires: ((emacs "24.4") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "20160604") (cider "0.11.0") (edn "1.1.2") (inflections "2.3") (hydra "0.13.2"))
+;; Package-Requires: ((emacs "24.4") (s "1.8.0") (dash "2.4.0") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.6.1") (cider "0.11.0") (edn "1.1.2") (inflections "2.3") (hydra "0.13.2"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -500,13 +500,6 @@ _s_: Refactor related functions
 (defun cljr--delete-sexp ()
   (delete-region (point) (cljr--point-after 'paredit-forward)))
 
-(defun cljr--delete-and-extract-sexp ()
-  (let* ((beg (point))
-         (end (cljr--point-after 'paredit-forward))
-         (contents (buffer-substring beg end)))
-    (delete-region beg end)
-    contents))
-
 (defun cljr--extract-sexp-as-list (&optional with-whitespace)
   "Returns list of strings representing the elements of the SEXP at point.
 
@@ -768,13 +761,13 @@ A new record is created to define this constructor."
   (interactive "")
   (cljr--goto-reify)
   (let ((record-name (cljr--prompt-user-for "Name of new record: "))
-        (reify-sexp (cljr--delete-and-extract-sexp))
+        (reify-sexp (clojure-delete-and-extract-sexp))
         (placeholder "#85dffa31d"))
     (insert placeholder)
     (cljr--new-toplevel-form reify-sexp)
     (paredit-backward)
     (paredit-forward-down)
-    (cljr--delete-and-extract-sexp)
+    (clojure-delete-and-extract-sexp)
     (insert "defrecord " record-name " []")
     (if (looking-at-p "[ \t]*$")
         (forward-line)
@@ -783,7 +776,7 @@ A new record is created to define this constructor."
     (indent-region (point) (cljr--point-after 'paredit-forward))
     (re-search-forward placeholder)
     (paredit-backward)
-    (cljr--delete-and-extract-sexp)
+    (clojure-delete-and-extract-sexp)
     (insert "("record-name ".)")
     (paredit-backward-down)))
 
@@ -1253,8 +1246,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
                (symbols (s-split " " (s-trim str) t)))
           (paredit-backward-up)
           (paredit-backward)
-          (cljr--delete-and-extract-sexp)
-          (cljr--delete-and-extract-sexp)
+          (clojure-delete-and-extract-sexp)
+          (clojure-delete-and-extract-sexp)
           (if (looking-back "\\w+ " 3)
               (just-one-space 0)
             (join-line))
@@ -1299,7 +1292,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
                           (buffer-substring-no-properties beg end)
                         (delete-region beg end)))
                   (cljr--goto-toplevel)
-                  (prog1 (cljr--delete-and-extract-sexp)
+                  (prog1 (clojure-delete-and-extract-sexp)
                     (join-line)
                     (join-line)
                     (delete-char 1))))
@@ -1511,7 +1504,7 @@ Point is assumed to be just after the ns form."
                 (unwind-protect
                     (cljr--prompt-user-for "Name: ")
                   (delete-overlay highlight))))
-        (body (cljr--delete-and-extract-sexp))
+        (body (clojure-delete-and-extract-sexp))
         const-pos)
     (save-excursion
       (cljr--prepare-to-insert-new-def)
@@ -1582,72 +1575,37 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-cycle-thread"
 ;; ------ let binding ----------
 
 ;;;###autoload
-(defun cljr-introduce-let ()
+(defun cljr-introduce-let (&optional n)
   "Create a let form, binding the form at point.
 The resulting let form can then be expanded with `\\[cljr-expand-let]'.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-introduce-let"
-  (interactive)
-  (paredit-wrap-round)
-  (insert "let ")
-  (paredit-wrap-square)
-  (insert " ")
-  (backward-char)
-  (let ((name (unless (cljr--use-multiple-cursors-p)
-                (cljr--prompt-user-for "Name: "))))
-    (if name
-        (insert name)
-      (mc/create-fake-cursor-at-point))
+  (interactive "P")
+  (if (not (cljr--use-multiple-cursors-p))
+      (clojure-introduce-let n)
+    (paredit-wrap-round)
+    (insert "let ")
+    (paredit-wrap-square)
+    (insert " ")
+    (backward-char)
+    (mc/create-fake-cursor-at-point)
     (paredit-forward-up)
     (newline-and-indent)
-    (if name
-        (insert name)
-      (mc/maybe-multiple-cursors-mode))))
+    (mc/maybe-multiple-cursors-mode)))
 
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-introduce-let)
-
-(defun cljr--goto-let ()
-  (let ((target-expr "\(\\(when-let\\|if-let\\|let\\)\\( \\|\\[\\)"))
-    (while (not (or (cljr--top-level-p)
-                    (looking-at target-expr)))
-      (paredit-backward-up))
-    (looking-at target-expr)))
 
 (defun cljr--get-let-bindings ()
   "Returns a list of lists. The inner lists contain two elements first is
    the binding, second is the init-expr"
-  (cljr--goto-let)
-  (paredit-forward-down 2)
-  (paredit-backward)
-  (let* ((start (point))
-         (sexp-start start)
-         (end (progn (paredit-forward)
-                     (point)))
-         bindings)
-    (paredit-backward)
-    (paredit-forward-down)
-    (while (/= sexp-start end)
-      (paredit-move-forward)
-      (let ((sexp (buffer-substring-no-properties sexp-start (point))))
-        (push (s-trim
-               (if (= start sexp-start)
-                   (substring sexp 1)
-                 sexp))
-              bindings))
-      (setq sexp-start (point)))
-    (-partition 2 (nreverse bindings))))
-
-(defun cljr--sexp-regexp (sexp)
-  (concat "\\([^[:word:]^-]\\)"
-          (s-join "[[:space:]\n\r]+" (-map 'regexp-quote (s-split " " sexp t)))
-          "\\([^[:word:]^-]\\)"))
+  (-partition 2 (clojure--read-let-bindings)))
 
 (defun cljr--replace-sexp-with-binding (binding)
   (save-excursion
     (let ((bind-var (car binding))
           (init-expr (-last-item binding))
-          (end (cljr--point-after 'cljr--goto-let 'paredit-forward)))
-      (while (re-search-forward (cljr--sexp-regexp init-expr) end t)
+          (end (cljr--point-after 'clojure--goto-let 'paredit-forward)))
+      (while (re-search-forward (clojure--sexp-regexp init-expr) end t)
         (replace-match (concat "\\1" bind-var "\\2"))))))
 
 (defun cljr--one-shot-keybinding (key command)
@@ -1670,7 +1628,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-introduce-let"
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-expand-let"
   (interactive)
   (multiple-cursors-mode 0)
-  (cljr--goto-let)
+  (clojure--goto-let)
   (paredit-forward-down 2)
   (paredit-forward-up)
   (cljr--skip-past-whitespace-and-comments)
@@ -1689,77 +1647,26 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-expand-let"
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-to-let"
   (interactive)
-  (if (not (save-excursion (cljr--goto-let)))
-      (cljr-introduce-let)
-    (let ((name (unless (cljr--use-multiple-cursors-p)
-                  (cljr--prompt-user-for "Name: "))))
+  (if (not (cljr--use-multiple-cursors-p))
+      (clojure-move-to-let)
+    (if (not (save-excursion (clojure--goto-let)))
+        (cljr-introduce-let)
       (save-excursion
-        (let ((contents (cljr--delete-and-extract-sexp)))
-          (cljr--prepare-to-insert-new-let-binding)
+        (let ((contents (clojure-delete-and-extract-sexp)))
+          (clojure--prepare-to-insert-new-let-binding)
           (insert contents))
         (backward-sexp)
         (insert " ")
         (backward-char)
-        (if name
-            (insert name)
-          (mc/create-fake-cursor-at-point)))
-      (if name
-          (progn
-            (insert name)
-            (cljr--replace-sexp-with-binding-in-let))
-        (add-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
-        (mc/maybe-multiple-cursors-mode)))))
-
-(defun cljr--prev-line ()
-  "goes to the previous line and keeps column position"
-  (let ((col (current-column)))
-    (forward-line -1)
-    (move-to-column col)))
-
-(defun cljr--prepare-to-insert-new-let-binding ()
-  (if (cljr--inside-let-binding-form-p)
-      (progn
-        (paredit-backward-up (- (cljr--depth-at-point)
-                                (cljr--depth-of-let-bindings)))
-        (paredit-backward)
-        (newline-and-indent)
-        (cljr--prev-line)
-        (indent-for-tab-command))
-    (cljr--goto-let)
-    (search-forward "[")
-    (paredit-backward)
-    (paredit-forward)
-    (paredit-backward-down)
-    (backward-char)
-    (if (looking-at "\\[ *\\]")
-        (forward-char)
-      (forward-char)
-      (newline-and-indent))))
-
-(defun cljr--inside-let-binding-form-p ()
-  (ignore-errors
-    (save-excursion
-      (let ((pos (point)))
-        (cljr--goto-let)
-        (re-search-forward "\\[")
-        (if (< pos (point))
-            nil
-          (paredit-forward-up)
-          (< pos (point)))))))
-
-(defun cljr--depth-of-let-bindings ()
-  "Returns the depth where the variable bindings for the active
-let are."
-  (save-excursion
-    (cljr--goto-let)
-    (re-search-forward "\\[")
-    (cljr--depth-at-point)))
+        (mc/create-fake-cursor-at-point))
+      (add-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
+      (mc/maybe-multiple-cursors-mode))))
 
 (defun cljr--eliminate-let ()
   "Remove a the nearest let form.
 
 This function only does the actual removal."
-  (cljr--goto-let)
+  (clojure--goto-let)
   (paredit-forward-down)
   (paredit-forward 2)
   (paredit-splice-sexp-killing-backward))
@@ -1771,7 +1678,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-let"
   (interactive)
   (save-excursion
     (let ((*cljr--noninteractive* t)) ; make `cljr-inline-symbol' be quiet
-      (cljr--goto-let)
+      (clojure--goto-let)
       (paredit-forward-down 2)
       (dotimes (_ (length (save-excursion (cljr--get-let-bindings))))
         (cljr-inline-symbol)
@@ -2034,7 +1941,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
        (point)
        (cljr--point-after '(re-search-forward "\\s-") 'backward-char))
     (backward-char)
-    (cljr--delete-and-extract-sexp)
+    (clojure-delete-and-extract-sexp)
     (delete-region (point-at-bol) (point-at-eol))
     (forward-line)
     (join-line)))
@@ -2132,7 +2039,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
       (-> (buffer-substring-no-properties (point)
                                           (cljr--point-after 'paredit-forward))
           cljr--get-sorted-dependency-names
-          (cljr--sort-dependency-vectors (->> (cljr--delete-and-extract-sexp)
+          (cljr--sort-dependency-vectors (->> (clojure-delete-and-extract-sexp)
                                               (s-chop-prefix "[")
                                               (s-chop-suffix "]")))
           insert))
@@ -2383,7 +2290,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
 
 (defun cljr--promote-function-literal ()
   (delete-char 1)
-  (let ((body (cljr--delete-and-extract-sexp)))
+  (let ((body (clojure-delete-and-extract-sexp)))
     (insert "(fn [] " body ")"))
   (backward-char)
   (cljr--goto-fn-definition)
@@ -2677,7 +2584,7 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
 (defun cljr--replace-ns (new-ns)
   (save-excursion
     (cljr--goto-ns)
-    (cljr--delete-and-extract-sexp)
+    (clojure-delete-and-extract-sexp)
     (insert new-ns)
     (cljr--just-one-blank-line)))
 
@@ -2969,7 +2876,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-function
                      (unwind-protect
                          (cljr--prompt-user-for "Name: ")
                        (delete-overlay highlight)))))
-           (body (cljr--delete-and-extract-sexp)))
+           (body (clojure-delete-and-extract-sexp)))
       (save-excursion
         (cljr--make-room-for-toplevel-form)
         (insert (cljr--defn-str))
@@ -3037,9 +2944,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
       (goto-char (point-min))
       (forward-line (1- line-beg))
       (forward-char (1- col-beg))
-      (cljr--delete-and-extract-sexp)
-      (when (cljr--inside-let-binding-form-p)
-        (cljr--delete-and-extract-sexp)
+      (clojure-delete-and-extract-sexp)
+      (when (clojure--inside-let-binding-p)
+        (clojure-delete-and-extract-sexp)
         (if (save-excursion (cljr--get-let-bindings))
             (progn
               (while (looking-at-p "\s*\n")
@@ -3105,8 +3012,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
                (sexp (if call-site?
                          (prog1 (cljr--extract-sexp-as-list)
                            (paredit-backward-up)
-                           (cljr--delete-and-extract-sexp))
-                       (cljr--delete-and-extract-sexp))))
+                           (clojure-delete-and-extract-sexp))
+                       (clojure-delete-and-extract-sexp))))
           (if call-site?
               (cljr--inline-fn-at-call-site def sexp)
             (insert def))))))
