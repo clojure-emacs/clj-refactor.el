@@ -2350,7 +2350,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
   (= (point) (cljr--point-after 'end-of-buffer)))
 
 (defun cljr--find-symbol-sync (symbol ns)
-  (let* ((filename (buffer-file-name))
+  (let* ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name)))
          (line (line-number-at-pos))
          (column (1+ (current-column)))
          (dir (cljr--project-dir))
@@ -2373,7 +2373,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
     occurrences))
 
 (defun cljr--find-symbol (symbol ns callback)
-  (let* ((filename (buffer-file-name))
+  (let* ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name)))
          (line (line-number-at-pos))
          (column (1+ (current-column)))
          (dir (cljr--project-dir))
@@ -2401,8 +2401,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
 root."
   (s-chop-prefix (cljr--project-dir) path))
 
+(defun cljr--get-valid-filename (hash)
+    "Get :file value from the hash table and convert path if necessary. Cygwin fix."
+    (funcall cider-from-nrepl-filename-function (gethash :file hash)))
+
 (defun cljr--format-symbol-occurrence (occurrence)
-  (let ((file (gethash :file occurrence ))
+  (let ((file (cljr--get-valid-filename occurrence))
         (line (gethash :line-beg occurrence))
         (col (1- (gethash :col-beg occurrence)))
         (match (gethash :match occurrence)))
@@ -2421,7 +2425,7 @@ root."
     (-when-let (occurrence-data (nrepl-dict-get occurrence-resp "occurrence"))
       (let* ((occurrence (edn-read occurrence-data))
              (occurrence-id (format "%s%s"
-                                    (gethash :file occurrence)
+                                    (cljr--get-valid-filename occurrence)
                                     (gethash :line-beg occurrence))))
         (cl-incf cjr--occurrence-count)
         (unless (member occurrence-id cljr--occurrence-ids)
@@ -2503,7 +2507,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
 
 (defun cljr--rename-occurrences (occurrences new-name)
   (dolist (symbol-meta occurrences)
-    (let* ((file (gethash :file symbol-meta))
+    (let* ((file (cljr--get-valid-filename symbol-meta))
            (line-beg (gethash :line-beg symbol-meta))
            (col-beg (gethash :col-beg symbol-meta))
            (line-end (gethash :line-end symbol-meta))
@@ -2550,7 +2554,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
 Also adds the alias prefix to all occurrences of public symbols in the namespace.
 "
   (cljr--ensure-op-supported "find-used-publics")
-  (let ((filename (buffer-file-name)))
+  (let ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name))))
     (let* ((alias (or alias
                       (cljr--prompt-user-for (format "alias for [%s]: " ns))))
            (request
@@ -2937,7 +2941,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
 
 (defun cljr--delete-definition (definition)
   "Delete a definition as part of inlining a symbol."
-  (let ((file (gethash :file definition))
+  (let ((file (cljr--get-valid-filename definition))
         (line-beg (gethash :line-beg definition))
         (col-beg (gethash :col-beg definition)))
     (with-current-buffer (find-file-noselect file)
@@ -3000,7 +3004,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
 
 (defun cljr--inline-symbol (definition occurrences)
   (dolist (symbol-meta (cljr--sort-occurrences occurrences))
-    (let* ((file (gethash :file symbol-meta))
+    (let* ((file (cljr--get-valid-filename symbol-meta))
            (line-beg (gethash :line-beg symbol-meta))
            (col-beg (gethash :col-beg symbol-meta))
            (def (gethash :definition definition)))
@@ -3050,7 +3054,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
   (when (cljr--asts-y-or-n-p)
     (save-buffer)
     (save-excursion
-      (let* ((filename (buffer-file-name))
+      (let* ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name)))
              (line (line-number-at-pos))
              (column (1+ (current-column)))
              (dir (cljr--project-dir))
@@ -3857,7 +3861,7 @@ Point is assumed to be at the function being called."
   ;; The OCCURRENCES are the same as those returned by `cljr--find-symbol'
   (let ((*cljr--noninteractive* t))
     (dolist (symbol-meta occurrences)
-      (let ((file (gethash :file symbol-meta))
+      (let ((file (cljr--get-valid-filename symbol-meta))
             (line-beg (gethash :line-beg symbol-meta))
             (col-beg (gethash :col-beg symbol-meta))
             (name (gethash :name symbol-meta))
