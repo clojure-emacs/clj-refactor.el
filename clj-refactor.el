@@ -2402,7 +2402,7 @@ root."
   (s-chop-prefix (cljr--project-dir) path))
 
 (defun cljr--get-valid-filename (hash)
-    "Get :file value from the hash table and convert path if necessary. Cygwin fix."
+    "Get :file value from the hash table and convert path if necessary."
     (funcall cider-from-nrepl-filename-function (gethash :file hash)))
 
 (defun cljr--format-symbol-occurrence (occurrence)
