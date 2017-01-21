@@ -200,7 +200,7 @@ won't run if there is a broken namespace in the project."
   :type 'string)
 
 (defcustom cljr-clojure-test-declaration "[clojure.test :as t]"
-  "The require form to use when clojure.test and cljs.test is in use in a cljc file."
+  "The require form to use when clojure.test is in use in a clj file."
   :group 'cljr
   :type 'string)
 
