@@ -978,7 +978,7 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
       (mapconcat 'identity (append (butlast ns-chunks) (list src-ns)) "."))))
 
 (defun cljr--cljs-file-p (&optional buf)
-  "Is BUF, or the current buffer, visiting a cljc file?"
+  "Is BUF, or the current buffer, visiting a cljs file?"
   (s-equals-p (file-name-extension (buffer-file-name (or buf (current-buffer))))
               "cljs"))
 
