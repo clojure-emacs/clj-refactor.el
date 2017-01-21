@@ -194,6 +194,11 @@ won't run if there is a broken namespace in the project."
   :group 'cljr
   :type 'string)
 
+(defcustom cljr-cljs-clojure-test-declaration "[cljs.test :as t :include-macros true]"
+  "The require form to use when cljs.test is in use in a cljs file."
+  :group 'cljr
+  :type 'string)
+
 (defcustom cljr-clojure-test-declaration "[clojure.test :as t]"
   "The require form to use when clojure.test and cljs.test is in use in a cljc file."
   :group 'cljr
@@ -1007,6 +1012,8 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
                 cljr-midje-test-declaration)
                ((cljr--project-depends-on-p "expectations")
                 cljr-expectations-test-declaration)
+	       ((cljr--cljs-file-p)
+		cljr-cljs-clojure-test-declaration)
                ((cljr--cljc-file-p)
                 cljr-cljc-clojure-test-declaration)
                (t cljr-clojure-test-declaration))))
