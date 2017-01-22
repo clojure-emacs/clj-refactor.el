@@ -2,6 +2,7 @@
 
 ## Up next
 
+- Display keymap bindings in documentation for minor mode
 - New config setting `cljr-libspec-whitelist` to prevent libspecs which appear unused but are side-effecting at load from being pruned.
 - [#301] (https://github.com/clojure-emacs/clj-refactor.el/issues/301) `ad`  has gained a prefix to declare the symbol under the cursor.
 - [#312](https://github.com/clojure-emacs/clj-refactor.el/issues/312) Allow `sut` alias to be customized.

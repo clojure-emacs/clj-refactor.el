@@ -3985,7 +3985,9 @@ If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-
 ;; ------ minor mode -----------
 ;;;###autoload
 (define-minor-mode clj-refactor-mode
-  "A mode to keep the clj-refactor keybindings."
+  "A mode to keep the clj-refactor keybindings.
+
+\\{clj-refactor-map}"
   nil " cljr" clj-refactor-map
   (if clj-refactor-mode
       (add-hook 'post-command-hook #'cljr--post-command-hook :append :local)
