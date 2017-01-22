@@ -1800,11 +1800,11 @@ FEATURE is either :clj or :cljs."
   (cdr (assoc key map)))
 
 (defun cljr--call-middleware-for-namespace-aliases ()
-  (-> "namespace-aliases"
-      cljr--ensure-op-supported
-      cljr--create-msg
-      (cljr--call-middleware-sync "namespace-aliases")
-      edn-read))
+  (thread-first "namespace-aliases"
+    cljr--ensure-op-supported
+    cljr--create-msg
+    (cljr--call-middleware-sync "namespace-aliases")
+    edn-read))
 
 (defun cljr--get-aliases-from-middleware ()
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
@@ -2014,13 +2014,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
     (goto-char (point-min))
     (while (re-search-forward ":dependencies" (point-max) t)
       (forward-char)
-      (-> (buffer-substring-no-properties (point)
-                                          (cljr--point-after 'paredit-forward))
-          cljr--get-sorted-dependency-names
-          (cljr--sort-dependency-vectors (->> (clojure-delete-and-extract-sexp)
-                                              (s-chop-prefix "[")
-                                              (s-chop-suffix "]")))
-          insert))
+      (thread-first (buffer-substring-no-properties (point)
+						    (cljr--point-after 'paredit-forward))
+	cljr--get-sorted-dependency-names
+	(cljr--sort-dependency-vectors (->> (clojure-delete-and-extract-sexp)
+					    (s-chop-prefix "[")
+					    (s-chop-suffix "]")))
+	insert))
     (indent-region (point-min) (point-max))
     (save-buffer)))
 
@@ -2029,7 +2029,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
 
 If it's present KEY indicates the key to extract from the response."
   (let* ((nrepl-sync-request-timeout (if cljr-warn-on-eval nil 25))
-         (response (-> request cider-nrepl-send-sync-request cljr--maybe-rethrow-error)))
+         (response (thread-first request cider-nrepl-send-sync-request cljr--maybe-rethrow-error)))
     (if key
         (nrepl-dict-get response key)
       response)))
@@ -2372,7 +2372,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
     (cljr--call-middleware-async find-symbol-request callback)))
 
 (defun cljr--first-line (s)
-  (-> s s-lines car s-trim))
+  (thread-first s s-lines car s-trim))
 
 (defun cljr--project-relative-path (path)
   "Denormalize PATH to make to make it relative to the project
@@ -2711,11 +2711,11 @@ Date. -> Date
 
 (defun cljr--call-middleware-to-resolve-missing (symbol)
   ;; Just so this part can be mocked out in a step definition
-  (when-let (candidates (-> (cljr--create-msg "resolve-missing"
-					      "symbol" symbol
-					      "session" (cider-current-session))
-			    (cljr--call-middleware-sync
-			     "candidates")))
+  (when-let (candidates (thread-first (cljr--create-msg "resolve-missing"
+							"symbol" symbol
+							"session" (cider-current-session))
+			  (cljr--call-middleware-sync
+			   "candidates")))
     (edn-read candidates)))
 
 (defun cljr--get-error-value (response)
