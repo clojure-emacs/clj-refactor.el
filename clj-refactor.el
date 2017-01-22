@@ -30,6 +30,7 @@
 ;;; Code:
 
 (require 'dash)
+(require 'clj-refactor-compat)
 (require 's)
 (require 'yasnippet)
 (require 'paredit)
