@@ -668,7 +668,7 @@ at the opening parentheses of an anonymous function."
            found-fn-p)
       (while (not found-fn-p)
         (paredit-backward-up)
-        (-if-let (fn-beg (cljr--point-for-anon-function))
+        (if-let (fn-beg (cljr--point-for-anon-function))
             (let ((fn-end (save-excursion (paredit-forward) (point))))
               (when (and (< fn-beg pt-orig) (< pt-orig fn-end))
                 (setq found-fn-p t)
@@ -1441,8 +1441,8 @@ With a prefix add a declaration for the symbol under the cursor instead.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-declaration"
   (interactive "P")
-  (-if-let (def (and (not for-thing-at-point-p)
-                     (save-excursion (cljr--name-of-current-def))))
+  (if-let (def (and (not for-thing-at-point-p)
+		    (save-excursion (cljr--name-of-current-def))))
       (cljr--add-declaration def)
     (cljr--add-declaration (cider-symbol-at-point))))
 
@@ -1825,8 +1825,8 @@ the alias in the project."
                     (s-chop-prefix "::"))))
     (unless (or (cljr--resolve-alias short)
                 (cljr--js-alias-p short))
-      (-if-let* ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
-                 (candidates (gethash (intern short) aliases)))
+      (if-let ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
+	       (candidates (gethash (intern short) aliases)))
           (list short candidates)
         (when (and cljr-magic-require-namespaces ; a regex against "" always triggers
                    (s-matches-p (cljr--magic-requires-re) short))
@@ -2395,7 +2395,7 @@ root."
   ;; The middleware sends either an occurrence or a final count, never
   ;; both in the same message.
   (cljr--maybe-rethrow-error occurrence-resp)
-  (-if-let (count (nrepl-dict-get occurrence-resp "count"))
+  (if-let (count (nrepl-dict-get occurrence-resp "count"))
       (progn
         (setq cljr--num-syms count)
         (when (= cjr--occurrence-count cljr--num-syms)
@@ -2724,8 +2724,8 @@ Date. -> Date
 We can't simply call `nrepl-dict-get' because the error value
 itself might be `nil'."
   (cl-assert (nrepl-dict-p response) nil
-          "Response from middleware isn't an nrepl-dict!")
-  (-if-let (err (nrepl-dict-get response "err"))
+	     "Response from middleware isn't an nrepl-dict!")
+  (if-let (err (nrepl-dict-get response "err"))
       (error (format "Error in nrepl-refactor: %s" err))
     (let* ((maybe-error-and-rest
             (-drop-while (lambda (e)
@@ -2742,7 +2742,7 @@ itself might be `nil'."
   (s-replace "%" "%%" msg))
 
 (defun cljr--maybe-rethrow-error (response)
-  (-if-let (err (cljr--get-error-value response))
+  (if-let (err (cljr--get-error-value response))
       (error (cljr--format-escape err))
     response))
 
