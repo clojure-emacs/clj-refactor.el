@@ -2727,7 +2727,7 @@ Date. -> Date
    ((s-ends-with-p "." name)
     (->> name (s-chop-suffix ".") cljr--normalize-symbol-name))
    ((s-starts-with-p "#'" name)
-    (-> name (s-chop-prefix "#'") cljr--normalize-symbol-name))
+    (->> name (s-chop-prefix "#'") cljr--normalize-symbol-name))
    ((s-starts-with-p "'" name)
     (->> name (s-chop-prefix "'") cljr--normalize-symbol-name))
    ((s-starts-with-p "~" name)
