@@ -302,11 +302,11 @@ Otherwise open the file and do the changes non-interactively."
     (otherwise key)))
 
 (defun cljr--key-pairs-with-modifier (modifier keys)
-  (->> (string-to-list keys)
-       (--map (cljr--fix-special-modifier-combinations
-               (concat modifier (char-to-string it))))
-       (s-join " ")
-       (read-kbd-macro)))
+  (thread-last (string-to-list keys)
+    (--map (cljr--fix-special-modifier-combinations
+	    (concat modifier (char-to-string it))))
+    (s-join " ")
+    (read-kbd-macro)))
 
 (defun cljr--key-pairs-with-prefix (prefix keys)
   (read-kbd-macro (concat prefix " " keys)))
@@ -1295,10 +1295,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
          (cljr--remove-references-of-target-ns forms ns target-ns-alias))
         (when requires
           (cljr--insert-in-ns ":require")
-          (->> (--remove (s-matches-p (format target-ns-regexp-template ns) it) requires)
-               (apply #'concat)
-               (s-trim)
-               (insert))
+          (thread-last (--remove (s-matches-p (format target-ns-regexp-template ns) it) requires)
+	    (apply #'concat)
+	    (s-trim)
+	    (insert))
           (cljr-clean-ns))
         (save-buffer))
       (cljr--update-ns-after-moving-fns ns (nreverse names))
@@ -1306,8 +1306,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
   (cljr--just-one-blank-line))
 
 (defun cljr--remove-references-of-target-ns (forms ns alias)
-  (->> (replace-regexp-in-string (format "\\_<%s/" alias) "" forms)
-       (replace-regexp-in-string (format "\\_<%s/" ns) "")))
+  (thread-last (replace-regexp-in-string (format "\\_<%s/" alias) "" forms)
+    (replace-regexp-in-string (format "\\_<%s/" ns) "")))
 
 (defun cljr--update-ns-after-moving-fns (ns &optional refer-names)
   "Updates the current ns declaration after moving defn forms out of the
@@ -1819,10 +1819,10 @@ FEATURE is either :clj or :cljs."
 (defun cljr--magic-requires-lookup-alias ()
   "Return (alias (ns.candidate1 ns.candidate1)) if we recognize
 the alias in the project."
-  (let ((short (->> (buffer-substring-no-properties
-                     (cljr--point-after 'paredit-backward)
-                     (1- (point)))
-                    (s-chop-prefix "::"))))
+  (let ((short (thread-last (buffer-substring-no-properties
+			     (cljr--point-after 'paredit-backward)
+			     (1- (point)))
+		 (s-chop-prefix "::"))))
     (unless (or (cljr--resolve-alias short)
                 (cljr--js-alias-p short))
       (if-let ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
@@ -1940,7 +1940,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
   "Strips metadata and comments"
   (with-temp-buffer
     (let ((names (list)))
-      (insert (->> deps (s-chop-prefix "[") (s-chop-suffix "]")))
+      (insert (thread-last deps (s-chop-prefix "[") (s-chop-suffix "]")))
       (goto-char (point-min))
       (while (not (cljr--empty-buffer-p))
         (push (cljr--extract-next-dependency-name) names))
@@ -1999,10 +1999,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
     (let ((dividing-line "<===============================>"))
       (cljr--prepare-sort-buffer sorted-names vectors-and-meta dividing-line)
       (cljr--sort-dependency-vectors-with-meta-and-comments dividing-line)
-      (->> (buffer-substring-no-properties (point) (point-max))
-           s-trim
-           (s-prepend "[")
-           (s-append "]")))))
+      (thread-last (buffer-substring-no-properties (point) (point-max))
+	s-trim
+	(s-prepend "[")
+	(s-append "]")))))
 
 ;;;###autoload
 (defun cljr-sort-project-dependencies ()
@@ -2017,9 +2017,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
       (thread-first (buffer-substring-no-properties (point)
 						    (cljr--point-after 'paredit-forward))
 	cljr--get-sorted-dependency-names
-	(cljr--sort-dependency-vectors (->> (clojure-delete-and-extract-sexp)
-					    (s-chop-prefix "[")
-					    (s-chop-suffix "]")))
+	(cljr--sort-dependency-vectors (thread-last (clojure-delete-and-extract-sexp)
+					 (s-chop-prefix "[")
+					 (s-chop-suffix "]")))
 	insert))
     (indent-region (point-min) (point-max))
     (save-buffer)))
@@ -2138,10 +2138,10 @@ possible choices. If the choice is trivial, return it."
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-dependency"
   (interactive "P")
   (cljr--ensure-op-supported "artifact-list")
-  (when-let ((lib-name (->> (cljr--get-artifacts-from-middleware force)
-			    (cljr--prompt-user-for "Artifact: ")))
-	     (version (->> (cljr--get-versions-from-middleware lib-name)
-			   (cljr--prompt-user-for "Version: "))))
+  (when-let ((lib-name (thread-last (cljr--get-artifacts-from-middleware force)
+			 (cljr--prompt-user-for "Artifact: ")))
+	     (version (thread-last (cljr--get-versions-from-middleware lib-name)
+			(cljr--prompt-user-for "Version: "))))
     (cljr--add-project-dependency lib-name version)))
 
 ;;;###autoload
@@ -2157,8 +2157,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
       (setq lib-name (cljr--extract-sexp))
       (paredit-forward)
       (skip-syntax-forward " ")
-      (let ((version (->> (cljr--get-versions-from-middleware lib-name)
-                          (cljr--prompt-user-for (concat lib-name " version: ")))))
+      (let ((version (thread-last (cljr--get-versions-from-middleware lib-name)
+		       (cljr--prompt-user-for (concat lib-name " version: ")))))
         (cljr--delete-sexp)
         (insert "\"" version "\""))))
   (when cljr-hotload-dependencies
@@ -2409,9 +2409,9 @@ root."
         (unless (member occurrence-id cljr--occurrence-ids)
           (setq cljr--occurrence-ids
                 (cons occurrence-id cljr--occurrence-ids))
-          (->> occurrence
-               cljr--format-symbol-occurrence
-               cljr--insert-in-find-symbol-buffer))))))
+          (thread-last occurrence
+	    cljr--format-symbol-occurrence
+	    cljr--insert-in-find-symbol-buffer))))))
 
 (defun cljr--finalise-find-symbol-buffer (total)
   (with-current-buffer "*cljr-find-usages*"
@@ -2464,7 +2464,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
   (save-excursion
     (with-current-buffer
         (find-file-noselect file)
-      (let* ((name (->> name cljr--symbol-suffix regexp-quote))
+      (let* ((name (thread-last name cljr--symbol-suffix regexp-quote))
              (search-limit (save-excursion
                              (progn
                                (goto-char (point-min))
@@ -2539,20 +2539,20 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
             (cljr--create-msg "find-used-publics"
                               "used-ns" ns
                               "file" filename))
-           (occurrences (->> (cljr--call-middleware-sync request "used-publics")
-                             (edn-read))))
+           (occurrences (thread-last (cljr--call-middleware-sync request "used-publics")
+			  (edn-read))))
       (cljr--replace-refer-all-with-alias ns occurrences alias))))
 
 (defun cljr--maybe-nses-in-bad-state (response)
-  (let ((asts-in-bad-state (->> (nrepl-dict-get response "ast-statuses")
-                                edn-read
-                                (-partition 2)
-                                (--filter (not (stringp (-last-item it)))))))
+  (let ((asts-in-bad-state (thread-last (nrepl-dict-get response "ast-statuses")
+			     edn-read
+			     (-partition 2)
+			     (--filter (not (stringp (-last-item it)))))))
     (when (not (= 0 (length asts-in-bad-state)))
       (user-error (concat "Some namespaces are in a bad state: "
-                          (->> asts-in-bad-state
-                               (--map (format "error \"%s\" in %s" (-last-item (-last-item it)) (-first-item it)))
-                               (s-join "; ")))))))
+                          (thread-last asts-in-bad-state
+			    (--map (format "error \"%s\" in %s" (-last-item (-last-item it)) (-first-item it)))
+			    (s-join "; ")))))))
 
 (defun cljr--warm-ast-cache ()
   (cljr--call-middleware-async
@@ -2680,9 +2680,9 @@ str/split => split"
   (let ((name (cljr--normalize-symbol-name symbol)))
     (cond
      ((s-matches-p "\\w+\\.\\w+" name)
-      (->> name (s-split "\\.") last car cljr--symbol-suffix))
+      (thread-last name (s-split "\\.") last car cljr--symbol-suffix))
      ((cljr--qualified-symbol-p name)
-      (->> name (s-split "/") cadr cljr--symbol-suffix))
+      (thread-last name (s-split "/") cadr cljr--symbol-suffix))
      (t name))))
 
 (defun cljr--normalize-symbol-name (name)
@@ -2696,17 +2696,17 @@ Date. -> Date
 ~@sym => sym"
   (cond
    ((s-ends-with-p "." name)
-    (->> name (s-chop-suffix ".") cljr--normalize-symbol-name))
+    (thread-last name (s-chop-suffix ".") cljr--normalize-symbol-name))
    ((s-starts-with-p "#'" name)
-    (->> name (s-chop-prefix "#'") cljr--normalize-symbol-name))
+    (thread-last name (s-chop-prefix "#'") cljr--normalize-symbol-name))
    ((s-starts-with-p "'" name)
-    (->> name (s-chop-prefix "'") cljr--normalize-symbol-name))
+    (thread-last name (s-chop-prefix "'") cljr--normalize-symbol-name))
    ((s-starts-with-p "~" name)
-    (->> name (s-chop-prefix "~") cljr--normalize-symbol-name))
+    (thread-last name (s-chop-prefix "~") cljr--normalize-symbol-name))
    ((s-starts-with-p "~@" name)
-    (->> name (s-chop-prefix "~@") cljr--normalize-symbol-name))
+    (thread-last name (s-chop-prefix "~@") cljr--normalize-symbol-name))
    ((s-starts-with-p "@" name)
-    (->> name (s-chop-prefix "@") cljr--normalize-symbol-name))
+    (thread-last name (s-chop-prefix "@") cljr--normalize-symbol-name))
    (t name)))
 
 (defun cljr--call-middleware-to-resolve-missing (symbol)
@@ -3435,9 +3435,9 @@ at PATH."
          (stub (s-concat (cljr--defn-str path)
                          (if path (cljr--symbol-suffix name) name)
                          " ["
-                         (->> args
-                              (-map-indexed params)
-                              (s-join " "))
+                         (thread-last args
+			   (-map-indexed params)
+			   (s-join " "))
                          "]\n$0)")))
     (when path
       (find-file-other-window path)
@@ -3752,13 +3752,13 @@ manual intervention."
 point is assumed to be at the function name"
   (unless (cljr--no-changes-to-parameter-order-p signature-changes)
     (let ((num-args 0)
-          (max-index (->> signature-changes
-                          (-map (lambda (c) (let ((new  (gethash :new-index c))
-                                                  (old (gethash :old-index c)))
-                                              (if (/= old new)
-                                                  (max old new)))))
-                          (-remove #'null)
-                          (apply #'max)))
+          (max-index (thread-last signature-changes
+		       (-map (lambda (c) (let ((new  (gethash :new-index c))
+					       (old (gethash :old-index c)))
+					   (if (/= old new)
+					       (max old new)))))
+		       (-remove #'null)
+		       (apply #'max)))
           beg end)
       (cljr--skip-past-whitespace-and-comments)
       (setq beg (point))
@@ -3783,13 +3783,13 @@ and only parameters a b or c are affected.
 point is assumed to be at the function name"
   (unless (cljr--no-changes-to-parameter-order-p signature-changes)
     (let ((num-partials 0)
-          (max-index (->> signature-changes
-                          (-map (lambda (c) (let ((new  (gethash :new-index c))
-                                                  (old (gethash :old-index c)))
-                                              (when (/= old new)
-                                                (max old new)))))
-                          (-remove #'null)
-                          (apply #'max)))
+          (max-index (thread-last signature-changes
+		       (-map (lambda (c) (let ((new  (gethash :new-index c))
+					       (old (gethash :old-index c)))
+					   (when (/= old new)
+					     (max old new)))))
+		       (-remove #'null)
+		       (apply #'max)))
           beg end)
       (setq beg (point))
       (cljr--skip-past-whitespace-and-comments)
