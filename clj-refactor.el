@@ -2608,7 +2608,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
              (cljr--symbol-suffix symbol))
     (let* ((names (-map (lambda (c) (gethash :name c)) candidates))
            (name (intern-soft (cljr--prompt-user-for "Require: " names))))
-      (-find (lambda (c) (equal name (gethash :name c))) candidates))))
+      (seq-find (lambda (c) (equal name (gethash :name c))) candidates))))
 
 (defun cljr--insert-libspec-verbosely (libspec)
   (insert (format "%s" libspec))
@@ -3518,8 +3518,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
     (move-to-column col)))
 
 (defun cljr--signature-change-at-index (signature-changes i)
-  (-first (lambda (change) (= (gethash :new-index change) i))
-          signature-changes))
+  (seq-find (lambda (change) (= (gethash :new-index change) i))
+	    signature-changes))
 
 (defun cljr--dec-parameter-index ()
   (let* ((index (1- (line-number-at-pos)))
@@ -3676,9 +3676,9 @@ Updates the ordering of the function parameters."
         (let ((old-name (gethash :old-name
                                  (cljr--signature-change-at-index
                                   signature-changes i))))
-          (insert (-find (lambda (param)
-                           (s-starts-with-p old-name param))
-                         parameters)))
+          (insert (seq-find (lambda (param)
+			      (s-starts-with-p old-name param))
+			    parameters)))
         (unless (= (1+ i) (length parameters))
           (insert " ")))
       (cljr--maybe-wrap-form))))
@@ -3728,8 +3728,8 @@ called."
       (setq args (nreverse args))
       (dotimes (i (length args))
         (insert (nth (gethash :old-index
-                              (-find (lambda (c) (= (gethash :new-index c) i))
-                                     signature-changes))
+                              (seq-find (lambda (c) (= (gethash :new-index c) i))
+					signature-changes))
                      args))
         (unless (= (1+ i) (length args))
           (insert " ")))
