@@ -2552,7 +2552,7 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
     (when (not (= 0 (length asts-in-bad-state)))
       (user-error (concat "Some namespaces are in a bad state: "
                           (thread-last asts-in-bad-state
-			    (--map (format "error \"%s\" in %s" (-last-item (-last-item it)) (-first-item it)))
+			    (--map (format "error \"%s\" in %s" (-last-item (-last-item it)) (car it)))
 			    (s-join "; ")))))))
 
 (defun cljr--warm-ast-cache ()
