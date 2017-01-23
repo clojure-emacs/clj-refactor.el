@@ -1350,7 +1350,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
     (re-search-forward ":refer")
     (paredit-forward)
     (backward-char)
-    (apply #'insert " " (-interpose " " names))))
+    (insert (format " %s" (s-join " " names)))))
 
 (defun cljr--new-require-clause (ns &optional refer-names)
   "Creates a new :require clause for NS.
