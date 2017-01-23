@@ -807,9 +807,9 @@ issued, and should be left focused."
                        f))))
     (dolist (buf buffers)
       (find-file
-       (format "%s%s" new-dir (-some (-partial same-file buf) files)))
+       (format "%s%s" new-dir (seq-some (-partial same-file buf) files)))
       (kill-buffer buf))
-    (find-file (format "%s/%s" new-dir (-some (-partial same-file active) files)))))
+    (find-file (format "%s/%s" new-dir (seq-some (-partial same-file active) files)))))
 
 ;;;###autoload
 (defun cljr-rename-file-or-dir (old-path new-path)
