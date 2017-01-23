@@ -2729,9 +2729,9 @@ itself might be `nil'."
   (if-let (err (nrepl-dict-get response "err"))
       (error (format "Error in nrepl-refactor: %s" err))
     (let* ((maybe-error-and-rest
-            (-drop-while (lambda (e)
-                           (not (and (stringp e) (s-equals-p e "error"))))
-                         response))
+            (seq-drop-while (lambda (e)
+			      (not (and (stringp e) (s-equals-p e "error"))))
+			    response))
            (maybe-error (car maybe-error-and-rest)))
       (when (and (stringp maybe-error) (s-equals-p maybe-error "error"))
         (or (cadr maybe-error-and-rest)
