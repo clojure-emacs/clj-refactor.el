@@ -360,6 +360,7 @@ Otherwise open the file and do the changes non-interactively."
     ("ht" . (hydra-cljr-toplevel-form-menu/body "Hydra menu for top level refactorings " ?t ("hydra")))
     ("hs" . (hydra-cljr-cljr-menu/body "Hydra menu for self features" ?s ("hydra")))))
 
+
 (defhydra hydra-cljr-ns-menu (:color pink :hint nil)
   "
  Ns related refactorings
@@ -788,10 +789,10 @@ A new record is created to define this constructor."
                          1000))))
 
 (defun cljr--buffers-visiting-dir (dir)
-  (-filter (lambda (buf)
-             (when-let (path (buffer-file-name buf))
-               (s-starts-with-p dir path :ignore-case)))
-           (buffer-list)))
+  (seq-filter (lambda (buf)
+		(when-let (path (buffer-file-name buf))
+		  (s-starts-with-p dir path :ignore-case)))
+	      (buffer-list)))
 
 (defun cljr--revisit-buffers (buffers new-dir active)
   "After moving a directory revisit all files visited by BUFFERS
@@ -945,12 +946,12 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
          (test-name (car (last ns-chunks)))
          (src-dir-name (s-replace "test/" "src/" (file-name-directory test-file)))
          (replace-underscore (-partial 's-replace "_" "-"))
-         (src-ns (car (--filter (or (s-prefix-p it test-name)
-                                    (s-suffix-p it test-name))
-                                (-map (lambda (file-name)
-                                        (funcall replace-underscore
-                                                 (file-name-sans-extension file-name)))
-                                      (directory-files src-dir-name))))))
+         (src-ns (car (seq-filter (lambda (it) (or (s-prefix-p it test-name)
+						   (s-suffix-p it test-name)))
+				  (-map (lambda (file-name)
+					  (funcall replace-underscore
+						   (file-name-sans-extension file-name)))
+					(directory-files src-dir-name))))))
     (when src-ns
       (mapconcat 'identity (append (butlast ns-chunks) (list src-ns)) "."))))
 
@@ -1285,7 +1286,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
         (setq ns (cljr--current-namespace)
               names (cljr--name-of-defns forms)
               target-ns-alias (-some->>
-                               (--filter (s-matches-p (format target-ns-regexp-template ns) it) requires)
+                               (seq-filter (lambda (it) (s-matches-p (format target-ns-regexp-template ns) it)) requires)
                                (car)
                                (s-slice-at ":as")
                                (-last-item)
@@ -1774,7 +1775,7 @@ Return the value of point if we moved."
 
 FEATURE is either :clj or :cljs."
   (cl-assert (or (eq feature :clj) (eq feature :cljs)) nil
-          "FEATURE has to be either :clj or :cljs.  Received: %s" feature)
+	     "FEATURE has to be either :clj or :cljs.  Received: %s" feature)
   (save-excursion
     (let ((start-reader-conditional
            (cljr--point-after 'cljr--goto-reader-conditional))
@@ -2381,8 +2382,8 @@ root."
   (s-chop-prefix (cljr--project-dir) path))
 
 (defun cljr--get-valid-filename (hash)
-    "Get :file value from the hash table and convert path if necessary."
-    (funcall cider-from-nrepl-filename-function (gethash :file hash)))
+  "Get :file value from the hash table and convert path if necessary."
+  (funcall cider-from-nrepl-filename-function (gethash :file hash)))
 
 (defun cljr--format-symbol-occurrence (occurrence)
   (let ((file (cljr--get-valid-filename occurrence))
@@ -2548,7 +2549,7 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
   (let ((asts-in-bad-state (thread-last (nrepl-dict-get response "ast-statuses")
 			     edn-read
 			     (-partition 2)
-			     (--filter (not (stringp (-last-item it)))))))
+			     (seq-filter (lambda (it) (not (stringp (-last-item it))))))))
     (when (not (= 0 (length asts-in-bad-state)))
       (user-error (concat "Some namespaces are in a bad state: "
                           (thread-last asts-in-bad-state
@@ -2792,10 +2793,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
     (insert string)
     (goto-char (point-min))
     (cl-assert (cljr--looking-at-dependency-vector-p) nil
-            (format
-             (s-concat "Expected dependency vector of type "
-                       "[org.clojure \"1.7.0\"], but got '%s'")
-             string)))
+	       (format
+		(s-concat "Expected dependency vector of type "
+			  "[org.clojure \"1.7.0\"], but got '%s'")
+		string)))
   string)
 
 ;;;###autoload
