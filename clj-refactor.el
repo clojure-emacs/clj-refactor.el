@@ -3666,8 +3666,8 @@ Point is assumed to be at the end of the form."
   "Point is assumed to be at the first character in the lambda list.
 
 Updates the ordering of the function parameters."
-  (unless (-every-p (lambda (c) (= (gethash :new-index c) (gethash :old-index c)))
-                    signature-changes)
+  (unless (seq-every-p (lambda (c) (= (gethash :new-index c) (gethash :old-index c)))
+		       signature-changes)
     (let (parameters)
       ;; extract parameters
       (dolist (_ signature-changes)
@@ -3721,8 +3721,8 @@ to here:  (defn foo [|bar baz] ...)"
       (s-ends-with-p (cljr--symbol-suffix fn) (cider-symbol-at-point)))))
 
 (defun cljr--no-changes-to-parameter-order-p (signature-changes)
-  (-every-p (lambda (e) (= (gethash :new-index e) (gethash :old-index e)))
-            signature-changes))
+  (seq-every-p (lambda (e) (= (gethash :new-index e) (gethash :old-index e)))
+	       signature-changes))
 
 (defun cljr--update-call-site (signature-changes)
   "Point is assumed to be at the name of the function being
