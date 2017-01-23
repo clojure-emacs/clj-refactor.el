@@ -1579,7 +1579,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-introduce-let"
 (defun cljr--get-let-bindings ()
   "Returns a list of lists. The inner lists contain two elements first is
    the binding, second is the init-expr"
-  (-partition 2 (clojure--read-let-bindings)))
+  (seq-partition (clojure--read-let-bindings) 2))
 
 (defun cljr--replace-sexp-with-binding (binding)
   (save-excursion
@@ -2547,11 +2547,12 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
       (cljr--replace-refer-all-with-alias ns occurrences alias))))
 
 (defun cljr--maybe-nses-in-bad-state (response)
-  (let ((asts-in-bad-state (thread-last (nrepl-dict-get response "ast-statuses")
-			     edn-read
-			     (-partition 2)
-			     (seq-filter (lambda (it)
-					   (not (stringp (car (last it)))))))))
+  (let ((asts-in-bad-state (seq-filter
+			    (lambda (it)
+			      (not (stringp (car (last it)))))
+			    (thread-first (nrepl-dict-get response "ast-statuses")
+			      edn-read
+			      (seq-partition 2)))))
     (when (not (= 0 (length asts-in-bad-state)))
       (user-error (concat "Some namespaces are in a bad state: "
                           (thread-last asts-in-bad-state
