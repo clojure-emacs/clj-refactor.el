@@ -304,8 +304,8 @@ Otherwise open the file and do the changes non-interactively."
 
 (defun cljr--key-pairs-with-modifier (modifier keys)
   (thread-last (string-to-list keys)
-    (--map (cljr--fix-special-modifier-combinations
-	    (concat modifier (char-to-string it))))
+    (seq-map (lambda (it) (cljr--fix-special-modifier-combinations
+			   (concat modifier (char-to-string it)))))
     (s-join " ")
     (read-kbd-macro)))
 
@@ -708,7 +708,7 @@ All config settings are included in the created msg."
         cljr--post-command-messages))
 
 (defun cljr--post-command-hook ()
-  (-map #'message cljr--post-command-messages)
+  (seq-map #'message cljr--post-command-messages)
   (setq cljr--post-command-messages nil))
 
 (defun cljr-show-changelog ()
@@ -948,10 +948,10 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
          (replace-underscore (-partial 's-replace "_" "-"))
          (src-ns (car (seq-filter (lambda (it) (or (s-prefix-p it test-name)
 						   (s-suffix-p it test-name)))
-				  (-map (lambda (file-name)
-					  (funcall replace-underscore
-						   (file-name-sans-extension file-name)))
-					(directory-files src-dir-name))))))
+				  (seq-map (lambda (file-name)
+					     (funcall replace-underscore
+						      (file-name-sans-extension file-name)))
+					   (directory-files src-dir-name))))))
     (when src-ns
       (mapconcat 'identity (append (butlast ns-chunks) (list src-ns)) "."))))
 
@@ -1747,7 +1747,7 @@ front of function literals and sets."
 ;; ------ magic requires -------
 
 (defun cljr--magic-requires-re ()
-  (regexp-opt (-map 'car cljr-magic-require-namespaces)))
+  (regexp-opt (seq-map 'car cljr-magic-require-namespaces)))
 
 (defun cljr--goto-reader-conditional ()
   "Move point just before #?.
@@ -1908,7 +1908,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
         (when (and (cljr--clojure-filename-p filename)
                    (not (cljr--excluded-from-project-clean-p filename)))
           (cljr--update-file filename
-            (ignore-errors (-map 'funcall cljr-project-clean-functions))))))
+            (ignore-errors (seq-map 'funcall cljr-project-clean-functions))))))
     (if (and (cider-connected-p) (not cljr-warn-on-eval) (cljr--op-supported-p "warm-ast-cache"))
         (cljr--warm-ast-cache))
     (cljr--post-command-message "Project clean done.")))
@@ -2553,7 +2553,9 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
     (when (not (= 0 (length asts-in-bad-state)))
       (user-error (concat "Some namespaces are in a bad state: "
                           (thread-last asts-in-bad-state
-			    (--map (format "error \"%s\" in %s" (-last-item (-last-item it)) (car it)))
+			    (seq-map
+			     (lambda (it)
+			       (format "error \"%s\" in %s" (-last-item (-last-item it)) (car it))))
 			    (s-join "; ")))))))
 
 (defun cljr--warm-ast-cache ()
@@ -2607,7 +2609,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   (if (= (length candidates) 0)
       (error "Couldn't find any symbols matching %s on classpath."
              (cljr--symbol-suffix symbol))
-    (let* ((names (-map (lambda (c) (gethash :name c)) candidates))
+    (let* ((names (seq-map (lambda (c) (gethash :name c)) candidates))
            (name (intern-soft (cljr--prompt-user-for "Require: " names))))
       (seq-find (lambda (c) (equal name (gethash :name c))) candidates))))
 
@@ -3222,18 +3224,20 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 
 (defun cljr--create-fn-from-list-fold (args path)
   (cljr--insert-example-fn (car args)
-                           (--map
-                            (when-let (name (cljr--guess-param-name it))
-                              (inflection-singularize-string name))
+                           (seq-map
+			    (lambda (it)
+			      (when-let (name (cljr--guess-param-name it))
+				(inflection-singularize-string name)))
                             (cdr args))
                            path))
 
 (defun cljr--create-fn-from-list-fold-with-index (args path)
   (cljr--insert-example-fn (car args)
                            (cons "index"
-                                 (--map
-                                  (when-let (name (cljr--guess-param-name it))
-                                    (inflection-singularize-string name))
+                                 (seq-map
+				  (lambda (it)
+				    (when-let (name (cljr--guess-param-name it))
+				      (inflection-singularize-string name)))
                                   (cdr args)))
                            path))
 
@@ -3755,10 +3759,10 @@ point is assumed to be at the function name"
   (unless (cljr--no-changes-to-parameter-order-p signature-changes)
     (let ((num-args 0)
           (max-index (thread-last signature-changes
-		       (-map (lambda (c) (let ((new  (gethash :new-index c))
-					       (old (gethash :old-index c)))
-					   (if (/= old new)
-					       (max old new)))))
+		       (seq-map (lambda (c) (let ((new  (gethash :new-index c))
+						  (old (gethash :old-index c)))
+					      (if (/= old new)
+						  (max old new)))))
 		       (seq-remove #'null)
 		       (apply #'max)))
           beg end)
@@ -3786,10 +3790,10 @@ point is assumed to be at the function name"
   (unless (cljr--no-changes-to-parameter-order-p signature-changes)
     (let ((num-partials 0)
           (max-index (thread-last signature-changes
-		       (-map (lambda (c) (let ((new  (gethash :new-index c))
-					       (old (gethash :old-index c)))
-					   (when (/= old new)
-					     (max old new)))))
+		       (seq-map (lambda (c) (let ((new  (gethash :new-index c))
+						  (old (gethash :old-index c)))
+					      (when (/= old new)
+						(max old new)))))
 		       (seq-remove #'null)
 		       (apply #'max)))
           beg end)
