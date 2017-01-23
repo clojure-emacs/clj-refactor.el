@@ -1289,8 +1289,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
                                (seq-filter (lambda (it) (s-matches-p (format target-ns-regexp-template ns) it)) requires)
                                (car)
                                (s-slice-at ":as")
-                               (-last-item)
-                               (replace-regexp-in-string (format target-ns-alias-template ns) "\\1")
+			       (last)
+			       (car)
+			       (replace-regexp-in-string (format target-ns-alias-template ns) "\\1")
                                (s-trim)))
         (goto-char (point-max))
         (cljr--insert-with-proper-whitespace
@@ -1583,7 +1584,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-introduce-let"
 (defun cljr--replace-sexp-with-binding (binding)
   (save-excursion
     (let ((bind-var (car binding))
-          (init-expr (-last-item binding))
+          (init-expr (car (last binding)))
           (end (cljr--point-after 'clojure--goto-let 'paredit-forward)))
       (while (re-search-forward (clojure--sexp-regexp init-expr) end t)
         (replace-match (concat "\\1" bind-var "\\2"))))))
@@ -2522,7 +2523,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
         (cljr--warm-ast-cache)))))
 
 (defun cljr--replace-refer-all-with-alias (ns publics-occurrences alias)
-  (let ((ns-last-token (-last-item (s-split "\\." ns))))
+  (let ((ns-last-token (car (last (s-split "\\." ns)))))
     (when (re-search-forward (format "\\(%s\\).*?\\([\]\)]\\)" ns-last-token) nil t)
       (replace-match (format "\\1 :as %s\\2" alias)))
     (perform-replace (format "%s/" alias) "" nil nil t)
@@ -2549,13 +2550,14 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
   (let ((asts-in-bad-state (thread-last (nrepl-dict-get response "ast-statuses")
 			     edn-read
 			     (-partition 2)
-			     (seq-filter (lambda (it) (not (stringp (-last-item it))))))))
+			     (seq-filter (lambda (it)
+					   (not (stringp (car (last it)))))))))
     (when (not (= 0 (length asts-in-bad-state)))
       (user-error (concat "Some namespaces are in a bad state: "
                           (thread-last asts-in-bad-state
 			    (seq-map
 			     (lambda (it)
-			       (format "error \"%s\" in %s" (-last-item (-last-item it)) (car it))))
+			       (format "error \"%s\" in %s" (car (last (car (last it)))) (car it))))
 			    (s-join "; ")))))))
 
 (defun cljr--warm-ast-cache ()
@@ -3261,7 +3263,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 
 (defun cljr--create-fn-from-sort (args path)
   (let* ((fn-name (cider-symbol-at-point))
-         (param-name (when-let (coll-name (cljr--guess-param-name (-last-item args)))
+         (param-name (when-let (coll-name (cljr--guess-param-name (car (last args))))
                        (inflection-singularize-string coll-name))))
     (cljr--insert-example-fn fn-name
                              (if param-name
@@ -3277,7 +3279,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
          (param-name (if making-comparator?
                          (when (cljr--keywordp (car args))
                            (s-chop-prefix ":" (car args)))
-                       (when-let (coll-name (cljr--guess-param-name (-last-item args)))
+                       (when-let (coll-name (cljr--guess-param-name (car (last args))))
                          (inflection-singularize-string coll-name)))))
     (cljr--insert-example-fn fn-name
                              (if making-comparator?
@@ -3294,7 +3296,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
    (list (or (and (= 3 (length args))
                   (cljr--guess-param-name (nth 1 args)))
              "acc")
-         (when-let (name (cljr--guess-param-name (-last-item args)))
+         (when-let (name (cljr--guess-param-name (car (last args))))
            (inflection-singularize-string name)))
    path))
 
@@ -3362,7 +3364,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
      ((cljr--keyword-lookup-p prepped-form)
       (cljr--strip-keyword-ns (match-string 1 prepped-form)))
      ((and fn-call (s-ends-with-p "." fn-call))
-      (s-dashed-words (-last-item (s-split "\\." fn-call t))))
+      (s-dashed-words (car (last (s-split "\\." fn-call t)))))
      ((and fn-call (s-starts-with-p "create-" fn-call))
       (s-chop-prefix "create-" fn-call))
      ((and fn-call (s-starts-with-p ".get" fn-call))
