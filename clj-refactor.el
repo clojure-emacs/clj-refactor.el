@@ -1612,13 +1612,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-expand-let"
   (paredit-forward-up)
   (cljr--skip-past-whitespace-and-comments)
   (cljr--paredit-convolute-no-advice)
-  (-each (cljr--get-let-bindings) 'cljr--replace-sexp-with-binding)
+  (mapc 'cljr--replace-sexp-with-binding (cljr--get-let-bindings))
   (cljr--one-shot-keybinding "l" 'cljr-expand-let))
 
 (defun cljr--replace-sexp-with-binding-in-let ()
   (remove-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
   (save-excursion
-    (-each (cljr--get-let-bindings) 'cljr--replace-sexp-with-binding)))
+    (mapc 'cljr--replace-sexp-with-binding (cljr--get-let-bindings))))
 
 ;;;###autoload
 (defun cljr-move-to-let ()
