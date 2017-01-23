@@ -462,12 +462,12 @@ _s_: Refactor related functions
 ;;;###autoload
 (defun cljr-add-keybindings-with-prefix (prefix)
   "Bind keys in `cljr--all-helpers' under a PREFIX key."
-  (cljr--add-keybindings (-partial 'cljr--key-pairs-with-prefix prefix)))
+  (cljr--add-keybindings (apply-partially 'cljr--key-pairs-with-prefix prefix)))
 
 ;;;###autoload
 (defun cljr-add-keybindings-with-modifier (modifier)
   "Bind keys in `cljr--all-helpers' under a MODIFIER key."
-  (cljr--add-keybindings (-partial 'cljr--key-pairs-with-modifier modifier)))
+  (cljr--add-keybindings (apply-partially 'cljr--key-pairs-with-modifier modifier)))
 
 
 ;; ------ utilities -----------
@@ -808,9 +808,9 @@ issued, and should be left focused."
                        f))))
     (dolist (buf buffers)
       (find-file
-       (format "%s%s" new-dir (seq-some (-partial same-file buf) files)))
+       (format "%s%s" new-dir (seq-some (apply-partially same-file buf) files)))
       (kill-buffer buf))
-    (find-file (format "%s/%s" new-dir (seq-some (-partial same-file active) files)))))
+    (find-file (format "%s/%s" new-dir (seq-some (apply-partially same-file active) files)))))
 
 ;;;###autoload
 (defun cljr-rename-file-or-dir (old-path new-path)
@@ -945,8 +945,8 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
   (let* ((ns-chunks (split-string test-ns "[.]" t))
          (test-name (car (last ns-chunks)))
          (src-dir-name (s-replace "test/" "src/" (file-name-directory test-file)))
-         (replace-underscore (-partial 's-replace "_" "-"))
-         (src-ns (car (seq-filter (lambda (it) (or (s-prefix-p it test-name)
+         (replace-underscore (apply-partially 's-replace "_" "-"))
+	 (src-ns (car (seq-filter (lambda (it) (or (s-prefix-p it test-name)
 						   (s-suffix-p it test-name)))
 				  (seq-map (lambda (file-name)
 					     (funcall replace-underscore
