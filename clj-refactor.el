@@ -1945,7 +1945,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
       (goto-char (point-min))
       (while (not (cljr--empty-buffer-p))
         (push (cljr--extract-next-dependency-name) names))
-      (s-join "\n "(-sort #'string< names)))))
+      (s-join "\n "(seq-sort #'string< names)))))
 
 (defun cljr--prepare-sort-buffer (sorted-names vectors-and-meta dividing-line)
   (insert sorted-names)
@@ -2945,20 +2945,20 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
       (save-buffer))))
 
 (defun cljr--sort-occurrences (occurrences)
-  "Sort the occurrences so the last ones in the file comes first."
-  (-sort (lambda (o1 o2)
-           (let ((o1-line (gethash :line-beg o1))
-                 (o2-line (gethash :line-beg o2))
-                 (o1-col (gethash :col-beg o1))
-                 (o2-col (gethash :col-beg o2)))
-             (cond
-              ((< o1-line o2-line) o2)
-              ((> o1-line o2-line) o1)
-              ((< o1-col o2-col ) o2)
-              ((> o1-col o2-col) o1)
-              (t (error "Sort occurrences failed to compare %s %s %s %s"
-                        o1-line o2-line o1-col o2-col)))))
-         occurrences))
+  "Sort the OCCURRENCES so the last ones in the file comes first."
+  (seq-sort (lambda (o1 o2)
+	      (let ((o1-line (gethash :line-beg o1))
+		    (o2-line (gethash :line-beg o2))
+		    (o1-col (gethash :col-beg o1))
+		    (o2-col (gethash :col-beg o2)))
+		(cond
+		 ((< o1-line o2-line) o2)
+		 ((> o1-line o2-line) o1)
+		 ((< o1-col o2-col ) o2)
+		 ((> o1-col o2-col) o1)
+		 (t (error "Sort occurrences failed to compare %s %s %s %s"
+			   o1-line o2-line o1-col o2-col)))))
+	    occurrences))
 
 (defun cljr--inline-fn-at-call-site (def call-site)
   "Point is at a call site, where the sexp call-site has just
