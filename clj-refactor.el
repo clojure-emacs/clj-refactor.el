@@ -3436,7 +3436,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 
 If PATH is non-nil append the new function to the end of the file
 at PATH."
-  (let* ((params (lambda (i word)
+  (let* ((params (lambda (word i)
                    (format "${%s:%s}" (+ i 1)
                            (or (and word (cljr--guess-param-name word))
                                (format "arg%s" i)))))
@@ -3444,7 +3444,7 @@ at PATH."
                          (if path (cljr--symbol-suffix name) name)
                          " ["
                          (thread-last args
-			   (-map-indexed params)
+			   (seq-map-indexed params)
 			   (s-join " "))
                          "]\n$0)")))
     (when path
