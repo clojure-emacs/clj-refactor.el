@@ -1285,14 +1285,16 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
         (ido-find-file)
         (setq ns (cljr--current-namespace)
               names (cljr--name-of-defns forms)
-              target-ns-alias (-some->>
-                               (seq-filter (lambda (it) (s-matches-p (format target-ns-regexp-template ns) it)) requires)
-                               (car)
-                               (s-slice-at ":as")
-			       (last)
-			       (car)
-			       (replace-regexp-in-string (format target-ns-alias-template ns) "\\1")
-                               (s-trim)))
+	      target-ns-alias (when-let ((filtered-require (seq-find
+							    (lambda (it)
+							      (s-matches-p (format target-ns-regexp-template ns) it))
+							    requires)))
+				(thread-last filtered-require
+				  (s-slice-at ":as")
+				  (last)
+				  (car)
+				  (replace-regexp-in-string (format target-ns-alias-template ns) "\\1")
+				  (s-trim))))
         (goto-char (point-max))
         (cljr--insert-with-proper-whitespace
          (cljr--remove-references-of-target-ns forms ns target-ns-alias))
