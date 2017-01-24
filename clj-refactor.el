@@ -358,36 +358,6 @@ Otherwise open the file and do the changes non-interactively."
     ("ht" . (hydra-cljr-toplevel-form-menu/body "Hydra menu for top level refactorings " ?t ("hydra")))
     ("hs" . (hydra-cljr-cljr-menu/body "Hydra menu for self features" ?s ("hydra")))))
 
-(defun hydra-docstring (type)
-  (apply
-   'concat
-   (cons
-    (format "\n %s related refactorings\n------------------------------------------------------------------------------------------------------------------------------------------------------\n" (s-capitalize (s-replace "-" " " type)))
-    (->> cljr--all-helpers
-         (-filter
-          (lambda (fn-description) (-contains-p (-last-item (cdr fn-description)) type)))
-         (-map (lambda (description) (list (car description)
-                                           (nth 1 (cdr description)))))
-         (-map (lambda (tuple) (format "_%s_: %-45s" (car tuple) (cadr tuple))))
-         (-partition-all 3)
-         (-map-first (lambda (line)
-                       (/= 3 (length line)))
-                     (lambda (line)
-                       (cond
-                        ((= 1 (length line))
-                         (cons (car line) '("" "")))
-
-                        ((= 2 (length line))
-                         (list (car line) (cadr line) "")))))
-         (-map (lambda (line) (apply 'format "%s%s%s\n" line)))))))
-
-(defun hydra-heads (type)
-  (->> cljr--all-helpers
-       (-filter
-        (lambda (fn-description) (-contains-p (-last-item (cdr fn-description)) type)))
-       (-map (lambda (description) (list (format "%s" (car description))
-                                         (cadr description))))))
-
 (defhydra hydra-cljr-ns-menu (:color pink :hint nil)
   "
  Ns related refactorings
