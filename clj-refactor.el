@@ -1697,7 +1697,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-destructure-keys
         (paredit-forward-down)
         (paredit-raise-sexp)
         (delete-char 1)
-        (!cons (cider-symbol-at-point) symbols)))
+	(setq symbols (cons (cider-symbol-at-point) symbols))))
     (save-excursion ;; find new bound
       (paredit-backward-up 2)
       (paredit-forward)
