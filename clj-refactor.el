@@ -304,7 +304,7 @@ Otherwise open the file and do the changes non-interactively."
 (defun cljr--key-pairs-with-modifier (modifier keys)
   (thread-last (string-to-list keys)
     (seq-map (lambda (it) (cljr--fix-special-modifier-combinations
-			   (concat modifier (char-to-string it)))))
+                           (concat modifier (char-to-string it)))))
     (s-join " ")
     (read-kbd-macro)))
 
@@ -789,9 +789,9 @@ A new record is created to define this constructor."
 
 (defun cljr--buffers-visiting-dir (dir)
   (seq-filter (lambda (buf)
-		(when-let (path (buffer-file-name buf))
-		  (s-starts-with-p dir path :ignore-case)))
-	      (buffer-list)))
+                (when-let (path (buffer-file-name buf))
+                  (s-starts-with-p dir path :ignore-case)))
+              (buffer-list)))
 
 (defun cljr--revisit-buffers (buffers new-dir active)
   "After moving a directory revisit all files visited by BUFFERS
@@ -945,12 +945,12 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
          (test-name (car (last ns-chunks)))
          (src-dir-name (s-replace "test/" "src/" (file-name-directory test-file)))
          (replace-underscore (apply-partially 's-replace "_" "-"))
-	 (src-ns (car (seq-filter (lambda (it) (or (s-prefix-p it test-name)
-						   (s-suffix-p it test-name)))
-				  (seq-map (lambda (file-name)
-					     (funcall replace-underscore
-						      (file-name-sans-extension file-name)))
-					   (directory-files src-dir-name))))))
+         (src-ns (car (seq-filter (lambda (it) (or (s-prefix-p it test-name)
+                                                   (s-suffix-p it test-name)))
+                                  (seq-map (lambda (file-name)
+                                             (funcall replace-underscore
+                                                      (file-name-sans-extension file-name)))
+                                           (directory-files src-dir-name))))))
     (when src-ns
       (mapconcat 'identity (append (butlast ns-chunks) (list src-ns)) "."))))
 
@@ -984,8 +984,8 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
                 cljr-midje-test-declaration)
                ((cljr--project-depends-on-p "expectations")
                 cljr-expectations-test-declaration)
-	       ((cljr--cljs-file-p)
-		cljr-cljs-clojure-test-declaration)
+               ((cljr--cljs-file-p)
+                cljr-cljs-clojure-test-declaration)
                ((cljr--cljc-file-p)
                 cljr-cljc-clojure-test-declaration)
                (t cljr-clojure-test-declaration))))
@@ -1284,15 +1284,15 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
         (ido-find-file)
         (setq ns (cljr--current-namespace)
               names (cljr--name-of-defns forms)
-	      target-ns-alias (when-let ((filtered-require (seq-find
-							    (lambda (it)
-							      (s-matches-p (format target-ns-regexp-template ns) it))
-							    requires)))
-				(thread-last filtered-require
-				  (s-slice-at ":as")
-				  (last)
-				  (car)
-				  (replace-regexp-in-string (format target-ns-alias-template ns) "\\1")
+              target-ns-alias (when-let ((filtered-require (seq-find
+                                                            (lambda (it)
+                                                              (s-matches-p (format target-ns-regexp-template ns) it))
+                                                            requires)))
+                                (thread-last filtered-require
+                                  (s-slice-at ":as")
+                                  (last)
+                                  (car)
+                                  (replace-regexp-in-string (format target-ns-alias-template ns) "\\1")
 				  (s-trim))))
         (goto-char (point-max))
         (cljr--insert-with-proper-whitespace
