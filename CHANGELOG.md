@@ -22,6 +22,7 @@
 
 ### Bugs fixed
 
+- [#368](https://github.com/clojure-emacs/clj-refactor.el/issues/368) Fix inline symbol fails on inlining composed function in a `def`
 - [#299](https://github.com/clojure-emacs/clj-refactor.el/issues/299) `ml` moves cursor
 - [#309](https://github.com/clojure-emacs/clj-refactor.el/issues/309)  `am` creates alias for fully-qualified symbols.
 - [#313](https://github.com/clojure-emacs/clj-refactor.el/issues/313)  teach `pf` about function literals using `%&`.

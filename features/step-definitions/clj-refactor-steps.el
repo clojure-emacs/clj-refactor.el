@@ -249,6 +249,27 @@
 :file \"core.clj\"
 :match \"(map my-inc (range 10))\"})}")))
            (cljr--inline-symbol (gethash :definition response)
+                            (gethash :occurrences response)))))
+
+(Given "I call the cljr--inline-symbol function directly with mockdata to inline trim-lower"
+       (lambda ()
+         (let ((response (edn-read "{:definition {:definition \"(comp str/lower-case str/trim)\"
+:line-beg 1
+:line-end 1
+:col-beg 2
+:col-end 52
+:name \"refactor-nrepl.foo/trim-lower\"
+:file \"core.clj\"
+:match \"(def trim-lower (comp str/lower-case str/trim))\"}
+:occurrences ({:line-beg 3
+:line-end 3
+:col-beg 2
+:col-end 26
+:name \"refactor-nrepl.foo/trim-lower\"
+:file \"core.clj\"
+:match \"(trim-lower a-string)\"})}")))
+
+           (cljr--inline-symbol (gethash :definition response)
                                 (gethash :occurrences response)))))
 
 (And "I mock out the call to the middleware to find locals$"
