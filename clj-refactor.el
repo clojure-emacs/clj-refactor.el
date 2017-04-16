@@ -891,6 +891,16 @@ Please, install (or update) refactor-nrepl %s and restart the REPL."
                    "project.clj")
     (user-error "Can't find project.clj!")))
 
+;;;###autoload
+(defun cljr-rename-dir ()
+  "Renames current buffer and directory of current buffer it is in."
+  (interactive)
+  (dolist (filename (directory-files (file-name-directory (or load-file-name buffer-file-name))))
+    (when (s-ends-with? ".clj" filename)
+      (let ((new-name (read-file-name "New name: " filename))
+	    (buffer (get-file-buffer filename)))
+	(cljr--rename-file filename new-name)))))
+
 ;; ------ ns statements -----------
 
 (defun cljr--goto-ns ()
