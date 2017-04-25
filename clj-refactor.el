@@ -2062,8 +2062,8 @@ If it's present KEY indicates the key to extract from the response."
 (splitting the string at numbers and doing numeric compare with them).
 It is optimized for version comparisons, in that empty strings are sorted
 before non-empty. This lets 1.7.0 be sorted above 1.7.0-RC1."
-  (let ((str1-components (cljr--dict-split (s-downcase str1)))
-        (str2-components (cljr--dict-split (s-downcase str2))))
+  (let ((str1-components (cljr--dict-split (downcase str1)))
+        (str2-components (cljr--dict-split (downcase str2))))
     (cljr--dict-lessp str1-components str2-components)))
 
 (defun cljr--dict-lessp (slist1 slist2)
@@ -3089,8 +3089,8 @@ if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
   "Check whether clj-refactor and nrepl-refactor versions are the same"
   (let ((refactor-nrepl-version (or (cljr--middleware-version)
                                     "n/a")))
-    (unless (string-equal (s-downcase refactor-nrepl-version)
-			  (s-downcase (cljr--version :remove-package-version)))
+    (unless (string-equal (downcase refactor-nrepl-version)
+			  (downcase (cljr--version :remove-package-version)))
       (cider-repl-emit-interactive-stderr
        (format "WARNING: clj-refactor and refactor-nrepl are out of sync.
 Their versions are %s and %s, respectively.
