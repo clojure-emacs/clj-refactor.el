@@ -791,7 +791,7 @@ A new record is created to define this constructor."
 (defun cljr--buffers-visiting-dir (dir)
   (seq-filter (lambda (buf)
                 (when-let (path (buffer-file-name buf))
-                  (s-starts-with-p dir path :ignore-case)))
+                  (string-prefix-p dir path :ignore-case)))
               (buffer-list)))
 
 (defun cljr--revisit-buffers (buffers new-dir active)
@@ -2706,15 +2706,15 @@ Date. -> Date
   (cond
    ((s-ends-with-p "." name)
     (thread-last name (s-chop-suffix ".") cljr--normalize-symbol-name))
-   ((s-starts-with-p "#'" name)
+   ((string-prefix-p "#'" name)
     (thread-last name (s-chop-prefix "#'") cljr--normalize-symbol-name))
-   ((s-starts-with-p "'" name)
+   ((string-prefix-p "'" name)
     (thread-last name (s-chop-prefix "'") cljr--normalize-symbol-name))
-   ((s-starts-with-p "~" name)
+   ((string-prefix-p "~" name)
     (thread-last name (s-chop-prefix "~") cljr--normalize-symbol-name))
-   ((s-starts-with-p "~@" name)
+   ((string-prefix-p "~@" name)
     (thread-last name (s-chop-prefix "~@") cljr--normalize-symbol-name))
-   ((s-starts-with-p "@" name)
+   ((string-prefix-p "@" name)
     (thread-last name (s-chop-prefix "@") cljr--normalize-symbol-name))
    (t name)))
 
@@ -2991,7 +2991,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
 
 (defun cljr--inline-symbol (definition occurrences)
   (let* ((def (gethash :definition definition))
-         (inline-fn-p (s-starts-with-p "(fn" def)))
+         (inline-fn-p (string-prefix-p "(fn" def)))
     (dolist (symbol-meta (cljr--sort-occurrences occurrences))
       (let* ((file (cljr--get-valid-filename symbol-meta))
              (line-beg (gethash :line-beg symbol-meta))
@@ -3315,7 +3315,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
       (cljr--extract-sexp-as-list))))
 
 (defun cljr--unwind-s (s)
-  (if (s-starts-with-p "(->" s)
+  (if (string-prefix-p "(->" s)
       (cljr--with-string-content s
         (clojure-unwind-all)
         (buffer-substring (point-min) (point-max)))
@@ -3370,9 +3370,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
       (cljr--strip-keyword-ns (match-string 1 prepped-form)))
      ((and fn-call (s-ends-with-p "." fn-call))
       (s-dashed-words (car (last (s-split "\\." fn-call t)))))
-     ((and fn-call (s-starts-with-p "create-" fn-call))
+     ((and fn-call (string-prefix-p "create-" fn-call))
       (s-chop-prefix "create-" fn-call))
-     ((and fn-call (s-starts-with-p ".get" fn-call))
+     ((and fn-call (string-prefix-p ".get" fn-call))
       (s-dashed-words (s-chop-prefix ".get" fn-call)))
      ((string= "get-in" fn-call)
       (cljr--find-param-name-from-get-in prepped-form))
@@ -3687,7 +3687,7 @@ Updates the ordering of the function parameters."
                                  (cljr--signature-change-at-index
                                   signature-changes i))))
           (insert (seq-find (lambda (param)
-			      (s-starts-with-p old-name param))
+			      (string-prefix-p old-name param))
 			    parameters)))
         (unless (= (1+ i) (length parameters))
           (insert " ")))
