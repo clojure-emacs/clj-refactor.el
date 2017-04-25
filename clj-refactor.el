@@ -946,8 +946,8 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
          (test-name (car (last ns-chunks)))
          (src-dir-name (s-replace "test/" "src/" (file-name-directory test-file)))
          (replace-underscore (apply-partially 's-replace "_" "-"))
-         (src-ns (car (seq-filter (lambda (it) (or (s-prefix-p it test-name)
-                                                   (s-suffix-p it test-name)))
+         (src-ns (car (seq-filter (lambda (it) (or (string-prefix-p it test-name)
+                                                   (string-suffix-p it test-name)))
                                   (seq-map (lambda (file-name)
                                              (funcall replace-underscore
                                                       (file-name-sans-extension file-name)))
