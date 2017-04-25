@@ -957,19 +957,19 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
 
 (defun cljr--cljs-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a cljs file?"
-  (s-equals-p (file-name-extension (buffer-file-name (or buf (current-buffer))))
-              "cljs"))
+  (string-equal (file-name-extension (buffer-file-name (or buf (current-buffer))))
+		"cljs"))
 
 (defun cljr--cljc-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a cljc file?"
-  (s-equals-p (file-name-extension (buffer-file-name (or buf (current-buffer))))
-              "cljc"))
+  (string-equal (file-name-extension (buffer-file-name (or buf (current-buffer))))
+		"cljc"))
 
 (defun cljr--clj-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a clj file?"
   (or (eq major-mode 'clojure-mode)
-      (s-equals-p (file-name-extension (buffer-file-name (or buf (current-buffer))))
-                  "clj")))
+      (string-equal (file-name-extension (buffer-file-name (or buf (current-buffer))))
+		    "clj")))
 
 (defun cljr--add-test-declarations ()
   (save-excursion
@@ -1797,9 +1797,9 @@ FEATURE is either :clj or :cljs."
       (when (cljr--cljc-file-p)
         (if (cljr--point-in-reader-conditional-p)
             (cljr--point-in-reader-conditional-branch-p :clj)
-          (s-equals-p (cljr--prompt-user-for "Language context at point? "
-                                             (list "clj" "cljs"))
-                      "clj")))))
+          (string-equal (cljr--prompt-user-for "Language context at point? "
+					       (list "clj" "cljs"))
+			"clj")))))
 
 (defun cljr--aget (map key)
   (cdr (assoc key map)))
@@ -1819,7 +1819,7 @@ FEATURE is either :clj or :cljs."
 
 (defun cljr--js-alias-p (alias)
   (and (cljr--cljs-file-p)
-       (s-equals-p "js" alias)))
+       (string-equal "js" alias)))
 
 (defun cljr--magic-requires-lookup-alias ()
   "Return (alias (ns.candidate1 ns.candidate1)) if we recognize
@@ -2738,10 +2738,10 @@ itself might be `nil'."
       (error (format "Error in nrepl-refactor: %s" err))
     (let* ((maybe-error-and-rest
             (seq-drop-while (lambda (e)
-			      (not (and (stringp e) (s-equals-p e "error"))))
+			      (not (and (stringp e) (string-equal e "error"))))
 			    response))
            (maybe-error (car maybe-error-and-rest)))
-      (when (and (stringp maybe-error) (s-equals-p maybe-error "error"))
+      (when (and (stringp maybe-error) (string-equal maybe-error "error"))
         (or (cadr maybe-error-and-rest)
             (format "Error 'nil' returned from middleware. %s"
                     "Please contact your local administrator."))))))
@@ -3089,8 +3089,8 @@ if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
   "Check whether clj-refactor and nrepl-refactor versions are the same"
   (let ((refactor-nrepl-version (or (cljr--middleware-version)
                                     "n/a")))
-    (unless (s-equals-p (s-downcase refactor-nrepl-version)
-                        (s-downcase (cljr--version :remove-package-version)))
+    (unless (string-equal (s-downcase refactor-nrepl-version)
+			  (s-downcase (cljr--version :remove-package-version)))
       (cider-repl-emit-interactive-stderr
        (format "WARNING: clj-refactor and refactor-nrepl are out of sync.
 Their versions are %s and %s, respectively.
