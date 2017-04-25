@@ -1022,7 +1022,7 @@ word test in it and whether the file lives under the test/ directory."
 (add-hook 'find-file-hook 'cljr--add-ns-if-blank-clj-file)
 
 (defun cljr--dash-in-file-name-p (file-name)
-  (and file-name (s-matches-p "-[^/]+\.clj[sxc]?$" file-name)))
+  (and file-name (string-match-p "-[^/]+\.clj[sxc]?$" file-name)))
 
 (defun cljr--maybe-replace-dash-in-file-name (file-name)
   (if (and (cljr--dash-in-file-name-p file-name)
@@ -1287,7 +1287,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
               names (cljr--name-of-defns forms)
               target-ns-alias (when-let ((filtered-require (seq-find
                                                             (lambda (it)
-                                                              (s-matches-p (format target-ns-regexp-template ns) it))
+                                                              (string-match-p (format target-ns-regexp-template ns) it))
                                                             requires)))
                                 (thread-last filtered-require
                                   (s-slice-at ":as")
@@ -1300,7 +1300,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
          (cljr--remove-references-of-target-ns forms ns target-ns-alias))
         (when requires
           (cljr--insert-in-ns ":require")
-          (thread-last (seq-remove (lambda (it) (s-matches-p (format target-ns-regexp-template ns) it)) requires)
+          (thread-last (seq-remove (lambda (it) (string-match-p (format target-ns-regexp-template ns) it)) requires)
 	    (apply #'concat)
 	    (string-trim)
 	    (insert))
@@ -1834,7 +1834,7 @@ the alias in the project."
 	       (candidates (gethash (intern short) aliases)))
           (list short candidates)
         (when (and cljr-magic-require-namespaces ; a regex against "" always triggers
-                   (s-matches-p (cljr--magic-requires-re) short))
+                   (string-match-p (cljr--magic-requires-re) short))
           ;; This when-let might seem unnecessary but the regexp match
           ;; isn't perfect.
           (when-let (long (cljr--aget cljr-magic-require-namespaces short))
@@ -1844,7 +1844,7 @@ the alias in the project."
   "Checks if thing at point is keyword without an alias."
   (let ((sym (cider-symbol-at-point)))
     (and (cljr--keywordp sym)
-         (not (s-matches-p "::.+" (cljr--symbol-prefix sym))))))
+         (not (string-match-p "::.+" (cljr--symbol-prefix sym))))))
 
 (defun cljr--in-map-destructuring? ()
   "True when `point' is inside a destructuring form."
@@ -2636,7 +2636,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
 str/split => str
 split => ''"
   (cond ((cljr--qualified-symbol-p symbol) (car (s-split "/" symbol)))
-        ((s-matches-p "\\w+\\.\\w+" symbol)
+        ((string-match-p "\\w+\\.\\w+" symbol)
 	 (string-join (butlast (s-split "\\." symbol)) "."))
         (t "")))
 
@@ -2688,7 +2688,7 @@ clojure.string/split => split
 str/split => split"
   (let ((name (cljr--normalize-symbol-name symbol)))
     (cond
-     ((s-matches-p "\\w+\\.\\w+" name)
+     ((string-match-p "\\w+\\.\\w+" name)
       (thread-last name (s-split "\\.") last car cljr--symbol-suffix))
      ((cljr--qualified-symbol-p name)
       (thread-last name (s-split "/") cadr cljr--symbol-suffix))
@@ -3322,12 +3322,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
     s))
 
 (defun cljr--keywordp (s)
-  (s-matches-p "^::?[^0-9:[{(\"][^[{(\"]*$"
+  (string-match-p "^::?[^0-9:[{(\"][^[{(\"]*$"
                (replace-regexp-in-string "\n" " " s)))
 
 (defun cljr--symbolp (s)
   "True when S is a symbol."
-  (s-matches-p "^[^0-9:[{(\"][^[{(\"]*$"
+  (string-match-p "^[^0-9:[{(\"][^[{(\"]*$"
                (replace-regexp-in-string "\n" " " s)))
 
 (defun cljr--keyword-lookup-p (s)
@@ -3491,7 +3491,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
     (unless arglists-str
       (error "Couldn't retrieve the parameter list for %s" fn))
     (let* ((arglists-str (substring arglists-str 1 -1)))
-      (unless (s-matches-p "^\\[[^]]+\\]$" arglists-str)
+      (unless (string-match-p "^\\[[^]]+\\]$" arglists-str)
         (error "Can't do work on functions of multiple arities"))
       (s-split " " (substring arglists-str 1 -1)))))
 
@@ -3593,7 +3593,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
     (view-mode 1)))
 
 (defun cljr--defnp (match)
-  (s-matches-p (rx (seq line-start (* whitespace) "("
+  (string-match-p (rx (seq line-start (* whitespace) "("
                         (? (+ (or (in "a-z") (in "A-z") (in "0-9")
                                   (in "-") (in "._/"))))
                         "defn"))
