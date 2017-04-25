@@ -1226,7 +1226,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
                (str (progn (paredit-forward-up)
                            (paredit-backward-down)
                            (buffer-substring-no-properties beg (point))))
-               (symbols (s-split " " (string-trim str) t)))
+               (symbols (split-string (string-trim str) " " t)))
           (paredit-backward-up)
           (paredit-backward)
           (clojure-delete-and-extract-sexp)
@@ -2525,7 +2525,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
         (cljr--warm-ast-cache)))))
 
 (defun cljr--replace-refer-all-with-alias (ns publics-occurrences alias)
-  (let ((ns-last-token (car (last (s-split "\\." ns)))))
+  (let ((ns-last-token (car (last (split-string ns "\\.")))))
     (when (re-search-forward (format "\\(%s\\).*?\\([\]\)]\\)" ns-last-token) nil t)
       (replace-match (format "\\1 :as %s\\2" alias)))
     (perform-replace (format "%s/" alias) "" nil nil t)
@@ -2635,9 +2635,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   "java.util.Date => java.util
 str/split => str
 split => ''"
-  (cond ((cljr--qualified-symbol-p symbol) (car (s-split "/" symbol)))
+  (cond ((cljr--qualified-symbol-p symbol) (car (split-string symbol "/")))
         ((string-match-p "\\w+\\.\\w+" symbol)
-	 (string-join (butlast (s-split "\\." symbol)) "."))
+	 (string-join (butlast (split-string symbol "\\.")) "."))
         (t "")))
 
 (defun cljr--insert-missing-require (symbol missing-symbol type)
@@ -2689,9 +2689,9 @@ str/split => split"
   (let ((name (cljr--normalize-symbol-name symbol)))
     (cond
      ((string-match-p "\\w+\\.\\w+" name)
-      (thread-last name (s-split "\\.") last car cljr--symbol-suffix))
+      (thread-last name (split-string "\\.") last car cljr--symbol-suffix))
      ((cljr--qualified-symbol-p name)
-      (thread-last name (s-split "/") cadr cljr--symbol-suffix))
+      (thread-first name (split-string "/") cadr cljr--symbol-suffix))
      (t name))))
 
 (defun cljr--normalize-symbol-name (name)
@@ -3026,9 +3026,9 @@ If the symbol is bound locally nil will be returned.
 ALL has the same meaning as for `cider-var-info'"
   (if symbol
       (cider-var-info symbol all)
-    (let ((used-locals (s-split " " (cljr--call-middleware-to-find-used-locals
+    (let ((used-locals (split-string (cljr--call-middleware-to-find-used-locals
                                      (expand-file-name (buffer-file-name))
-                                     (line-number-at-pos) (1+ (current-column)))))
+                                     (line-number-at-pos) (1+ (current-column))) " "))
           (symbol (cider-symbol-at-point)))
       (unless (member symbol used-locals)
         (cider-var-info symbol all)))))
@@ -3369,7 +3369,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
      ((cljr--keyword-lookup-p prepped-form)
       (cljr--strip-keyword-ns (match-string 1 prepped-form)))
      ((and fn-call (string-suffix-p "." fn-call))
-      (s-dashed-words (car (last (s-split "\\." fn-call t)))))
+      (s-dashed-words (car (last (split-string fn-call "\\." t)))))
      ((and fn-call (string-prefix-p "create-" fn-call))
       (string-remove-prefix "create-" fn-call))
      ((and fn-call (string-prefix-p ".get" fn-call))
@@ -3493,7 +3493,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
     (let* ((arglists-str (substring arglists-str 1 -1)))
       (unless (string-match-p "^\\[[^]]+\\]$" arglists-str)
         (error "Can't do work on functions of multiple arities"))
-      (s-split " " (substring arglists-str 1 -1)))))
+      (split-string (substring arglists-str 1 -1) " "))))
 
 (defvar cljr--change-signature-mode-map
   (let ((keymap (make-sparse-keymap)))
