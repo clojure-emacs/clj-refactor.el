@@ -491,7 +491,7 @@ If optional `with-whitespace' is T sexp elements are not trimmed."
       (while (/= (point) end)
         (paredit-forward)
         (let ((sexp-elem (buffer-substring-no-properties beg (point))))
-          (push (if with-whitespace sexp-elem (s-trim sexp-elem)) sexp-elems))
+          (push (if with-whitespace sexp-elem (string-trim sexp-elem)) sexp-elems))
         (setq beg (point)))
       (nreverse sexp-elems))))
 
@@ -573,7 +573,7 @@ list of (fn args) to pass to `apply''"
 
 (defun cljr--whitespacep (s)
   "True if S contains only whitespace."
-  (s-blank? (s-trim s)))
+  (s-blank? (string-trim s)))
 
 (defun cljr--make-room-for-toplevel-form ()
   (if (cljr--whitespacep (buffer-substring-no-properties (point) (point-max)))
@@ -1223,7 +1223,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
                (str (progn (paredit-forward-up)
                            (paredit-backward-down)
                            (buffer-substring-no-properties beg (point))))
-               (symbols (s-split " " (s-trim str) t)))
+               (symbols (s-split " " (string-trim str) t)))
           (paredit-backward-up)
           (paredit-backward)
           (clojure-delete-and-extract-sexp)
@@ -1294,7 +1294,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
                                   (last)
                                   (car)
                                   (replace-regexp-in-string (format target-ns-alias-template ns) "\\1")
-				  (s-trim))))
+				  (string-trim))))
         (goto-char (point-max))
         (cljr--insert-with-proper-whitespace
          (cljr--remove-references-of-target-ns forms ns target-ns-alias))
@@ -1302,7 +1302,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
           (cljr--insert-in-ns ":require")
           (thread-last (seq-remove (lambda (it) (s-matches-p (format target-ns-regexp-template ns) it)) requires)
 	    (apply #'concat)
-	    (s-trim)
+	    (string-trim)
 	    (insert))
           (cljr-clean-ns))
         (save-buffer))
@@ -1932,7 +1932,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
 (defun cljr--empty-buffer-p (&optional buffer)
   (let ((buffer (or buffer (current-buffer))))
     (with-current-buffer buffer
-      (s-blank? (s-trim (buffer-substring-no-properties (point-min) (point-max)))))))
+      (s-blank? (string-trim (buffer-substring-no-properties (point-min) (point-max)))))))
 
 (defun cljr--extract-next-dependency-name ()
   (while (not (or (cljr--empty-buffer-p)
@@ -1972,7 +1972,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
   ;;; comments to the end of the buffer
   (goto-char (point-min))
   (while (not (looking-at dividing-line))
-    (let ((dep (s-trim (cljr--extract-region (point) (point-at-eol))))
+    (let ((dep (string-trim (cljr--extract-region (point) (point-at-eol))))
           start end vector-and-meta)
       (forward-line)
       (join-line)
@@ -2005,7 +2005,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
       (cljr--prepare-sort-buffer sorted-names vectors-and-meta dividing-line)
       (cljr--sort-dependency-vectors-with-meta-and-comments dividing-line)
       (thread-last (buffer-substring-no-properties (point) (point-max))
-	s-trim
+	string-trim
 	(s-prepend "[")
 	(s-append "]")))))
 
@@ -2377,7 +2377,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
     (cljr--call-middleware-async find-symbol-request callback)))
 
 (defun cljr--first-line (s)
-  (thread-first s s-lines car s-trim))
+  (thread-first s s-lines car string-trim))
 
 (defun cljr--project-relative-path (path)
   "Denormalize PATH to make to make it relative to the project
@@ -3077,7 +3077,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
 
 if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
   (let ((version (s-replace "snapshot" "-SNAPSHOT"
-                            (s-trim (pkg-info-version-info 'clj-refactor)))))
+                            (string-trim (pkg-info-version-info 'clj-refactor)))))
     (if remove-package-version
         (replace-regexp-in-string " (.*)" "" version)
       version)))
@@ -3748,8 +3748,8 @@ called."
 (defun cljr--append-to-manual-intervention-buffer ()
   "Append the current line to the buffer of stuff requiring
 manual intervention."
-  (let ((line (s-trim (buffer-substring-no-properties
-                       (point-at-bol) (point-at-eol))))
+  (let ((line (string-trim (buffer-substring-no-properties
+			    (point-at-bol) (point-at-eol))))
         (linum (line-number-at-pos))
         (file (buffer-file-name)))
     (with-current-buffer (get-buffer-create cljr--manual-intervention-buffer)
