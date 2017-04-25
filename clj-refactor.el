@@ -573,7 +573,7 @@ list of (fn args) to pass to `apply''"
 
 (defun cljr--whitespacep (s)
   "True if S contains only whitespace."
-  (s-blank? (string-trim s)))
+  (string-blank-p (string-trim s)))
 
 (defun cljr--make-room-for-toplevel-form ()
   (if (cljr--whitespacep (buffer-substring-no-properties (point) (point-max)))
@@ -1932,7 +1932,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
 (defun cljr--empty-buffer-p (&optional buffer)
   (let ((buffer (or buffer (current-buffer))))
     (with-current-buffer buffer
-      (s-blank? (string-trim (buffer-substring-no-properties (point-min) (point-max)))))))
+      (string-blank-p (string-trim (buffer-substring-no-properties (point-min) (point-max)))))))
 
 (defun cljr--extract-next-dependency-name ()
   (while (not (or (cljr--empty-buffer-p)
@@ -2882,7 +2882,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-function
       (insert "(")
       (when name (insert name))
       (save-excursion
-        (unless (s-blank? unbound)
+        (unless (string-blank-p unbound)
           (insert " " unbound))
         (insert ")"))
       (unless name
@@ -2915,7 +2915,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
   (let* ((interface (cider-symbol-at-point))
          (prefix? (cljr--symbol-prefix interface))
          (alias? (cljr--resolve-alias prefix?))
-         (interface (if (not (s-blank? prefix?))
+         (interface (if (not (string-blank-p prefix?))
                         (if alias?
                             (format "%s/%s" alias? (cljr--symbol-suffix interface))
                           interface)
