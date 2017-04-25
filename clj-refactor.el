@@ -1323,7 +1323,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
            (refer-present-p (cljr--search-forward-within-sexp ":refer" :save-excursion))
            (refer-all-p (cljr--search-forward-within-sexp ":refer :all" :save-excursion))
            (require-present-p (cljr--search-forward-within-sexp
-                               (s-concat ":require [" ns)
+                               (concat ":require [" ns)
                                :save-excursion)))
       (if ns-present-p
           (unless (or refer-all-p (null refer-names))
@@ -1977,14 +1977,14 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
       (forward-line)
       (join-line)
       (re-search-forward dividing-line)
-      (re-search-forward (s-concat "\\[" dep "\\s-+\""))
+      (re-search-forward (concat "\\[" dep "\\s-+\""))
       (paredit-backward-up 2)
       (while (not (looking-back "^\\s-*" (point-at-bol)))
         (forward-char -1))
       (while (save-excursion (forward-line -1) (cljr--comment-line-p))
         (forward-line -1))
       (setq start (point))
-      (re-search-forward (s-concat "\\[" dep "\\s-+\""))
+      (re-search-forward (concat "\\[" dep "\\s-+\""))
       (setq end (max (point-at-eol)
                      (cljr--point-after
                       '(paredit-forward-up 2) '(move-end-of-line 1))))
@@ -2801,7 +2801,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
     (goto-char (point-min))
     (cl-assert (cljr--looking-at-dependency-vector-p) nil
 	       (format
-		(s-concat "Expected dependency vector of type "
+		(concat "Expected dependency vector of type "
 			  "[org.clojure \"1.7.0\"], but got '%s'")
 		string)))
   string)
@@ -2825,7 +2825,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
 (defun cljr--defn-str (&optional public)
   (if public
       "(defn "
-    (s-concat "(defn"
+    (concat "(defn"
               (if cljr-favor-private-functions
                   (if clojure-use-metadata-for-privacy
                       " ^:private "
@@ -3445,7 +3445,7 @@ at PATH."
                    (format "${%s:%s}" (+ i 1)
                            (or (and word (cljr--guess-param-name word))
                                (format "arg%s" i)))))
-         (stub (s-concat (cljr--defn-str path)
+         (stub (concat (cljr--defn-str path)
                          (if path (cljr--symbol-suffix name) name)
                          " ["
 			 (string-join (seq-map-indexed params args)  " ")
