@@ -801,7 +801,7 @@ A new record is created to define this constructor."
 ACTIVE is the buffer the user was looking at when the command was
 issued, and should be left focused."
   (let ((files (directory-files new-dir))
-        (new-dir (if (s-ends-with-p "/" new-dir) new-dir (format "%s/" new-dir)))
+        (new-dir (if (string-suffix-p "/" new-dir) new-dir (format "%s/" new-dir)))
         (same-file (lambda (buf f)
                      (when (string= (file-name-nondirectory f)
                                     (file-name-nondirectory (buffer-file-name buf)))
@@ -1001,14 +1001,14 @@ word test in it and whether the file lives under the test/ directory."
       (string-match-p "/test" (buffer-file-name))))
 
 (defun cljr--clojure-ish-filename-p (file-name)
-  (or (s-ends-with-p ".clj" file-name)
-      (s-ends-with-p ".cljs" file-name)
-      (s-ends-with-p ".cljx" file-name)
-      (s-ends-with-p ".cljc" file-name)))
+  (or (string-suffix-p ".clj" file-name)
+      (string-suffix-p ".cljs" file-name)
+      (string-suffix-p ".cljx" file-name)
+      (string-suffix-p ".cljc" file-name)))
 
 (defun cljr--clojure-filename-p (&optional file-name)
-  (or (s-ends-with-p ".clj" (or file-name (buffer-file-name)))
-      (s-ends-with-p ".cljc" (or file-name (buffer-file-name)))))
+  (or (string-suffix-p ".clj" (or file-name (buffer-file-name)))
+      (string-suffix-p ".cljc" (or file-name (buffer-file-name)))))
 
 (defun cljr--add-ns-if-blank-clj-file ()
   (ignore-errors
@@ -2704,7 +2704,7 @@ Date. -> Date
 ~sym => sym
 ~@sym => sym"
   (cond
-   ((s-ends-with-p "." name)
+   ((string-suffix-p "." name)
     (thread-last name (s-chop-suffix ".") cljr--normalize-symbol-name))
    ((string-prefix-p "#'" name)
     (thread-last name (s-chop-prefix "#'") cljr--normalize-symbol-name))
@@ -3368,7 +3368,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
       prepped-form)
      ((cljr--keyword-lookup-p prepped-form)
       (cljr--strip-keyword-ns (match-string 1 prepped-form)))
-     ((and fn-call (s-ends-with-p "." fn-call))
+     ((and fn-call (string-suffix-p "." fn-call))
       (s-dashed-words (car (last (s-split "\\." fn-call t)))))
      ((and fn-call (string-prefix-p "create-" fn-call))
       (s-chop-prefix "create-" fn-call))
@@ -3721,7 +3721,7 @@ to here:  (defn foo [|bar baz] ...)"
     (ignore-errors
       (paredit-backward-up)
       (paredit-forward-down)
-      (s-ends-with-p (cljr--symbol-suffix fn) (cider-symbol-at-point)))))
+      (string-suffix-p (cljr--symbol-suffix fn) (cider-symbol-at-point)))))
 
 (defun cljr--no-changes-to-parameter-order-p (signature-changes)
   (seq-every-p (lambda (e) (= (gethash :new-index e) (gethash :old-index e)))
