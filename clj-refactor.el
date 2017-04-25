@@ -1830,7 +1830,7 @@ the alias in the project."
   (let ((short (thread-last (buffer-substring-no-properties
 			     (cljr--point-after 'paredit-backward)
 			     (1- (point)))
-		 (s-chop-prefix "::"))))
+		 (string-remove-prefix "::"))))
     (unless (or (cljr--resolve-alias short)
                 (cljr--js-alias-p short))
       (if-let ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
@@ -1896,8 +1896,8 @@ form."
 
 (defun cljr--excluded-from-project-clean-p (filename)
   (member (s-with filename
-            (s-chop-prefix (cljr--project-dir))
-            (s-chop-prefix "/"))
+            (string-remove-prefix (cljr--project-dir))
+            (string-remove-prefix "/"))
           cljr-project-clean-exceptions))
 
 ;;;###autoload
@@ -1948,7 +1948,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
   "Strips metadata and comments"
   (with-temp-buffer
     (let ((names (list)))
-      (insert (thread-last deps (s-chop-prefix "[") (s-chop-suffix "]")))
+      (insert (thread-last deps (string-remove-prefix "[") (string-remove-suffix "]")))
       (goto-char (point-min))
       (while (not (cljr--empty-buffer-p))
         (push (cljr--extract-next-dependency-name) names))
@@ -2026,8 +2026,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
 						    (cljr--point-after 'paredit-forward))
 	cljr--get-sorted-dependency-names
 	(cljr--sort-dependency-vectors (thread-last (clojure-delete-and-extract-sexp)
-					 (s-chop-prefix "[")
-					 (s-chop-suffix "]")))
+					 (string-remove-prefix "[")
+					 (string-remove-suffix "]")))
 	insert))
     (indent-region (point-min) (point-max))
     (save-buffer)))
@@ -2385,7 +2385,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
 (defun cljr--project-relative-path (path)
   "Denormalize PATH to make to make it relative to the project
 root."
-  (s-chop-prefix (cljr--project-dir) path))
+  (string-remove-prefix (cljr--project-dir) path))
 
 (defun cljr--get-valid-filename (hash)
   "Get :file value from the hash table and convert path if necessary."
@@ -2708,17 +2708,17 @@ Date. -> Date
 ~@sym => sym"
   (cond
    ((string-suffix-p "." name)
-    (thread-last name (s-chop-suffix ".") cljr--normalize-symbol-name))
+    (thread-last name (string-remove-suffix ".") cljr--normalize-symbol-name))
    ((string-prefix-p "#'" name)
-    (thread-last name (s-chop-prefix "#'") cljr--normalize-symbol-name))
+    (thread-last name (string-remove-prefix "#'") cljr--normalize-symbol-name))
    ((string-prefix-p "'" name)
-    (thread-last name (s-chop-prefix "'") cljr--normalize-symbol-name))
+    (thread-last name (string-remove-prefix "'") cljr--normalize-symbol-name))
    ((string-prefix-p "~" name)
-    (thread-last name (s-chop-prefix "~") cljr--normalize-symbol-name))
+    (thread-last name (string-remove-prefix "~") cljr--normalize-symbol-name))
    ((string-prefix-p "~@" name)
-    (thread-last name (s-chop-prefix "~@") cljr--normalize-symbol-name))
+    (thread-last name (string-remove-prefix "~@") cljr--normalize-symbol-name))
    ((string-prefix-p "@" name)
-    (thread-last name (s-chop-prefix "@") cljr--normalize-symbol-name))
+    (thread-last name (string-remove-prefix "@") cljr--normalize-symbol-name))
    (t name)))
 
 (defun cljr--call-middleware-to-resolve-missing (symbol)
@@ -3255,7 +3255,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
   (let ((keyfn (cadr args)))
     (cljr--insert-example-fn (cider-symbol-at-point)
                              (if (cljr--keywordp keyfn)
-                                 (list (s-chop-prefix ":" keyfn))
+                                 (list (string-remove-prefix ":" keyfn))
                                (list 0))
                              path)))
 
@@ -3265,7 +3265,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                            (cider-symbol-at-point))))
     (cljr--insert-example-fn (cider-symbol-at-point)
                              (if (cljr--keywordp last-path-entry)
-                                 (list (s-chop-prefix ":" last-path-entry))
+                                 (list (string-remove-prefix ":" last-path-entry))
                                (list 0))
                              path)))
 
@@ -3286,7 +3286,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                                   (= 3 (length args))))
          (param-name (if making-comparator?
                          (when (cljr--keywordp (car args))
-                           (s-chop-prefix ":" (car args)))
+                           (string-remove-prefix ":" (car args)))
                        (when-let (coll-name (cljr--guess-param-name (car (last args))))
                          (inflection-singularize-string coll-name)))))
     (cljr--insert-example-fn fn-name
@@ -3374,9 +3374,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
      ((and fn-call (string-suffix-p "." fn-call))
       (s-dashed-words (car (last (s-split "\\." fn-call t)))))
      ((and fn-call (string-prefix-p "create-" fn-call))
-      (s-chop-prefix "create-" fn-call))
+      (string-remove-prefix "create-" fn-call))
      ((and fn-call (string-prefix-p ".get" fn-call))
-      (s-dashed-words (s-chop-prefix ".get" fn-call)))
+      (s-dashed-words (string-remove-prefix ".get" fn-call)))
      ((string= "get-in" fn-call)
       (cljr--find-param-name-from-get-in prepped-form))
      ((string= "get" fn-call)
@@ -3428,7 +3428,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                            (paredit-backward-down)
                            (cider-symbol-at-point))))
     (when (cljr--keywordp last-path-entry)
-      (s-chop-prefix ":" last-path-entry))))
+      (string-remove-prefix ":" last-path-entry))))
 
 (defun cljr--find-param-name-from-get (form)
   (let ((key (cljr--with-string-content form
@@ -3437,7 +3437,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                (cljr--skip-past-whitespace-and-comments)
                (cljr--extract-sexp))))
     (when (cljr--keywordp key)
-      (s-chop-prefix ":" key))))
+      (string-remove-prefix ":" key))))
 
 (defun cljr--insert-example-fn (name args path)
   "Create a new function from NAME and ARGS.
