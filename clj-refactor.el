@@ -2247,7 +2247,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
               (insert name)
             (mc/create-fake-cursor-at-point)))
         (re-search-forward "\\[")
-        (when (s-present? locals)
+	(when (not (or (null locals) (string= "" locals)))
           (insert locals)
           (unless (looking-at-p "\\]")
             (insert " ")))
@@ -2255,7 +2255,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
         (unless (looking-at "\s*?$")
           (newline))
         (indent-region fn-start (cljr--point-after 'paredit-forward-up)))
-      (when (s-present? locals)
+      (when (not (or (null locals) (string= "" locals)))
         (insert (format "(partial  %s)" locals))
         (backward-char (length (concat " " locals ")"))))
       (if name
@@ -3193,7 +3193,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 
                          (:else sexp-forms*))))
          (prefix (cljr--symbol-prefix symbol-at-point))
-         (path (when (s-present? prefix)
+         (path (when (not (or (null prefix) (string= "" prefix)))
                  (cljr--ns-path (cljr--resolve-alias prefix)))))
     (push-mark)
     (if (cljr--symbolp symbol-at-point)
