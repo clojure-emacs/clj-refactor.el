@@ -944,8 +944,8 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
 (defun cljr--find-source-ns-of-test-ns (test-ns test-file)
   (let* ((ns-chunks (split-string test-ns "[.]" t))
          (test-name (car (last ns-chunks)))
-         (src-dir-name (s-replace "test/" "src/" (file-name-directory test-file)))
-         (replace-underscore (apply-partially 's-replace "_" "-"))
+	 (src-dir-name (replace-regexp-in-string "test/" "src/" (file-name-directory test-file) t t))
+	 (replace-underscore (apply-partially 'replace-regexp-in-string "_" "-"))
          (src-ns (car (seq-filter (lambda (it) (or (string-prefix-p it test-name)
                                                    (string-suffix-p it test-name)))
                                   (seq-map (lambda (file-name)
@@ -1028,7 +1028,7 @@ word test in it and whether the file lives under the test/ directory."
   (if (and (cljr--dash-in-file-name-p file-name)
            (yes-or-no-p "The file name contains dashes. Replace with underscores? "))
       (concat (file-name-directory file-name)
-              (s-replace "-" "_" (file-name-nondirectory file-name)))
+	      (replace-regexp-in-string "-" "_" (file-name-nondirectory file-name)))
     file-name))
 
 (defun cljr--ensure-no-dashes-in-filename ()
@@ -2676,7 +2676,7 @@ to create an alias or refer."
            ;; will prefer - over _ when naming namespaces :(
            (progn (cljr--insert-missing-require
                    symbol
-                   (s-replace "_" "-" (format "%s" missing-symbol)) type)
+                   (replace-regexp-in-string "_" "-" (format "%s" missing-symbol)) type)
                   (cljr--insert-missing-import missing-symbol)))
           ((eq type :class) (cljr--insert-missing-import missing-symbol))
           (t (error (format "Unknown type %s" type))))))
@@ -2748,7 +2748,7 @@ itself might be `nil'."
 
 (defun cljr--format-escape (msg)
   "Make the message consumable by format."
-  (s-replace "%" "%%" msg))
+  (replace-regexp-in-string "%" "%%" msg))
 
 (defun cljr--maybe-rethrow-error (response)
   (if-let (err (cljr--get-error-value response))
@@ -3076,8 +3076,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
   "Get the version of `clj-refactor' from the package header.
 
 if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
-  (let ((version (s-replace "snapshot" "-SNAPSHOT"
-                            (string-trim (pkg-info-version-info 'clj-refactor)))))
+  (let ((version (replace-regexp-in-string "snapshot" "-SNAPSHOT"
+					   (string-trim (pkg-info-version-info 'clj-refactor)))))
     (if remove-package-version
         (replace-regexp-in-string " (.*)" "" version)
       version)))
@@ -3323,12 +3323,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 
 (defun cljr--keywordp (s)
   (s-matches-p "^::?[^0-9:[{(\"][^[{(\"]*$"
-               (s-replace "\n" " " s)))
+               (replace-regexp-in-string "\n" " " s)))
 
 (defun cljr--symbolp (s)
   "True when S is a symbol."
   (s-matches-p "^[^0-9:[{(\"][^[{(\"]*$"
-               (s-replace "\n" " " s)))
+               (replace-regexp-in-string "\n" " " s)))
 
 (defun cljr--keyword-lookup-p (s)
   (string-match "^(:\\([^ 0-9:[{(\"][^[{(\"]+\\) " s))
