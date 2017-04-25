@@ -2007,10 +2007,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
     (let ((dividing-line "<===============================>"))
       (cljr--prepare-sort-buffer sorted-names vectors-and-meta dividing-line)
       (cljr--sort-dependency-vectors-with-meta-and-comments dividing-line)
-      (thread-last (buffer-substring-no-properties (point) (point-max))
-	string-trim
-	(s-prepend "[")
-	(s-append "]")))))
+      (concat "[" (string-trim (buffer-substring-no-properties (point) (point-max))) "]"))))
 
 ;;;###autoload
 (defun cljr-sort-project-dependencies ()
