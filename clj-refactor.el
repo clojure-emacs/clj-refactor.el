@@ -302,11 +302,12 @@ Otherwise open the file and do the changes non-interactively."
     (otherwise key)))
 
 (defun cljr--key-pairs-with-modifier (modifier keys)
-  (thread-last (string-to-list keys)
-    (seq-map (lambda (it) (cljr--fix-special-modifier-combinations
-                           (concat modifier (char-to-string it)))))
-    (s-join " ")
-    (read-kbd-macro)))
+  (read-kbd-macro
+   (string-join
+    (seq-map
+     (lambda (it)
+       (cljr--fix-special-modifier-combinations (concat modifier (char-to-string it))))
+     (string-to-list keys)) " ")))
 
 (defun cljr--key-pairs-with-prefix (prefix keys)
   (read-kbd-macro (concat prefix " " keys)))
@@ -1340,7 +1341,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
     (re-search-forward ns)
     (paredit-forward-up)
     (backward-char)
-    (insert " :refer [" (s-join " " refer-names) "]")))
+    (insert " :refer [" (string-join refer-names  " ") "]")))
 
 (defun cljr--append-names-to-refer (ns names)
   "Append NAMES to the :refer vector for NS"
@@ -1351,7 +1352,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
     (re-search-forward ":refer")
     (paredit-forward)
     (backward-char)
-    (insert (format " %s" (s-join " " names)))))
+    (insert (format " %s" (string-join names  " ")))))
 
 (defun cljr--new-require-clause (ns &optional refer-names)
   "Creates a new :require clause for NS.
@@ -1708,7 +1709,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-destructure-keys
     (when (looking-back "\\s_\\|\\sw" 3)
       (paredit-backward))
     (kill-sexp)
-    (insert "{:keys [" (s-join " " (seq-uniq (reverse symbols))) "]"
+    (insert "{:keys [" (string-join (seq-uniq (reverse symbols)) " ") "]"
             (if include-as (concat " :as " symbol) "") "}")))
 
 ;; ------ Cycling ----------
@@ -1948,7 +1949,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
       (goto-char (point-min))
       (while (not (cljr--empty-buffer-p))
         (push (cljr--extract-next-dependency-name) names))
-      (s-join "\n "(seq-sort #'string< names)))))
+      (string-join (seq-sort #'string< names) "\n "))))
 
 (defun cljr--prepare-sort-buffer (sorted-names vectors-and-meta dividing-line)
   (insert sorted-names)
@@ -2556,11 +2557,11 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
 			      (seq-partition 2)))))
     (when (not (= 0 (length asts-in-bad-state)))
       (user-error (concat "Some namespaces are in a bad state: "
-                          (thread-last asts-in-bad-state
-			    (seq-map
-			     (lambda (it)
-			       (format "error \"%s\" in %s" (car (last (car (last it)))) (car it))))
-			    (s-join "; ")))))))
+                          (string-join
+			   (seq-map
+			    (lambda (it)
+			      (format "error \"%s\" in %s" (car (last (car (last it)))) (car it)))
+			    asts-in-bad-state) "; "))))))
 
 (defun cljr--warm-ast-cache ()
   (cljr--call-middleware-async
@@ -2636,7 +2637,7 @@ str/split => str
 split => ''"
   (cond ((cljr--qualified-symbol-p symbol) (car (s-split "/" symbol)))
         ((s-matches-p "\\w+\\.\\w+" symbol)
-         (s-join "." (butlast (s-split "\\." symbol))))
+	 (string-join (butlast (s-split "\\." symbol)) "."))
         (t "")))
 
 (defun cljr--insert-missing-require (symbol missing-symbol type)
@@ -2832,11 +2833,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
                 " "))))
 
 (defun cljr--call-middleware-to-find-used-locals (file line column)
-  (s-join " "
-          (cljr--call-middleware-sync
-           (cljr--create-msg "find-used-locals" "file" file "line" line
-                             "column" column)
-           "used-locals")))
+  (string-join
+   (cljr--call-middleware-sync
+    (cljr--create-msg "find-used-locals" "file" file "line" line
+		      "column" column)
+    "used-locals") " "))
 
 (defun cljr--goto-enclosing-sexp ()
   (let ((sexp-regexp (rx (or "(" "#{" "{" "["))))
@@ -3447,9 +3448,7 @@ at PATH."
          (stub (s-concat (cljr--defn-str path)
                          (if path (cljr--symbol-suffix name) name)
                          " ["
-                         (thread-last args
-			   (seq-map-indexed params)
-			   (s-join " "))
+			 (string-join (seq-map-indexed params args)  " ")
                          "]\n$0)")))
     (when path
       (find-file-other-window path)
@@ -3646,7 +3645,7 @@ Updates the names of the function parameters."
             parameter))
     (delete-region (point) (cljr--point-after
                             'cljr--skip-past-whitespace-and-comments))
-    (s-join " " (nreverse parameter))))
+    (string-join (nreverse parameter) " ")))
 
 (defun cljr--maybe-wrap-form ()
   "Insert newlines in or prior to the current form to prevent long lines.
@@ -3900,7 +3899,7 @@ Point is assumed to be at the function being called."
 # RET or C-c C-c when you're happy with your changes.
 # q or C-c C-k to abort. ")
   (goto-char (point-min))
-  (insert (s-join "\n" params))
+  (insert (string-join params "\n"))
   (forward-line -1)
   (when (looking-at-p "&")
     (forward-line 1)
