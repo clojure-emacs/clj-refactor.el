@@ -3362,7 +3362,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
   (list "first" "second" "last" "fnext" "nth" "rand-nth"))
 
 (defun cljr--strip-keyword-ns (s)
-  (car (s-match "[^/]+$" s)))
+  (when (string-match "[^/]+$" s)
+    (substring s (car (match-data)) (car (cdr (match-data))))))
 
 (defun cljr--guess-param-name (form)
   (let* ((prepped-form (cljr--strip-off-semantic-noops
