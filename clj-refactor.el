@@ -2629,7 +2629,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
     (cljr--insert-libspec-verbosely missing)))
 
 (defun cljr--qualified-symbol-p (symbol)
-  (s-contains-p "/" (format "%s" symbol)))
+  (thread-last symbol
+    (format "%s")
+    regexp-quote
+    (string-match-p "/")
+    null
+    not))
 
 (defun cljr--symbol-prefix (symbol)
   "java.util.Date => java.util
