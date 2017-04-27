@@ -1300,10 +1300,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
                                                             requires)))
                                 (thread-last filtered-require
                                   (cljr--slice-at ":as")
-                                  (last)
-                                  (car)
+                                  last
+                                  car
                                   (replace-regexp-in-string (format target-ns-alias-template ns) "\\1")
-				  (string-trim))))
+				  string-trim)))
         (goto-char (point-max))
         (cljr--insert-with-proper-whitespace
          (cljr--remove-references-of-target-ns forms ns target-ns-alias))
@@ -1311,8 +1311,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
           (cljr--insert-in-ns ":require")
           (thread-last (seq-remove (lambda (it) (string-match-p (format target-ns-regexp-template ns) it)) requires)
 	    (apply #'concat)
-	    (string-trim)
-	    (insert))
+	    string-trim
+	    insert)
           (cljr-clean-ns))
         (save-buffer))
       (cljr--update-ns-after-moving-fns ns (nreverse names))
