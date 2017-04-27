@@ -1896,7 +1896,7 @@ form."
 ;; ------ project clean --------
 
 (defun cljr--excluded-from-project-clean-p (filename)
-  (member (s-with filename
+  (member (thread-last filename
             (string-remove-prefix (cljr--project-dir))
             (string-remove-prefix "/"))
           cljr-project-clean-exceptions))
