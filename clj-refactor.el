@@ -41,6 +41,7 @@
 (require 'sgml-mode)
 (require 'inflections)
 (require 'hydra)
+(require 'subword)
 
 (defcustom cljr-add-ns-to-blank-clj-files t
   "If t, automatically add a ns form to new .clj files."
@@ -3365,6 +3366,17 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
   (when (string-match "[^/]+$" s)
     (substring s (car (match-data)) (car (cdr (match-data))))))
 
+(defun cljr--dashed-words (s)
+  "Take the string S and replace all the word separators with '-'
+and make the whole string lower-cased."
+  (with-temp-buffer
+    (insert s)
+    (goto-char (point-min))
+    (while (not (eobp))
+      (subword-forward)
+      (insert " "))
+    (mapconcat 'identity (split-string (downcase (buffer-string))) "-")))
+
 (defun cljr--guess-param-name (form)
   (let* ((prepped-form (cljr--strip-off-semantic-noops
                         (cljr--unwind-s form)))
@@ -3375,11 +3387,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
      ((cljr--keyword-lookup-p prepped-form)
       (cljr--strip-keyword-ns (match-string 1 prepped-form)))
      ((and fn-call (string-suffix-p "." fn-call))
-      (s-dashed-words (car (last (split-string fn-call "\\." t)))))
+      (cljr--dashed-words (car (last (split-string fn-call "\\." t)))))
      ((and fn-call (string-prefix-p "create-" fn-call))
       (string-remove-prefix "create-" fn-call))
      ((and fn-call (string-prefix-p ".get" fn-call))
-      (s-dashed-words (string-remove-prefix ".get" fn-call)))
+      (cljr--dashed-words (string-remove-prefix ".get" fn-call)))
      ((string= "get-in" fn-call)
       (cljr--find-param-name-from-get-in prepped-form))
      ((string= "get" fn-call)
