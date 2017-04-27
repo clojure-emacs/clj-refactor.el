@@ -31,7 +31,6 @@
 
 (require 'seq)
 (require 'clj-refactor-compat)
-(require 's)
 (require 'yasnippet)
 (require 'paredit)
 (require 'multiple-cursors-core)
