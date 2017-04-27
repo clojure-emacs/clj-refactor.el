@@ -1260,6 +1260,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
       (goto-char p)
       (cljr--just-one-blank-line))))
 
+(defun cljr--slice-at (pattern s)
+  "Slice S up at every index matching PATTERN"
+  (let ((slices (split-string s pattern)))
+    (cons (car slices) (mapcar (lambda (slice) (concat pattern slice)) (cdr slices)))))
+
 ;;;###autoload
 (defun cljr-move-form ()
   "Move the form containing POINT to a new namespace.
@@ -1294,7 +1299,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
                                                               (string-match-p (format target-ns-regexp-template ns) it))
                                                             requires)))
                                 (thread-last filtered-require
-                                  (s-slice-at ":as")
+                                  (cljr--slice-at ":as")
                                   (last)
                                   (car)
                                   (replace-regexp-in-string (format target-ns-alias-template ns) "\\1")
