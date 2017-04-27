@@ -2383,7 +2383,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
     (cljr--call-middleware-async find-symbol-request callback)))
 
 (defun cljr--first-line (s)
-  (thread-first s s-lines car string-trim))
+  (thread-first s (split-string "\\(\r\n\\|[\n\r]\\)") car string-trim))
 
 (defun cljr--project-relative-path (path)
   "Denormalize PATH to make to make it relative to the project
