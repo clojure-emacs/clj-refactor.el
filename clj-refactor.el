@@ -105,7 +105,7 @@ This only applies to dependencies added by `cljr-add-project-dependency'."
   :group 'cljr
   :type 'boolean)
 
-(defcustom cljr-favor-prefix-notation t
+(defcustom cljr-favor-prefix-notation nil
   "If t, `cljr-clean-ns' favors prefix notation in the ns form."
   :group 'cljr
   :type 'boolean)
