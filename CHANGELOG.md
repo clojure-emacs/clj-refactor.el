@@ -1,5 +1,7 @@
 # Changelog
 
+- [#363](https://github.com/clojure-emacs/clj-refactor.el/issues/363) cljr-favor-prefix-notation by default is set to false
+
 ## Up next
 
 - Display keymap bindings in documentation for minor mode
