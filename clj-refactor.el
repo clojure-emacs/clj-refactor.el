@@ -894,10 +894,24 @@ Please, install (or update) refactor-nrepl %s and restart the REPL."
 ;; ------ ns statements -----------
 
 (defun cljr--goto-ns ()
+  "Go to the first namespace defining form in the buffer."
   (goto-char (point-min))
   (if (re-search-forward clojure-namespace-name-regex nil t)
       (cljr--goto-toplevel)
     (error "No namespace declaration found")))
+
+(defun cljr--goto-closest-ns ()
+  "Go to the closest namespace defining form.
+Go to the namespace form closest to point and above it.  If there is
+no namespace form above point, return the first one in the buffer."
+  (save-restriction
+    (widen)
+    ;; The closest ns form above point.
+    (when (or (re-search-backward clojure-namespace-name-regex nil t)
+              ;; Or any form at all.
+              (and (goto-char (point-min))
+                   (re-search-forward clojure-namespace-name-regex nil t)))
+      (cljr--goto-toplevel))))
 
 (defun cljr--goto-cljs-branch ()
   "Move POINT to the cljs branch of the reader conditional following point."
@@ -1858,6 +1872,11 @@ the alias in the project."
       (paredit-forward-down)
       (looking-at-p ":keys"))))
 
+(defun cljr--in-ns-above-point-p ()
+  (save-excursion
+    (cljr--goto-closest-ns)
+    (looking-at-p "(\\s-*in-ns")))
+
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts / as normal, but also checks for common namespace shorthands to require.
@@ -1867,7 +1886,8 @@ command will add the corresponding require statement to the ns
 form."
   (interactive)
   (insert "/")
-  (unless (cljr--in-map-destructuring?)
+  (unless (or (cljr--in-map-destructuring?)
+              (cljr--in-ns-above-point-p))
     (when-let (aliases (and cljr-magic-requires
 			    (not (cider-in-comment-p))
 			    (not (cider-in-string-p))
