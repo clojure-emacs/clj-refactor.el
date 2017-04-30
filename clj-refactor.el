@@ -1227,9 +1227,14 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
           (paredit-backward)
           (clojure-delete-and-extract-sexp)
           (clojure-delete-and-extract-sexp)
-          (if (looking-back "\\w+ " 3)
-              (just-one-space 0)
-            (join-line))
+          (cond
+           ((looking-at-p "\\s-*[\\w:]+")
+            (just-one-space))
+
+           ((looking-back "\\w+ " 3)
+            (just-one-space 0))
+
+           (t (join-line)))
           (cljr--add-ns-prefix (or alias ns) symbols))))))
 
 (defun cljr--add-ns-prefix (ns symbols)
