@@ -2263,7 +2263,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
         (unless (looking-at "\s*?$")
           (newline))
         (indent-region fn-start (cljr--point-after 'paredit-forward-up)))
-      (when (not (or (null locals) (string= "" locals)))
+      (when (cljr--string-present-p locals)
         (insert (format "(partial  %s)" locals))
         (backward-char (length (concat " " locals ")"))))
       (if name
@@ -3206,7 +3206,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 
                          (:else sexp-forms*))))
          (prefix (cljr--symbol-prefix symbol-at-point))
-         (path (when (not (or (null prefix) (string= "" prefix)))
+         (path (when (cljr--string-present-p prefix)
                  (cljr--ns-path (cljr--resolve-alias prefix)))))
     (push-mark)
     (if (cljr--symbolp symbol-at-point)
