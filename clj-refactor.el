@@ -2700,7 +2700,7 @@ str/split => split"
   (let ((name (cljr--normalize-symbol-name symbol)))
     (cond
      ((string-match-p "\\w+\\.\\w+" name)
-      (thread-last name (split-string "\\.") last car cljr--symbol-suffix))
+      (thread-first name (split-string "\\.") last car cljr--symbol-suffix))
      ((cljr--qualified-symbol-p name)
       (thread-first name (split-string "/") cadr cljr--symbol-suffix))
      (t name))))
