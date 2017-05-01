@@ -760,16 +760,18 @@ A new record is created to define this constructor."
 
 ;; ------ file -----------
 
+(defun cljr--locate-project-file (file)
+  (ignore-errors
+    (file-truename
+     (locate-dominating-file default-directory file))))
+
 (defun cljr--project-dir ()
-  (or (ignore-errors
-	(file-truename
-	 (locate-dominating-file default-directory "project.clj")))
-      (ignore-errors
-	(file-truename
-	 (locate-dominating-file default-directory "build.boot")))
-      (ignore-errors (file-truename
-		      (locate-dominating-file default-directory "pom.xml")))
-      ""))
+  (or
+   (thread-last  '("project.clj" "build.boot" "pom.xml")
+     (mapcar 'cljr--locate-project-file)
+     (delete 'nil)
+     car)
+     ""))
 
 (defun cljr--project-file ()
   (let ((project-dir (cljr--project-dir)))
