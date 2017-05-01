@@ -2216,6 +2216,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
 (defun cljr--highlight-sexp ()
   (cljr--highlight (point) (cljr--point-after 'paredit-forward)))
 
+(defun cljr--string-present-p (s)
+  (not (or (null s) (string-empty-p s))))
+
 (defun cljr--promote-fn ()
   (save-excursion
     (let* ((locals (save-excursion (paredit-forward-down)
@@ -2252,7 +2255,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
               (insert name)
             (mc/create-fake-cursor-at-point)))
         (re-search-forward "\\[")
-	(when (not (or (null locals) (string= "" locals)))
+	(when (cljr--string-present-p locals)
           (insert locals)
           (unless (looking-at-p "\\]")
             (insert " ")))
