@@ -761,15 +761,15 @@ A new record is created to define this constructor."
 ;; ------ file -----------
 
 (defun cljr--project-dir ()
-  (let ((project-dir (or (ignore-errors
-			   (file-truename
-			    (locate-dominating-file default-directory "project.clj")))
-			 (ignore-errors
-			   (file-truename
-			    (locate-dominating-file default-directory "build.boot")))
-			 (ignore-errors (file-truename
-					 (locate-dominating-file default-directory "pom.xml"))))))
-    (or project-dir "")))
+  (or (ignore-errors
+	(file-truename
+	 (locate-dominating-file default-directory "project.clj")))
+      (ignore-errors
+	(file-truename
+	 (locate-dominating-file default-directory "build.boot")))
+      (ignore-errors (file-truename
+		      (locate-dominating-file default-directory "pom.xml")))
+      ""))
 
 (defun cljr--project-file ()
   (let ((project-dir (cljr--project-dir)))
