@@ -573,7 +573,7 @@ list of (fn args) to pass to `apply''"
 
 (defun cljr--whitespacep (s)
   "True if S contains only whitespace."
-  (string-blank-p (string-trim s)))
+  (or (null s) (string-blank-p (string-trim s))))
 
 (defun cljr--make-room-for-toplevel-form ()
   (if (cljr--whitespacep (buffer-substring-no-properties (point) (point-max)))
