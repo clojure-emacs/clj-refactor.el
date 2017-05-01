@@ -769,9 +769,7 @@ A new record is created to define this constructor."
 			    (locate-dominating-file default-directory "build.boot")))
 			 (ignore-errors (file-truename
 					 (locate-dominating-file default-directory "pom.xml"))))))
-    (if (null project-dir)
-	""
-      project-dir)))
+    (or project-dir "")))
 
 (defun cljr--project-file ()
   (let ((project-dir (cljr--project-dir)))
