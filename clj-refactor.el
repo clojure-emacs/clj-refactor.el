@@ -29,7 +29,13 @@
 
 ;;; Code:
 
+;; HACK: In Emacs 25.1, an older version of seq.el is provided, which can be
+;; loaded before jade or even package.el.  If this happens, the feature `seq'
+;; being already provided, the correct version of seq.el won't get loaded.
 (require 'seq)
+(unless (fboundp 'seq-map-indexed)
+  (require 'seq-25))
+
 (require 'clj-refactor-compat)
 (require 'yasnippet)
 (require 'paredit)
