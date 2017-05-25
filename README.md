@@ -86,8 +86,7 @@ All functions in `clj-refactor` have a two-letter mnemonic
 shortcut. E.g. `rs` for `cljr-rename-symbol`.  Given the prefix choice
 in the example setup you'd call this function by hitting `C-c C-m rs`
 
-See the wiki for a complete [list of available refactorings]
-(https://github.com/clojure-emacs/clj-refactor.el/wiki),
+See the wiki for a complete [list of available refactorings](https://github.com/clojure-emacs/clj-refactor.el/wiki),
 demonstrations and customization points.
 
 If you're having trouble remembering the mnemonic shortcuts, check out
