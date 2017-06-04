@@ -1,26 +1,26 @@
 # Changelog
 
+## 2.3.1
+
 - [#363](https://github.com/clojure-emacs/clj-refactor.el/issues/363) cljr-favor-prefix-notation by default is set to false
-
-## Up next
-
 - Display keymap bindings in documentation for minor mode
 - New config setting `cljr-libspec-whitelist` to prevent libspecs which appear unused but are side-effecting at load from being pruned.
-- [#301] (https://github.com/clojure-emacs/clj-refactor.el/issues/301) `ad`  has gained a prefix to declare the symbol under the cursor.
+- [#301](https://github.com/clojure-emacs/clj-refactor.el/issues/301) `ad`  has gained a prefix to declare the symbol under the cursor.
 - [#312](https://github.com/clojure-emacs/clj-refactor.el/issues/312) Allow `sut` alias to be customized.
 - [#305](https://github.com/clojure-emacs/clj-refactor.el/issues/305) Don't call lookup-alias for non namespaced keywords at all when slash is typed. However trigger lookup alias with the leading :: stripped off the prefix if the keyword is namespaced.
 - Require a custom test framework for Clojurescript test files. By default it's `cljs.test` but it can be customized with `cljr-cljs-clojure-test-declaration`.
 
 ### Changes
 
-- [#302] (https://github.com/clojure-emacs/clj-refactor.el/issues/302) `ad` now understands def-like things, e.g. defs created by Schema.
+- [#302](https://github.com/clojure-emacs/clj-refactor.el/issues/302) `ad` now understands def-like things, e.g. defs created by Schema.
 - When inserting ns form to blank clojure-ish file, check if cider is available and connected for better detecting the expected namespace.
 - Remove the warning about missing nREPl ops.
 - Remove threading macro related features because they are moved to Clojure mode. However, the usual mnemonics for these features still work only they reference the Clojure mode implementations.
 - Remove cycle privacy, cycle if and cycle collection type features. They are moved to Clojure mode. The usual mnemonics for cycle privacy and cycle if features still work only they refer the Clojure mode implementations. Cycle collection type got reworked into convert collection to list, quoted list, map, vector and set. *Cycle* collection type is no longer supported.
 - Compatible with clojure-mode 5.6.1 and above.
 - Remove *most* of the code implementing `let` related refactorings because these featured got migrated and reworked in Clojure mode. The usual mnemonics for these features still work and also a version of these features using multiple cursors are still maintained here as multiple cursors mode is not supported in Clojure mode.
-- [#294] Remove dash library dependency.
+- [#294](https://github.com/clojure-emacs/clj-refactor.el/issues/294) Remove dash library dependency.
+- [#372](https://github.com/clojure-emacs/clj-refactor.el/issues/372) Remove s.el dependency
 
 ### Bugs fixed
 
