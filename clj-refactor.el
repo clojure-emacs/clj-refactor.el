@@ -58,6 +58,11 @@
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-auto-sort-project-dependencies nil
+  "If t, sort project dependencies after any command that changes them."
+  :group 'cljr
+  :type 'boolean)
+
 (defcustom cljr-magic-requires t
   "Whether to automatically require common namespaces when they are used.
 These are the namespaces listed in `cljr-magic-require-namespaces'.
@@ -2183,6 +2188,11 @@ possible choices. If the choice is trivial, return it."
       (paredit-backward-down)
       (cljr-hotload-dependency))))
 
+(defun cljr--maybe-sort-project-dependencies ()
+  "If allowed, sort project dependencies in the current buffer."
+  (when cljr-auto-sort-project-dependencies
+    (cljr-sort-project-dependencies)))
+
 ;;;###autoload
 (defun cljr-add-project-dependency (force)
   "Add a dependency to the project.clj file.
@@ -2194,7 +2204,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
                          (cljr--prompt-user-for "Artifact: ")))
              (version (thread-last (cljr--get-versions-from-middleware lib-name)
                         (cljr--prompt-user-for "Version: "))))
-    (cljr--add-project-dependency lib-name version)))
+    (cljr--add-project-dependency lib-name version)
+    (cljr--maybe-sort-project-dependencies)))
 
 ;;;###autoload
 (defun cljr-update-project-dependency ()

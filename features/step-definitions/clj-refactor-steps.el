@@ -40,6 +40,14 @@
        (lambda ()
          (setq cljr-use-multiple-cursors nil)))
 
+(Given "^I don't want my project dependencies to be sorted automatically"
+       (lambda ()
+         (setq cljr-auto-sort-project-dependencies nil)))
+
+(Given "^I want my project dependencies to be sorted automatically"
+       (lambda ()
+         (setq cljr-auto-sort-project-dependencies t)))
+
 (defun cljr--plist-to-hash (plist)
   (let ((h (make-hash-table)))
     (dolist (k (-filter #'keywordp plist))
