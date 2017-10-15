@@ -3,6 +3,7 @@
 ## Unreleased
 
 - [#394](https://github.com/clojure-emacs/clj-refactor.el/issues/394) New config option `cljr-assume-language-context`: by default, when clj-refactor encounters an ambiguous context (clj vs cljs) it creates a popup asking user which context is meant. If this option is changed to "clj" or "cljs", clj-refactor will use that as the assumed context in such ambigous cases.
+- [#391](https://github.com/clojure-emacs/clj-refactor.el/issues/391) Prevent refactor-nrepl from being injected when starting a REPL outside a project, and add an option `cljr-suppress-outside-project-warning` to suppress the resultant warning.
 
 ## 2.3.1
 
