@@ -1,5 +1,10 @@
 # Changelog
 
+## NEXT VERSION
+
+### Changes
+ - Add cljr-load-all-project-ns-on-startup option, to help prefill AST cache
+
 ## 2.3.1
 
 - [#363](https://github.com/clojure-emacs/clj-refactor.el/issues/363) cljr-favor-prefix-notation by default is set to false

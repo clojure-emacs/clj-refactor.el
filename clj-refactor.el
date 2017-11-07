@@ -128,6 +128,13 @@ refactorings will use regular prompts instead."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-load-all-project-ns-on-startup nil
+  "If t, the middleware will eagerly load all project namespaces.
+Use this to ensures that all namespaces are loaded before warming
+the AST cache."
+  :group 'cljr
+  :type 'boolean)
+
 (defcustom cljr-populate-artifact-cache-on-startup t
   "If t, the middleware will eagerly populate the artifact cache.
 This makes `cljr-add-project-dependency' as snappy as can be."
@@ -3180,6 +3187,11 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
   ;; Best effort; don't freak people out with errors
   (ignore-errors
     (when (cljr--middleware-version) ; check if middleware is running
+      (when cljr-load-all-project-ns-on-startup
+        ;; lifted from cider-load-all-project-ns to load without
+        ;; confirmation
+        (let ((loaded-ns-count (length (cider-sync-request:ns-load-all))))
+          (message "Loaded %d namespaces" loaded-ns-count)))
       (when cljr-populate-artifact-cache-on-startup
         (cljr--update-artifact-cache))
       (when (and (not cljr-warn-on-eval)
