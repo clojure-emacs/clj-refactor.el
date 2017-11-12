@@ -221,6 +221,13 @@ won't run if there is a broken namespace in the project."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-assume-language-context nil
+  "If set to 'clj' or 'cljs', clj-refactor will use that value in situations
+  where the language context is ambiguous. If set to nil, a popup will be
+  created in each ambiguous case asking user to choose language context."
+  :group 'cljr
+  :type 'string)
+
 (defcustom cljr-libspec-whitelist
   '("^cljsns" "^slingshot.test" "^monger.joda-time" "^monger.json")
   "List of regexes to match against libspec names which shouldn't be pruned.
@@ -1828,11 +1835,15 @@ FEATURE is either :clj or :cljs."
   "Is point in a clj context?"
   (or (cljr--clj-file-p)
       (when (cljr--cljc-file-p)
-        (if (cljr--point-in-reader-conditional-p)
-            (cljr--point-in-reader-conditional-branch-p :clj)
-          (string-equal (cljr--prompt-user-for "Language context at point? "
-                                               (list "clj" "cljs"))
-                        "clj")))))
+        (cond
+          ((cljr--point-in-reader-conditional-p)
+           (cljr--point-in-reader-conditional-branch-p :clj))
+          (cljr-assume-language-context
+           (string-equal cljr-assume-language-context "clj"))
+          (t
+           (string-equal (cljr--prompt-user-for "Language context at point? "
+                                                (list "clj" "cljs"))
+                         "clj"))))))
 
 (defun cljr--aget (map key)
   (cdr (assoc key map)))
