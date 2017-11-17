@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- [#394](https://github.com/clojure-emacs/clj-refactor.el/issues/394) New config option `cljr-assume-language-context`: by default, when clj-refactor encounters an ambiguous context (clj vs cljs) it creates a popup asking user which context is meant. If this option is changed to "clj" or "cljs", clj-refactor will use that as the assumed context in such ambigous cases.
+
 ## 2.3.1
 
 - [#363](https://github.com/clojure-emacs/clj-refactor.el/issues/363) cljr-favor-prefix-notation by default is set to false
