@@ -1836,14 +1836,14 @@ FEATURE is either :clj or :cljs."
   (or (cljr--clj-file-p)
       (when (cljr--cljc-file-p)
         (cond
-          ((cljr--point-in-reader-conditional-p)
-           (cljr--point-in-reader-conditional-branch-p :clj))
-          (cljr-assume-language-context
-           (string-equal cljr-assume-language-context "clj"))
-          (t
-           (string-equal (cljr--prompt-user-for "Language context at point? "
-                                                (list "clj" "cljs"))
-                         "clj"))))))
+         ((cljr--point-in-reader-conditional-p)
+          (cljr--point-in-reader-conditional-branch-p :clj))
+         (cljr-assume-language-context
+          (string-equal cljr-assume-language-context "clj"))
+         (t
+          (string-equal (cljr--prompt-user-for "Language context at point? "
+                                               (list "clj" "cljs"))
+                        "clj"))))))
 
 (defun cljr--aget (map key)
   (cdr (assoc key map)))
