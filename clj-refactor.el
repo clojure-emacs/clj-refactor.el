@@ -8,7 +8,7 @@
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;; Version: 2.4.0-SNAPSHOT
 ;; Keywords: convenience, clojure, cider
-;; Package-Requires: ((emacs "24.4") (s "1.8.0") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.6.1") (cider "0.15.0") (edn "1.1.2") (inflections "2.3") (hydra "0.13.2"))
+;; Package-Requires: ((emacs "24.4") (s "1.8.0") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.6.1") (cider "0.17.0") (edn "1.1.2") (inflections "2.3") (hydra "0.13.2"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -152,6 +152,13 @@ as can be."
 
 (defcustom cljr-suppress-middleware-warnings nil
   "If t, no middleware warnings are printed to the repl."
+  :group 'cljr
+  :type 'boolean)
+
+(defcustom cljr-suppress-no-project-warning nil
+  "If t, no warning is printed when starting a REPL outside a project.
+By default, a warning is printed in this case since clj-refactor
+will not work as expected in such REPLs."
   :group 'cljr
   :type 'boolean)
 
@@ -785,6 +792,10 @@ A new record is created to define this constructor."
      (delete 'nil)
      car)
    ""))
+
+(defun cljr--inside-project-p ()
+  "Return non-nil if `default-directory' is inside a Clojure project."
+  (not (string-empty-p (cljr--project-dir))))
 
 (defun cljr--project-file ()
   (let ((project-dir (cljr--project-dir)))
@@ -3142,15 +3153,21 @@ if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
 
 (defun cljr--check-middleware-version ()
   "Check whether clj-refactor and nrepl-refactor versions are the same"
-  (let ((refactor-nrepl-version (or (cljr--middleware-version)
-                                    "n/a")))
-    (unless (string-equal (downcase refactor-nrepl-version)
-                          (downcase (cljr--version :remove-package-version)))
-      (cider-repl-emit-interactive-stderr
-       (format "WARNING: clj-refactor and refactor-nrepl are out of sync.
+  (if (cljr--inside-project-p)
+      (let ((refactor-nrepl-version (or (cljr--middleware-version)
+                                        "n/a")))
+        (unless (string-equal (downcase refactor-nrepl-version)
+                              (downcase (cljr--version :remove-package-version)))
+          (cider-repl-emit-interactive-stderr
+           (format "WARNING: clj-refactor and refactor-nrepl are out of sync.
 Their versions are %s and %s, respectively.
 You can mute this warning by changing cljr-suppress-middleware-warnings."
-               (cljr--version) refactor-nrepl-version)))))
+                   (cljr--version) refactor-nrepl-version))))
+    (unless cljr-suppress-no-project-warning
+      (cider-repl-emit-interactive-stderr
+       "WARNING: No Clojure project was detected. The
+refactor-nrepl middleware was not enabled. (You can mute this
+warning by customizing `cljr-suppress-no-project-warning'.)"))))
 
 ;;;###autoload
 (defun cljr-version ()
@@ -3178,16 +3195,10 @@ You can mute this warning by changing cljr-suppress-middleware-warnings."
     (cider-repl-emit-interactive-stderr
      (format "WARNING: Can't determine Clojure version.  The refactor-nrepl middleware requires clojure %s (or newer)" cljr-minimum-clojure-version))))
 
-(defun cljr--check-project-context ()
-  (unless (cljr--project-dir)
-    (cider-repl-emit-interactive-stderr
-     (format "WARNING: No clojure project detected.  The refactor-nrepl middleware won't work and has been disabled!"))))
-
 (defun cljr--init-middleware ()
   (unless cljr-suppress-middleware-warnings
     (cljr--check-clojure-version)
     (cljr--check-middleware-version))
-  (cljr--check-project-context)
   ;; Best effort; don't freak people out with errors
   (ignore-errors
     (when (cljr--middleware-version) ; check if middleware is running
@@ -4003,14 +4014,21 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
       (pop-to-buffer cljr--change-signature-buffer))))
 
 ;;;###autoload
+(defun cljr--inject-middleware-p (&rest _)
+  "Return non-nil if nREPL middleware should be injected."
+  (cljr--inside-project-p))
+
+;;;###autoload
 (defun cljr--inject-jack-in-dependencies ()
   "Inject the REPL dependencies of clj-refactor at `cider-jack-in'.
 If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-jack-in' to nil."
   (when (and cljr-inject-dependencies-at-jack-in
              (boundp 'cider-jack-in-lein-plugins)
              (boundp 'cider-jack-in-nrepl-middlewares))
-    (add-to-list 'cider-jack-in-lein-plugins `("refactor-nrepl" ,(cljr--version t)))
-    (add-to-list 'cider-jack-in-nrepl-middlewares "refactor-nrepl.middleware/wrap-refactor")))
+    (add-to-list 'cider-jack-in-lein-plugins `("refactor-nrepl" ,(cljr--version t)
+                                               :predicate cljr--inject-middleware-p))
+    (add-to-list 'cider-jack-in-nrepl-middlewares '("refactor-nrepl.middleware/wrap-refactor"
+                                                    :predicate cljr--inject-middleware-p))))
 
 ;;;###autoload
 (eval-after-load 'cider
