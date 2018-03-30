@@ -21,6 +21,30 @@
          (with-temp-file (expand-file-name "project.clj" dir-name)
            (insert "(defproject " project-name " \"0.1.0-SNAPSHOT\")"))))
 
+(Given "^I have a \\(clj\\|leiningen\\) project with dependencies \"\\([^\"]+\\)\" in \"\\([^\"]+\\)\"$"
+       (lambda (project-type project-name dir-name)
+         (setq default-directory clj-refactor-root-path)
+
+         ;; delete old directory
+         (when (file-exists-p dir-name)
+           (delete-directory dir-name t))
+
+         ;; create directory structure
+         (mkdir (expand-file-name project-name (expand-file-name "src" dir-name)) t)
+         (mkdir (expand-file-name project-name (expand-file-name "test" dir-name)) t)
+
+         (cond
+
+          ;; add project.clj
+          ((string= project-type "leiningen")
+           (with-temp-file (expand-file-name "project.clj" dir-name)
+             (insert "(defproject " project-name " \"0.1.0-SNAPSHOT\"\n  :dependencies [[org.clojure/clojure \"1.9.0\"]])")))
+
+          ;; add deps.edn
+          ((string= project-type "clj")
+           (with-temp-file (expand-file-name "deps.edn" dir-name)
+             (insert "{:paths [\"src\" \"resources\"]\n :deps {org.clojure/clojure {:mvn/version \"1.9.0\"}}}"))))))
+
 (Given "^I have a clojure-file \"\\([^\"]+\\)\"$"
        (lambda (file-name)
          (setq default-directory clj-refactor-root-path)
@@ -483,3 +507,20 @@ pprint (cljs.pprint)}}"))))
 (And "^I disable cljr-clean-ns$"
      (lambda ()
        (defun cljr-clean-ns ()(interactive))))
+
+(When "^I add dependency artifact \"\\([^ ]+\\)\" with version \"\\([^\"]+\\)\"$"
+  (lambda (artifact version)
+    (setq cljr-hotload-dependencies nil)
+    (cljr--add-project-dependency artifact version)))
+
+(When "^I locate dependency artifact \"\\([^ ]+\\)\"$"
+  (lambda (artifact)
+    (goto-char (point-min))
+    (re-search-forward artifact)
+    (cljr--dependency-at-point)
+    (goto-char
+     (match-beginning 0))))
+
+(And "^I update artifact version to \"\\([^\"]+\\)\"$"
+  (lambda (version)
+    (cljr-update-project-dependency version)))
