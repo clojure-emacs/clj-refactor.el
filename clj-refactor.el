@@ -1073,7 +1073,8 @@ word test in it and whether the file lives under the test/ directory."
     file-name))
 
 (defun cljr--ensure-no-dashes-in-filename ()
-  (when (and (not (file-exists-p (buffer-file-name))) ; only new files
+  (when (and (buffer-file-name)
+             (not (file-exists-p (buffer-file-name))) ; only new files
              (cljr--dash-in-file-name-p (buffer-file-name)))
     (let ((new-name (cljr--maybe-replace-dash-in-file-name (buffer-file-name))))
       (rename-buffer new-name)
