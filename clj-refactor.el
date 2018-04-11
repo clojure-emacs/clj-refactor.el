@@ -315,6 +315,9 @@ Otherwise open the file and do the changes non-interactively."
   (and cljr-use-multiple-cursors
        (not (bound-and-true-p evil-mode))))
 
+(defun cljr--vector-at-point-p ()
+  (eq (char-after) ?\[))
+
 (defun cljr--fix-special-modifier-combinations (key)
   (cl-case key
     ("C-s-i" "s-TAB")
@@ -570,8 +573,12 @@ errors."
   (join-line)
   (paredit-forward-delete 1))
 
-(defun cljr--looking-at-dependency-vector-p ()
-  (looking-at "\\[[^[[:space:]]+[[:space:]]+\""))
+(defun cljr--looking-at-dependency-p ()
+  (or
+   ;; boot & leiningen dependency vector
+   (looking-at "\\[[^[[:space:]]+[[:space:]]+\"")
+   ;; clj dependency style
+   (looking-at "\\([a-z0-9\-\./]+\\)[[:space:]]*\{.*\\(:mvn\\|:local\\|:git\\)/\\(root\\|version\\|url\\)[[:space:]]+\\(\"[^\"]+\"\\)")))
 
 (defun cljr--just-one-blank-line ()
   "Ensure there's only one blank line at POINT."
@@ -787,7 +794,7 @@ A new record is created to define this constructor."
 
 (defun cljr--project-dir ()
   (or
-   (thread-last  '("project.clj" "build.boot" "pom.xml")
+   (thread-last  '("project.clj" "build.boot" "pom.xml" "deps.edn")
      (mapcar 'cljr--locate-project-file)
      (delete 'nil)
      car)
@@ -804,6 +811,8 @@ A new record is created to define this constructor."
         (let ((file (expand-file-name "build.boot" project-dir)))
           (and (file-exists-p file) file))
         (let ((file (expand-file-name "pom.xml" project-dir)))
+          (and (file-exists-p file) file))
+        (let ((file (expand-file-name "deps.edn" project-dir)))
           (and (file-exists-p file) file)))))
 
 (defun cljr--project-files ()
@@ -814,6 +823,9 @@ A new record is created to define this constructor."
                          (format "-name \"%s\"" "*.cljc")
                          "-not -regex \".*svn.*\""
                          1000))))
+
+(defun cljr--project-with-deps-p (project-file)
+  (string-match "/deps.edn$" project-file))
 
 (defun cljr--buffers-visiting-dir (dir)
   (seq-filter (lambda (buf)
@@ -1979,7 +1991,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
     (cljr--post-command-message "Project clean done.")))
 
 (defun cljr--extract-dependency-name ()
-  (cl-assert (cljr--looking-at-dependency-vector-p))
+  (cl-assert (cljr--looking-at-dependency-p))
   (forward-char)
   (prog1
       (buffer-substring-no-properties
@@ -1998,9 +2010,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
 
 (defun cljr--extract-next-dependency-name ()
   (while (not (or (cljr--empty-buffer-p)
-                  (cljr--looking-at-dependency-vector-p)))
+                  (cljr--looking-at-dependency-p)))
     (delete-char 1))
-  (when (cljr--looking-at-dependency-vector-p)
+  (when (cljr--looking-at-dependency-p)
     (cljr--extract-dependency-name)))
 
 (defun cljr--get-sorted-dependency-names (deps)
@@ -2074,19 +2086,22 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dependencies"
   (interactive)
-  (cljr--update-file (cljr--project-file)
-    (goto-char (point-min))
-    (while (re-search-forward ":dependencies" (point-max) t)
-      (forward-char)
-      (thread-first (buffer-substring-no-properties (point)
-                                                    (cljr--point-after 'paredit-forward))
-        cljr--get-sorted-dependency-names
-        (cljr--sort-dependency-vectors (thread-last (clojure-delete-and-extract-sexp)
-                                         (string-remove-prefix "[")
-                                         (string-remove-suffix "]")))
-        insert))
-    (indent-region (point-min) (point-max))
-    (save-buffer)))
+  (let ((project-file (cljr--project-file)))
+    (if (cljr--project-with-deps-p project-file)
+        (user-error "Dependencies sorting not supported in deps.edn yet.")
+      (cljr--update-file project-file
+        (goto-char (point-min))
+        (while (re-search-forward ":dependencies" (point-max) t)
+          (forward-char)
+          (thread-first (buffer-substring-no-properties (point)
+                                                        (cljr--point-after 'paredit-forward))
+            cljr--get-sorted-dependency-names
+            (cljr--sort-dependency-vectors (thread-last (clojure-delete-and-extract-sexp)
+                                             (string-remove-prefix "[")
+                                             (string-remove-suffix "]")))
+            insert))
+        (indent-region (point-min) (point-max))
+        (save-buffer)))))
 
 (defun cljr--call-middleware-sync (request &optional key)
   "Call the middleware with REQUEST.
@@ -2182,18 +2197,34 @@ possible choices. If the choice is trivial, return it."
         (completing-read prompt choices nil nil nil nil (car choices)))
     (read-from-minibuffer prompt)))
 
+(defun cljr--insert-into-leiningen-dependencies (artifact version)
+  (re-search-forward ":dependencies")
+  (paredit-forward)
+  (paredit-backward-down)
+  (newline-and-indent)
+  (insert "[" artifact " \"" version "\"]"))
+
+(defun cljr--insert-into-clj-dependencies (artifact version)
+  (re-search-forward ":deps")
+  (forward-sexp)
+  (backward-char)
+  (newline-and-indent)
+  (insert artifact " {:mvn/version \"" version "\"}"))
+
 (defun cljr--add-project-dependency (artifact version)
-  (cljr--update-file (cljr--project-file)
-    (goto-char (point-min))
-    (re-search-forward ":dependencies")
-    (paredit-forward)
-    (paredit-backward-down)
-    (newline-and-indent)
-    (insert "[" artifact " \"" version "\"]")
-    (cljr--post-command-message "Added %s version %s as a project dependency" artifact version)
-    (when cljr-hotload-dependencies
-      (paredit-backward-down)
-      (cljr-hotload-dependency))))
+  (let* ((project-file (cljr--project-file))
+         (deps (cljr--project-with-deps-p project-file)))
+    (cljr--update-file project-file
+      (goto-char (point-min))
+      (if deps
+          (cljr--insert-into-clj-dependencies artifact version)
+        (cljr--insert-into-leiningen-dependencies artifact version))
+      (cljr--post-command-message "Added %s version %s as a project dependency" artifact version)
+      (when cljr-hotload-dependencies
+        (if deps
+            (back-to-indentation)
+          (paredit-backward-down))
+        (cljr-hotload-dependency)))))
 
 ;;;###autoload
 (defun cljr-add-project-dependency (force)
@@ -2209,22 +2240,27 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
     (cljr--add-project-dependency lib-name version)))
 
 ;;;###autoload
-(defun cljr-update-project-dependency ()
+(defun cljr-update-project-dependency (&optional version)
   "Update the version of the dependency at point."
   (interactive)
   (cljr--ensure-op-supported "artifact-list")
-  (unless (cljr--looking-at-dependency-vector-p)
-    (user-error "Place cursor in front of dependency vector to update."))
+  (unless (cljr--looking-at-dependency-p)
+    (user-error "Place cursor in front of dependency to update."))
   (save-excursion
-    (let (lib-name)
-      (paredit-forward-down)
+    (let (lib-name
+          (lein-style (cljr--vector-at-point-p)))
+      (if lein-style
+          (paredit-forward-down))
       (setq lib-name (cljr--extract-sexp))
       (paredit-forward)
       (skip-syntax-forward " ")
-      (let ((version (thread-last (cljr--get-versions-from-middleware lib-name)
-                       (cljr--prompt-user-for (concat lib-name " version: ")))))
+      (let ((artifact-version (or version
+                                  (thread-last (cljr--get-versions-from-middleware lib-name)
+                                    (cljr--prompt-user-for (concat lib-name " version: "))))))
         (cljr--delete-sexp)
-        (insert "\"" version "\""))))
+        (if lein-style
+            (insert "\"" artifact-version "\"")
+          (insert "\{:mvn/version \"" artifact-version "\"\}")))))
   (when cljr-hotload-dependencies
     (cljr-hotload-dependency)
     (cljr--ensure-op-supported "artifact-list")))
@@ -2236,19 +2272,25 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-dependencies"
   (interactive)
   (cljr--ensure-op-supported "artifact-list")
-  (find-file (cljr--project-file))
-  (goto-char (point-min))
-  (let (cljr-hotload-dependencies)
-    (while (re-search-forward ":dependencies" (point-max) t)
-      (paredit-forward-down)
-      (cljr--skip-past-whitespace-and-comments)
-      (while (not (looking-at "]"))
-        (let ((highlight (cljr--highlight-sexp)))
-          (unwind-protect
-              (cljr-update-project-dependency)
-            (delete-overlay highlight)))
-        (paredit-forward)
-        (cljr--skip-past-whitespace-and-comments)))))
+  (let ((project-file (cljr--project-file)))
+    (find-file project-file)
+    (goto-char (point-min))
+    (let (cljr-hotload-dependencies)
+      (if (cljr--project-with-deps-p project-file)
+          (cljr--update-dependencies ":deps" "}" 2)
+        (cljr--update-dependencies ":dependencies" "]" 1)))))
+
+(defun cljr--update-dependencies (keyword dependency-closing-brace forward-count)
+  (while (re-search-forward keyword (point-max) t)
+    (paredit-forward-down)
+    (cljr--skip-past-whitespace-and-comments)
+    (while (not (looking-at dependency-closing-brace))
+      (let ((highlight (cljr--highlight-sexp)))
+        (unwind-protect
+            (cljr-update-project-dependency)
+          (delete-overlay highlight)))
+      (paredit-forward forward-count)
+      (cljr--skip-past-whitespace-and-comments))))
 
 (defun cljr--skip-past-whitespace-and-comments ()
   (skip-syntax-forward " >")
@@ -2844,13 +2886,25 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
   (cljr--maybe-clean-ns)
   (cljr--maybe-eval-ns-form))
 
-(defun cljr--dependency-vector-at-point ()
+(defun cljr--dependency-at-point ()
+  "Returns project dependency at point.
+
+Recognizes both leiningen- and deps.edn-style dependencies, but the latter is always
+transformed back to leiningen dependency vector which is what nrepl backend
+expects for hot-loading."
   (save-excursion
     (ignore-errors
-      (while (not (cljr--looking-at-dependency-vector-p))
+      (while (not (cljr--looking-at-dependency-p))
         (paredit-backward-up))
-      (buffer-substring-no-properties (point)
-                                      (cljr--point-after 'paredit-forward)))))
+
+      (if (cljr--vector-at-point-p)
+          (buffer-substring-no-properties (point)
+                                          (cljr--point-after 'paredit-forward))
+        (concat "["
+                (match-string-no-properties 1)
+                " "
+                (match-string-no-properties 4)
+                "]")))))
 
 (defun cljr--hotload-dependency-callback (response)
   (cljr--maybe-rethrow-error response)
@@ -2866,10 +2920,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
   (with-temp-buffer
     (insert string)
     (goto-char (point-min))
-    (cl-assert (cljr--looking-at-dependency-vector-p) nil
+    (cl-assert (cljr--looking-at-dependency-p) nil
                (format
                 (concat "Expected dependency vector of type "
-                        "[org.clojure \"1.7.0\"], but got '%s'")
+                        "[org.clojure \"1.7.0\"] or "
+                        "org.clojure {:mvn/version \"1.7.0\"}, but got '%s'")
                 string)))
   string)
 
@@ -2882,8 +2937,9 @@ Defaults to the dependency vector at point, but prompts if none is found.
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependency"
   (interactive)
   (cljr--ensure-op-supported "hotload-dependency")
-  (let ((dependency-vector (or (cljr--dependency-vector-at-point)
+  (let ((dependency-vector (or (cljr--dependency-at-point)
                                (cljr--prompt-user-for "Dependency vector: "))))
+
     (cljr--assert-dependency-vector dependency-vector)
     (cljr--call-middleware-async
      (cljr--create-msg "hotload-dependency" "coordinates" dependency-vector)
