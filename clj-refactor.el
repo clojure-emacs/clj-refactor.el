@@ -2092,7 +2092,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
       (cljr--update-file project-file
         (goto-char (point-min))
         (while (re-search-forward ":dependencies" (point-max) t)
-          (forward-char)
+          ;; Boot has quoted vectors, leiningen does not
+          (while (not (looking-at-p "\\["))
+            (forward-char))
           (thread-first (buffer-substring-no-properties (point)
                                                         (cljr--point-after 'paredit-forward))
             cljr--get-sorted-dependency-names
