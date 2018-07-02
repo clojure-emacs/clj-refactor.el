@@ -2847,7 +2847,7 @@ Date. -> Date
   ;; Just so this part can be mocked out in a step definition
   (when-let (candidates (thread-first (cljr--create-msg "resolve-missing"
                                                         "symbol" symbol
-                                                        "session" (cider-current-session))
+                                                        "session" (cider-nrepl-eval-session))
                           (cljr--call-middleware-sync
                            "candidates")))
     (edn-read candidates)))
