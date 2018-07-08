@@ -279,12 +279,12 @@ if it appears to be unused."
 (defcustom cljr-before-warming-ast-cache-hook nil
   "Runs before each time the AST is loaded."
   :group 'cljr
-  :type 'function)
+  :type 'hook)
 
 (defcustom cljr-after-warming-ast-cache-hook nil
   "Runs after each time the AST is loaded."
   :group 'cljr
-  :type 'function)
+  :type 'hook)
 
 ;;; Buffer Local Declarations
 
@@ -2680,13 +2680,11 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
                             asts-in-bad-state) "; "))))))
 
 (defun cljr--warm-ast-cache ()
-  (when cljr-before-warming-ast-cache-hook
-    (funcall cljr-before-warming-ast-cache-hook))
+  (run-hooks 'cljr-before-warming-ast-cache-hook)
   (cljr--call-middleware-async
    (cljr--create-msg "warm-ast-cache")
    (lambda (res)
-     (when cljr-after-warming-ast-cache-hook
-       (funcall cljr-after-warming-ast-cache-hook res))
+     (run-hook-with-args 'cljr-after-warming-ast-cache-hook res)
      (cljr--maybe-rethrow-error res)
      (cljr--maybe-nses-in-bad-state res)
      (when cljr--debug-mode
