@@ -2493,7 +2493,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
                             "ignore-paths" cljr-middleware-ignored-paths
                             "ignore-errors"
                             (when (or cljr-find-usages-ignore-analyzer-errors cljr-ignore-analyzer-errors) "true"))))
-    (with-current-buffer (cider-current-repl-buffer)
+    (with-current-buffer (with-no-warnings (cider-current-repl-buffer))
       (setq cjr--occurrence-count 0)
       (setq cljr--num-syms -1)
       (setq cljr--occurrence-ids '()))
