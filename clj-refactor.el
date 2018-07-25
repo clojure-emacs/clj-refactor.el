@@ -100,7 +100,7 @@ These are called on all .clj files in the project."
   :group 'cljr
   :type '(repeat string))
 
-(defcustom cljr-hotload-dependencies t
+(defcustom cljr-hotload-dependencies nil
   "If t, newly added dependencies are also hotloaded into the repl.
 This only applies to dependencies added by `cljr-add-project-dependency'."
   :group 'cljr
@@ -2920,28 +2920,6 @@ expects for hot-loading."
                 (match-string-no-properties 4)
                 "]")))))
 
-(defun cljr--hotload-dependency-callback (response)
-  (cljr--maybe-rethrow-error response)
-  (cljr--post-command-message "Hotloaded %s" (nrepl-dict-get response "dependency")))
-
-(defun cljr--call-middleware-to-hotload-dependency (dep)
-  (cljr--call-middleware-async
-   (cljr--create-msg "hotload-dependency"
-                     "coordinates" dep)
-   #'cljr--hotload-dependency-callback))
-
-(defun cljr--assert-dependency-vector (string)
-  (with-temp-buffer
-    (insert string)
-    (goto-char (point-min))
-    (cl-assert (cljr--looking-at-dependency-p) nil
-               (format
-                (concat "Expected dependency vector of type "
-                        "[org.clojure \"1.7.0\"] or "
-                        "org.clojure {:mvn/version \"1.7.0\"}, but got '%s'")
-                string)))
-  string)
-
 ;;;###autoload
 (defun cljr-hotload-dependency ()
   "Download a dependency (if needed) and hotload it into the current repl session.
@@ -2950,14 +2928,7 @@ Defaults to the dependency vector at point, but prompts if none is found.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependency"
   (interactive)
-  (cljr--ensure-op-supported "hotload-dependency")
-  (let ((dependency-vector (or (cljr--dependency-at-point)
-                               (cljr--prompt-user-for "Dependency vector: "))))
-
-    (cljr--assert-dependency-vector dependency-vector)
-    (cljr--call-middleware-async
-     (cljr--create-msg "hotload-dependency" "coordinates" dependency-vector)
-     #'cljr--hotload-dependency-callback)))
+  (user-error "Temporarily disabled due to make the middleware run with Java 10."))
 
 (defun cljr--defn-str (&optional public)
   (if public

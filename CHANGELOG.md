@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Hotload dependency temporarily disabled to make the middleware run on Java 10.
 
 - [#415](https://github.com/clojure-emacs/clj-refactor.el/issues/415) Support for deps.edn - based projects
 - [#408](https://github.com/clojure-emacs/clj-refactor.el/pull/408) New `cljr-before-warming-ast-cache-hook`, `cljr-after-warming-ast-cache-hook` callbacks around AST warming.
