@@ -127,8 +127,8 @@ Thanks to [everyone](https://github.com/clojure-emacs/clj-refactor.el/graphs/con
 
 ## License
 
-Copyright © 2012-2017 Magnar Sveen
-Copyright © 2014-2017 Magnar Sveen, Lars Andersen, Benedek Fazekas
+Copyright © 2012-2014 Magnar Sveen
+Copyright © 2014-2018 Magnar Sveen, Lars Andersen, Benedek Fazekas
 
 Author: Magnar Sveen <magnars@gmail.com>
         Lars Andersen <expez@expez.com>
