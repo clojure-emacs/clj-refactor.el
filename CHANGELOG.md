@@ -1,15 +1,16 @@
 # Changelog
 
 ## Unreleased
-- Hotload dependency temporarily disabled to make the middleware run on Java 10.
 
-- Dropped support for emacs < 25.1 (to match CIDER).
+- Compatible with CIDER 0.17 and 0.18.
+- Hotload dependency temporarily disabled to make the middleware run on Java 10.
+- Dropped support for Emacs < 25.1 (to match clojure-mode and CIDER).
 - [#426](https://github.com/clojure-emacs/clj-refactor.el/issues/426) New variable, `cljr-middleware-ignored-paths`, to make the middleware ignore certain paths.
 - [#408](https://github.com/clojure-emacs/clj-refactor.el/pull/408) New `cljr-before-warming-ast-cache-hook`, `cljr-after-warming-ast-cache-hook` callbacks around AST warming.
 - [#394](https://github.com/clojure-emacs/clj-refactor.el/issues/394) New config option `cljr-assume-language-context`: by default, when clj-refactor encounters an ambiguous context (clj vs cljs) it creates a popup asking user which context is meant. If this option is changed to "clj" or "cljs", clj-refactor will use that as the assumed context in such ambigous cases.
 - [#391](https://github.com/clojure-emacs/clj-refactor.el/issues/391) Prevent refactor-nrepl from being injected when starting a REPL outside a project, and add an option `cljr-suppress-outside-project-warning` to suppress the resultant warning.
 
-## 2.3.1
+## 2.3.1 (2017-07-04)
 
 - [#363](https://github.com/clojure-emacs/clj-refactor.el/issues/363) cljr-favor-prefix-notation by default is set to false
 - Display keymap bindings in documentation for minor mode
@@ -44,7 +45,7 @@
 - Fix `cljr--normalize-symbol-name` when the symbol name starts with `#'`.
 - [#371](https://github.com/clojure-emacs/clj-refactor.el/issues/371) Stop `cljr-slash` messing up `(in-ns ...)` forms
 
-## 2.2.0
+## 2.2.0 (2016-03-22)
 
 - Smarten up `cljr-stop-referring` to replace `:refer :all` style require with alias and apply the alias to all occurrences of symbols from the referred namespace.
 - [#292](https://github.com/clojure-emacs/clj-refactor.el/issues/292) The buffer wasn't saved after adding a missing libspec causing clean-ns
@@ -58,7 +59,7 @@ to act on stale data.
 - Compatible with CIDER 0.11
 - Follow up CIDER 0.11 injecting its own dependencies at `cider-jack-in` by adding clj-refactor's own dependencies to the approriate vars in CIDER. Both leiningen and boot are supported. Set `cljr-inject-dependencies-at-jack-in` to nil to opt out.
 
-## 2.0.0
+## 2.0.0 (2016-02-06)
 
 - [#267](https://github.com/clojure-emacs/clj-refactor.el/issues/267)
  Add `cljr-require-macro` which requires a macro into the current
@@ -108,7 +109,7 @@ to act on stale data.
 - Some AST based features (find usages, rename symbol, inline symbol) ignore namespaces that cannot be analyzed if `cljr-ignore-analyzer-errors` set to true instead of failing entirely.
 - By default warning is given when AST based feature is used and clj-refactor only proceeds with it if the user allowed evalling the project as the analyzer also evals first level forms. To disable the warning set `cljr-warn-on-eval` to `nil`. This also reenables warming AST cache at startup of the REPL.
 
-## 1.1.0
+## 1.1.0 (2015-07-06)
 
 - Add `cljr-describe-refactoring` which shows the wiki page describing one of the available refactorings inline in emacs.
 - Add `cljr-rename-file-or-dir` to replace `cljr-rename-file`.
@@ -127,7 +128,7 @@ to act on stale data.
 - Multiple cursors is used when extracting and promoting functions (disable by setting `cljr-use-multiple-cursors` to nil)
 - Not using multiple-cursors when in evil-mode.
 
-## 1.0.5
+## 1.0.5 (2015-05-02)
 
 - Add `cljr-reload-config` to resubmit config settings to the middleware
 - Add config setting for `clean-ns` to not do rewriting to favor prefix form.
@@ -141,7 +142,7 @@ to act on stale data.
 - Add `cljr-find-usages`
 - Add `cljr-rename-symbol`
 
-## 0.13
+## 0.13 (2014-11-19)
 
 - Removed `cljr-cycle-stringlike`.  This function was duplicating the functionality of `clojure-mode`s `clojure-toggle-keyword-string`
 - Add `cljr-cycle-if`
@@ -154,38 +155,38 @@ to act on stale data.
 - Add `cljr-remove-debug-fns`
 - performance tweak for `cljr-remove-unused-requires` if `refactor-nrepl` is used
 
-## 0.12
+## 0.12 (2014-03-03)
 
 - When expanding let, or moving expressions to let, it now replaces
   duplicates in the let body with the bound name.
 
-## 0.11
+## 0.11 (2014-02-20)
 
 - Add `cljr-raise-sexp`
 - Add `cljr-remove-unused-requires`
 - Add `cljr-move-form`
 
-## 0.10
+## 0.10 (2014-01-30)
 
 - Add `cljr-stop-referring`
 - Add `cljr-destructure-keys`
 - Add `cljr-sort-ns`
 
-## 0.9
+## 0.9 (2014-01-26)
 
 - Add `cljr-replace-use`
 - Add `cljr-add-declaration`
 
-## 0.8
+## 0.8 (2014-01-20)
 
 - Add `cljr-cycle-stringlike`
 - Add `cljr-cycle-coll`
 - Add `cljr-cycle-privacy`
 
-## 0.7
+## 0.7 (2014-01-15)
 
 - Add `cljr-thread-first-all`, `cljr-thread-last-all` and `cljr-unwind-all`
 
-## 0.6
+## 0.6 (2014-01-11)
 
 - Add `cljr-move-to-let`
