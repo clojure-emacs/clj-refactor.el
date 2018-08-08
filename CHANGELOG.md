@@ -1,58 +1,58 @@
-# Changelog
+# Change log
 
 ## Unreleased
 
 - Compatible with CIDER 0.17 and 0.18.
 - Hotload dependency temporarily disabled to make the middleware run on Java 10.
 - Dropped support for Emacs < 25.1 (to match clojure-mode and CIDER).
-- [#426](https://github.com/clojure-emacs/clj-refactor.el/issues/426) New variable, `cljr-middleware-ignored-paths`, to make the middleware ignore certain paths.
-- [#408](https://github.com/clojure-emacs/clj-refactor.el/pull/408) New `cljr-before-warming-ast-cache-hook`, `cljr-after-warming-ast-cache-hook` callbacks around AST warming.
-- [#394](https://github.com/clojure-emacs/clj-refactor.el/issues/394) New config option `cljr-assume-language-context`: by default, when clj-refactor encounters an ambiguous context (clj vs cljs) it creates a popup asking user which context is meant. If this option is changed to "clj" or "cljs", clj-refactor will use that as the assumed context in such ambigous cases.
-- [#391](https://github.com/clojure-emacs/clj-refactor.el/issues/391) Prevent refactor-nrepl from being injected when starting a REPL outside a project, and add an option `cljr-suppress-outside-project-warning` to suppress the resultant warning.
+- [#426](https://github.com/clojure-emacs/clj-refactor.el/issues/426): New variable, `cljr-middleware-ignored-paths`, to make the middleware ignore certain paths.
+- [#408](https://github.com/clojure-emacs/clj-refactor.el/pull/408): New `cljr-before-warming-ast-cache-hook`, `cljr-after-warming-ast-cache-hook` callbacks around AST warming.
+- [#394](https://github.com/clojure-emacs/clj-refactor.el/issues/394): New config option `cljr-assume-language-context`: by default, when clj-refactor encounters an ambiguous context (clj vs cljs) it creates a popup asking user which context is meant. If this option is changed to "clj" or "cljs", clj-refactor will use that as the assumed context in such ambigous cases.
+- [#391](https://github.com/clojure-emacs/clj-refactor.el/issues/391): Prevent refactor-nrepl from being injected when starting a REPL outside a project, and add an option `cljr-suppress-outside-project-warning` to suppress the resultant warning.
 
 ## 2.3.1 (2017-07-04)
 
 - [#363](https://github.com/clojure-emacs/clj-refactor.el/issues/363) cljr-favor-prefix-notation by default is set to false
 - Display keymap bindings in documentation for minor mode
 - New config setting `cljr-libspec-whitelist` to prevent libspecs which appear unused but are side-effecting at load from being pruned.
-- [#301](https://github.com/clojure-emacs/clj-refactor.el/issues/301) `ad`  has gained a prefix to declare the symbol under the cursor.
-- [#312](https://github.com/clojure-emacs/clj-refactor.el/issues/312) Allow `sut` alias to be customized.
-- [#305](https://github.com/clojure-emacs/clj-refactor.el/issues/305) Don't call lookup-alias for non namespaced keywords at all when slash is typed. However trigger lookup alias with the leading :: stripped off the prefix if the keyword is namespaced.
+- [#301](https://github.com/clojure-emacs/clj-refactor.el/issues/301): `ad`  has gained a prefix to declare the symbol under the cursor.
+- [#312](https://github.com/clojure-emacs/clj-refactor.el/issues/312): Allow `sut` alias to be customized.
+- [#305](https://github.com/clojure-emacs/clj-refactor.el/issues/305): Don't call lookup-alias for non namespaced keywords at all when slash is typed. However trigger lookup alias with the leading :: stripped off the prefix if the keyword is namespaced.
 - Require a custom test framework for Clojurescript test files. By default it's `cljs.test` but it can be customized with `cljr-cljs-clojure-test-declaration`.
 
 ### Changes
 
-- [#302](https://github.com/clojure-emacs/clj-refactor.el/issues/302) `ad` now understands def-like things, e.g. defs created by Schema.
+- [#302](https://github.com/clojure-emacs/clj-refactor.el/issues/302): `ad` now understands def-like things, e.g. defs created by Schema.
 - When inserting ns form to blank clojure-ish file, check if cider is available and connected for better detecting the expected namespace.
 - Remove the warning about missing nREPl ops.
 - Remove threading macro related features because they are moved to Clojure mode. However, the usual mnemonics for these features still work only they reference the Clojure mode implementations.
 - Remove cycle privacy, cycle if and cycle collection type features. They are moved to Clojure mode. The usual mnemonics for cycle privacy and cycle if features still work only they refer the Clojure mode implementations. Cycle collection type got reworked into convert collection to list, quoted list, map, vector and set. *Cycle* collection type is no longer supported.
 - Compatible with clojure-mode 5.6.1 and above.
 - Remove *most* of the code implementing `let` related refactorings because these featured got migrated and reworked in Clojure mode. The usual mnemonics for these features still work and also a version of these features using multiple cursors are still maintained here as multiple cursors mode is not supported in Clojure mode.
-- [#294](https://github.com/clojure-emacs/clj-refactor.el/issues/294) Remove dash library dependency.
-- [#372](https://github.com/clojure-emacs/clj-refactor.el/issues/372) Remove s.el dependency
+- [#294](https://github.com/clojure-emacs/clj-refactor.el/issues/294): Remove dash library dependency.
+- [#372](https://github.com/clojure-emacs/clj-refactor.el/issues/372): Remove s.el dependency
 
 ### Bugs fixed
 
-- [#368](https://github.com/clojure-emacs/clj-refactor.el/issues/368) Fix inline symbol fails on inlining composed function in a `def`
-- [#299](https://github.com/clojure-emacs/clj-refactor.el/issues/299) `ml` moves cursor
-- [#309](https://github.com/clojure-emacs/clj-refactor.el/issues/309)  `am` creates alias for fully-qualified symbols.
-- [#313](https://github.com/clojure-emacs/clj-refactor.el/issues/313)  teach `pf` about function literals using `%&`.
-- [#320](https://github.com/clojure-emacs/clj-refactor.el/issues/320) `*data-readers*` ignored when searching for macros.
-- [#339](https://github.com/clojure-emacs/clj-refactor.el/issues/339) Teach stop refer to understand multiline refer clauses.
-- [#341](https://github.com/clojure-emacs/clj-refactor.el/issues/341) Avoid creating circular dependencies with move form when source namespace refers to the target namespace with a require.
+- [#368](https://github.com/clojure-emacs/clj-refactor.el/issues/368): Fix inline symbol fails on inlining composed function in a `def`
+- [#299](https://github.com/clojure-emacs/clj-refactor.el/issues/299): `ml` moves cursor
+- [#309](https://github.com/clojure-emacs/clj-refactor.el/issues/309): `am` creates alias for fully-qualified symbols.
+- [#313](https://github.com/clojure-emacs/clj-refactor.el/issues/313): teach `pf` about function literals using `%&`.
+- [#320](https://github.com/clojure-emacs/clj-refactor.el/issues/320): `*data-readers*` ignored when searching for macros.
+- [#339](https://github.com/clojure-emacs/clj-refactor.el/issues/339): Teach stop refer to understand multiline refer clauses.
+- [#341](https://github.com/clojure-emacs/clj-refactor.el/issues/341): Avoid creating circular dependencies with move form when source namespace refers to the target namespace with a require.
 - [refactor-nrepl#183](https://github.com/clojure-emacs/refactor-nrepl/issues/183) Applied conversion between Unix-like path generated by Emacs under Cygwin and Windows-like path required by nREPL. Cider functions `cider-to-nrepl-filename-function` and `cider-from-nrepl-filename-function` are used.
 - Fix `cljr--normalize-symbol-name` when the symbol name starts with `#'`.
-- [#371](https://github.com/clojure-emacs/clj-refactor.el/issues/371) Stop `cljr-slash` messing up `(in-ns ...)` forms
+- [#371](https://github.com/clojure-emacs/clj-refactor.el/issues/371): Stop `cljr-slash` messing up `(in-ns ...)` forms
 
 ## 2.2.0 (2016-03-22)
 
 - Smarten up `cljr-stop-referring` to replace `:refer :all` style require with alias and apply the alias to all occurrences of symbols from the referred namespace.
-- [#292](https://github.com/clojure-emacs/clj-refactor.el/issues/292) The buffer wasn't saved after adding a missing libspec causing clean-ns
+- [#292](https://github.com/clojure-emacs/clj-refactor.el/issues/292): The buffer wasn't saved after adding a missing libspec causing clean-ns
 to act on stale data.
 - Don't try to resolve `js/` in cljs-mode
 - `cljr-create-fn-from-example` improvements: strip ns off keywords when making param name; always include a blank line over new function
-- [#306](https://github.com/clojure-emacs/clj-refactor.el/issues/306) Add-require doesn't jump back if there is no REPL connection with refactor-nrepl configured
+- [#306](https://github.com/clojure-emacs/clj-refactor.el/issues/306): Add-require doesn't jump back if there is no REPL connection with refactor-nrepl configured
 
 ### Changes
 
@@ -61,7 +61,7 @@ to act on stale data.
 
 ## 2.0.0 (2016-02-06)
 
-- [#267](https://github.com/clojure-emacs/clj-refactor.el/issues/267)
+- [#267](https://github.com/clojure-emacs/clj-refactor.el/issues/267):
  Add `cljr-require-macro` which requires a macro into the current
  namespace.
 - Add prefix variant to `cljr-add-import-to-ns` for insertion of imports in the cljs part of the ns declaration.
@@ -71,32 +71,32 @@ to act on stale data.
 - Boot support for `cljr-sort-project-dependencies`.
 - Boot support for `cljr-update-project-dependencies`.
 - Boot support for `cljr-update-project-dependency`.
-- [#228](https://github.com/clojure-emacs/clj-refactor.el/issues/238) Boot support for `cljr-add-project-dependency`.
+- [#228](https://github.com/clojure-emacs/clj-refactor.el/issues/238): Boot support for `cljr-add-project-dependency`.
 - Get rid of `cljr-reload-config`.  We're now sending the configuration options down to the middleware on each request instead of storing it down there.
 - Make magic requires cljc aware.
-- [#215](https://github.com/clojure-emacs/clj-refactor.el/issues/215) Improve the magic requires feature (when you hit `/`) by asking the middleware for all available namespace aliases.
+- [#215](https://github.com/clojure-emacs/clj-refactor.el/issues/215): Improve the magic requires feature (when you hit `/`) by asking the middleware for all available namespace aliases.
 - Add `cljr-extract-def` which extracts the form at, or around, point as a def.
 - Add `cljr-change-function-signature` to re-order or re-name function parameters.
 - Keep pressing `l` after `cljr-expand-let` to expand further.
-- [refactor-nrepl#99](https://github.com/clojure-emacs/refactor-nrepl/issues/99) if cljr-thread-first-all or cljr-thread-last-all is called with a prefix the last expression is not threaded. cljr-thread-all-but-last defcustom has the same effect without the prefix
+- [refactor-nrepl#99](https://github.com/clojure-emacs/refactor-nrepl/issues/99): if cljr-thread-first-all or cljr-thread-last-all is called with a prefix the last expression is not threaded. cljr-thread-all-but-last defcustom has the same effect without the prefix
 - [hydra](https://github.com/abo-abo/hydra) menus for discoverability: they help to (re)learn clj-refactor key bindings. See: [parent hydra](https://github.com/clojure-emacs/clj-refactor.el/wiki/Hydra).
 
 ### Bugs fixed
 
-- [#285](https://github.com/clojure-emacs/clj-refactor.el/issues/285) clean-ns did the wrong thing unless the code was loaded.
+- [#285](https://github.com/clojure-emacs/clj-refactor.el/issues/285): clean-ns did the wrong thing unless the code was loaded.
 
 ### Changes
 
-- [#265](https://github.com/clojure-emacs/clj-refactor.el/issues/265) Feedback to the user is lost among other general messages from emacs.
+- [#265](https://github.com/clojure-emacs/clj-refactor.el/issues/265): Feedback to the user is lost among other general messages from emacs.
 - Make `cljr-clean-ns` the only default function used by `cljr-project-clean`.
 - Remove `cljr-remove-unused-requires` which is replaced by `cljr-clean-ns`.
 - Remove `cljr-replace-use` which is replaced by `cljr-clean-ns`.
 - Remove `cljr-sort-ns` which is replaced by `cljr-clean-ns`.
 - `cljr-remove-debug-fns` has been removed.
 - `cljr-magic-require-namespaces` is now only consulted in the event the namespace alias isn't already used in the project.
-- [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217) When requiring the test framework in test files stop favoring `:refer :all`.
-- [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217) Add a bunch of defcustoms to parameterise what gets inserted into the test namespaces for the various test frameworks.
-- [#216](https://github.com/clojure-emacs/clj-refactor.el/issues/216) Teach our automatic ns generator about cljc files.
+- [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217): When requiring the test framework in test files stop favoring `:refer :all`.
+- [#217](https://github.com/clojure-emacs/clj-refactor.el/issues/217): Add a bunch of defcustoms to parameterise what gets inserted into the test namespaces for the various test frameworks.
+- [#216](https://github.com/clojure-emacs/clj-refactor.el/issues/216): Teach our automatic ns generator about cljc files.
 - Teach `cljr-extract-constant` about the `^:const` hint to the compiler.
 - Use yasnippet for placeholder parameters in `cljr-create-fn-from-example`
 - Highlight the function be promoted with overlays in `cljr-promote-function`.
@@ -105,7 +105,7 @@ to act on stale data.
 - `cljr-sort-ns` no longer marks the buffer as changed if it did no work.
 - `cljr-rename-symbol` now fails earlier, before prompting the user for a new name if an AST can't be built due to errors.
 - support for emacs 24.3 and older is dropped
-- [refactor-nrepl#85](https://github.com/clojure-emacs/refactor-nrepl/issues/85) Eliminate some find usages duplicates
+- [refactor-nrepl#85](https://github.com/clojure-emacs/refactor-nrepl/issues/85): Eliminate some find usages duplicates
 - Some AST based features (find usages, rename symbol, inline symbol) ignore namespaces that cannot be analyzed if `cljr-ignore-analyzer-errors` set to true instead of failing entirely.
 - By default warning is given when AST based feature is used and clj-refactor only proceeds with it if the user allowed evalling the project as the analyzer also evals first level forms. To disable the warning set `cljr-warn-on-eval` to `nil`. This also reenables warming AST cache at startup of the REPL.
 
