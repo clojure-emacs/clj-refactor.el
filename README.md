@@ -83,6 +83,12 @@ configuration. AST dependent features at the moment are `find usages`,
 `rename symbol`, `extract function`, `inline symbol`, `rename file or
 dir`, `change function signature`, `promote function`.
 
+### Compatibility
+
+clj-refactor | refactor-nrepl | CIDER       | Clojure | Java |
+-------------|----------------|-------------|---------|------|
+2.4.0        |  2.4.0         | 0.17, 0.18  | 1.7+    | 8+   |
+
 ## Usage
 
 All functions in `clj-refactor` have a two-letter mnemonic
