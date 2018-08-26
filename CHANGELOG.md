@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.4.0 (2018-08-26)
+
 - Compatible with CIDER 0.17 and 0.18.
 - Hotload dependency temporarily disabled to make the middleware run on Java 10.
 - Dropped support for Emacs < 25.1 (to match clojure-mode and CIDER).

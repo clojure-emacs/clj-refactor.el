@@ -47,9 +47,12 @@ Either in your project's `project.clj` or in the `:user`
 profile found at `~/.lein/profiles.clj`:
 
 ```clojure
-:plugins [[refactor-nrepl "2.3.1"]
-          [cider/cider-nrepl "0.14.0"]]
+:plugins [[refactor-nrepl "2.4.0"]
+          [cider/cider-nrepl "0.18.0"]]
 ```
+
+**clj-refactor 2.4 is compatible with CIDER 0.17 and 0.18. Change the cider-nrepl dep
+to 0.17 if you're using CIDER 0.17.**
 
 Check out the much longer
 [installation](https://github.com/clojure-emacs/clj-refactor.el/wiki/installation)
