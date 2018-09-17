@@ -3358,12 +3358,18 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                (cljr--insert-example-fn fn-name args path)))
       (cljr--insert-example-fn fn-name args path))))
 
+(defun cljr--inflect-last-word (f s)
+  (let* ((words (s-split "-" s))
+         (last-word (-last-item words))
+         (prefix (-butlast words)))
+    (s-join "-" (-concat prefix (list (funcall f last-word))))))
+
 (defun cljr--create-fn-from-list-fold (args path)
   (cljr--insert-example-fn (car args)
                            (seq-map
                             (lambda (it)
                               (when-let (name (cljr--guess-param-name it))
-                                (inflection-singularize-string name)))
+                                (cljr--inflect-last-word 'inflection-singularize-string name)))
                             (cdr args))
                            path))
 
@@ -3373,7 +3379,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                                  (seq-map
                                   (lambda (it)
                                     (when-let (name (cljr--guess-param-name it))
-                                      (inflection-singularize-string name)))
+                                      (cljr--inflect-last-word 'inflection-singularize-string name)))
                                   (cdr args)))
                            path))
 
@@ -3398,7 +3404,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 (defun cljr--create-fn-from-sort (args path)
   (let* ((fn-name (cider-symbol-at-point))
          (param-name (when-let (coll-name (cljr--guess-param-name (car (last args))))
-                       (inflection-singularize-string coll-name))))
+                       (cljr--inflect-last-word 'inflection-singularize-string coll-name))))
     (cljr--insert-example-fn fn-name
                              (if param-name
                                  (list (concat param-name "-a")
@@ -3414,7 +3420,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                          (when (cljr--keywordp (car args))
                            (string-remove-prefix ":" (car args)))
                        (when-let (coll-name (cljr--guess-param-name (car (last args))))
-                         (inflection-singularize-string coll-name)))))
+                         (cljr--inflect-last-word 'inflection-singularize-string coll-name)))))
     (cljr--insert-example-fn fn-name
                              (if making-comparator?
                                  (if param-name
@@ -3431,7 +3437,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                   (cljr--guess-param-name (nth 1 args)))
              "acc")
          (when-let (name (cljr--guess-param-name (car (last args))))
-           (inflection-singularize-string name)))
+           (cljr--inflect-last-word 'inflection-singularize-string name)))
    path))
 
 (defun cljr--unwind-and-extract-this-as-list (name)
@@ -3523,7 +3529,7 @@ and make the whole string lower-cased."
       (inflection-pluralize-string
        (cljr--guess-param-name (cljr--last-arg-s prepped-form))))
      ((member fn-call cljr--fns-that-get-item-out-of-coll)
-      (inflection-singularize-string
+      (cljr--inflect-last-word 'inflection-singularize-string
        (cljr--guess-param-name (cljr--first-arg-s prepped-form)))))))
 
 (defvar cljr--semantic-noops--first-position
