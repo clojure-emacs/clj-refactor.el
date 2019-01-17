@@ -3359,10 +3359,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
       (cljr--insert-example-fn fn-name args path))))
 
 (defun cljr--inflect-last-word (f s)
-  (let* ((words (s-split "-" s))
-         (last-word (-last-item words))
-         (prefix (-butlast words)))
-    (s-join "-" (-concat prefix (list (funcall f last-word))))))
+  (save-match-data
+    (let* ((words (split-string s "-"))
+           (last-word (car (last words)))
+           (prefix (butlast words)))
+      (mapconcat 'identity
+                 (append prefix (list (funcall f last-word)))
+                 "-"))))
 
 (defun cljr--create-fn-from-list-fold (args path)
   (cljr--insert-example-fn (car args)
