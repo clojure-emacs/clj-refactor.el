@@ -1956,6 +1956,11 @@ the alias in the project."
     (cljr--goto-closest-ns)
     (looking-at-p "(\\s-*in-ns")))
 
+(defun cljr--in-reader-literal-p ()
+  (save-excursion
+    (clojure-backward-logical-sexp 1)
+    (looking-at-p "#")))
+
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts / as normal, but also checks for common namespace shorthands to require.
@@ -1966,7 +1971,8 @@ form."
   (interactive)
   (insert "/")
   (unless (or (cljr--in-map-destructuring?)
-              (cljr--in-ns-above-point-p))
+              (cljr--in-ns-above-point-p)
+              (cljr--in-reader-literal-p))
     (when-let (aliases (and cljr-magic-requires
                             (not (cider-in-comment-p))
                             (not (cider-in-string-p))
