@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- clean-ns: fix cases where this would generate a FileNotFoundException, by trying both the absolute and the relative path to the file to be cleaned.
+
 ## 2.4.0 (2018-08-26)
 
 - Compatible with CIDER 0.17 and 0.18.
