@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- [#380](https://github.com/clojure-emacs/clj-refactor.el/issues/380) clean-ns: fix FileNotFoundException, by trying both the absolute path and the path relative to the project root. This requires a new refactor-nrepl, old versions will only check the absolute path.
+
 ## 2.4.0 (2018-08-26)
 
 - Compatible with CIDER 0.17 and 0.18.

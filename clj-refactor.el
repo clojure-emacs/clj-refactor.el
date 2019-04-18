@@ -2732,10 +2732,12 @@ removed."
   (unless (and *cljr--noninteractive*
                (not (buffer-modified-p)))
     (save-buffer))
-  (let ((path (or path (cljr--project-relative-path (buffer-file-name)))))
+  (let ((path (or path (buffer-file-name)))
+        (relative-path (cljr--project-relative-path path)))
     (when-let (new-ns (cljr--call-middleware-sync
                        (cljr--create-msg "clean-ns"
                                          "path" path
+                                         "relative-path" relative-path
                                          "libspec-whitelist" cljr-libspec-whitelist
                                          "prune-ns-form" (if no-prune? "false"
                                                            "true"))
