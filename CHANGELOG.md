@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- clean-ns: fix cases where this would generate a FileNotFoundException, by trying both the absolute and the relative path to the file to be cleaned.
+- [#380](https://github.com/clojure-emacs/clj-refactor.el/issues/380) clean-ns: fix FileNotFoundException, by trying both the absolute path and the path relative to the project root. This requires a new refactor-nrepl, old versions will only check the absolute path.
 
 ## 2.4.0 (2018-08-26)
 
