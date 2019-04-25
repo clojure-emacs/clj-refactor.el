@@ -1079,7 +1079,7 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
 
 Two checks are made - whether the namespace of the file has the
 word test in it and whether the file lives under the test/ directory."
-  (or (string-match-p "test\." (clojure-find-ns))
+  (or (string-match-p "\\btest\\b" (clojure-find-ns))
       (string-match-p "/test" (buffer-file-name))))
 
 (defun cljr--clojure-ish-filename-p (file-name)
