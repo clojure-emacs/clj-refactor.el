@@ -1328,9 +1328,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-stop-referring"
     (paredit-forward)
     (let ((case-fold-search nil))
       (while (re-search-forward (regexp-opt symbols 'symbols) nil t)
-        (paredit-backward)
-        (insert ns "/")
-        (paredit-forward)))))
+        (when (save-excursion
+                (paredit-backward-up)
+                (not (looking-at "\"")))
+          (paredit-backward)
+          (insert ns "/")
+          (paredit-forward))))))
 
 (defun cljr--insert-with-proper-whitespace (forms)
   (open-line 2)
