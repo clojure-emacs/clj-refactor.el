@@ -377,6 +377,7 @@ Otherwise open the file and do the changes non-interactively."
     ("ml" . (cljr-move-to-let "Move to let" ?m ("code")))
     ("pc" . (cljr-project-clean "Project clean" ?c ("project")))
     ("pf" . (cljr-promote-function "Promote function" ?p ("code" "toplevel-form")))
+    ("ra" . (cljr-rename-ns-alias "Rename namespace alias" ?a ("ns")))
     ("rf" . (cljr-rename-file-or-dir "Rename file-or-dir" ?r ("project" "toplevel-form")))
     ("rl" . (cljr-remove-let "Remove let" ?r ("code")))
     ("rm" . (cljr-require-macro "Add to or extend the require-macros form" ?M ("ns")))
@@ -406,13 +407,14 @@ Otherwise open the file and do the changes non-interactively."
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 _ai_: Add import to ns                             _am_: Add missing libspec                          _ap_: Add project dependency
 _ar_: Add require to ns                            _au_: Add use to ns                                _cn_: Clean ns
-_rm_: Require a macro into the ns                  _sr_: Stop referring
+_ra_: Rename namespace alias                       _rm_: Require a macro into the ns                  _sr_: Stop referring
 _b_: Back to previous Hydra
 "
   ("ai" cljr-add-import-to-ns) ("am" cljr-add-missing-libspec)
   ("ap" cljr-add-project-dependency) ("ar" cljr-add-require-to-ns)
   ("au" cljr-add-use-to-ns) ("cn" cljr-clean-ns)
-  ("rm" cljr-require-macro) ("sr" cljr-stop-referring)
+  ("ra" cljr-rename-ns-alias) ("rm" cljr-require-macro)
+  ("sr" cljr-stop-referring)
   ("b" hydra-cljr-help-menu/body :exit t)
   ("q" nil "quit"))
 
@@ -879,6 +881,31 @@ issued, and should be left focused."
        (format "%s%s" new-dir (seq-some (apply-partially same-file buf) files)))
       (kill-buffer buf))
     (find-file (format "%s/%s" new-dir (seq-some (apply-partially same-file active) files)))))
+
+;;;###autoload
+(defun cljr-rename-ns-alias ()
+  "Rename a namespace alias.
+
+See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-ns-alias"
+  (interactive)
+  (let ((current-alias (read-from-minibuffer "Current alias: ")))
+    (save-excursion
+      (cljr--goto-ns)
+      (let ((rgx (concat ":as +" current-alias))
+            (bound (save-excursion (forward-list 1) (point))))
+        (if (save-excursion (search-forward-regexp rgx bound t))
+          (let ((new-alias (read-from-minibuffer "New alias: ")))
+            (save-excursion
+              (while (re-search-forward rgx bound t)
+                (replace-match (concat ":as " new-alias))))
+            (save-excursion
+              (while (re-search-forward (concat current-alias "/") nil t)
+                (replace-match (concat new-alias "/"))))
+            (save-excursion
+              (while (re-search-forward (concat "#::" current-alias "{") nil t)
+                (replace-match (concat "#::" new-alias "{"))))
+            (message "Successfully renamed alias '%s' to '%s'" current-alias new-alias))
+          (message "Cannot find namespace alias: '%s'" current-alias))))))
 
 ;;;###autoload
 (defun cljr-rename-file-or-dir (old-path new-path)
