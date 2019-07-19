@@ -906,8 +906,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
       (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
         (let* ((changed-files (cljr--call-middleware-sync
                                (cljr--create-msg "rename-file-or-dir"
-                                                 "old-path" old-path
-                                                 "new-path" new-path)
+                                                 "old-path" (cljr--remove-tramp-params old-path)
+                                                 "new-path" (cljr--remove-tramp-params new-path))
                                "touched"))
                (changed-files-count (length changed-files)))
           (cond
@@ -2477,7 +2477,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
   (= (point) (cljr--point-after 'end-of-buffer)))
 
 (defun cljr--find-symbol-sync (symbol ns)
-  (let* ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name)))
+  (let* ((filename (cljr--remove-tramp-params (funcall cider-to-nrepl-filename-function (buffer-file-name))))
          (line (line-number-at-pos))
          (column (1+ (current-column)))
          (dir (cljr--project-dir))
@@ -2500,7 +2500,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
     occurrences))
 
 (defun cljr--find-symbol (symbol ns callback)
-  (let* ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name)))
+  (let* ((filename (cljr--remove-tramp-params (funcall cider-to-nrepl-filename-function (buffer-file-name))))
          (line (line-number-at-pos))
          (column (1+ (current-column)))
          (dir (cljr--project-dir))
@@ -2529,9 +2529,27 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
 root."
   (string-remove-prefix (cljr--project-dir) path))
 
+(defun cljr--remove-tramp-params (file)
+  "Remove the TRAMP params from file path."
+  (if (tramp-tramp-file-p file)
+      (tramp-file-name-localname (tramp-dissect-file-name file))
+    file))
+
 (defun cljr--get-valid-filename (hash)
   "Get :file value from the hash table and convert path if necessary."
-  (funcall cider-from-nrepl-filename-function (gethash :file hash)))
+  (let ((file (funcall cider-from-nrepl-filename-function (gethash :file hash)))
+        (current (funcall cider-from-nrepl-filename-function (buffer-file-name))))
+    (if (tramp-tramp-file-p current)
+        (let ((vec (tramp-dissect-file-name current t)))
+          (tramp-make-tramp-file-name
+           (tramp-file-name-method vec)
+           (tramp-file-name-user vec)
+           (tramp-file-name-domain vec)
+           (tramp-file-name-host vec)
+           (tramp-file-name-port vec)
+           file
+           (tramp-file-name-hop vec)))
+      file)))
 
 (defun cljr--format-symbol-occurrence (occurrence)
   (let ((file (cljr--get-valid-filename occurrence))
@@ -2682,7 +2700,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
 Also adds the alias prefix to all occurrences of public symbols in the namespace.
 "
   (cljr--ensure-op-supported "find-used-publics")
-  (let ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name))))
+  (let ((filename (cljr--remove-tramp-params (funcall cider-to-nrepl-filename-function (buffer-file-name)))))
     (let* ((alias (or alias
                       (cljr--prompt-user-for (format "alias for [%s]: " ns))))
            (request
@@ -2735,7 +2753,7 @@ removed."
   (unless (and *cljr--noninteractive*
                (not (buffer-modified-p)))
     (save-buffer))
-  (let ((path (or path (buffer-file-name)))
+  (let ((path (cljr--remove-tramp-params (or path (buffer-file-name))))
         (relative-path (cljr--project-relative-path path)))
     (when-let (new-ns (cljr--call-middleware-sync
                        (cljr--create-msg "clean-ns"
@@ -2975,8 +2993,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
 (defun cljr--call-middleware-to-find-used-locals (file line column)
   (string-join
    (cljr--call-middleware-sync
-    (cljr--create-msg "find-used-locals" "file" file "line" line
-                      "column" column)
+    (cljr--create-msg "find-used-locals" "file" (cljr--remove-tramp-params file)
+                      "line" line "column" column)
     "used-locals") " "))
 
 (defun cljr--goto-enclosing-sexp ()
@@ -3183,7 +3201,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
   (when (cljr--asts-y-or-n-p)
     (save-buffer)
     (save-excursion
-      (let* ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name)))
+      (let* ((filename (cljr--remove-tramp-params (funcall cider-to-nrepl-filename-function (buffer-file-name))))
              (line (line-number-at-pos))
              (column (1+ (current-column)))
              (dir (cljr--project-dir))
