@@ -2535,20 +2535,33 @@ root."
       (tramp-file-name-localname (tramp-dissect-file-name file))
     file))
 
+(defmacro cljr--make-tramp-file-name (vec file)
+  (declare (indent 1))
+  (cond
+   ((>= emacs-major-version 26)
+    `(tramp-make-tramp-file-name
+      (tramp-file-name-method ,vec)
+      (tramp-file-name-user ,vec)
+      (tramp-file-name-domain ,vec)
+      (tramp-file-name-host ,vec)
+      (tramp-file-name-port ,vec)
+      ,file
+      (tramp-file-name-hop ,vec)))
+   (t
+    `(tramp-make-tramp-file-name
+      (tramp-file-name-method ,vec)
+      (tramp-file-name-user ,vec)
+      (tramp-file-name-host ,vec)
+      ,file
+      (tramp-file-name-hop ,vec)))))
+
 (defun cljr--get-valid-filename (hash)
   "Get :file value from the hash table and convert path if necessary."
   (let ((file (funcall cider-from-nrepl-filename-function (gethash :file hash)))
         (current (funcall cider-from-nrepl-filename-function (buffer-file-name))))
     (if (tramp-tramp-file-p current)
         (let ((vec (tramp-dissect-file-name current t)))
-          (tramp-make-tramp-file-name
-           (tramp-file-name-method vec)
-           (tramp-file-name-user vec)
-           (tramp-file-name-domain vec)
-           (tramp-file-name-host vec)
-           (tramp-file-name-port vec)
-           file
-           (tramp-file-name-hop vec)))
+          (cljr--make-tramp-file-name vec file))
       file)))
 
 (defun cljr--format-symbol-occurrence (occurrence)
