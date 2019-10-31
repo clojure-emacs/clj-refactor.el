@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- [#450](https://github.com/clojure-emacs/clj-refactor.el/pull/450) New config options: `cljr-magic-uses` (boolean) and `cljr-magic-uses-namespaces` (list): if boolean is `true`, upon creation of new namespace, add `:refer :all` entries for all namespaces in the list to the new namespace
+- [#450](https://github.com/clojure-emacs/clj-refactor.el/pull/450) New config option: `cljr-magic-uses-namespaces` (list): if list is non-empty, upon creation of new namespace, add `:refer :all` entries for all namespaces in the list to the new namespace
 - [#402](https://github.com/clojure-emacs/clj-refactor.el/issues/402) cljr-stop-referring: do not alter strings.
 - [#380](https://github.com/clojure-emacs/clj-refactor.el/issues/380) clean-ns: fix FileNotFoundException, by trying both the absolute path and the path relative to the project root. This requires a new refactor-nrepl, old versions will only check the absolute path.
 

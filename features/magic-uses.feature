@@ -2,7 +2,6 @@ Feature: Magic uses
 
   Background:
     Given I have a project "cljr" in "tmp"
-    And I enable cljr-magic-uses
     And I add "my.prelude" to cljr-magic-use-namespaces
     And I add "my.http-client" to cljr-magic-use-namespaces
     When I have a clojure-file "tmp/src/cljr/core.clj"

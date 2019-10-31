@@ -82,16 +82,10 @@ Any other non-nil value means to add the form without asking."
                        (string :tag "Full namespace")))
   :group 'cljr)
 
-(defcustom cljr-magic-uses nil
-  "Whether to automatically use namespaces specified by
-`cljr-magic-use-namespaces' upon namespace creation."
-  :group 'cljr
-  :type '(choice (const :tag "true" t)
-                 (const :tag "false" nil)))
-
 (defcustom cljr-magic-use-namespaces
   '()
-  "List of namespaces used by `cljr-magic-uses'."
+  "List of namespaces for whose entries are referred upon
+creation of a new namespace."
   :type '(repeat (string :tag "Full namespace"))
   :group 'cljr)
 
@@ -1117,7 +1111,7 @@ word test in it and whether the file lives under the test/ directory."
                (cljr--clojure-ish-filename-p (buffer-file-name))
                (= (point-min) (point-max)))
       (insert (format "(ns %s)\n\n" (cider-expected-ns)))
-      (when cljr-magic-uses
+      (when (not (null cljr-magic-use-namespaces))
         (cljr--add-magic-uses))
       (when (cljr--in-tests-p)
         (cljr--add-test-declarations)))))
