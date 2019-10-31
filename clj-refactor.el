@@ -82,6 +82,19 @@ Any other non-nil value means to add the form without asking."
                        (string :tag "Full namespace")))
   :group 'cljr)
 
+(defcustom cljr-magic-uses nil
+  "Whether to automatically use namespaces specified by
+`cljr-magic-use-namespaces' upon namespace creation."
+  :group 'cljr
+  :type '(choice (const :tag "true" t)
+                 (const :tag "false" nil)))
+
+(defcustom cljr-magic-use-namespaces
+  '()
+  "List of namespaces used by `cljr-magic-uses'."
+  :type '(repeat (string :tag "Full namespace"))
+  :group 'cljr)
+
 (defcustom cljr-project-clean-prompt t
   "If t, `cljr-project-clean' asks before doing anything.
 If nil, the project clean functions are run without warning."
@@ -1053,6 +1066,12 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
       (string-equal (file-name-extension (buffer-file-name (or buf (current-buffer))))
                     "clj")))
 
+(defun cljr--add-magic-uses ()
+  (save-excursion
+    (dolist (namespace cljr-magic-use-namespaces)
+      (cljr--insert-in-ns ":require")
+      (insert "[" namespace " :refer :all]"))))
+
 (defun cljr--add-test-declarations ()
   (save-excursion
     (let* ((ns (clojure-find-ns))
@@ -1098,6 +1117,8 @@ word test in it and whether the file lives under the test/ directory."
                (cljr--clojure-ish-filename-p (buffer-file-name))
                (= (point-min) (point-max)))
       (insert (format "(ns %s)\n\n" (cider-expected-ns)))
+      (when cljr-magic-uses
+        (cljr--add-magic-uses))
       (when (cljr--in-tests-p)
         (cljr--add-test-declarations)))))
 

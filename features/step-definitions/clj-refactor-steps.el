@@ -64,6 +64,14 @@
        (lambda ()
          (setq cljr-use-multiple-cursors nil)))
 
+(Given "^I enable cljr-magic-uses"
+       (lambda ()
+         (setq cljr-magic-uses t)))
+
+(Given "^I add \"\\([^\"]+\\)\" to cljr-magic-use-namespaces$"
+       (lambda (namespace)
+         (add-to-list 'cljr-magic-use-namespaces namespace)))
+
 (defun cljr--plist-to-hash (plist)
   (let ((h (make-hash-table)))
     (dolist (k (-filter #'keywordp plist))
