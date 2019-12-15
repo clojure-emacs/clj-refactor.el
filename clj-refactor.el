@@ -2711,7 +2711,8 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
 (defun cljr--warm-ast-cache ()
   (run-hooks 'cljr-before-warming-ast-cache-hook)
   (cljr--call-middleware-async
-   (cljr--create-msg "warm-ast-cache")
+   (cljr--create-msg "warm-ast-cache"
+                     "ignore-paths" cljr-middleware-ignored-paths)
    (lambda (res)
      (run-hook-with-args 'cljr-after-warming-ast-cache-hook res)
      (cljr--maybe-rethrow-error res)
