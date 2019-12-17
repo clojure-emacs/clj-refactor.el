@@ -823,7 +823,7 @@ A new record is created to define this constructor."
 
 (defun cljr--project-dir ()
   (or
-   (thread-last  '("project.clj" "build.boot" "pom.xml" "deps.edn")
+   (thread-last  '("project.clj" "build.boot" "pom.xml" "deps.edn" "shadow-cljs.edn")
      (mapcar 'cljr--locate-project-file)
      (delete 'nil)
      car)
@@ -842,6 +842,8 @@ A new record is created to define this constructor."
         (let ((file (expand-file-name "pom.xml" project-dir)))
           (and (file-exists-p file) file))
         (let ((file (expand-file-name "deps.edn" project-dir)))
+          (and (file-exists-p file) file))
+        (let ((file (expand-file-name "shadow-cljs.edn" project-dir)))
           (and (file-exists-p file) file)))))
 
 (defun cljr--project-files ()
