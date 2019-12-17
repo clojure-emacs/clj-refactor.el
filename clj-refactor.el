@@ -2173,6 +2173,13 @@ If it's present KEY indicates the key to extract from the response."
                                  (when cljr--debug-mode
                                    (message "Artifact cache updated")))))
 
+(defun cljr--init-artifact-cache ()
+  (cljr--call-middleware-async (cljr--create-msg "artifact-list"
+                                                 "force" "false")
+                               (lambda (_)
+                                 (when cljr--debug-mode
+                                   (message "Artifact cache updated")))))
+
 (defun cljr--dictionary-lessp (str1 str2)
   "return t if STR1 is < STR2 when doing a dictionary compare
 (splitting the string at numbers and doing numeric compare with them).
@@ -3280,7 +3287,7 @@ warning by customizing `cljr-suppress-no-project-warning'.)"))))
   (ignore-errors
     (when (cljr--middleware-version) ; check if middleware is running
       (when cljr-populate-artifact-cache-on-startup
-        (cljr--update-artifact-cache))
+        (cljr--init-artifact-cache))
       (when (and (not cljr-warn-on-eval)
                  cljr-eagerly-build-asts-on-startup)
         (cljr--warm-ast-cache)))))
