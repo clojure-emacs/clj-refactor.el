@@ -1,11 +1,12 @@
 ;;; clj-refactor.el --- A collection of commands for refactoring Clojure code -*- lexical-binding: t -*-
 
 ;; Copyright © 2012-2014 Magnar Sveen
-;; Copyright © 2014-2018 Magnar Sveen, Lars Andersen, Benedek Fazekas
+;; Copyright © 2014-2020 Magnar Sveen, Lars Andersen, Benedek Fazekas, Bozhidar Batsov
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;;         Lars Andersen <expez@expez.com>
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
+;;         Bozhidar Batsov <bozhidar@batsov.com>
 ;; Version: 2.5.0-snapshot
 ;; Keywords: convenience, clojure, cider
 
