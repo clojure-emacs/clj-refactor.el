@@ -155,7 +155,7 @@
 
 (Given "^I call the add-stubs function directly with mock data for java.util.List from the middleware"
        (lambda ()
-         (cljr--insert-function-stubs (edn-read "(
+         (cljr--insert-function-stubs (parseedn-read-str "(
 {:parameter-list \"[^int arg]\", :name \"remove\"}
 {:parameter-list \"[^int arg0 ^Object arg1]\", :name \"add\"}
 {:parameter-list \"[^java.util.function.UnaryOperator arg]\", :name \"replaceAll\"}
@@ -187,11 +187,11 @@
 
 (Given "^I call the add-stubs function directly with mock data for clojure.reflect from the middleware"
        (lambda ()
-         (cljr--insert-function-stubs (edn-read "({:parameter-list \"[this]\", :name \"typename\"})"))))
+         (cljr--insert-function-stubs (parseedn-read-str "({:parameter-list \"[this]\", :name \"typename\"})"))))
 
 (Given "I call the cljr--inline-symbol function directly with mockdata to inline my-constant"
        (lambda ()
-         (let ((response (edn-read "{:occurrences ({:match \"(println my-constant my-constant another-val)))\"
+         (let ((response (parseedn-read-str "{:occurrences ({:match \"(println my-constant my-constant another-val)))\"
 :file \"core.clj\"
 :name \"refactor-nrepl.test/my-constant\"
 :col-end 26
@@ -217,7 +217,7 @@
 
 (Given "I call the cljr--inline-symbol function directly with mockdata to inline another-val"
        (lambda ()
-         (let ((response (edn-read "{:definition {:line-beg 4
+         (let ((response (parseedn-read-str "{:definition {:line-beg 4
 :line-end 4
 :col-beg 9
 :col-end 21
@@ -237,7 +237,7 @@
 
 (Given "I call the cljr--inline-symbol function directly with mockdata to inline some-val"
        (lambda ()
-         (let ((response (edn-read "{:definition {:line-beg 5
+         (let ((response (parseedn-read-str "{:definition {:line-beg 5
 :line-end 5
 :col-beg 9
 :col-end 17
@@ -251,7 +251,7 @@
 
 (Given "I call the cljr--inline-symbol function directly with mockdata to inline my-inc"
        (lambda ()
-         (let ((response (edn-read "{:definition {:definition \"(fn [n]\\n  (+ 1 n))\"
+         (let ((response (parseedn-read-str "{:definition {:definition \"(fn [n]\\n  (+ 1 n))\"
 :line-beg 1
 :line-end 2
 :col-beg 1
@@ -273,11 +273,11 @@
 :file \"core.clj\"
 :match \"(map my-inc (range 10))\"})}")))
            (cljr--inline-symbol (gethash :definition response)
-                            (gethash :occurrences response)))))
+                                (gethash :occurrences response)))))
 
 (Given "I call the cljr--inline-symbol function directly with mockdata to inline trim-lower"
        (lambda ()
-         (let ((response (edn-read "{:definition {:definition \"(comp str/lower-case str/trim)\"
+         (let ((response (parseedn-read-str "{:definition {:definition \"(comp str/lower-case str/trim)\"
 :line-beg 1
 :line-end 1
 :col-beg 2
@@ -411,7 +411,7 @@
 (Given "The cache of namespace aliases is populated"
        (lambda ()
          (defun cljr--call-middleware-for-namespace-aliases ()
-           (edn-read "{:clj {t (clojure.test)
+           (parseedn-read-str "{:clj {t (clojure.test)
 set (clojure.set)
 pprint (clojure.pprint)
 util (refactor-nrepl.util clojure.tools.analyzer.jvm.utils)
@@ -460,7 +460,7 @@ pprint (cljs.pprint)}}"))))
        (lambda (ns-name)
          (cljr--replace-refer-all-with-alias
           ns-name
-          (edn-read
+          (parseedn-read-str
            "({:line-beg 5 :line-end 5 :col-beg 13 :col-end 30 :file\"one.clj\" :name \"foo\"} {:line-beg 8 :line-end 8 :col-beg 15 :col-end 28 :file \"one.clj\" :name \"star*\"})")
           "two")))
 
