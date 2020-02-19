@@ -5,7 +5,8 @@
 
 # clj-refactor.el
 
-`clj-refactor` provides refactoring support for Clojure projects.
+`clj-refactor` provides refactoring support for Clojure projects. It complements
+the refactoring functionality you'd find in `clojure-mode` and CIDER.
 
 Here's a small teaser, helping you add a missing libspec:
 
