@@ -1477,18 +1477,18 @@ Optionally adds :refer [REFER-NAMES] clause."
   "Returns a list of the function names in STRING-WITH-DEFNS,
 optionally including those that are declared private."
   (cljr--with-string-content string-with-defns
-                             (let ((count (paredit-count-sexps-forward))
-                                   (names '()))
-                               (dotimes (_ count)
-                                 (paredit-forward-down)
-                                 (cljr--goto-toplevel)
-                                 (forward-char)
-                                 (if (and include-private (looking-at "defn-"))
-                                     (push (cljr--name-of-current-def) names)
-                                   (when (looking-at "defn ")
-                                     (push (cljr--name-of-current-def) names)))
-                                 (paredit-forward-up))
-                               names)))
+    (let ((count (paredit-count-sexps-forward))
+          (names '()))
+      (dotimes (_ count)
+        (paredit-forward-down)
+        (cljr--goto-toplevel)
+        (forward-char)
+        (if (and include-private (looking-at "defn-"))
+            (push (cljr--name-of-current-def) names)
+          (when (looking-at "defn ")
+            (push (cljr--name-of-current-def) names)))
+        (paredit-forward-up))
+      names)))
 
 (defun cljr--current-namespace ()
   (save-excursion
