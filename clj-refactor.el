@@ -44,7 +44,7 @@
 (require 'multiple-cursors-core)
 (require 'clojure-mode)
 (require 'cider)
-(require 'edn)
+(require 'parseedn)
 (require 'sgml-mode)
 (require 'inflections)
 (require 'hydra)
