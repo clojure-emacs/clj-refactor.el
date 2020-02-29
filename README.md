@@ -89,6 +89,7 @@ dir`, `change function signature`, `promote function`.
 clj-refactor | refactor-nrepl | CIDER       | Clojure | Java |
 -------------|----------------|-------------|---------|------|
 2.4.0        |  2.4.0         | 0.17, 0.18  | 1.7+    | 8+   |
+2.5.0        |  2.5.0         | 0.24        | 1.8+    | 8+   |
 
 ## Usage
 
