@@ -4133,17 +4133,17 @@ If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-
 (add-hook 'cider-connected-hook #'cljr--init-middleware)
 
 ;; moved to Clojure mode, made obsolete here
-(define-obsolete-variable-alias 'cljr-thread-all-but-last 'clojure-thread-all-but-last "2.3.0-SNAPSHOT")
-(define-obsolete-variable-alias 'cljr-use-metadata-for-privacy 'clojure-use-metadata-for-privacy "2.3.0-SNAPSHOT")
+(define-obsolete-variable-alias 'cljr-thread-all-but-last 'clojure-thread-all-but-last "2.3.0")
+(define-obsolete-variable-alias 'cljr-use-metadata-for-privacy 'clojure-use-metadata-for-privacy "2.3.0")
 
-(define-obsolete-function-alias 'cljr-thread 'clojure-thread "2.3.0-SNAPSHOT")
-(define-obsolete-function-alias 'cljr-thread-first-all 'clojure-thread-first-all "2.3.0-SNAPSHOT")
-(define-obsolete-function-alias 'cljr-thread-last-all 'clojure-thread-last-all "2.3.0-SNAPSHOT")
-(define-obsolete-function-alias 'cljr-unwind 'clojure-unwind "2.3.0-SNAPSHOT")
-(define-obsolete-function-alias 'cljr-unwind-all 'clojure-unwind-all "2.3.0-SNAPSHOT")
-(define-obsolete-function-alias 'cljr-cycle-privacy 'clojure-cycle-privacy "2.3.0-SNAPSHOT")
-(define-obsolete-function-alias 'cljr-cycle-if 'clojure-cycle-if "2.3.0-SNAPSHOT")
-(make-obsolete 'cljr-cycle-coll "reworked into convert collection to list, quoted list, map, vector, set in Clojure mode." "2.3.0-SNAPSHOT")
+(define-obsolete-function-alias 'cljr-thread 'clojure-thread "2.3.0")
+(define-obsolete-function-alias 'cljr-thread-first-all 'clojure-thread-first-all "2.3.0")
+(define-obsolete-function-alias 'cljr-thread-last-all 'clojure-thread-last-all "2.3.0")
+(define-obsolete-function-alias 'cljr-unwind 'clojure-unwind "2.3.0")
+(define-obsolete-function-alias 'cljr-unwind-all 'clojure-unwind-all "2.3.0")
+(define-obsolete-function-alias 'cljr-cycle-privacy 'clojure-cycle-privacy "2.3.0")
+(define-obsolete-function-alias 'cljr-cycle-if 'clojure-cycle-if "2.3.0")
+(make-obsolete 'cljr-cycle-coll "reworked into convert collection to list, quoted list, map, vector, set in Clojure mode." "2.3.0")
 
 ;; ------ minor mode -----------
 ;;;###autoload
