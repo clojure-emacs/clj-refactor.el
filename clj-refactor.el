@@ -2526,8 +2526,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
   (thread-first s (split-string "\\(\r\n\\|[\n\r]\\)") car string-trim))
 
 (defun cljr--project-relative-path (path)
-  "Denormalize PATH to make to make it relative to the project
-root."
+  "Denormalize PATH to make it relative to the project root."
   (string-remove-prefix (cljr--project-dir) path))
 
 (defun cljr--get-valid-filename (hash)
