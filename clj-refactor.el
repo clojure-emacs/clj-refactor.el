@@ -164,18 +164,6 @@ will not work as expected in such REPLs."
   :group 'cljr
   :type 'boolean)
 
-(defcustom cljr-find-usages-ignore-analyzer-errors nil
-  "DEPRECATED: use `cljr-ignore-analyzer-errors' instead.
-  If t, `cljr-find-usages' ignores namespaces that cannot be analyzed.
-If any namespaces presents an analyzer error, it is skipped and
-the command carries on looking for the given symbol in those
-namespaces which can be analyzed.
-
-If nil, `cljr-find-usages' won't run if there is a broken
-namespace in the project."
-  :group 'cljr
-  :type 'boolean)
-
 (defcustom cljr-ignore-analyzer-errors nil
   "If t, `cljr-find-usages' `cljr-inline-symbol' `cljr-rename-symbol'
 ignores namespaces that cannot be analyzed.
@@ -187,6 +175,8 @@ If nil, `cljr-find-usages'  `cljr-inline-symbol' `cljr-rename-symbol'
 won't run if there is a broken namespace in the project."
   :group 'cljr
   :type 'boolean)
+
+(define-obsolete-variable-alias 'cljr-find-usages-ignore-analyzer-errors 'cljr-ignore-analyzer-errors "2.3.0")
 
 (defcustom cljr-auto-eval-ns-form t
   "When true refactorings which change the ns form also trigger
@@ -2525,7 +2515,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
                             "name" symbol
                             "ignore-paths" cljr-middleware-ignored-paths
                             "ignore-errors"
-                            (when (or cljr-find-usages-ignore-analyzer-errors cljr-ignore-analyzer-errors) "true"))))
+                            (when cljr-ignore-analyzer-errors "true"))))
     (with-current-buffer (with-no-warnings (cider-current-repl-buffer))
       (setq cjr--occurrence-count 0)
       (setq cljr--num-syms -1)
