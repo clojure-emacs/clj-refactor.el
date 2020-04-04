@@ -2498,7 +2498,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
         (goto-char (point-min))
         (while (not (cljr--end-of-buffer-p))
           (dolist (edn (parseedn-read))
-            (push edn occurrences))))
+            (push edn occurrences)))))
     occurrences))
 
 (defun cljr--find-symbol (symbol ns callback)
