@@ -896,12 +896,14 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
            (affected-buffers (when (file-directory-p old-path)
                                (cljr--buffers-visiting-dir old-path)))
            (old-path (expand-file-name old-path))
-           (new-path (cljr--maybe-replace-dash-in-file-name (expand-file-name new-path))))
+           (new-path (cljr--maybe-replace-dash-in-file-name (expand-file-name new-path)))
+           (nrepl-new-path (funcall cider-to-nrepl-filename-function new-path))
+           (nrepl-old-path (funcall cider-to-nrepl-filename-function old-path)))
       (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
         (let* ((changed-files (cljr--call-middleware-sync
                                (cljr--create-msg "rename-file-or-dir"
-                                                 "old-path" old-path
-                                                 "new-path" new-path)
+                                                 "old-path" nrepl-old-path
+                                                 "new-path" nrepl-new-path)
                                "touched"))
                (changed-files-count (length changed-files)))
           (cond
@@ -2481,7 +2483,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
   (let* ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name)))
          (line (line-number-at-pos))
          (column (1+ (current-column)))
-         (dir (cljr--project-dir))
+         (dir (funcall cider-to-nrepl-filename-function (cljr--project-dir)))
          (request (cljr--create-msg "find-symbol"
                                     "ns" ns
                                     "dir" dir
@@ -2505,7 +2507,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
   (let* ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name)))
          (line (line-number-at-pos))
          (column (1+ (current-column)))
-         (dir (cljr--project-dir))
+         (dir (funcall cider-to-nrepl-filename-function (cljr--project-dir)))
          (find-symbol-request
           (cljr--create-msg "find-symbol"
                             "ns" ns
@@ -2737,7 +2739,7 @@ removed."
   (unless (and *cljr--noninteractive*
                (not (buffer-modified-p)))
     (save-buffer))
-  (let ((path (or path (buffer-file-name)))
+  (let* ((path (funcall cider-to-nrepl-filename-function (or path (buffer-file-name))))
         (relative-path (cljr--project-relative-path path)))
     (when-let (new-ns (cljr--call-middleware-sync
                        (cljr--create-msg "clean-ns"
@@ -2975,11 +2977,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
               " "))))
 
 (defun cljr--call-middleware-to-find-used-locals (file line column)
-  (string-join
-   (cljr--call-middleware-sync
-    (cljr--create-msg "find-used-locals" "file" file "line" line
-                      "column" column)
-    "used-locals") " "))
+  (let ((file (funcall cider-to-nrepl-filename-function file)))
+    (string-join
+     (cljr--call-middleware-sync
+      (cljr--create-msg "find-used-locals" "file" file "line" line
+                        "column" column)
+      "used-locals") " ")))
 
 (defun cljr--goto-enclosing-sexp ()
   (let ((sexp-regexp (rx (or "(" "#{" "{" "["))))
