@@ -1980,7 +1980,7 @@ form."
         (when-let (long (cljr--prompt-user-for "Require " (cl-second aliases)))
           (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
                      (or (not (eq :prompt cljr-magic-requires))
-                         (not (> (length (cl-second aliases)) 1)) ; already prompted
+                         (> (length (cl-second aliases)) 1) ; already prompted
                          (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
             (save-excursion
               (cljr--insert-in-ns ":require")
