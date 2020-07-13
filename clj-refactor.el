@@ -3305,11 +3305,21 @@ warning by customizing `cljr-suppress-no-project-warning'.)"))))
 (defvar cljr--list-fold-function-names-with-index
   '("map-indexed" "keep-indexed"))
 
+(defun cljr--chop-prefix (prefix s)
+  "Remove PREFIX if it is at the start of S."
+  (declare (pure t) (side-effect-free t))
+  (let ((pos (length prefix)))
+    (if (and (>= (length s) (length prefix))
+             (string= prefix (substring s 0 pos)))
+        (substring s pos)
+      s)))
+
 (defun cljr--ns-path (ns-name)
   "Find the file path to the ns named NS-NAME."
   (cider-ensure-connected)
   (cider-ensure-op-supported "ns-path")
-  (cider-sync-request:ns-path ns-name))
+  (cljr--chop-prefix "file:"
+   (cider-sync-request:ns-path ns-name)))
 
 ;;;###autoload
 (defun cljr-create-fn-from-example ()
