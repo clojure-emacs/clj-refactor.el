@@ -22,7 +22,7 @@ It's available on [MELPA](http://melpa.org/) and [MELPA Stable](http://stable.me
 
 ## Setup
 
-```el
+```emacs-lisp
 (require 'clj-refactor)
 
 (defun my-clojure-mode-hook ()
