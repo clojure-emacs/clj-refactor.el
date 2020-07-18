@@ -67,11 +67,15 @@ clj-refactor | refactor-nrepl | CIDER       | Clojure | Java |
 2.4.0        |  2.4.0         | 0.17, 0.18  | 1.7+    | 8+   |
 2.5.0        |  2.5.0         | 0.24        | 1.8+    | 8+   |
 
-## Middleware
+### Middleware
 
 Most users will not need to worry about this, but if you wish to configure middleware yourself, the name of the middleware is:
 
 > `refactor-nrepl.middleware/wrap-refactor`
+
+Unlike `cider-nrepl` which defines many middleware with a handful of related
+ops, `refactor-repl` defines a single middleware which houses all of the provided nREPL
+ops.
 
 ### In case `refactor-nrepl` used for advanced refactorings
 
