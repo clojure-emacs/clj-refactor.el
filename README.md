@@ -63,6 +63,12 @@ page in the wiki for a less opinionated approach.
 behavior of various commands.  You can read more about that
 [here](https://github.com/clojure-emacs/clj-refactor.el/wiki#customization).
 
+## Middleware
+
+Most users will not need to worry about this, but if you wish to configure middleware yourself, the name of the middleware is:
+
+> `refactor-nrepl.middleware/wrap-refactor`
+
 ### In case `refactor-nrepl` used for advanced refactorings
 
 The [analyzer](https://github.com/clojure/tools.analyzer)
