@@ -77,7 +77,7 @@ Unlike `cider-nrepl` which defines many middleware with a handful of related
 ops, `refactor-repl` defines a single middleware which houses all of the provided nREPL
 ops.
 
-### In case `refactor-nrepl` used for advanced refactorings
+### In case `refactor-nrepl` is used for advanced (AST-based) refactorings
 
 The [analyzer](https://github.com/clojure/tools.analyzer)
 `refactor-nrepl` uses needs to eval the code too in order to be able
