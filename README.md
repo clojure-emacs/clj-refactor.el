@@ -48,12 +48,9 @@ Either in your project's `project.clj` or in the `:user`
 profile found at `~/.lein/profiles.clj`:
 
 ```clojure
-:plugins [[refactor-nrepl "2.4.0"]
-          [cider/cider-nrepl "0.18.0"]]
+:plugins [[refactor-nrepl "2.5.0"]
+          [cider/cider-nrepl "0.24.0"]]
 ```
-
-**clj-refactor 2.4 is compatible with CIDER 0.17 and 0.18. Change the cider-nrepl dep
-to 0.17 if you're using CIDER 0.17.**
 
 Check out the much longer
 [installation](https://github.com/clojure-emacs/clj-refactor.el/wiki/installation)
@@ -62,6 +59,13 @@ page in the wiki for a less opinionated approach.
 `clj-refactor` has quite a few settings you can tweak to change the
 behavior of various commands.  You can read more about that
 [here](https://github.com/clojure-emacs/clj-refactor.el/wiki#customization).
+
+### Compatibility
+
+clj-refactor | refactor-nrepl | CIDER       | Clojure | Java |
+-------------|----------------|-------------|---------|------|
+2.4.0        |  2.4.0         | 0.17, 0.18  | 1.7+    | 8+   |
+2.5.0        |  2.5.0         | 0.24        | 1.8+    | 8+   |
 
 ## Middleware
 
@@ -89,13 +93,6 @@ We create ASTs for all the namespaces at REPL start up if
 configuration. AST dependent features at the moment are `find usages`,
 `rename symbol`, `extract function`, `inline symbol`, `rename file or
 dir`, `change function signature`, `promote function`.
-
-### Compatibility
-
-clj-refactor | refactor-nrepl | CIDER       | Clojure | Java |
--------------|----------------|-------------|---------|------|
-2.4.0        |  2.4.0         | 0.17, 0.18  | 1.7+    | 8+   |
-2.5.0        |  2.5.0         | 0.24        | 1.8+    | 8+   |
 
 ## Usage
 
