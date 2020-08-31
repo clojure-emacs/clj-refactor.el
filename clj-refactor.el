@@ -2252,7 +2252,11 @@ possible choices. If the choice is trivial, return it."
   (forward-sexp)
   (backward-char)
   (newline-and-indent)
-  (insert artifact " {:mvn/version \"" version "\"}"))
+  (let ((artifact (if (string-match-p "^.+/.+$" artifact)
+                      artifact
+                    (format "%s/%s" artifact artifact))))
+    (insert artifact " {:mvn/version \"" version "\"}")))
+
 
 (defun cljr--add-project-dependency (artifact version)
   (let* ((project-file (cljr--project-file))
