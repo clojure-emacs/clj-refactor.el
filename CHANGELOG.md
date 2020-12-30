@@ -1,6 +1,7 @@
 # Change log
 
 ## Unreleased
+- [#470](https://github.com/clojure-emacs/clj-refactor.el/issues/470): Choose deps.edn over pom.xml as project file
 
 ## 2.5.0 (2020-02-29)
 
