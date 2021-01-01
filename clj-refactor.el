@@ -2523,7 +2523,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
                             "ignore-paths" cljr-middleware-ignored-paths
                             "ignore-errors"
                             (when cljr-ignore-analyzer-errors "true"))))
-    (with-current-buffer (with-no-warnings (cider-current-repl-buffer))
+    (with-current-buffer (with-no-warnings (cider-current-repl))
       (setq cjr--occurrence-count 0)
       (setq cljr--num-syms -1)
       (setq cljr--occurrence-ids '()))
@@ -2885,7 +2885,7 @@ Date. -> Date
   (when-let (candidates (thread-first (cljr--create-msg "resolve-missing"
                                                         "symbol" symbol
                                                         "session"
-                                                        (with-no-warnings (cider-current-session)))
+                                                        (with-no-warnings (cider-nrepl-eval-session)))
                           (cljr--call-middleware-sync
                            "candidates")))
     (parseedn-read-str candidates)))
