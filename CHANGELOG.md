@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 2.5.1 (2021-02-16)
+
+- [#442](https://github.com/clojure-emacs/clj-refactor.el/issues/442): Send nREPL-based paths instead of CIDER-based paths.
+- [#465](https://github.com/clojure-emacs/clj-refactor.el/issues/465): Fix breakage in `cljr-rename-symbol`.
+- Automatically namespace artifacts in `deps.edn`.
+
 ## 2.5.0 (2020-02-29)
 
 - [#455](https://github.com/clojure-emacs/clj-refactor.el/pull/455): Added support for detecting shadow-cljs projects.
