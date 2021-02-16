@@ -120,7 +120,7 @@ This only applies to dependencies added by `cljr-add-project-dependency'."
 
 (defcustom cljr-use-multiple-cursors t
   "If t, some refactorings use the `multiple-cursors' package.
-This improves interactivity of the commands. If nil, those
+This improves interactivity of the commands.  If nil, those
 refactorings will use regular prompts instead."
   :group 'cljr
   :type 'boolean)
@@ -138,8 +138,8 @@ This makes `cljr-add-project-dependency' as snappy as can be."
 
 (defcustom cljr-warn-on-eval t
   "If t, warn the user before running any op that requires ASTs to be built
-   that the project will be evaled. If this is not preferred the op will
-   be aborted. Also effectively overrides `cljr-eagerly-build-asts-on-startup'
+   that the project will be evaled.  If this is not preferred the op will
+   be aborted.  Also effectively overrides `cljr-eagerly-build-asts-on-startup'
    so if this is on the AST cache is not warmed at startup or after certain
    operations."
   :group 'cljr
