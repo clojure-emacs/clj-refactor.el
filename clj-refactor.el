@@ -50,6 +50,13 @@
 (require 'hydra)
 (require 'subword)
 
+(defgroup cljr nil
+  "Clojure refactoring facilities."
+  :prefix "cljr-"
+  :group 'clojure
+  :link '(url-link :tag "GitHub"
+                   "https://github.com/clojure-emacs/clj-refactor.el"))
+
 (defcustom cljr-add-ns-to-blank-clj-files t
   "If t, automatically add a ns form to new .clj files."
   :group 'cljr
