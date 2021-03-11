@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- [#482](https://github.com/clojure-emacs/clj-refactor.el/issues/482): Add missing defgroup form.
+
 ## 2.5.1 (2021-02-16)
 
 - [#442](https://github.com/clojure-emacs/clj-refactor.el/issues/442): Send nREPL-based paths instead of CIDER-based paths.
