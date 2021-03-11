@@ -3,6 +3,7 @@
 [![circleci][badge-circleci]][circleci]
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/clojure-emacs/refactor-nrepl?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
+[badge-circleci]: https://circleci.com/gh/clojure-emacs/clj-refactor.el.svg?style=svg
 [circleci]: https://circleci.com/gh/clojure-emacs/clj-refactor.el
 
 # clj-refactor.el
