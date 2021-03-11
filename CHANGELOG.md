@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- [#482](https://github.com/clojure-emacs/clj-refactor.el/issues/482): Add missing defgroup form.
 - [#470](https://github.com/clojure-emacs/clj-refactor.el/issues/470): Choose `deps.edn` over `pom.xml` as project file.
 
 ## 2.5.1 (2021-02-16)
