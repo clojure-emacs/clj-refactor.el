@@ -7,7 +7,11 @@ default: &default-steps
     - run: apt-get update && apt-get install make
     - run: make elpa
     - run: emacs --version
-    - run: ./run-tests-ci.sh
+    - run: make test
+    # Make sure to run test-checks before test-bytecomp, as test-bytecomp autogenerates
+    # files which won't pass test-checks.
+    - run: make test-checks
+    - run: make test-bytecomp
 
 # Enumerated list of Emacs versions
 jobs:
