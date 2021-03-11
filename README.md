@@ -146,6 +146,26 @@ guidelines](.github/CONTRIBUTING.md).
 
 Thanks to [everyone](https://github.com/clojure-emacs/clj-refactor.el/graphs/contributors) who's contributed so far!
 
+## Get Help
+
+Due to clj-refactor's kinship with CIDER, you can get help for it
+in most CIDER-related support channels.
+
+### Discord
+
+CIDER has its own Discord chat server, created by CIDER's
+author Bozhidar. You can join the Discord server
+https://discord.com/invite/nFPpynQPME[here].
+
+### Slack
+
+CIDER has an official https://clojurians.slack.com/[Clojurians
+Slack] - `#cider`. The channel is very active and is a great way to
+get a handle on some of the maintainers and interact with other CIDER/clj-refactor
+users. If you need an invite you can go http://clojurians.net/[here].
+
+There's also another channel named `#emacs` for generic Emacs discussions.
+
 ## License
 
 Copyright © 2012-2014 Magnar Sveen
