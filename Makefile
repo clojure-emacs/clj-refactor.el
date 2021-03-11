@@ -29,7 +29,7 @@ clean:
 	rm -f $(OBJS)
 
 test: $(PKGDIR)
-	$(CASK) ecukes "$@" --no-win
+	$(CASK) exec ecukes --no-win
 
 test-checks:
 	$(CASK) exec $(EMACS) --no-site-file --no-site-lisp --batch \

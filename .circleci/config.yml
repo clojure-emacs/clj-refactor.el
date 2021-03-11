@@ -7,6 +7,7 @@ default: &default-steps
     - run: apt-get update && apt-get install make
     - run: make elpa
     - run: emacs --version
+    - run: cask --version
     - run: make test
     # Make sure to run test-checks before test-bytecomp, as test-bytecomp autogenerates
     # files which won't pass test-checks.
