@@ -1,7 +1,10 @@
 [![MELPA](http://melpa.org/packages/clj-refactor-badge.svg)](http://melpa.org/#/clj-refactor)
 [![MELPA Stable](http://stable.melpa.org/packages/clj-refactor-badge.svg)](http://stable.melpa.org/#/clj-refactor)
-[![Build Status](https://secure.travis-ci.org/clojure-emacs/clj-refactor.el.png?branch=master)](http://travis-ci.org/clojure-emacs/clj-refactor.el)
+[![circleci][badge-circleci]][circleci]
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/clojure-emacs/refactor-nrepl?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
+[badge-circleci]: https://circleci.com/gh/clojure-emacs/clj-refactor.el.svg?style=svg
+[circleci]: https://circleci.com/gh/clojure-emacs/clj-refactor.el
 
 # clj-refactor.el
 
