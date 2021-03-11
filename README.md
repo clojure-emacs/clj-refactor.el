@@ -137,7 +137,7 @@ then:
 
 Run the tests with:
 
-    $ ./run-tests.sh
+    $ make test
 
 
 Before submitting a patch, or a pull request, make sure all tests are
