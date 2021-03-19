@@ -4125,7 +4125,7 @@ If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-
   (when (and cljr-inject-dependencies-at-jack-in
              (boundp 'cider-jack-in-lein-plugins)
              (boundp 'cider-jack-in-nrepl-middlewares))
-    (add-to-list 'cider-jack-in-lein-plugins `("refactor-nrepl" ,(cljr--version t)
+    (add-to-list 'cider-jack-in-lein-plugins `("refactor-nrepl/refactor-nrepl" ,(cljr--version t)
                                                :predicate cljr--inject-middleware-p))
     (add-to-list 'cider-jack-in-nrepl-middlewares '("refactor-nrepl.middleware/wrap-refactor"
                                                     :predicate cljr--inject-middleware-p))))
