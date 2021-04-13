@@ -1968,6 +1968,11 @@ the alias in the project."
     (clojure-backward-logical-sexp 1)
     (looking-at-p "#")))
 
+(defun cljr--in-number-p ()
+  (save-excursion
+    (backward-sexp 1)
+    (looking-at-p "[-+0-9]")))
+
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts / as normal, but also checks for common namespace shorthands to require.
@@ -1984,6 +1989,7 @@ form."
                           (not (cider-in-comment-p))
                           (not (cider-in-string-p))
                           (not (cljr--in-keyword-sans-alias-p))
+                          (not (cljr--in-number-p))
                           (clojure-find-ns)
                           (cljr--magic-requires-lookup-alias)))
     (let ((short (cl-first aliases)))
