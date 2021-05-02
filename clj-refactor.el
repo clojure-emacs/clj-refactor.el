@@ -69,7 +69,8 @@
 
 (defcustom cljr-magic-requires t
   "Whether to automatically require common namespaces when they are used.
-These are the namespaces listed in `cljr-magic-require-namespaces'.
+These are the namespaces listed in `cljr-magic-require-namespaces'
+and returned by the `namespace-aliases' middleware op.
 
 If this variable is `:prompt', typing the short form followed by
 `\\[cljr-slash]' will ask if you want to add the corresponding require
@@ -1976,10 +1977,9 @@ the alias in the project."
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts / as normal, but also checks for common namespace shorthands to require.
-If `cljr-magic-require-namespaces' is non-nil, typing one of the
-short aliases listed in `cljr-magic-requires' followed by this
-command will add the corresponding require statement to the ns
-form."
+If `cljr-magic-requires' is non-nil, executing this command after one of the aliases
+listed in `cljr-magic-require-namespaces', or any alias used elsewhere in the project,
+will add the corresponding require statement to the ns form."
   (interactive)
   (insert "/")
   (when-let (aliases (and cljr-magic-requires
