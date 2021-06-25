@@ -1,7 +1,7 @@
 # Change log
 
 ## Unreleased
-
+- [#466](https://github.com/clojure-emacs/clj-refactor.el/issues/466): Bring `cljr-hotload-dependency back`.
 - [#483](https://github.com/clojure-emacs/clj-refactor.el/issues/483): Improve performance of cljr-slash when typing fraction literals.
 - [#482](https://github.com/clojure-emacs/clj-refactor.el/issues/482): Add missing defgroup form.
 - [#470](https://github.com/clojure-emacs/clj-refactor.el/issues/470): Choose `deps.edn` over `pom.xml` as project file.
