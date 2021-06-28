@@ -126,6 +126,11 @@ This only applies to dependencies added by `cljr-add-project-dependency'."
   :group 'cljr
   :type 'boolean)
 
+(defcustom cljr-insert-newline-after-require t
+  "If t, `cljr-clean-ns' will place a newline after the `:require` and `:import` tokens."
+  :group 'cljr
+  :type 'boolean)
+
 (defcustom cljr-use-multiple-cursors t
   "If t, some refactorings use the `multiple-cursors' package.
 This improves interactivity of the commands.  If nil, those
@@ -749,6 +754,10 @@ All config settings are included in the created msg."
   (apply #'list "op" op
          "prefix-rewriting"
          (if cljr-favor-prefix-notation
+             "true"
+           "false")
+         "insert-newline-after-require"
+         (if cljr-insert-newline-after-require
              "true"
            "false")
          "debug"
