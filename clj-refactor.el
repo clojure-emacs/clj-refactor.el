@@ -1983,6 +1983,35 @@ the alias in the project."
     (backward-sexp 1)
     (looking-at-p "[-+0-9]")))
 
+(defun completable-for-cljr-slash? (sym)
+  (when sym
+    (not (null (string-match-p "^\\([a-zA-Z]+[a-zA-Z0-9\\-]*\\)+\\(\\.?[a-zA-Z]+[a-zA-Z0-9\\-]*\\)*$" sym)))))
+
+(progn
+  (assert (not (completable-for-cljr-slash? nil)))
+  (assert (completable-for-cljr-slash? "a"))
+  (assert (completable-for-cljr-slash? "a-"))
+  (assert (completable-for-cljr-slash? "a2"))
+  (assert (completable-for-cljr-slash? "a-2"))
+  (assert (completable-for-cljr-slash? "a2-"))
+  (assert (completable-for-cljr-slash? "a2.a"))
+  (assert (completable-for-cljr-slash? "a2.a-"))
+  (assert (completable-for-cljr-slash? "a2.a2"))
+  (assert (completable-for-cljr-slash? "a2.a-2"))
+  (assert (completable-for-cljr-slash? "a2.a2-"))
+  (assert (not (completable-for-cljr-slash? "a2.a.")))
+  (assert (not (completable-for-cljr-slash? "a2.2")))
+  (assert (not (completable-for-cljr-slash? "a2.2a")))
+  (assert (not (completable-for-cljr-slash? "a2.-")))
+  (assert (not (completable-for-cljr-slash? "a2.-a")))
+  (assert (not (completable-for-cljr-slash? "-")))
+  (assert (not (completable-for-cljr-slash? ".")))
+  (assert (not (completable-for-cljr-slash? "2")))
+  (assert (not (completable-for-cljr-slash? "+")))
+  (assert (not (completable-for-cljr-slash? "a/")))
+  (assert (not (completable-for-cljr-slash? "a/a")))
+  (assert (not (completable-for-cljr-slash? "a/a/"))))
+
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts / as normal, but also checks for common namespace shorthands to require.
@@ -1990,30 +2019,32 @@ If `cljr-magic-requires' is non-nil, executing this command after one of the ali
 listed in `cljr-magic-require-namespaces', or any alias used elsewhere in the project,
 will add the corresponding require statement to the ns form."
   (interactive)
-  (insert "/")
-  (when-let (aliases (and cljr-magic-requires
-                          (not (cljr--in-map-destructuring?))
-                          (not (cljr--in-ns-above-point-p))
-                          (not (cljr--in-reader-literal-p))
-                          (not (cider-in-comment-p))
-                          (not (cider-in-string-p))
-                          (not (cljr--in-keyword-sans-alias-p))
-                          (not (cljr--in-number-p))
-                          (clojure-find-ns)
-                          (cljr--magic-requires-lookup-alias)))
-    (let ((short (cl-first aliases)))
-      (when-let (long (cljr--prompt-user-for "Require " (cl-second aliases)))
-        (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
-                   (or (not (eq :prompt cljr-magic-requires))
-                       (not (> (length (cl-second aliases)) 1)) ; already prompted
-                       (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
-          (save-excursion
-            (cljr--insert-in-ns ":require")
-            (let ((libspec (format "[%s :as %s]" long short)))
-              (insert libspec)
-              (ignore-errors (cljr--maybe-eval-ns-form))
-              (cljr--indent-defun)
-              (cljr--post-command-message "Required %s" libspec))))))))
+  (let ((original-input (cider-symbol-at-point)))
+    (insert "/")
+    (when-let (aliases (and cljr-magic-requires
+                            (completable-for-cljr-slash? original-input)
+                            (not (cljr--in-map-destructuring?))
+                            (not (cljr--in-ns-above-point-p))
+                            (not (cljr--in-reader-literal-p))
+                            (not (cider-in-comment-p))
+                            (not (cider-in-string-p))
+                            (not (cljr--in-keyword-sans-alias-p))
+                            (not (cljr--in-number-p))
+                            (clojure-find-ns)
+                            (cljr--magic-requires-lookup-alias)))
+      (let ((short (cl-first aliases)))
+        (when-let (long (cljr--prompt-user-for "Require " (cl-second aliases)))
+          (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
+                     (or (not (eq :prompt cljr-magic-requires))
+                         (not (> (length (cl-second aliases)) 1)) ; already prompted
+                         (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
+            (save-excursion
+              (cljr--insert-in-ns ":require")
+              (let ((libspec (format "[%s :as %s]" long short)))
+                (insert libspec)
+                (ignore-errors (cljr--maybe-eval-ns-form))
+                (cljr--indent-defun)
+                (cljr--post-command-message "Required %s" libspec)))))))))
 
 (defun cljr--in-namespace-declaration-p (s)
   (save-excursion
