@@ -15,7 +15,7 @@ default: &default-steps
     # Make sure to run test-checks before test-bytecomp, as test-bytecomp autogenerates
     # files which won't pass test-checks.
     #- run: make test-checks
-    - run: make test-bytecomp
+    #- run: make test-bytecomp
 
 # Enumerated list of Emacs versions
 jobs:
