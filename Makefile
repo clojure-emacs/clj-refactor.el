@@ -32,7 +32,7 @@ test: $(PKGDIR)
 	$(CASK) exec ecukes --no-win
 
 unit: $(PKGDIR)
-	$(CASK) exec buttercup -L .
+	$(CASK) exec $(EMACS) --no-site-file --no-site-lisp --batch -f package-initialize -L . -f buttercup-run-discover
 
 test-checks:
 	$(CASK) exec $(EMACS) --no-site-file --no-site-lisp --batch \
