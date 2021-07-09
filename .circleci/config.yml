@@ -13,8 +13,9 @@ default: &default-steps
     - run: make test
     # Make sure to run test-checks before test-bytecomp, as test-bytecomp autogenerates
     # files which won't pass test-checks.
-    - run: make test-checks
-    - run: make test-bytecomp
+    # disabled - see https://github.com/clojure-emacs/clj-refactor.el/issues/491
+    #- run: make test-checks
+    #- run: make test-bytecomp
 
 # Enumerated list of Emacs versions
 jobs:
