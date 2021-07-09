@@ -31,6 +31,9 @@ clean:
 test: $(PKGDIR)
 	$(CASK) exec ecukes --no-win
 
+unit:
+	$(CASK) exec buttercup -L .
+
 test-checks:
 	$(CASK) exec $(EMACS) --no-site-file --no-site-lisp --batch \
 		-l test/test-checks.el ./

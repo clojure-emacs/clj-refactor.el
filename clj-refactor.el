@@ -1987,33 +1987,6 @@ the alias in the project."
   (when sym
     (not (null (string-match-p "^\\^?\\(::\\)?\\([a-zA-Z]+[a-zA-Z0-9\\-]*\\)+\\(\\.?[a-zA-Z]+[a-zA-Z0-9\\-]*\\)*$" sym)))))
 
-(progn
-  (assert (not (completable-for-cljr-slash? nil)))
-  (dolist (prefix '("" "^" "^::"))
-    (assert (completable-for-cljr-slash? (concat prefix "a")))
-    (assert (completable-for-cljr-slash? (concat prefix "a-")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2")))
-    (assert (completable-for-cljr-slash? (concat prefix "a-2")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2-")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2.a")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2.a-")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2.a2")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2.a-2")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2.a2-")))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a2.a."))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a2.2"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a2.2a"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a2.-"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a2.-a"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "-"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "."))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "2"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "+"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "+"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a/"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a/a"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a/a/"))))))
-
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts / as normal, but also checks for common namespace shorthands to require.
