@@ -31,8 +31,8 @@ clean:
 test: $(PKGDIR)
 	$(CASK) exec ecukes --no-win
 
-unit: $(PKGDIR)
-	$(EMACS) -batch -f package-initialize -L . -f buttercup-run-discover
+unit:
+	cask exec buttercup -L .
 
 test-checks:
 	$(CASK) exec $(EMACS) --no-site-file --no-site-lisp --batch \
