@@ -1987,33 +1987,6 @@ the alias in the project."
   (when sym
     (not (null (string-match-p "^\\^?\\(::\\)?\\([a-zA-Z]+[a-zA-Z0-9\\-]*\\)+\\(\\.?[a-zA-Z]+[a-zA-Z0-9\\-]*\\)*$" sym)))))
 
-(progn
-  (assert (not (completable-for-cljr-slash? nil)))
-  (dolist (prefix '("" "^" "^::"))
-    (assert (completable-for-cljr-slash? (concat prefix "a")))
-    (assert (completable-for-cljr-slash? (concat prefix "a-")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2")))
-    (assert (completable-for-cljr-slash? (concat prefix "a-2")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2-")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2.a")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2.a-")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2.a2")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2.a-2")))
-    (assert (completable-for-cljr-slash? (concat prefix "a2.a2-")))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a2.a."))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a2.2"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a2.2a"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a2.-"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a2.-a"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "-"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "."))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "2"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "+"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "+"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a/"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a/a"))))
-    (assert (not (completable-for-cljr-slash? (concat prefix "a/a/"))))))
-
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts / as normal, but also checks for common namespace shorthands to require.
@@ -2800,7 +2773,7 @@ removed."
                (not (buffer-modified-p)))
     (save-buffer))
   (let* ((path (funcall cider-to-nrepl-filename-function (or path (buffer-file-name))))
-        (relative-path (cljr--project-relative-path path)))
+         (relative-path (cljr--project-relative-path path)))
     (when-let (new-ns (cljr--call-middleware-sync
                        (cljr--create-msg "clean-ns"
                                          "path" path
@@ -3126,9 +3099,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
                           interface)
                       (format "%s/%s" (cider-current-ns) interface)))
          (functions (parseedn-read-str (cljr--call-middleware-sync
-                               (cljr--create-msg "stubs-for-interface"
-                                                 "interface" interface)
-                               "functions"))))
+                                        (cljr--create-msg "stubs-for-interface"
+                                                          "interface" interface)
+                                        "functions"))))
     (cljr--insert-function-stubs functions)))
 
 (defun cljr--delete-definition (definition)
@@ -3267,7 +3240,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
                                           "ignore-errors"
                                           (when cljr-ignore-analyzer-errors "true")))
              (response (parseedn-read-str (cljr--call-middleware-sync
-                                  extract-definition-request "definition")))
+                                           extract-definition-request "definition")))
              (definition (gethash :definition response))
              (occurrences (gethash :occurrences response)))
         (cljr--inline-symbol definition occurrences)
@@ -3368,7 +3341,7 @@ warning by customizing `cljr-suppress-no-project-warning'.)"))))
   (cider-ensure-connected)
   (cider-ensure-op-supported "ns-path")
   (cljr--chop-prefix "file:"
-   (cider-sync-request:ns-path ns-name)))
+                     (cider-sync-request:ns-path ns-name)))
 
 ;;;###autoload
 (defun cljr-create-fn-from-example ()
@@ -3620,7 +3593,7 @@ and make the whole string lower-cased."
        (cljr--guess-param-name (cljr--last-arg-s prepped-form))))
      ((member fn-call cljr--fns-that-get-item-out-of-coll)
       (cljr--inflect-last-word 'inflection-singularize-string
-       (cljr--guess-param-name (cljr--first-arg-s prepped-form)))))))
+                               (cljr--guess-param-name (cljr--first-arg-s prepped-form)))))))
 
 (defvar cljr--semantic-noops--first-position
   (list "assoc" "assoc-in" "update" "update-in" "dissoc" "conj" "concat"
