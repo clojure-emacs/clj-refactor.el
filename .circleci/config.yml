@@ -9,6 +9,7 @@ default: &default-steps
     - run: make elpa
     - run: emacs --version
     - run: cask --version
+    - run: cask install
     - run: make unit
     - run: make test
     # Make sure to run test-checks before test-bytecomp, as test-bytecomp autogenerates
