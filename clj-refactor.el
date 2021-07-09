@@ -1994,7 +1994,7 @@ If `cljr-magic-requires' is non-nil, executing this command after one of the ali
 listed in `cljr-magic-require-namespaces', or any alias used elsewhere in the project,
 will add the corresponding require statement to the ns form."
   (interactive)
-  (let ((original-input (cider-symbol-at-point)))
+  (let ((original-input (thing-at-point 'symbol)))
     (insert "/")
     (when-let (aliases (and cljr-magic-requires
                             (completable-for-cljr-slash? original-input)
