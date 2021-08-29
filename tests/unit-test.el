@@ -4,7 +4,10 @@
 (describe "completable-for-cljr-slash?"
   (it "Returns `t' for tokens that can represent alias-prefixed named things (symbols, keywords, metadata)"
     (expect (completable-for-cljr-slash? nil) :to-be nil)
-    (dolist (prefix '("" "^" "^::"))
+    (dolist (prefix '(""
+                      "::"
+                      "^"
+                      "^::"))
       (expect (completable-for-cljr-slash? (concat prefix "a")) :to-be t)
       (expect (completable-for-cljr-slash? (concat prefix "a-")) :to-be t)
       (expect (completable-for-cljr-slash? (concat prefix "a2")) :to-be t)
@@ -15,6 +18,34 @@
       (expect (completable-for-cljr-slash? (concat prefix "a2.a2")) :to-be t)
       (expect (completable-for-cljr-slash? (concat prefix "a2.a-2")) :to-be t)
       (expect (completable-for-cljr-slash? (concat prefix "a2.a2-")) :to-be t)
+      (expect (completable-for-cljr-slash? (concat prefix "a2.a.")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a2.2")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a2.2a")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a2.-")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a2.-a")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "-")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix ".")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "2")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "+")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "+")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a/")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a/a")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a/a/")) :to-be nil))
+
+    ;; these two prefixes don't have a namespace, so cljr-slash can't possibly insert a namespace in the ns form.
+    ;; therefore none of these are completable:
+    (dolist (prefix '(":"
+                      "^:"))
+      (expect (completable-for-cljr-slash? (concat prefix "a")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a-")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a2")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a-2")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a2-")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a2.a")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a2.a-")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a2.a2")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a2.a-2")) :to-be nil)
+      (expect (completable-for-cljr-slash? (concat prefix "a2.a2-")) :to-be nil)
       (expect (completable-for-cljr-slash? (concat prefix "a2.a.")) :to-be nil)
       (expect (completable-for-cljr-slash? (concat prefix "a2.2")) :to-be nil)
       (expect (completable-for-cljr-slash? (concat prefix "a2.2a")) :to-be nil)
