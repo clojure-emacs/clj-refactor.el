@@ -1934,14 +1934,18 @@ FEATURE is either :clj or :cljs."
   (and (cljr--cljs-file-p)
        (string-equal "js" alias)))
 
+(defun cljr--namespace-of-thing-at-point ()
+  (thread-last (buffer-substring-no-properties
+                (cljr--point-after 'paredit-backward)
+                (1- (point)))
+    (string-remove-prefix "::")
+    (string-remove-prefix "^")
+    (string-remove-prefix "@")))
+
 (defun cljr--magic-requires-lookup-alias ()
   "Return (alias (ns.candidate1 ns.candidate1)) if we recognize
 the alias in the project."
-  (let ((short (thread-last (buffer-substring-no-properties
-                             (cljr--point-after 'paredit-backward)
-                             (1- (point)))
-                 (string-remove-prefix "::")
-                 (string-remove-prefix "@"))))
+  (let ((short (cljr--namespace-of-thing-at-point)))
     (unless (or (cljr--resolve-alias short)
                 (cljr--js-alias-p short))
       (if-let ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
