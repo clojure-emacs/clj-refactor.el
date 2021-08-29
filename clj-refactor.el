@@ -1989,7 +1989,11 @@ the alias in the project."
 
 (defun completable-for-cljr-slash? (sym)
   (when sym
-    (not (null (string-match-p "^\\^?\\(::\\)?\\([a-zA-Z]+[a-zA-Z0-9\\-]*\\)+\\(\\.?[a-zA-Z]+[a-zA-Z0-9\\-]*\\)*$" sym)))))
+    (or
+     ;; vanilla symbols, maybe prefixed by ^, :: or ^::
+     (not (null (string-match-p "^\\^?\\(::\\)?\\([a-zA-Z]+[a-zA-Z0-9\\-]*\\)+\\(\\.?[a-zA-Z]+[a-zA-Z0-9\\-]*\\)*$" sym)))
+     ;; vanilla symbols, prefixed by @
+     (not (null (string-match-p "^@\\([a-zA-Z]+[a-zA-Z0-9\\-]*\\)+\\(\\.?[a-zA-Z]+[a-zA-Z0-9\\-]*\\)*$" sym))))))
 
 ;;;###autoload
 (defun cljr-slash ()

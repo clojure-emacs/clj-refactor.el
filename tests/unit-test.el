@@ -7,7 +7,8 @@
     (dolist (prefix '(""
                       "::"
                       "^"
-                      "^::"))
+                      "^::"
+                      "@"))
       (expect (completable-for-cljr-slash? (concat prefix "a")) :to-be t)
       (expect (completable-for-cljr-slash? (concat prefix "a-")) :to-be t)
       (expect (completable-for-cljr-slash? (concat prefix "a2")) :to-be t)
