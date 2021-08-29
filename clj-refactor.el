@@ -1938,6 +1938,7 @@ FEATURE is either :clj or :cljs."
   (thread-last (buffer-substring-no-properties
                 (cljr--point-after 'paredit-backward)
                 (1- (point)))
+    (string-remove-prefix "^::")
     (string-remove-prefix "::")
     (string-remove-prefix "^")
     (string-remove-prefix "@")))
