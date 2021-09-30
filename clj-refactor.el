@@ -10,7 +10,7 @@
 ;; Version: 2.5.1
 ;; Keywords: convenience, clojure, cider
 
-;; Package-Requires: ((emacs "26.1") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.9") (cider "1.0") (parseedn "1.0.4") (inflections "2.3") (hydra "0.13.2"))
+;; Package-Requires: ((emacs "25.1") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.9") (cider "1.0") (parseedn "0.2") (inflections "2.3") (hydra "0.13.2"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -31,7 +31,12 @@
 
 ;;; Code:
 
+;; HACK: In Emacs 25.1, an older version of seq.el is provided, which can be
+;; loaded before jade or even package.el.  If this happens, the feature `seq'
+;; being already provided, the correct version of seq.el won't get loaded.
 (require 'seq)
+(unless (fboundp 'seq-map-indexed)
+  (require 'seq-25))
 
 (require 'clj-refactor-compat)
 (require 'yasnippet)
