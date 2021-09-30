@@ -6,6 +6,7 @@
 - [#482](https://github.com/clojure-emacs/clj-refactor.el/issues/482): Add missing defgroup form.
 - [#470](https://github.com/clojure-emacs/clj-refactor.el/issues/470): Choose `deps.edn` over `pom.xml` as project file.
 - Introduce `defcustom cljr-insert-newline-after-require` option.
+- Introduce `defcustom cljr-injected-middleware-version` option, allowing users to customize the [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl) version to be used.
 
 ## 2.5.1 (2021-02-16)
 
