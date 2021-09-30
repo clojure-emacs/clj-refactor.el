@@ -966,7 +966,7 @@ Signal an error if it is not supported, otherwise return OP."
       op
     (user-error "Can't find nREPL middleware providing op \"%s\".  \
 Please, install (or update) refactor-nrepl %s and restart the REPL."
-                op (upcase (cljr--version :prune-package-version)))))
+                op (upcase cljr-injected-middleware-version))))
 
 (defun cljr--assert-leiningen-project ()
   (unless (string= (file-name-nondirectory (or (cljr--project-file) ""))
@@ -3254,6 +3254,17 @@ if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
         (replace-regexp-in-string " (.*)" "" version)
       version)))
 
+(defcustom cljr-injected-middleware-version (cljr--version t)
+  "The refactor-nrepl version to be injected.
+
+You can customize this in order to try out new releases.
+
+If customizing it, you most likely should `(setq cljr-suppress-middleware-warnings nil)' too,
+for avoiding a warning that would be irrelevant for this case."
+  :group 'cljr
+  :type 'string
+  :package-version "3.0.0")
+
 (defun cljr--middleware-version ()
   (cljr--call-middleware-sync (cljr--create-msg "version") "version"))
 
@@ -3263,7 +3274,7 @@ if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
       (let ((refactor-nrepl-version (or (cljr--middleware-version)
                                         "n/a")))
         (unless (string-equal (downcase refactor-nrepl-version)
-                              (downcase (cljr--version :remove-package-version)))
+                              (downcase cljr-injected-middleware-version))
           (cider-repl-emit-interactive-stderr
            (format "WARNING: clj-refactor and refactor-nrepl are out of sync.
 Their versions are %s and %s, respectively.
@@ -4151,7 +4162,7 @@ If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-
   (when (and cljr-inject-dependencies-at-jack-in
              (boundp 'cider-jack-in-lein-plugins)
              (boundp 'cider-jack-in-nrepl-middlewares))
-    (add-to-list 'cider-jack-in-lein-plugins `("refactor-nrepl/refactor-nrepl" ,(cljr--version t)
+    (add-to-list 'cider-jack-in-lein-plugins `("refactor-nrepl/refactor-nrepl" ,cljr-injected-middleware-version
                                                :predicate cljr--inject-middleware-p))
     (add-to-list 'cider-jack-in-nrepl-middlewares '("refactor-nrepl.middleware/wrap-refactor"
                                                     :predicate cljr--inject-middleware-p))))
