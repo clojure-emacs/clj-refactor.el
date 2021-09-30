@@ -17,11 +17,6 @@ default: &default-steps
 
 # Enumerated list of Emacs versions
 jobs:
-  test-emacs-25:
-    docker:
-      - image: silex/emacs:25-ci-cask
-        entrypoint: bash
-    <<: *default-steps
 
   test-emacs-26:
     docker:

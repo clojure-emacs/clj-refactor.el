@@ -7,6 +7,7 @@
 - [#470](https://github.com/clojure-emacs/clj-refactor.el/issues/470): Choose `deps.edn` over `pom.xml` as project file.
 - Introduce `defcustom cljr-insert-newline-after-require` option.
 - Introduce `defcustom cljr-injected-middleware-version` option, allowing users to customize the [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl) version to be used.
+- Dropped support for Emacs 25 (to match CIDER).
 
 ## 2.5.1 (2021-02-16)
 
