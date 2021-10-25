@@ -7,7 +7,7 @@
 ;;         Lars Andersen <expez@expez.com>
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;;         Bozhidar Batsov <bozhidar@batsov.com>
-;; Version: 3.0.0-alpha13
+;; Version: 3.0.0
 ;; Keywords: convenience, clojure, cider
 
 ;; Package-Requires: ((emacs "26.1") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.9") (cider "1.0") (parseedn "1.0.46") (inflections "2.3") (hydra "0.13.2"))
@@ -3278,7 +3278,7 @@ if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
         (replace-regexp-in-string " (.*)" "" version)
       version)))
 
-(defcustom cljr-injected-middleware-version "3.0.0-alpha13" ;; (cljr--version t)
+(defcustom cljr-injected-middleware-version "3.0.0" ;; (cljr--version t)
   "The refactor-nrepl version to be injected.
 
 You can customize this in order to try out new releases.
