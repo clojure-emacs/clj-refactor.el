@@ -82,7 +82,7 @@ ops.
 
 ### In case `refactor-nrepl` is used for advanced (AST-based) refactorings
 
-The [analyzer](https://github.com/clojure/tools.analyzer)
+The [analyzer](https://github.com/clojure/tools.analyzer) that
 `refactor-nrepl` uses needs to eval the code too in order to be able
 to build the AST we can work with. If that causes side effects like
 writing files, opening connections to servers, modifying databases,
