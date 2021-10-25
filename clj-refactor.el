@@ -6,7 +6,7 @@
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;;         Lars Andersen <expez@expez.com>
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
-;;         Bozhidar Batsov <bozhidar@batsov.com>
+;;         Bozhidar Batsov <bozhidar@batsov.dev>
 ;; Version: 3.0.0
 ;; Keywords: convenience, clojure, cider
 
