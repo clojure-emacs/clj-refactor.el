@@ -3015,7 +3015,7 @@ Defaults to the dependency vector at point, but prompts if none is found.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependency"
   (interactive)
-  (user-error "Temporarily disabled due to make the middleware run with Java 10."))
+  (user-error "Temporarily disabled due to changes introduced with Java 9. See https://github.com/clojure-emacs/refactor-nrepl/pull/301"))
 
 (defun cljr--defn-str (&optional public)
   (if public
