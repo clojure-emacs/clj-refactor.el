@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- [#139](https://github.com/clojure-emacs/clj-refactor.el/issues/139): avoid a repeated prompt when using `(cljr-project-clean)`.
+
 ## 3.0.0 (2021-10-25)
 
 - [#483](https://github.com/clojure-emacs/clj-refactor.el/issues/483): Improve performance of `cljr-slash` when typing fraction literals.
