@@ -337,19 +337,18 @@ Otherwise open the file and do the changes non-interactively."
   (declare (debug (form body))
            (indent 1))
   (let ((fn (make-symbol "filename"))
-        (bf (make-symbol "buffer")))
+        (bf (make-symbol "buffer"))
+        (wo (make-symbol "was-open")))
     `(let* ((,fn ,filename)
-            (,bf (get-file-buffer ,fn)))
-       (if ,bf
-           (progn
-             (set-buffer ,bf)
-             ,@body
-             (save-buffer))
-         (with-temp-file ,fn
-           (insert-file-contents ,fn)
-           (delay-mode-hooks
-             (clojure-mode)
-             ,@body))))))
+            (,wo (get-file-buffer ,fn))
+            (,bf (find-file-noselect ,fn)))
+       (when ,bf
+         (set-buffer ,bf)
+         ,@body
+         (save-buffer)
+         (when (not ,wo)
+           ;; Don't accumulate open buffers, since this can slow down Emacs for large projects:
+           (kill-buffer))))))
 
 (define-key clj-refactor-map [remap paredit-raise-sexp] 'cljr-raise-sexp)
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-backward] 'cljr-splice-sexp-killing-backward)
