@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 3.1.0 (2021-11-10)
+
+- Use refactor-nrepl [3.1.0](https://github.com/clojure-emacs/refactor-nrepl/blob/a6b052809e6c2c8b077bf0ae4684e05af0a5f484/CHANGELOG.md#310-2021-11-09).
 - [#139](https://github.com/clojure-emacs/clj-refactor.el/issues/139): avoid a repeated prompt when using `(cljr-project-clean)`.
 
 ## 3.0.0 (2021-10-25)

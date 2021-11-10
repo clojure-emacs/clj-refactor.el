@@ -3277,7 +3277,10 @@ if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
         (replace-regexp-in-string " (.*)" "" version)
       version)))
 
-(defcustom cljr-injected-middleware-version "3.0.0" ;; (cljr--version t)
+;; We used to derive the version out of `(cljr--version t)`,
+;; but now prefer a fixed version to fully decouple things and prevent unforeseen behavior.
+;; This suits better our current pace of development.
+(defcustom cljr-injected-middleware-version "3.1.0"
   "The refactor-nrepl version to be injected.
 
 You can customize this in order to try out new releases.
