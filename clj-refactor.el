@@ -7,7 +7,7 @@
 ;;         Lars Andersen <expez@expez.com>
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;;         Bozhidar Batsov <bozhidar@batsov.dev>
-;; Version: 3.2.0
+;; Version: 3.2.1
 ;; Keywords: convenience, clojure, cider
 
 ;; Package-Requires: ((emacs "26.1") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.9") (cider "1.0") (parseedn "1.0.6") (inflections "2.3") (hydra "0.13.2"))
@@ -914,6 +914,27 @@ issued, and should be left focused."
       (kill-buffer buf))
     (find-file (format "%s/%s" new-dir (seq-some (apply-partially same-file active) files)))))
 
+
+(defcustom cljr-print-right-margin 72
+  "Will be forwarded to `clojure.pprint/*print-right-margin*'
+when refactor-nrepl pretty-prints ns forms,
+as performed after `clean-ns', `rename-file-or-dir', etc.
+You can set it to the string \"nil\" for disabling line wrapping.
+
+See also: `cljr-print-miser-width'."
+  :group 'cljr
+  :package-version "3.2.0")
+
+(defcustom cljr-print-miser-width 40
+  "Will be forwarded to `clojure.pprint/*print-miser-width*'
+when refactor-nrepl pretty-prints ns forms,
+as performed after `clean-ns', `rename-file-or-dir', etc.
+You can set it to the string \"nil\" for disabling line wrapping.
+
+See also: `cljr-print-right-margin'."
+  :group 'cljr
+  :package-version "3.2.0")
+
 ;;;###autoload
 (defun cljr-rename-file-or-dir (old-path new-path)
   "Rename a file or directory of files.
@@ -943,7 +964,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
         (let* ((changed-files (cljr--call-middleware-sync
                                (cljr--create-msg "rename-file-or-dir"
                                                  "old-path" nrepl-old-path
-                                                 "new-path" nrepl-new-path)
+                                                 "new-path" nrepl-new-path
+                                                 "print-right-margin" cljr-print-right-margin
+                                                 "print-miser-width" cljr-print-miser-width)
                                "touched"))
                (changed-files-count (length changed-files)))
           (cond
@@ -2779,30 +2802,6 @@ Also adds the alias prefix to all occurrences of public symbols in the namespace
     (clojure-delete-and-extract-sexp)
     (insert new-ns)
     (cljr--just-one-blank-line)))
-
-(defcustom cljr-print-right-margin "72"
-  "Will be forwarded to `clojure.pprint/*print-right-margin*'
-when refactor-nrepl pretty-prints ns forms,
-as performed after `clean-ns', `rename-file-or-dir', etc.
-You can set it to the string \"nil\" for disabling line wrapping.
-
-See also: `cljr-print-miser-width'."
-  :group 'cljr
-  :type 'string
-  :safe #'stringp
-  :package-version "3.2.0")
-
-(defcustom cljr-print-miser-width "40"
-  "Will be forwarded to `clojure.pprint/*print-miser-width*'
-when refactor-nrepl pretty-prints ns forms,
-as performed after `clean-ns', `rename-file-or-dir', etc.
-You can set it to the string \"nil\" for disabling line wrapping.
-
-See also: `cljr-print-right-margin'."
-  :group 'cljr
-  :type 'string
-  :safe #'stringp
-  :package-version "3.2.0")
 
 (defun cljr--clean-ns (&optional path no-prune?)
   "If PATH is passed use that instead of the path to the current buffer
