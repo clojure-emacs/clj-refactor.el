@@ -7,7 +7,7 @@ PKGDIR := $(shell EMACS=$(EMACS) $(CASK) package-directory)
 SRCS = $(wildcard *.el)
 OBJS = $(SRCS:.el=.elc)
 
-.PHONY: compile test clean elpa
+.PHONY: compile unit-tests integration-tests test clean elpa
 
 all: compile
 
@@ -28,8 +28,13 @@ compile: elpa
 clean:
 	rm -f $(OBJS)
 
-test: $(PKGDIR)
+integration-tests: $(PKGDIR)
 	$(CASK) exec ecukes --no-win
+
+unit-tests:
+	$(CASK) exec buttercup -L .
+
+test: unit-tests integration-tests
 
 test-checks:
 	$(CASK) exec $(EMACS) --no-site-file --no-site-lisp --batch \

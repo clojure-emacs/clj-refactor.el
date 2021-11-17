@@ -15,16 +15,17 @@
 (setq checkdoc-arguments-in-order-flag nil)
 (setq checkdoc-verb-check-experimental-flag nil)
 
-(let ((files (directory-files default-directory t
-                              "\\`[^.].*\\.el\\'" t)))
+(when (not (getenv "CI")) ;; See https://github.com/clojure-emacs/clj-refactor.el/issues/491
+  (let ((files (directory-files default-directory t
+                                "\\`[^.].*\\.el\\'" t)))
 
-  ;; `checkdoc-file' was introduced in Emacs 25
-  (when (fboundp 'checkdoc-file)
-    (dolist (file files)
-      (checkdoc-file file))
-    (when (get-buffer "*Warnings*")
-      (message "Failing due to checkdoc warnings...")
-      (kill-emacs 1)))
+    ;; `checkdoc-file' was introduced in Emacs 25
+    (when (fboundp 'checkdoc-file)
+      (dolist (file files)
+        (checkdoc-file file))
+      (when (get-buffer "*Warnings*")
+        (message "Failing due to checkdoc warnings...")
+        (kill-emacs 1)))
 
-  (when (apply #'check-declare-files files)
-    (kill-emacs 1)))
+    (when (apply #'check-declare-files files)
+      (kill-emacs 1))))
