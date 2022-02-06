@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Use refactor-nrepl [3.2.0](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.2.0/CHANGELOG.md#320-2022-01-09).
+## 3.2.3
+
+- Use refactor-nrepl [3.2.2](https://github.com/clojure-emacs/refactor-nrepl/blob/deploy-typo/CHANGELOG.md#322-2022-01-29).
 
 ## 3.2.0, 3.2.1, 3.2.2 (2021-11-16)
 
