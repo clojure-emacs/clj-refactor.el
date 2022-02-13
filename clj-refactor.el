@@ -4180,8 +4180,16 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
   "Inject the REPL dependencies of clj-refactor at `cider-jack-in'.
 If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-jack-in' to nil."
   (when (and cljr-inject-dependencies-at-jack-in
+             (fboundp 'cider-add-to-alist)
+             (boundp 'cider-preferred-build-tool)
+             (boundp 'cider-jack-in-dependencies)
              (boundp 'cider-jack-in-lein-plugins)
              (boundp 'cider-jack-in-nrepl-middlewares))
+
+    (when (not (eq cider-preferred-build-tool 'lein))
+      (cider-add-to-alist 'cider-jack-in-dependencies
+                          "refactor-nrepl/refactor-nrepl" cljr-injected-middleware-version))
+
     (add-to-list 'cider-jack-in-lein-plugins `("refactor-nrepl/refactor-nrepl" ,cljr-injected-middleware-version
                                                :predicate cljr--inject-middleware-p))
     (add-to-list 'cider-jack-in-nrepl-middlewares '("refactor-nrepl.middleware/wrap-refactor"

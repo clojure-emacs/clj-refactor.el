@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.3.3
+
+- Adapt `cljr--inject-jack-in-dependencies` to upstream changes in CIDER. 
+
 ## 3.3.2
 
 - Use refactor-nrepl [3.3.2](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.3.2/CHANGELOG.md#332).
