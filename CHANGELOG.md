@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- [#512](https://github.com/clojure-emacs/clj-refactor.el/issues/512): Fix occasional :require` / `:require-macros` confusion in `cljr-slash`.
+
 ## 3.3.3
 
 - Adapt `cljr--inject-jack-in-dependencies` to upstream changes in CIDER. 
