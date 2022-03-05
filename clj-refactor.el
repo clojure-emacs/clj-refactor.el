@@ -1025,7 +1025,7 @@ no namespace form above point, return the first one in the buffer."
 (defun cljr--insert-in-ns (type &optional cljs?)
   "Insert another clause into the TYPE clause of the ns statement.
 
-TYPE is :require, :use etc, as a regexp.
+TYPE is :require, :use etc.
 
 If CLJS? is T we insert in the cljs part of the ns declaration."
   (cljr--goto-ns)
