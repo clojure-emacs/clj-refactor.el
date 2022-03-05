@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 3.4.0
+
 - Use refactor-nrepl [3.4.0](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.4.0/CHANGELOG.md#340).
 - [#512](https://github.com/clojure-emacs/clj-refactor.el/issues/512): Fix occasional :require` / `:require-macros` confusion in `cljr-slash`.
 
