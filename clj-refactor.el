@@ -552,15 +552,18 @@ If optional `with-whitespace' is T sexp elements are not trimmed."
     (goto-char (point-at-bol))
     (looking-at "\\s-*;+")))
 
-(defun cljr--search-forward-within-sexp (s &optional save-excursion)
+(defun cljr--search-forward-within-sexp (s &optional save-excursion regexp)
   "Searches forward for S in the current sexp.
 
 if SAVE-EXCURSION is T POINT does not move."
-  (let ((bound (save-excursion (forward-list 1) (point))))
+  (let ((bound (save-excursion (forward-list 1) (point)))
+        (f (if regexp
+               're-search-forward
+             'search-forward)))
     (if save-excursion
         (save-excursion
-          (search-forward s bound t))
-      (search-forward s bound t))))
+          (funcall f s bound t))
+      (funcall f s bound t))))
 
 (defun cljr--goto-toplevel ()
   (paredit-backward-up (cljr--depth-at-point))
@@ -1022,13 +1025,20 @@ no namespace form above point, return the first one in the buffer."
 (defun cljr--insert-in-ns (type &optional cljs?)
   "Insert another clause into the TYPE clause of the ns statement.
 
-TYPE is :require, :use etc
+TYPE is :require, :use etc, as a regexp.
 
 If CLJS? is T we insert in the cljs part of the ns declaration."
   (cljr--goto-ns)
   (when cljs?
     (cljr--goto-cljs-branch))
-  (if (cljr--search-forward-within-sexp (concat "(" type))
+  (if (cljr--search-forward-within-sexp (concat "("
+                                                type
+                                                ;; match e.g. `require' but not `require-macros',
+                                                ;; or vice versa.
+                                                ;; See https://github.com/clojure-emacs/clj-refactor.el/issues/512
+                                                "\\(?:$\\|[^-a-zA-Z]\\)")
+                                        nil
+                                        t)
       (if (looking-at " *)")
           (progn
             (search-backward "(")
