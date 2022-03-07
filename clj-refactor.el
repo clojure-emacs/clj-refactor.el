@@ -1,13 +1,13 @@
 ;;; clj-refactor.el --- A collection of commands for refactoring Clojure code -*- lexical-binding: t -*-
 
 ;; Copyright © 2012-2014 Magnar Sveen
-;; Copyright © 2014-2021 Magnar Sveen, Lars Andersen, Benedek Fazekas, Bozhidar Batsov
+;; Copyright © 2014-2022 Magnar Sveen, Lars Andersen, Benedek Fazekas, Bozhidar Batsov
 
 ;; Author: Magnar Sveen <magnars@gmail.com>
 ;;         Lars Andersen <expez@expez.com>
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;;         Bozhidar Batsov <bozhidar@batsov.dev>
-;; Version: 3.4.0
+;; Version: 3.4.1
 ;; Keywords: convenience, clojure, cider
 
 ;; Package-Requires: ((emacs "26.1") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.9") (cider "1.0") (parseedn "1.0.6") (inflections "2.3") (hydra "0.13.2"))
@@ -1942,10 +1942,18 @@ FEATURE is either :clj or :cljs."
 (defun cljr--aget (map key)
   (cdr (assoc key map)))
 
+(defcustom cljr-suggest-namespace-aliases t
+  "If `t', `namespace-aliases' and `cljr-slash' will take into account suggested namespace aliases,
+following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace-aliases"
+  :group 'cljr
+  :type 'boolean)
+
 (defun cljr--call-middleware-for-namespace-aliases ()
   (thread-first "namespace-aliases"
     cljr--ensure-op-supported
-    cljr--create-msg
+    (cljr--create-msg "suggest" (if cljr-suggest-namespace-aliases
+                                    "true"
+                                  "false"))
     (cljr--call-middleware-sync "namespace-aliases")
     parseedn-read-str))
 

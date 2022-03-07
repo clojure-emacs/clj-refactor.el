@@ -169,7 +169,7 @@ There's also another channel named `#emacs` for generic Emacs discussions.
 ## License
 
 Copyright © 2012-2014 Magnar Sveen
-Copyright © 2014-2021 Magnar Sveen, Lars Andersen, Benedek Fazekas, Bozhidar Batsov
+Copyright © 2014-2022 Magnar Sveen, Lars Andersen, Benedek Fazekas, Bozhidar Batsov
 
 Author: Magnar Sveen <magnars@gmail.com>
         Lars Andersen <expez@expez.com>

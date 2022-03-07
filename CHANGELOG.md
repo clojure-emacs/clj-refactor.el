@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.4.1
+
+- Introduce `cljr-suggest-namespace-aliases` defcustom.
+
 ## 3.4.0
 
 - Use refactor-nrepl [3.4.0](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.4.0/CHANGELOG.md#340).
