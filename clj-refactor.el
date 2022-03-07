@@ -1942,10 +1942,18 @@ FEATURE is either :clj or :cljs."
 (defun cljr--aget (map key)
   (cdr (assoc key map)))
 
+(defcustom cljr-suggest-namespace-aliases t
+  "If `t', `namespace-aliases' and `cljr-slash' will take into account suggested namespace aliases,
+following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace-aliases"
+  :group 'cljr
+  :type 'boolean)
+
 (defun cljr--call-middleware-for-namespace-aliases ()
   (thread-first "namespace-aliases"
     cljr--ensure-op-supported
-    cljr--create-msg
+    (cljr--create-msg "suggest" (if cljr-suggest-namespace-aliases
+                                    "true"
+                                  "false"))
     (cljr--call-middleware-sync "namespace-aliases")
     parseedn-read-str))
 
