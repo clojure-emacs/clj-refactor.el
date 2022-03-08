@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.4.2
+
+- [#514](https://github.com/clojure-emacs/clj-refactor.el/issues/514): cljr-slash: Fix `Wrong type argument: listp`.
+
 ## 3.4.1
 
 - Introduce `cljr-suggest-namespace-aliases` defcustom.
