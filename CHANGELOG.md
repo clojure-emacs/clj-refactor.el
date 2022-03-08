@@ -5,6 +5,7 @@
 ## 3.4.2
 
 - [#514](https://github.com/clojure-emacs/clj-refactor.el/issues/514): cljr-slash: Fix `Wrong type argument: listp`.
+- Use refactor-nrepl [3.4.1](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.4.1/CHANGELOG.md#341).
 
 ## 3.4.1
 
