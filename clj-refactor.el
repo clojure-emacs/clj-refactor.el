@@ -2034,11 +2034,13 @@ will add the corresponding require statement to the ns form."
                           (not (cljr--in-number-p))
                           (clojure-find-ns)
                           (cljr--magic-requires-lookup-alias)))
-    (let ((short (cl-first aliases)))
-      (when-let (long (cljr--prompt-user-for "Require " (cl-second aliases)))
+    (let ((short (cl-first aliases))
+          ;; Ensure it's a list (and not a vector):
+          (candidates (mapcar 'identity (cl-second aliases))))
+      (when-let (long (cljr--prompt-user-for "Require " candidates))
         (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
                    (or (not (eq :prompt cljr-magic-requires))
-                       (not (> (length (cl-second aliases)) 1)) ; already prompted
+                       (not (> (length candidates) 1)) ; already prompted
                        (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
           (save-excursion
             (cljr--insert-in-ns ":require")
