@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.4.3
+
+- Use refactor-nrepl [3.4.2](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.4.2/CHANGELOG.md#342).
+
 ## 3.4.2
 
 - [#514](https://github.com/clojure-emacs/clj-refactor.el/issues/514): cljr-slash: Fix `Wrong type argument: listp`.
