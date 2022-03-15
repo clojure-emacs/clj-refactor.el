@@ -1,6 +1,12 @@
-# Change log
+# Changelog
 
 ## Unreleased
+
+## 3.5.0
+
+* Use refactor-nrepl [3.5.0](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.0/CHANGELOG.md#350).
+* Improve integration with Clojure 1.11's new `:as-alias` namespace directive.
+  * Closes [#515](https://github.com/clojure-emacs/clj-refactor.el/issues/515), [#515](https://github.com/clojure-emacs/clj-refactor.el/issues/516)
 
 ## 3.4.3
 
