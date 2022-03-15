@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.5.1
+
+* Use refactor-nrepl [3.5.1](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.1/CHANGELOG.md#351).
+
 ## 3.5.0
 
 * Use refactor-nrepl [3.5.0](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.0/CHANGELOG.md#350).
