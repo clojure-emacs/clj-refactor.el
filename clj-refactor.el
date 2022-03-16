@@ -1963,6 +1963,24 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
         (gethash :clj aliases)
       (gethash :cljs aliases))))
 
+(defun cljr-aliases-from-middleware ()
+  "quick debug display of middleware output"
+  (interactive)
+  (let ((buf (cider-popup-buffer "*cider ns aliases*")))
+    (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
+      (with-current-buffer buf
+        (setq buffer-read-only nil)
+        (cl-loop for alias-type being the hash-keys of aliases
+                 using (hash-values alias-values)
+                 do
+                 (insert (format "%S\n" alias-type))
+                 (cl-loop for short being the hash-keys of alias-values
+                          using (hash-values long)
+                          do
+                          (insert (format "%S\t%S\n" short long)))
+                 (insert "\n"))
+        (setq buffer-read-only t)))))
+
 (defun cljr--js-alias-p (alias)
   (and (cljr--cljs-file-p)
        (string-equal "js" alias)))
