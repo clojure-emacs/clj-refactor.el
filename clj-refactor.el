@@ -1968,18 +1968,26 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
   (interactive)
   (let ((buf (cider-popup-buffer "*cider ns aliases*")))
     (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
-      (with-current-buffer buf
-        (setq buffer-read-only nil)
+      (let ((alias-index (make-hash-table :test 'equal
+                                          :size (max (hash-table-size (gethash :clj aliases))
+                                                     (hash-table-size (gethash :cljs aliases))))))
+        ;; invert the index so type is now hash of alias-name to alist of type,requires.
         (cl-loop for alias-type being the hash-keys of aliases
-                 using (hash-values alias-values)
+                 using (hash-values alias-vals)
                  do
-                 (insert (format "%S\n" alias-type))
-                 (cl-loop for short being the hash-keys of alias-values
-                          using (hash-values long)
+                 (cl-loop for alias-name being the hash-keys of alias-vals
+                          using (hash-values alias-require)
                           do
-                          (insert (format "%S\t%S\n" short long)))
-                 (insert "\n"))
-        (setq buffer-read-only t)))))
+                          (let ((lookup (gethash alias-name alias-index '())))
+                            (puthash alias-name (cons alias-type (cons alias-require lookup)) alias-index))))
+
+        (with-current-buffer buf
+          (setq buffer-read-only nil)
+          (cl-loop for alias-name being the hash-keys of alias-index
+                   using (hash-values alias-vals)
+                   do
+                   (insert (format "%S\t%S\n" alias-name alias-vals)))
+          (setq buffer-read-only t))))))
 
 (defun cljr--js-alias-p (alias)
   (and (cljr--cljs-file-p)
