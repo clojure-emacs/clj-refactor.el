@@ -1972,14 +1972,20 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
                                           :size (max (hash-table-size (gethash :clj aliases))
                                                      (hash-table-size (gethash :cljs aliases))))))
         ;; invert the index so type is now hash of alias-name to alist of type,requires.
+        ;; TODO: benchmark or only reverse index for matching prefix?
         (cl-loop for alias-type being the hash-keys of aliases
                  using (hash-values alias-vals)
                  do
                  (cl-loop for alias-name being the hash-keys of alias-vals
-                          using (hash-values alias-require)
+                          using (hash-values alias-requires)
                           do
-                          (let ((lookup (gethash alias-name alias-index '())))
-                            (puthash alias-name (cons alias-type (cons alias-require lookup)) alias-index))))
+                          (cl-loop for alias-require being the elements of alias-requires
+                                   do
+                                   (let* ((choices (gethash alias-name alias-index '()))
+                                          (types (plist-get choices alias-require)))
+                                     (puthash alias-name
+                                              (plist-put choices alias-require (cons alias-type types))
+                                              alias-index)))))
 
         (with-current-buffer buf
           (setq buffer-read-only nil)
