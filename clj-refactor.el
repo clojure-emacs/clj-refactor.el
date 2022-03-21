@@ -1999,14 +1999,18 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
   (and (cljr--cljs-file-p)
        (string-equal "js" alias)))
 
+(defun cljr--ns-short-alias-at-point ()
+  "Returns the (alias)/ just prior to the point excluding the trailing slash."
+  (thread-last (buffer-substring-no-properties
+                (cljr--point-after 'paredit-backward)
+                (1- (point)))
+               (string-remove-prefix "::")
+               (string-remove-prefix "@")))
+
 (defun cljr--magic-requires-lookup-alias ()
   "Return (alias (ns.candidate1 ns.candidate1)) if we recognize
 the alias in the project."
-  (let ((short (thread-last (buffer-substring-no-properties
-                             (cljr--point-after 'paredit-backward)
-                             (1- (point)))
-                 (string-remove-prefix "::")
-                 (string-remove-prefix "@"))))
+  (let ((short (cljr--ns-short-alias-at-point)))
     (unless (or (cljr--resolve-alias short)
                 (cljr--js-alias-p short))
       (if-let ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
