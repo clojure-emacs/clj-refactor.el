@@ -1963,37 +1963,30 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
         (gethash :clj aliases)
       (gethash :cljs aliases))))
 
-(defun cljr-aliases-from-middleware ()
+(defun cljr-aliases-from-middleware (&optional search-alias)
   "quick debug display of middleware output"
-  (interactive)
-  (let ((buf (cider-popup-buffer "*cider ns aliases*")))
-    (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
-      (let ((alias-index (make-hash-table :test 'equal
-                                          :size (max (hash-table-size (gethash :clj aliases))
-                                                     (hash-table-size (gethash :cljs aliases))))))
-        ;; invert the index so type is now hash of alias-name to alist of type,requires.
-        ;; TODO: benchmark or only reverse index for matching prefix?
-        (cl-loop for alias-type being the hash-keys of aliases
-                 using (hash-values alias-vals)
-                 do
-                 (cl-loop for alias-name being the hash-keys of alias-vals
-                          using (hash-values alias-requires)
-                          do
-                          (cl-loop for alias-require being the elements of alias-requires
-                                   do
-                                   (let* ((choices (gethash alias-name alias-index '()))
-                                          (types (plist-get choices alias-require)))
-                                     (puthash alias-name
-                                              (plist-put choices alias-require (cons alias-type types))
-                                              alias-index)))))
-
-        (with-current-buffer buf
-          (setq buffer-read-only nil)
-          (cl-loop for alias-name being the hash-keys of alias-index
-                   using (hash-values alias-vals)
-                   do
-                   (insert (format "%S\t%S\n" alias-name alias-vals)))
-          (setq buffer-read-only t))))))
+  (interactive "M")
+  (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
+    (let ((alias-index (make-hash-table :test 'equal
+                                        :size (max (hash-table-size (gethash :clj aliases))
+                                                   (hash-table-size (gethash :cljs aliases))))))
+      ;; invert the index so type is now hash of alias-name to alist of type,requires.
+      ;; TODO: benchmark or only reverse index for matching prefix?
+      (cl-loop for alias-type being the hash-keys of aliases
+               using (hash-values alias-vals)
+               do
+               (cl-loop for alias-name being the hash-keys of alias-vals
+                        using (hash-values alias-requires)
+                        do
+                        (cl-loop for alias-require being the elements of alias-requires
+                                 do
+                                 (puthash (format "[%s :as %s] (%s)" alias-require alias-name alias-type)
+                                          (list alias-name alias-require alias-type)
+                                          alias-index))))
+      (let ((ns-require (completing-read "Add Require aliased as: "
+                                         alias-index
+                                         nil nil search-alias)))
+        (gethash ns-require alias-index)))))
 
 (defun cljr--js-alias-p (alias)
   (and (cljr--cljs-file-p)
@@ -2060,32 +2053,30 @@ listed in `cljr-magic-require-namespaces', or any alias used elsewhere in the pr
 will add the corresponding require statement to the ns form."
   (interactive)
   (insert "/")
-  (when-let (aliases (and cljr-magic-requires
-                          (not (cljr--in-map-destructuring?))
-                          (not (cljr--in-ns-above-point-p))
-                          (not (cljr--in-reader-literal-p))
-                          (not (cider-in-comment-p))
-                          (not (cider-in-string-p))
-                          (not (cljr--in-keyword-sans-alias-p))
-                          (not (cljr--in-number-p))
-                          (clojure-find-ns)
-                          (cljr--magic-requires-lookup-alias)))
-    (let ((short (cl-first aliases))
-          ;; Ensure it's a list (and not a vector):
-          (candidates (mapcar 'identity (cl-second aliases))))
-      (when-let (long (cljr--prompt-user-for "Require " candidates))
-        (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
-                   (not (cljr--in-namespace-declaration-p (concat ":as-alias " short "\b")))
-                   (or (not (eq :prompt cljr-magic-requires))
-                       (not (> (length candidates) 1)) ; already prompted
-                       (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
-          (save-excursion
-            (cljr--insert-in-ns ":require")
-            (let ((libspec (format "[%s :as %s]" long short)))
-              (insert libspec)
-              (ignore-errors (cljr--maybe-eval-ns-form))
-              (cljr--indent-defun)
-              (cljr--post-command-message "Required %s" libspec))))))))
+  (let ((short-alias (cljr--ns-short-alias-at-point)))
+    (if-let (selected-ns (and cljr-magic-requires
+                              (not (cljr--in-map-destructuring?))
+                              (not (cljr--in-ns-above-point-p))
+                              (not (cljr--in-reader-literal-p))
+                              (not (cider-in-comment-p))
+                              (not (cider-in-string-p))
+                              (not (cljr--in-keyword-sans-alias-p))
+                              (not (cljr--in-number-p))
+                              (clojure-find-ns)
+                              (cljr-aliases-from-middleware short-alias)))
+        (let ((short (symbol-name (cl-first selected-ns)))
+              (long (cl-second selected-ns)))
+          (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
+                     (not (cljr--in-namespace-declaration-p (concat ":as-alias " short "\b")))
+                     (or (not (eq :prompt cljr-magic-requires))
+                         (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
+            (save-excursion
+              (cljr--insert-in-ns ":require")
+              (let ((libspec (format "[%s :as %s]" long short)))
+                (insert libspec)
+                (ignore-errors (cljr--maybe-eval-ns-form))
+                (cljr--indent-defun)
+                (cljr--post-command-message "Required %s" libspec))))))))
 
 (defun cljr--in-namespace-declaration-p (s)
   (save-excursion
