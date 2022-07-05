@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.5.4
+
+* [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.3/CHANGELOG.md#353).
+
 ## 3.5.3
 
 * Upgrade `cider`, `parseedn` and `inflections` dependencies.
