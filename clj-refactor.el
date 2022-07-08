@@ -1957,12 +1957,6 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
     (cljr--call-middleware-sync "namespace-aliases")
     parseedn-read-str))
 
-(defun cljr--get-aliases-from-middleware ()
-  (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
-    (if (cljr--clj-context-p)
-        (gethash :clj aliases)
-      (gethash :cljs aliases))))
-
 (defun cljr--collapse-to-alias-require-types (sequence)
   "Collapse alias list into a unique mapping of aliases.
 
