@@ -2020,8 +2020,11 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
                (string-remove-prefix "@")))
 
 (defun cljr--magic-requires-lookup-alias ()
-  "Return ((alias ns.candidate1 types) (alias ns.candidate2 types) ...) if we recognize
-the alias in the project."
+  "Generate candidates requires based on the alias at point.
+
+  Constructs a list of alias, namespace, language-contexts
+  triplets from either the middleware or
+  `cljr-magic-require-namespaces'."
   (let ((short (cljr--ns-short-alias-at-point)))
     (unless (or (cljr--resolve-alias short)
                 (cljr--js-alias-p short))
