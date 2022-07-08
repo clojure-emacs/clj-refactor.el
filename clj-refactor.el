@@ -1994,22 +1994,23 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
                        (cl-loop for alias-require being the elements of alias-requires
                                 collect (list alias-name alias-require alias-type)))))))
 
-(defun cljr--completion-from-middleware (&optional search-alias)
+(defun cljr--namespace-completion (search-alias candidates)
   "Complete best require for a given `search-alias`."
-  (interactive "M")
-  (when-let (aliases (cljr--aliases-from-middleware))
-    (let* ((alias-index (make-hash-table :test 'equal))
-           (matching-aliases (seq-filter (lambda (elt) (equal (intern search-alias) (car elt))) aliases)))
-      (dolist (elt matching-aliases)
-        (message "%S" elt)
+  (when candidates
+    (let ((alias-index (make-hash-table :test 'equal)))
+      (dolist (elt candidates)
         (cl-destructuring-bind (alias-name alias-require alias-types) elt
-          (puthash (format "[%s :as %s] (%s)"
-                           (symbol-name alias-require)
-                           (symbol-name alias-name)
-                           (string-join (seq-map #'symbol-name alias-types) ","))
+          (puthash (if alias-types
+                       (format "[%s :as %s] (%s)"
+                               (symbol-name alias-require)
+                               (symbol-name alias-name)
+                               (string-join (seq-map #'symbol-name alias-types) ","))
+                     (format "[%s :as %s]"
+                             (symbol-name alias-require)
+                             (symbol-name alias-name)))
                    (list alias-name alias-require alias-types)
                    alias-index)))
-      (let ((ns-require (completing-read "Add Require aliased as: "
+      (let ((ns-require (completing-read "Require: "
                                          alias-index
                                          nil nil search-alias)))
         (gethash ns-require alias-index)))))
@@ -2027,20 +2028,20 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
                (string-remove-prefix "@")))
 
 (defun cljr--magic-requires-lookup-alias ()
-  "Return (alias (ns.candidate1 ns.candidate1)) if we recognize
+  "Return ((alias ns.candidate1 types) (alias ns.candidate2 types) ...) if we recognize
 the alias in the project."
   (let ((short (cljr--ns-short-alias-at-point)))
     (unless (or (cljr--resolve-alias short)
                 (cljr--js-alias-p short))
-      (if-let ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
-               (candidates (gethash (intern short) aliases)))
-          (list short candidates)
+      (if-let ((candidates (seq-filter (lambda (elt) (equal (intern short) (car elt)))
+                                       (cljr--aliases-from-middleware))))
+          candidates
         (when (and cljr-magic-require-namespaces ; a regex against "" always triggers
                    (string-match-p (cljr--magic-requires-re) short))
           ;; This when-let might seem unnecessary but the regexp match
           ;; isn't perfect.
           (when-let (long (cljr--aget cljr-magic-require-namespaces short))
-            (list short (list long))))))))
+            (list (list (intern short) (intern long) '()))))))))
 
 (defun cljr--in-keyword-sans-alias-p ()
   "Checks if thing at point is keyword without an alias."
@@ -2079,30 +2080,30 @@ listed in `cljr-magic-require-namespaces', or any alias used elsewhere in the pr
 will add the corresponding require statement to the ns form."
   (interactive)
   (insert "/")
-  (let ((short-alias (cljr--ns-short-alias-at-point)))
-    (if-let (selected-ns (and cljr-magic-requires
-                              (not (cljr--in-map-destructuring?))
-                              (not (cljr--in-ns-above-point-p))
-                              (not (cljr--in-reader-literal-p))
-                              (not (cider-in-comment-p))
-                              (not (cider-in-string-p))
-                              (not (cljr--in-keyword-sans-alias-p))
-                              (not (cljr--in-number-p))
-                              (clojure-find-ns)
-                              (cljr--completion-from-middleware short-alias)))
-        (let ((short (symbol-name (cl-first selected-ns)))
-              (long (cl-second selected-ns)))
-          (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
-                     (not (cljr--in-namespace-declaration-p (concat ":as-alias " short "\b")))
-                     (or (not (eq :prompt cljr-magic-requires))
-                         (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
-            (save-excursion
-              (cljr--insert-in-ns ":require")
-              (let ((libspec (format "[%s :as %s]" long short)))
-                (insert libspec)
-                (ignore-errors (cljr--maybe-eval-ns-form))
-                (cljr--indent-defun)
-                (cljr--post-command-message "Required %s" libspec))))))))
+  (when-let (aliases (and cljr-magic-requires
+                          (not (cljr--in-map-destructuring?))
+                          (not (cljr--in-ns-above-point-p))
+                          (not (cljr--in-reader-literal-p))
+                          (not (cider-in-comment-p))
+                          (not (cider-in-string-p))
+                          (not (cljr--in-keyword-sans-alias-p))
+                          (not (cljr--in-number-p))
+                          (clojure-find-ns)
+                          (cljr--magic-requires-lookup-alias)))
+    (when-let (selected-ns (cljr--namespace-completion (cljr--ns-short-alias-at-point) aliases))
+      (let ((short (symbol-name (cl-first selected-ns)))
+            (long (cl-second selected-ns)))
+        (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
+                   (not (cljr--in-namespace-declaration-p (concat ":as-alias " short "\b")))
+                   (or (not (eq :prompt cljr-magic-requires))
+                       (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
+          (save-excursion
+            (cljr--insert-in-ns ":require")
+            (let ((libspec (format "[%s :as %s]" long short)))
+              (insert libspec)
+              (ignore-errors (cljr--maybe-eval-ns-form))
+              (cljr--indent-defun)
+              (cljr--post-command-message "Required %s" libspec))))))))
 
 (defun cljr--in-namespace-declaration-p (s)
   (save-excursion
