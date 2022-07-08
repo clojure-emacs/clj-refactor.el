@@ -1957,52 +1957,52 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
     (cljr--call-middleware-sync "namespace-aliases")
     parseedn-read-str))
 
-(defun cljr--collapse-to-alias-require-types (sequence)
+(defun cljr--collapse-to-alias-require-lang-contexts (sequence)
   "Collapse alias list into a unique mapping of aliases.
 
-  Given a list of alias,require,type then collapse it into a
-  unique list of alias,require,types."
+  Given a list of alias,require,lang-context then collapse it into a
+  unique list of alias,require,lang-context(s)."
   (seq-map (lambda (elt) (append (car elt) (cdr elt)))
            (seq-reduce
             (lambda (acc elt)
               (let* ((key (seq-take elt 2))
-                     (type (last elt))
+                     (lang-context (last elt))
                      (cell (assoc key acc)))
                 (if cell
-                    (setf (cadr cell) (cons (car type) (cadr cell)))
-                  (push (list key type) acc))
+                    (setf (cadr cell) (cons (car lang-context) (cadr cell)))
+                  (push (list key lang-context) acc))
                 acc))
             (seq-reverse sequence)
             nil)))
 
 (defun cljr--aliases-from-middleware ()
-  "Calculate a list of alias, require, alias-types from middleware."
+  "Calculate a list of alias, require, lang-contexts from middleware."
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
-    (cljr--collapse-to-alias-require-types
-     (cl-loop for alias-type being the hash-keys of aliases
+    (cljr--collapse-to-alias-require-lang-contexts
+     (cl-loop for lang-context being the hash-keys of aliases
               using (hash-values alias-vals)
               append
               (cl-loop for alias-name being the hash-keys of alias-vals
                        using (hash-values alias-requires)
                        append
                        (cl-loop for alias-require being the elements of alias-requires
-                                collect (list alias-name alias-require alias-type)))))))
+                                collect (list alias-name alias-require lang-context)))))))
 
 (defun cljr--namespace-completion (search-alias candidates)
   "Complete best require for a given `search-alias`."
   (when candidates
     (let ((alias-index (make-hash-table :test 'equal)))
       (dolist (elt candidates)
-        (cl-destructuring-bind (alias-name alias-require alias-types) elt
-          (puthash (if alias-types
+        (cl-destructuring-bind (alias-name alias-require lang-contexts) elt
+          (puthash (if lang-contexts
                        (format "[%s :as %s] (%s)"
                                (symbol-name alias-require)
                                (symbol-name alias-name)
-                               (string-join (seq-map #'symbol-name alias-types) ","))
+                               (string-join (seq-map #'symbol-name lang-contexts) ","))
                      (format "[%s :as %s]"
                              (symbol-name alias-require)
                              (symbol-name alias-name)))
-                   (list alias-name alias-require alias-types)
+                   (list alias-name alias-require)
                    alias-index)))
       (let ((ns-require (completing-read "Require: "
                                          alias-index
