@@ -1988,8 +1988,8 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
                        (cl-loop for alias-require being the elements of alias-requires
                                 collect (list alias-name alias-require lang-context)))))))
 
-(defun cljr--namespace-completion (search-alias candidates)
-  "Complete best require for a given `search-alias`."
+(defun cljr--prompt-for-namespace (candidates)
+  "Prompt to select namespace from a list of candidate requires."
   (when candidates
     (let ((alias-index (make-hash-table :test 'equal)))
       (dolist (elt candidates)
@@ -2004,9 +2004,7 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
                              (symbol-name alias-name)))
                    (list alias-name alias-require)
                    alias-index)))
-      (let ((ns-require (completing-read "Require: "
-                                         alias-index
-                                         nil nil search-alias)))
+      (let ((ns-require (completing-read "Require: " alias-index)))
         (gethash ns-require alias-index)))))
 
 (defun cljr--js-alias-p (alias)
@@ -2084,7 +2082,7 @@ will add the corresponding require statement to the ns form."
                           (not (cljr--in-number-p))
                           (clojure-find-ns)
                           (cljr--magic-requires-lookup-alias)))
-    (when-let (selected-ns (cljr--namespace-completion (cljr--ns-short-alias-at-point) aliases))
+    (when-let (selected-ns (cljr--prompt-for-namespace aliases))
       (let ((short (symbol-name (cl-first selected-ns)))
             (long (cl-second selected-ns)))
         (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
