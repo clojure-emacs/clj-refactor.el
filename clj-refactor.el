@@ -2027,13 +2027,21 @@ cljs) the alias has been used in previously."
   "Generate candidates requires based on the alias at point.
 
   Constructs a list of alias, namespace, language-contexts
-  triplets from either the middleware or
+  triplets from either the middleware or `cljr-magic-require-namespaces'.
+
+  Preference for namespaces candidates with an exact match on
+  alias, namespace and then a fallback to use
   `cljr-magic-require-namespaces'."
   (let ((short (cljr--ns-short-alias-at-point)))
     (unless (or (cljr--resolve-alias short)
                 (cljr--js-alias-p short))
-      (if-let ((candidates (seq-filter (lambda (elt) (equal (intern short) (car elt)))
-                                       (cljr--aliases-from-middleware))))
+      (if-let ((candidates
+                (seq-filter (lambda (elt)
+                              ;; prefer to match alias
+                              (or (equal (intern short) (car elt))
+                                  ;; but fallback on matching full namespace
+                                  (equal short (symbol-name (cadr elt)))))
+                            (cljr--aliases-from-middleware))))
           candidates
         (when (and cljr-magic-require-namespaces ; a regex against "" always triggers
                    (string-match-p (cljr--magic-requires-re) short))
