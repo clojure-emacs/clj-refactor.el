@@ -1963,26 +1963,52 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
         (gethash :clj aliases)
       (gethash :cljs aliases))))
 
-(defun cljr-aliases-from-middleware (&optional search-alias)
-  "quick debug display of middleware output"
-  (interactive "M")
+(defun cljr--collapse-to-alias-require-types (sequence)
+  "Collapse alias list into a unique mapping of aliases.
+
+  Given a list of alias,require,type then collapse it into a
+  unique list of alias,require,types."
+  (seq-map (lambda (elt) (append (car elt) (cdr elt)))
+           (seq-reduce
+            (lambda (acc elt)
+              (let* ((key (seq-take elt 2))
+                     (type (last elt))
+                     (cell (assoc key acc)))
+                (if cell
+                    (setf (cadr cell) (cons (car type) (cadr cell)))
+                  (push (list key type) acc))
+                acc))
+            (seq-reverse sequence)
+            nil)))
+
+(defun cljr--aliases-from-middleware ()
+  "Calculate a list of alias, require, alias-types from middleware."
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
-    (let ((alias-index (make-hash-table :test 'equal
-                                        :size (max (hash-table-size (gethash :clj aliases))
-                                                   (hash-table-size (gethash :cljs aliases))))))
-      ;; invert the index so type is now hash of alias-name to alist of type,requires.
-      ;; TODO: benchmark or only reverse index for matching prefix?
-      (cl-loop for alias-type being the hash-keys of aliases
-               using (hash-values alias-vals)
-               do
-               (cl-loop for alias-name being the hash-keys of alias-vals
-                        using (hash-values alias-requires)
-                        do
-                        (cl-loop for alias-require being the elements of alias-requires
-                                 do
-                                 (puthash (format "[%s :as %s] (%s)" alias-require alias-name alias-type)
-                                          (list alias-name alias-require alias-type)
-                                          alias-index))))
+    (cljr--collapse-to-alias-require-types
+     (cl-loop for alias-type being the hash-keys of aliases
+              using (hash-values alias-vals)
+              append
+              (cl-loop for alias-name being the hash-keys of alias-vals
+                       using (hash-values alias-requires)
+                       append
+                       (cl-loop for alias-require being the elements of alias-requires
+                                collect (list alias-name alias-require alias-type)))))))
+
+(defun cljr--completion-from-middleware (&optional search-alias)
+  "Complete best require for a given `search-alias`."
+  (interactive "M")
+  (when-let (aliases (cljr--aliases-from-middleware))
+    (let* ((alias-index (make-hash-table :test 'equal))
+           (matching-aliases (seq-filter (lambda (elt) (equal (intern search-alias) (car elt))) aliases)))
+      (dolist (elt matching-aliases)
+        (message "%S" elt)
+        (cl-destructuring-bind (alias-name alias-require alias-types) elt
+          (puthash (format "[%s :as %s] (%s)"
+                           (symbol-name alias-require)
+                           (symbol-name alias-name)
+                           (string-join (seq-map #'symbol-name alias-types) ","))
+                   (list alias-name alias-require alias-types)
+                   alias-index)))
       (let ((ns-require (completing-read "Add Require aliased as: "
                                          alias-index
                                          nil nil search-alias)))
@@ -2063,7 +2089,7 @@ will add the corresponding require statement to the ns form."
                               (not (cljr--in-keyword-sans-alias-p))
                               (not (cljr--in-number-p))
                               (clojure-find-ns)
-                              (cljr-aliases-from-middleware short-alias)))
+                              (cljr--completion-from-middleware short-alias)))
         (let ((short (symbol-name (cl-first selected-ns)))
               (long (cl-second selected-ns)))
           (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
