@@ -1985,25 +1985,31 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
                 nil)))))
 
 (defun cljr--prompt-for-namespace (candidates)
-  "Prompt to select namespace from a list of candidate requires if more than 1 option."
-  (when candidates
-    (if (= (length candidates) 1)
-        (cl-first candidates)
-      (let ((alias-index (make-hash-table :test 'equal)))
-        (dolist (elt candidates)
-          (cl-destructuring-bind (alias-name alias-require lang-contexts) elt
-            (puthash (if lang-contexts
-                         (format "[%s :as %s] (%s)"
-                                 (symbol-name alias-require)
-                                 (symbol-name alias-name)
-                                 (string-join (seq-map #'symbol-name lang-contexts) ","))
-                       (format "[%s :as %s]"
+  "Selects namespace to require from a list of candidates.
+
+This will auto-select the only candidate if `cljr-magic-requires'
+is not set to `:prompt'. Shows user the language contexts (:clj,
+cljs) the alias has been used in previously."
+  (cond
+   ((or (> (length candidates) 1)
+        (eq :prompt cljr-magic-requires))
+    (let ((alias-index (make-hash-table :test 'equal)))
+      (dolist (elt candidates)
+        (cl-destructuring-bind (alias-name alias-require lang-contexts) elt
+          (puthash (if lang-contexts
+                       (format "[%s :as %s] (%s)"
                                (symbol-name alias-require)
-                               (symbol-name alias-name)))
-                     (list alias-name alias-require)
-                     alias-index)))
-        (let ((ns-require (completing-read "Require: " alias-index)))
-          (gethash ns-require alias-index))))))
+                               (symbol-name alias-name)
+                               (string-join (seq-map #'symbol-name lang-contexts) ","))
+                     (format "[%s :as %s]"
+                             (symbol-name alias-require)
+                             (symbol-name alias-name)))
+                   (list alias-name alias-require)
+                   alias-index)))
+      (let ((ns-require (completing-read "Add require: " alias-index)))
+        (gethash ns-require alias-index))))
+   ((= (length candidates) 1)
+     (cl-first candidates))))
 
 (defun cljr--js-alias-p (alias)
   (and (cljr--cljs-file-p)
@@ -2087,10 +2093,7 @@ will add the corresponding require statement to the ns form."
       (let ((short (symbol-name (cl-first selected-ns)))
             (long (cl-second selected-ns)))
         (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
-                   (not (cljr--in-namespace-declaration-p (concat ":as-alias " short "\b")))
-                   (or (not (eq :prompt cljr-magic-requires))
-                       (not (> (length aliases) 1)) ; already prompted
-                       (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
+                   (not (cljr--in-namespace-declaration-p (concat ":as-alias " short "\b"))))
           (save-excursion
             (cljr--insert-in-ns ":require")
             (let ((libspec (format "[%s :as %s]" long short)))
