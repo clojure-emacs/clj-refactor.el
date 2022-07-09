@@ -18,7 +18,7 @@
             (parseedn-read-str
              "{:clj  {t (clojure.test) set (clojure.set) sut (alpha shared)}
                :cljs {t (cljs.test) set (clojure.set) sut (beta shared)}}"))
-    (expect (cljr--namespace-aliases)
+    (expect (cljr--get-aliases-from-middleware)
             :to-equal
             '((t clojure.test (:clj))
               (sut alpha (:clj))
