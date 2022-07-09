@@ -1957,8 +1957,8 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
     (cljr--call-middleware-sync "namespace-aliases")
     parseedn-read-str))
 
-(defun cljr--aliases-from-middleware ()
-  "Calculate a list of alias, require, lang-contexts from middleware."
+(defun cljr--namespace-aliases ()
+  "Calculate a list of alias, namespace, lang-contexts from middleware."
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
     (let ((alias-list ; list of all alias, require, lang-context
            (cl-loop for lang-context being the hash-keys of aliases
@@ -2041,7 +2041,7 @@ cljs) the alias has been used in previously."
                               (or (equal (intern short) (car elt))
                                   ;; but fallback on matching full namespace
                                   (equal short (symbol-name (cadr elt)))))
-                            (cljr--aliases-from-middleware))))
+                            (cljr--namespace-aliases))))
           candidates
         (when (and cljr-magic-require-namespaces ; a regex against "" always triggers
                    (string-match-p (cljr--magic-requires-re) short))
