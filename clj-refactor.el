@@ -2016,6 +2016,15 @@ the alias in the project."
     (backward-sexp 1)
     (looking-at-p "[-+0-9]")))
 
+(defun cljr--insert-require-libspec (libspec)
+  "Inserts a require `libspec' in the namespace of the current file."
+  (save-excursion
+    (cljr--insert-in-ns ":require")
+    (insert libspec)
+    (ignore-errors (cljr--maybe-eval-ns-form))
+    (cljr--indent-defun)
+    (cljr--post-command-message "Required %s" libspec)))
+
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts / as normal, but also checks for common namespace shorthands to require.
@@ -2043,13 +2052,7 @@ will add the corresponding require statement to the ns form."
                    (or (not (eq :prompt cljr-magic-requires))
                        (not (> (length candidates) 1)) ; already prompted
                        (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
-          (save-excursion
-            (cljr--insert-in-ns ":require")
-            (let ((libspec (format "[%s :as %s]" long short)))
-              (insert libspec)
-              (ignore-errors (cljr--maybe-eval-ns-form))
-              (cljr--indent-defun)
-              (cljr--post-command-message "Required %s" libspec))))))))
+          (cljr--insert-require-libspec (format "[%s :as %s]" long short)))))))
 
 (defun cljr--in-namespace-declaration-p (s)
   (save-excursion
