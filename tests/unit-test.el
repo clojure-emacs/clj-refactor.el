@@ -223,3 +223,39 @@
     (spy-on 'cljr--list-namespace-aliases :and-return-value '())
     (let ((cljr-magic-require-namespaces '()))
       (expect (cljr--magic-require-candidates "io") :to-equal '()))))
+
+(describe "cljr--alias-completion-table"
+  (it "generates prompt table from candidates"
+    (let ((table (cljr--alias-completion-table '((a b.a (:clj))
+                                                 (b b.b ()))))
+          (expected (let ((table (make-hash-table :test 'equal)))
+                      (puthash "[b.a :as a] (:clj)" '(a b.a (:clj)) table)
+                      (puthash "[b.b :as b]" '(b b.b ()) table)
+                      table)))
+      (expect (hash-table-keys table) :to-have-same-items-as (hash-table-keys expected))
+      (expect (hash-table-values table) :to-have-same-items-as (hash-table-values expected)))))
+
+(describe "cljr--magic-prompt-or-select-namespace"
+  (it "prompts user for namespace selection"
+    (spy-on 'completing-read :and-return-value "[b.a :as a] (:clj)")
+    (expect (cljr--magic-prompt-or-select-namespace '((a b.a (:clj))
+                                                      (b b.b (:clj))))
+            :to-equal '(a b.a (:clj))))
+
+  (it "returns nil if no selection"
+    (spy-on 'completing-read :and-return-value "")
+    (expect (cljr--magic-prompt-or-select-namespace
+             '((a b.a (:clj))
+               (b b.b (:clj))))
+            :to-be nil))
+
+  (it "short-circuits if only one candidate matches"
+    (expect 'completing-read :to-have-been-called-times 0)
+    (expect (cljr--magic-prompt-or-select-namespace '((a b.a (:clj))))
+            :to-equal '(a b.a (:clj))))
+
+  (it "prompts anyway if `cljr-magic-requires' is `:prompt'"
+    (spy-on 'completing-read :and-return-value "[b.a :as a] (:clj)")
+    (let ((cljr-magic-requires :prompt))
+      (expect (cljr--magic-prompt-or-select-namespace '((a b.a (:clj))))
+              :to-equal '(a b.a (:clj))))))

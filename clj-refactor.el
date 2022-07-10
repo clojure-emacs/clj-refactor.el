@@ -2005,6 +2005,40 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
       (when-let (namespace (cljr--aget cljr-magic-require-namespaces alias))
         (list (list (intern alias) (intern namespace) '()))))))
 
+(defun cljr--alias-completion-table (candidates)
+  "Generate a completion table from a list of alias,namespace,contexts.
+
+The key of the table will be presented to the user by
+`completing-read', the value is the intended selection value."
+  (let ((completions (make-hash-table :test 'equal)))
+    (dolist (elt candidates)
+      (cl-destructuring-bind (alias-name alias-require lang-contexts) elt
+        (puthash (if lang-contexts
+                     (format "[%s :as %s] (%s)"
+                             (symbol-name alias-require)
+                             (symbol-name alias-name)
+                             (string-join (seq-map #'symbol-name lang-contexts) ","))
+                   (format "[%s :as %s]"
+                           (symbol-name alias-require)
+                           (symbol-name alias-name)))
+                 (list alias-name alias-require lang-contexts)
+                 completions)))
+    completions))
+
+(defun cljr--magic-prompt-or-select-namespace (candidates)
+  "Prompts for namespace selection or returns only candidate.
+
+This will auto-select the only candidate if `cljr-magic-requires'
+is not set to `:prompt'."
+  (cond
+   ((or (> (length candidates) 1)
+        (eq :prompt cljr-magic-requires))
+    (let* ((completions (cljr--alias-completion-table candidates))
+           (ns-require (completing-read "Add require: " completions)))
+      (gethash ns-require completions)))
+   ((= (length candidates) 1)
+    (cl-first candidates))))
+
 (defun cljr--get-aliases-from-middleware ()
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
     (if (cljr--clj-context-p)
