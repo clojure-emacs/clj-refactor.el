@@ -1984,6 +1984,27 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
                 (seq-reverse alias-list)
                 nil)))))
 
+(defun cljr--magic-require-candidates (alias)
+  "Generate candidates requires based on the given `alias'.
+
+  Constructs a list of alias, namespace, language-contexts
+  triplets from either the middleware or
+  `cljr-magic-require-namespaces'.
+
+  Preference for namespaces candidates with an exact alias match
+  with a fallback to use aliases from
+  `cljr-magic-require-namespaces'."
+  (if-let ((candidates
+            (seq-filter (lambda (elt) (equal (intern alias) (car elt)))
+                        (cljr--list-namespace-aliases))))
+      candidates
+    (when (and cljr-magic-require-namespaces ; a regex against "" always triggers
+               (string-match-p (cljr--magic-requires-re) alias))
+      ;; This when-let might seem unnecessary but the regexp match
+      ;; isn't perfect.
+      (when-let (namespace (cljr--aget cljr-magic-require-namespaces alias))
+        (list (list (intern alias) (intern namespace) '()))))))
+
 (defun cljr--get-aliases-from-middleware ()
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
     (if (cljr--clj-context-p)

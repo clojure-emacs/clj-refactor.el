@@ -185,3 +185,41 @@
               (set clojure.set (:clj :cljs))
               (sut beta (:cljs))
               (sut shared (:clj :cljs))))))
+
+(describe "cljr--magic-require-candidates"
+  (it "returns an empty list if no matching aliases"
+    (spy-on 'cljr--list-namespace-aliases
+            :and-return-value '((set clojure.set '(:clj :cljs))))
+    (let ((cljr-magic-require-namespaces '(("set" . "clojure.set"))))
+      (expect (cljr--magic-require-candidates "alias") :to-equal '())))
+
+  (it "generates candidates from middleware that match"
+    (spy-on 'cljr--list-namespace-aliases :and-return-value
+            '((gl geometry.line '(:clj :cljs))
+              (gl webgl.core '(:cljs))
+              (set clojure.set (:clj :cljs))
+              (t clojure.test (:clj))
+              (t cljs.test (:cljs))))
+    ;; single alias to namespace mapping
+    (expect (cljr--magic-require-candidates "set")
+            :to-equal '((set clojure.set (:clj :cljs))))
+    ;; same alias name is re-used across namespaces with different behavior
+    (expect (cljr--magic-require-candidates "gl")
+            :to-equal '((gl geometry.line '(:clj :cljs))
+                        (gl webgl.core '(:cljs))))
+    ;; same alias is re-used and a *possible* candidate for reader conditional
+    (expect (cljr--magic-require-candidates "t")
+            :to-equal '((t clojure.test (:clj))
+                        (t cljs.test (:cljs)))))
+
+  (it "fallsback to `cljr-magic-require-namspaces' if middleware does not match."
+    (spy-on 'cljr--list-namespace-aliases
+            :and-return-value '((set clojure.set '(:clj))))
+    (let ((cljr-magic-require-namespaces '(("io" . "clojure.java.io"))))
+      (expect (cljr--magic-require-candidates "io")
+              :to-equal '((io clojure.java.io ())))))
+
+  (it "returns an empty list if neither match"
+    (spy-on 'cljr--list-namespace-aliases :and-return-value '())
+    (let ((cljr-magic-require-namespaces '()))
+      (expect (cljr--magic-require-candidates "io") :to-equal '()))))
