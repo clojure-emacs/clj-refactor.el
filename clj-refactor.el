@@ -1957,6 +1957,33 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
     (cljr--call-middleware-sync "namespace-aliases")
     parseedn-read-str))
 
+(defun cljr--list-namespace-aliases ()
+  "Calculate a list of alias, namespace, lang-contexts from middleware."
+  (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
+    (let ((alias-list ; list of all alias, require, lang-context
+           (cl-loop for lang-context being the hash-keys of aliases
+                    using (hash-values alias-vals)
+                    append
+                    (cl-loop for alias-name being the hash-keys of alias-vals
+                             using (hash-values alias-requires)
+                             append
+                             (cl-loop for alias-require being the elements of alias-requires
+                                      collect (list alias-name alias-require lang-context))))))
+      ;; Collapse from alias-list into a unique list of
+      ;; alias,require,lang-context(s).
+      (seq-map (lambda (elt) (append (car elt) (cdr elt)))
+               (seq-reduce
+                (lambda (acc elt)
+                  (let* ((key (seq-take elt 2))
+                         (lang-context (last elt))
+                         (cell (assoc key acc)))
+                    (if cell
+                        (setf (cadr cell) (cons (car lang-context) (cadr cell)))
+                      (push (list key lang-context) acc))
+                    acc))
+                (seq-reverse alias-list)
+                nil)))))
+
 (defun cljr--get-aliases-from-middleware ()
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
     (if (cljr--clj-context-p)
