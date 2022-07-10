@@ -259,3 +259,49 @@
     (let ((cljr-magic-requires :prompt))
       (expect (cljr--magic-prompt-or-select-namespace '((a b.a (:clj))))
               :to-equal '(a b.a (:clj))))))
+
+(describe "cljr-slash"
+  (describe "with prompts including context"
+    (before-each (setq cljr-magic-require-prompts-includes-context t))
+    (after-each (setq cljr-magic-require-prompts-includes-context nil))
+    (it "prompts user for require and adds libspec"
+      (spy-on 'cljr--call-middleware-for-namespace-aliases
+              :and-return-value
+              (parseedn-read-str "{:clj {t (clojure.test)} :cljs {t (cljs.test)}}"))
+      (spy-on 'completing-read :and-return-value "[cljs.test :as t] (:cljs)")
+      (let ((clj-buffer
+             (cljr--with-clojure-temp-file "foo.cljc"
+               (insert "(ns foo)\n")
+               (insert "t")
+               (cljr-slash)
+               (buffer-string))))
+        (expect clj-buffer
+                :to-equal "(ns foo\n  (:require [cljs.test :as t]))\nt/")))
+
+    (it "inserts matching libspec without prompting if only a single matching candidate"
+      (spy-on 'cljr--call-middleware-for-namespace-aliases
+              :and-return-value
+              (parseedn-read-str "{:clj {set (clojure.set)} :cljs {set (clojure.set)}}"))
+      (expect 'completing-read :to-have-been-called-times 0)
+      (let ((clj-buffer
+             (cljr--with-clojure-temp-file "foo.cljc"
+               (insert "(ns foo)\n")
+               (insert "set")
+               (cljr-slash)
+               (buffer-string))))
+        (expect clj-buffer
+                :to-equal "(ns foo\n  (:require [clojure.set :as set]))\nset/")))
+
+    (it "only adds / if unknown alias"
+      (spy-on 'cljr--call-middleware-for-namespace-aliases
+              :and-return-value
+              (parseedn-read-str "{}"))
+      (expect 'completing-read :to-have-been-called-times 0)
+      (let ((clj-buffer
+             (cljr--with-clojure-temp-file "foo.cljc"
+               (insert "(ns foo)\n")
+               (insert "bar")
+               (cljr-slash)
+               (buffer-string))))
+        (expect clj-buffer
+                :to-equal "(ns foo)\nbar/")))))
