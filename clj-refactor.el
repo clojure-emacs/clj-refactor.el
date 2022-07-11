@@ -2152,10 +2152,8 @@ will add the corresponding require statement to the ns form."
     (if cljr-magic-require-prompts-includes-context
         (when-let (selection (cljr--magic-prompt-or-select-namespace
                               (cljr--magic-require-candidates alias-ref)))
-          (let ((alias (symbol-name (cl-first selection)))
-                (namespace (cl-second selection)))
-            (when (and (not (cljr--in-namespace-declaration-p (concat ":as " alias "\b")))
-                       (not (cljr--in-namespace-declaration-p (concat ":as-alias " alias "\b"))))
+          (cl-destructuring-bind (alias namespace _) selection
+            (unless (cljr--resolve-alias (symbol-name alias))
               (cljr--insert-require-libspec (format "[%s :as %s]" namespace alias)))))
       (when-let (aliases (cljr--magic-requires-lookup-alias alias-ref))
         (let ((short (cl-first aliases))

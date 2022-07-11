@@ -260,6 +260,24 @@
       (expect (cljr--magic-prompt-or-select-namespace '((a b.a (:clj))))
               :to-equal '(a b.a (:clj))))))
 
+(defun cljr--test-resolve (alias)
+  (cljr--with-clojure-temp-file "foo.clj"
+    (insert "(ns foo (:require [a.a :as a] [a.b :as-alias b] [a.b.c :as b.c]))")
+    (cljr--resolve-alias alias)))
+
+(describe "cljr--resolve-alias"
+  (it "returns nil on no matching alias"
+    (expect (cljr--test-resolve "missing") :to-be nil))
+
+  (it "finds alias :as `a'"
+    (expect (cljr--test-resolve "a") :to-equal "a.a"))
+
+  (it "finds alias :as-alias `b'"
+    (expect (cljr--test-resolve "b") :to-equal "a.b"))
+
+  (it "finds dotted alias `b.c'"
+    (expect (cljr--test-resolve "b.c") :to-equal "a.b.c")))
+
 (describe "cljr-slash"
   (describe "with prompts including context"
     (before-each (setq cljr-magic-require-prompts-includes-context t))
