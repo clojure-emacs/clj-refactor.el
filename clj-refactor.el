@@ -2021,7 +2021,7 @@ The key of the table will be presented to the user by
 `completing-read', the value is the intended selection value."
   (let ((completions (make-hash-table :test 'equal)))
     (dolist (elt candidates)
-      (cl-destructuring-bind (alias-name alias-require lang-contexts) elt
+      (seq-let (alias-name alias-require lang-contexts) elt
         (puthash (if lang-contexts
                      (format "[%s :as %s] (%s)"
                              (symbol-name alias-require)
@@ -2153,7 +2153,7 @@ will add the corresponding require statement to the ns form."
     (if cljr-magic-require-prompts-includes-context
         (when-let (selection (cljr--magic-prompt-or-select-namespace
                               (cljr--magic-require-candidates alias-ref)))
-          (cl-destructuring-bind (alias namespace _) selection
+          (seq-let (alias namespace _) selection
             (unless (cljr--resolve-alias (symbol-name alias))
               (cljr--insert-require-libspec (format "[%s :as %s]" namespace alias)))))
       (when-let (aliases (cljr--magic-requires-lookup-alias alias-ref))
