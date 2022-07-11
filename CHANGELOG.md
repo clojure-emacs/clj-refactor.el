@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Improve `cljr-slash` for cljs and cljc files when `cljr-magic-require-prompts-include-context` is enabled [#525](https://github.com/clojure-emacs/clj-refactor.el/pull/525).
+
 ## 3.5.4
 
 * [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.3/CHANGELOG.md#353).
