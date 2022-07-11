@@ -39,24 +39,36 @@
             [com.b :as b]))
 ")))
 
+(defun cljr--alias-here (content)
+  (with-temp-buffer
+    (insert content)
+    (cljr--ns-alias-at-point)))
+
 (describe "cljr--ns-alias-at-point"
   (it "returns the short alias before the /"
-    (expect (with-temp-buffer
-              (insert "aba/")
-              (cljr--ns-alias-at-point))
+    (expect (cljr--alias-here "aba/")
             :to-equal "aba"))
 
   (it "removes namespace keyword ::"
-    (expect (with-temp-buffer
-              (insert "::ns-name/")
-              (cljr--ns-alias-at-point))
+    (expect (cljr--alias-here "::ns-name/")
             :to-equal "ns-name"))
 
   (it "removes deref operator"
-    (expect (with-temp-buffer
-              (insert "@atom/")
-              (cljr--ns-alias-at-point))
-            :to-equal "atom")))
+    (expect (cljr--alias-here "@atom/")
+            :to-equal "atom"))
+
+  ;; FIXME: https://github.com/clojure-emacs/clj-refactor.el/issues/524
+  (xit "identifies dotted namespace aliases"
+    (expect (cljr--alias-here "clojure.set/")
+            :to-equal "clojure.set"))
+
+  (xit "removes sharpquote"
+    (expect (cljr--alias-here "#'alias/")
+            :to-equal "alias"))
+
+  (xit "removes quasiquote"
+    (expect (cljr--alias-here "`alias/")
+            :to-equal "alias")))
 
 (describe "cljr--unresolved-alias-ref"
   (it "returns unresolved alias reference"
