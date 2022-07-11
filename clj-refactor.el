@@ -36,6 +36,7 @@
 (require 'yasnippet)
 (require 'paredit)
 (require 'multiple-cursors-core)
+(require 'cl-macs)
 (require 'clojure-mode)
 (require 'cider)
 (require 'parseedn)
