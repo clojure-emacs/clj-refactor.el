@@ -173,18 +173,18 @@
 (describe "cljr--list-namespace-aliases"
   (it "reduces to a unique list from middleware"
     (spy-on 'cljr--call-middleware-for-namespace-aliases
-             :and-return-value
-             (parseedn-read-str
-              "{:clj  {t (clojure.test) set (clojure.set) sut (alpha shared)}
+            :and-return-value
+            (parseedn-read-str
+             "{:clj  {t (clojure.test) set (clojure.set) sut (alpha shared)}
                :cljs {t (cljs.test) set (clojure.set) sut (beta shared)}}"))
     (expect (cljr--list-namespace-aliases)
             :to-equal
-            '((t clojure.test (:clj))
-              (sut alpha (:clj))
+            '((sut beta (:cljs))
               (t cljs.test (:cljs))
-              (set clojure.set (:clj :cljs))
-              (sut beta (:cljs))
-              (sut shared (:clj :cljs))))))
+              (sut alpha (:clj))
+              (sut shared (:cljs :clj))
+              (set clojure.set (:cljs :clj))
+              (t clojure.test (:clj))))))
 
 (describe "cljr--magic-require-candidates"
   (it "returns an empty list if no matching aliases"

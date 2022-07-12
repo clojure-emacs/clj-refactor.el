@@ -1970,14 +1970,15 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
   "Calculate a list of alias, namespace, lang-contexts from middleware."
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
     (let ((alias-list ; list of all alias, require, lang-context
-           (cl-loop for lang-context being the hash-keys of aliases
-                    using (hash-values alias-vals)
-                    append
-                    (cl-loop for alias-name being the hash-keys of alias-vals
-                             using (hash-values alias-requires)
-                             append
-                             (cl-loop for alias-require being the elements of alias-requires
-                                      collect (list alias-name alias-require lang-context))))))
+           (seq-mapcat
+            (lambda (lang-context)
+              (seq-mapcat
+               (lambda (alias)
+                 (seq-map (lambda (namespace)
+                            (list alias namespace lang-context))
+                          (gethash alias (gethash lang-context aliases))))
+               (hash-table-keys (gethash lang-context aliases))))
+            (hash-table-keys aliases))))
       ;; Collapse from alias-list into a unique list of
       ;; alias,require,lang-context(s).
       (seq-map (lambda (elt) (append (car elt) (cdr elt)))
