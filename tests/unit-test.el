@@ -41,32 +41,69 @@
 
 (defun cljr--alias-here (content)
   (with-temp-buffer
+    (clojure-mode) ;; activate clojure syntax table
     (insert content)
     (cljr--ns-alias-at-point)))
 
+;; https://clojure.org/reference/reader#_reader_forms
 (describe "cljr--ns-alias-at-point"
   (it "returns the short alias before the /"
     (expect (cljr--alias-here "aba/")
             :to-equal "aba"))
 
-  (it "removes namespace keyword ::"
+  (it "does not include boundaries"
+    (expect (cljr--alias-here " alias/")
+            :to-equal "alias")
+    (expect (cljr--alias-here "(alias/")
+            :to-equal "alias")
+    (expect (cljr--alias-here ",alias/")
+            :to-equal "alias"))
+
+  (it "identifies dotted namespace aliases"
+    (expect (cljr--alias-here "a.b.c/")
+            :to-equal "a.b.c"))
+
+  (it "removes prefix :: (namespaced keyword)"
     (expect (cljr--alias-here "::ns-name/")
             :to-equal "ns-name"))
+
+  (it "includes question-mark"
+    (expect (cljr--alias-here "ns-name?/")
+            :to-equal "ns-name?")
+    (expect (cljr--alias-here "ns?name/")
+            :to-equal "ns?name")
+    (expect (cljr--alias-here "?ns-name/")
+            :to-equal "?ns-name"))
+
+  (it "removes prefix : (keyword)"
+    (expect (cljr--alias-here ":ns-name/")
+            :to-equal "ns-name"))
+
+  (it "allows infix :"
+    (expect (cljr--alias-here "foo:bar/")
+            :to-equal "foo:bar"))
+
+  (it "allows infix $"
+    (expect (cljr--alias-here "foo$bar/")
+            :to-equal "foo$bar"))
 
   (it "removes deref operator"
     (expect (cljr--alias-here "@atom/")
             :to-equal "atom"))
 
-  ;; FIXME: https://github.com/clojure-emacs/clj-refactor.el/issues/524
-  (xit "identifies dotted namespace aliases"
-    (expect (cljr--alias-here "clojure.set/")
-            :to-equal "clojure.set"))
+  (it "removes prefix quote"
+    (expect (cljr--alias-here "'name-bar.set/")
+            :to-equal "name-bar.set"))
 
-  (xit "removes sharpquote"
+  (it "allows infix quote"
+    (expect (cljr--alias-here "tl'an/")
+            :to-equal "tl'an"))
+
+  (it "removes sharpquote"
     (expect (cljr--alias-here "#'alias/")
             :to-equal "alias"))
 
-  (xit "removes quasiquote"
+  (it "removes quasiquote"
     (expect (cljr--alias-here "`alias/")
             :to-equal "alias")))
 
