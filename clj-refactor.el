@@ -1969,15 +1969,14 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
 
 (defun cljr--ns-alias-at-point ()
   "Returns the (alias)/ just prior to the point excluding the trailing slash."
-  (thread-last (buffer-substring-no-properties
-                (cljr--point-after
-                 '(skip-syntax-backward "w_"))  ;; word or symbol constituent
-                (1- (point)))
-               (string-remove-prefix "`")
-               (string-remove-prefix "#'")
-               (string-remove-prefix "::")
-               (string-remove-prefix ":")
-               (string-remove-prefix "'")))
+  (buffer-substring-no-properties
+   (cljr--point-after
+    ;; word or symbol constituent
+    '(skip-syntax-backward "w_")
+    ;; ignore prefix digits, #', ', `, :, and ::, that are not part of the
+    ;; symbol, and can occur in various orderings.
+    '(re-search-forward "^\[0-9`':#\]*" nil t))
+   (1- (point))))
 
 (defun cljr--magic-requires-lookup-alias (short)
   "Generate a mapping from alias to candidate namespaces.

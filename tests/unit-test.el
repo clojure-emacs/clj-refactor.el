@@ -105,6 +105,20 @@
 
   (it "removes quasiquote"
     (expect (cljr--alias-here "`alias/")
+            :to-equal "alias"))
+
+  (it "ignores prefix digits"
+    (expect (cljr--alias-here "0alias/")
+            :to-equal "alias")
+    (expect (cljr--alias-here "01alias/")
+            :to-equal "alias"))
+
+  (it "ignores multiple prefixes"
+    (expect (cljr--alias-here "'#alias/")
+            :to-equal "alias")
+    (expect (cljr--alias-here "'#0alias/")
+            :to-equal "alias")
+    (expect (cljr--alias-here "':alias/")
             :to-equal "alias")))
 
 (describe "cljr--unresolved-alias-ref"
