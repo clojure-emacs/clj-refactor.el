@@ -1975,7 +1975,7 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
     '(skip-syntax-backward "w_")
     ;; ignore prefix digits, #', ', `, :, and ::, that are not part of the
     ;; symbol, and can occur in various orderings.
-    '(re-search-forward "^\[0-9`':#\]*" nil t))
+    '(re-search-forward "[0-9`':#]*" nil t))
    (1- (point))))
 
 (defun cljr--magic-requires-lookup-alias (short)
