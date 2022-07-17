@@ -65,7 +65,9 @@
 
   (it "removes prefix :: (namespaced keyword)"
     (expect (cljr--alias-here "::ns-name/")
-            :to-equal "ns-name"))
+            :to-equal "ns-name")
+    (expect (cljr--alias-here "(::util/")
+            :to-equal "util"))
 
   (it "includes question-mark"
     (expect (cljr--alias-here "ns-name?/")
@@ -77,7 +79,9 @@
 
   (it "removes prefix : (keyword)"
     (expect (cljr--alias-here ":ns-name/")
-            :to-equal "ns-name"))
+            :to-equal "ns-name")
+    (expect (cljr--alias-here "(:alias/")
+            :to-equal "alias"))
 
   (it "allows infix :"
     (expect (cljr--alias-here "foo:bar/")
@@ -111,7 +115,15 @@
     (expect (cljr--alias-here "0alias/")
             :to-equal "alias")
     (expect (cljr--alias-here "01alias/")
+            :to-equal "alias")
+    (expect (cljr--alias-here "{01alias/")
             :to-equal "alias"))
+
+  (it "allows internal & suffix digits"
+    (expect (cljr--alias-here "alias0/")
+            :to-equal "alias0")
+    (expect (cljr--alias-here "ali0as/")
+            :to-equal "ali0as"))
 
   (it "ignores multiple prefixes"
     (expect (cljr--alias-here "'#alias/")
@@ -119,6 +131,12 @@
     (expect (cljr--alias-here "'#0alias/")
             :to-equal "alias")
     (expect (cljr--alias-here "':alias/")
+            :to-equal "alias")
+    (expect (cljr--alias-here "#':alias/")
+            :to-equal "alias")
+    (expect (cljr--alias-here "(#':alias/")
+            :to-equal "alias")
+    (expect (cljr--alias-here "([#'::alias/")
             :to-equal "alias")))
 
 (describe "cljr--unresolved-alias-ref"
