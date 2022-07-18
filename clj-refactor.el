@@ -1979,20 +1979,32 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
                           (gethash alias (gethash lang-context aliases))))
                (hash-table-keys (gethash lang-context aliases))))
             (hash-table-keys aliases))))
-      ;; Collapse from alias-list into a unique list of
-      ;; alias,require,lang-context(s).
-      (seq-map (lambda (elt) (append (car elt) (cdr elt)))
-               (seq-reduce
-                (lambda (acc elt)
-                  (let* ((key (seq-take elt 2))
-                         (lang-context (last elt))
-                         (cell (assoc key acc)))
-                    (if cell
-                        (setf (cadr cell) (cons (car lang-context) (cadr cell)))
-                      (push (list key lang-context) acc))
-                    acc))
-                (seq-reverse alias-list)
-                nil)))))
+      (thread-last
+        ;; Collapse from alias-list into an alist of
+        ;; '(((alias namespace) (language-contexts))).
+        (seq-reduce
+         (lambda (acc elt)
+           (let* ((key (seq-take elt 2))
+                  (lang-context (last elt))
+                  (cell (assoc key acc)))
+             (if cell
+                 (setf (cadr cell) (cons (car lang-context) (cadr cell)))
+               (push (list key lang-context) acc))
+             acc))
+         alias-list nil)
+        ;; Flatten each alist entry from '((alias name) (:cljs :clj)) to
+        ;; '(alias name (:clj :cljs))
+        (seq-map (lambda (elt)
+                   (append (car elt)
+                           (list (seq-sort-by 'symbol-name 'string-lessp (cadr elt))))))
+        ;; Ensure stable namespace ordering for tests
+        (seq-sort (lambda (a b)
+                    (let ((alias-a (symbol-name (car a)))
+                          (alias-b (symbol-name (car b))))
+                      (or (string-lessp alias-a alias-b)
+                          (and (string-equal alias-a alias-b)
+                               (string-lessp (symbol-name (cadr a))
+                                             (symbol-name (cadr b))))))))))))
 
 (defun cljr--magic-require-candidates (alias)
   "Generate candidates requires based on the given `alias'.

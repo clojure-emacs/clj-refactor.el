@@ -179,11 +179,11 @@
                :cljs {t (cljs.test) set (clojure.set) sut (beta shared)}}"))
     (expect (cljr--list-namespace-aliases)
             :to-equal
-            '((sut beta (:cljs))
-              (t cljs.test (:cljs))
+            '((set clojure.set (:clj :cljs))
               (sut alpha (:clj))
-              (sut shared (:cljs :clj))
-              (set clojure.set (:cljs :clj))
+              (sut beta (:cljs))
+              (sut shared (:clj :cljs))
+              (t cljs.test (:cljs))
               (t clojure.test (:clj))))))
 
 (describe "cljr--magic-require-candidates"
