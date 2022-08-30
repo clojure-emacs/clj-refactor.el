@@ -1957,6 +1957,31 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
     (cljr--call-middleware-sync "namespace-aliases")
     parseedn-read-str))
 
+(defun cljr--call-middleware-suggest-libspec (alias-ref language-context)
+  "Suggest libspec entries for an `alias-ref' in a `language-context'.
+
+Returns a candidate list of libspec entry strings. `alias-ref' is
+a string representing a namespace alias. `language-context' is a
+2 element list representing the language context of the buffer,
+followed by the language context at the current point. Assume
+same context as buffer if context at current point is nil.
+
+Passes through the custom `cljr-magic-require-namespaces' so that
+users can specify default recommended alias prefixes that may not
+appear in the project yet."
+  (seq-let (buffer-context point-context) language-context
+    (thread-first
+      "cljr-suggest-libspecs"
+      cljr--ensure-op-supported
+      (cljr--create-msg "lib-prefix" alias-ref
+                        "language-context" buffer-context
+                        "buffer-language-context" buffer-context
+                        "input-language-context" (or point-context buffer-context)
+                        "preferred-aliases" (prin1-to-string cljr-magic-require-namespaces))
+      (cljr--call-middleware-sync "suggestions")
+      parseedn-read-str
+      (seq-into 'list))))
+
 (defun cljr--get-aliases-from-middleware ()
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
     (if (cljr--clj-context-p)
