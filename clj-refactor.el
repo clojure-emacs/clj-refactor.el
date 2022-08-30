@@ -1982,6 +1982,25 @@ appear in the project yet."
       parseedn-read-str
       (seq-into 'list))))
 
+(defun cljr--language-context-at-point ()
+  "Detects the current language-context at a given point.
+
+Returns a tuple, the first value represents the language context
+of the file, the second represents the language context at the
+current point if it is within a reader conditional. If either
+value is unknown, return nil."
+  (list (cond ((cljr--cljc-file-p)
+               "cljc")
+              ((cljr--cljs-file-p)
+               "cljs")
+              ((cljr--clj-file-p)
+               "clj"))
+        (when (cljr--point-in-reader-conditional-p)
+          (cond ((cljr--point-in-reader-conditional-branch-p :clj)
+                 "clj")
+                ((cljr--point-in-reader-conditional-branch-p :cljs)
+                 "cljs")))))
+
 (defun cljr--get-aliases-from-middleware ()
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
     (if (cljr--clj-context-p)

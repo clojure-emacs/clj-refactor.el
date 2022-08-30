@@ -169,3 +169,42 @@
       (insert "(ns foo)")
       (expect (cljr--unresolved-alias-ref "js")
               :to-equal "js"))))
+
+(defmacro with-point-at (text &rest body)
+  (declare (indent 1))
+  `(progn (insert ,text)
+          (goto-char (point-min))
+          (re-search-forward "|")
+          (delete-char -1)
+          ,@body))
+
+(describe "cljr--language-context-at-point"
+  (it "identifies a clj file"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo)")
+      (expect (cljr--language-context-at-point)
+              :to-equal '("clj" nil))))
+
+  (it "identifies a cljs file"
+    (cljr--with-clojure-temp-file "foo.cljs"
+      (insert "(ns foo)")
+      (expect (cljr--language-context-at-point)
+              :to-equal '("cljs" nil))))
+
+  (it "identifies a cljc file"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (insert "(ns foo)")
+      (expect (cljr--language-context-at-point)
+              :to-equal '("cljc" nil))))
+
+  (it "identifies a cljc file with a cljs context"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:cljs (Math/log|))"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "identifies a cljc file with a clj context"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:clj (Math/log|))"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "clj"))))))
