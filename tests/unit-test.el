@@ -208,3 +208,65 @@
       (with-point-at "(ns foo) #?(:clj (Math/log|))"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "clj"))))))
+
+(describe "cljr--prompt-or-select-libspec"
+  (it "prompts user for namespace selection"
+    (spy-on 'completing-read :and-return-value "[a.a :as a]")
+    (expect (cljr--prompt-or-select-libspec '("[a.a :as a]"
+                                              "[a.b :as b]"))
+            :to-equal "[a.a :as a]"))
+
+  (it "returns user content from prompt regardless of candidates"
+    (spy-on 'completing-read :and-return-value "[alpha :as a]")
+    (expect (cljr--prompt-or-select-libspec
+             '("[a.a :as a]"
+               "[a.b :as b]"))
+            :to-equal "[alpha :as a]"))
+
+  (it "short-circuits if only one candidate matches"
+    (expect 'completing-read :to-have-been-called-times 0)
+    (expect (cljr--prompt-or-select-libspec '("[a.a :as a]"))
+            :to-equal "[a.a :as a]"))
+
+  (it "prompts anyway if `cljr-magic-requires' is `:prompt'"
+    (spy-on 'completing-read :and-return-value "[a.a :as a]")
+    (let ((cljr-magic-requires :prompt))
+      (expect (cljr--prompt-or-select-libspec '("[a.a :as a]"))
+              :to-equal "[a.a :as a]"))))
+
+(describe "cljr-slash"
+  (before-each (setq cljr-slash-uses-suggest-libspec t))
+  (after-each (setq cljr-slash-uses-suggest-libspec nil))
+  (it "inserts single selection from suggest-libspec"
+    (spy-on 'cljr--call-middleware-suggest-libspec
+            :and-return-value (parseedn-read-str "[\"[bar.alias :as alias]\"]"))
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo)\nalias|"
+        (cljr-slash))
+      (expect (buffer-string) :to-equal "(ns foo
+  (:require [bar.alias :as alias]))
+alias/")))
+
+  (it "prompts user for selection from suggest-libspec"
+    (spy-on 'cljr--call-middleware-suggest-libspec
+            :and-return-value (parseedn-read-str "[\"[bar.example :as ex]\" \"[baz.example :as ex]\"]"))
+    (spy-on 'completing-read
+            :and-return-value "[baz.example :as ex]")
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo)\nex|"
+        (cljr-slash))
+      (expect (buffer-string) :to-equal "(ns foo
+  (:require [baz.example :as ex]))
+ex/")))
+
+  (it "inserts modified user input from completing-read"
+    (spy-on 'cljr--call-middleware-suggest-libspec
+            :and-return-value (parseedn-read-str "[\"[bar.example :as ex]\" \"[baz.example :as ex]\"]"))
+    (spy-on 'completing-read
+            :and-return-value "[baz.example :as ex :refer [a b c] ]")
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo)\nex|"
+        (cljr-slash))
+      (expect (buffer-string) :to-equal "(ns foo
+  (:require [baz.example :as ex :refer [a b c] ]))
+ex/"))))
