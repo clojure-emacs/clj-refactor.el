@@ -141,31 +141,31 @@
 
 (describe "cljr--unresolved-alias-ref"
   (it "returns unresolved alias reference"
-    (expect (cljr--with-clojure-temp-file "foo.clj"
-              (insert "(ns foo)")
-              (cljr--unresolved-alias-ref "ns-name"))
-            :to-equal "ns-name"))
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo)")
+      (expect (cljr--unresolved-alias-ref "ns-name")
+              :to-equal "ns-name")))
 
   (it "returns nil for resolved alias"
-    (expect (cljr--with-clojure-temp-file "foo.clj"
-              (insert "(ns foo (:require [user.ns-name :as ns-name]))")
-              (cljr--unresolved-alias-ref "ns-name"))
-            :to-be nil))
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo (:require [user.ns-name :as ns-name]))")
+      (expect (cljr--unresolved-alias-ref "ns-name")
+              :to-be nil)))
 
   (it "returns nil for js alias in cljs file."
-    (expect (cljr--with-clojure-temp-file "foo.cljs"
-              (insert "(ns foo)")
-              (cljr--unresolved-alias-ref "js"))
-            :to-be nil))
+    (cljr--with-clojure-temp-file "foo.cljs"
+      (insert "(ns foo)")
+      (expect (cljr--unresolved-alias-ref "js")
+              :to-be nil)))
 
   (it "returns js for js alias in clj file."
-    (expect (cljr--with-clojure-temp-file "foo.clj"
-              (insert "(ns foo)")
-              (cljr--unresolved-alias-ref "js"))
-            :to-equal "js"))
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo)")
+      (expect (cljr--unresolved-alias-ref "js")
+              :to-equal "js")))
 
   (it "returns js for js alias in cljc file."
-    (expect (cljr--with-clojure-temp-file "foo.cljc"
-              (insert "(ns foo)")
-              (cljr--unresolved-alias-ref "js"))
-            :to-equal "js")))
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (insert "(ns foo)")
+      (expect (cljr--unresolved-alias-ref "js")
+              :to-equal "js"))))
