@@ -207,7 +207,46 @@
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:clj (Math/log|))"
         (expect (cljr--language-context-at-point)
-                :to-equal '("cljc" "clj"))))))
+                :to-equal '("cljc" "clj")))))
+
+  (it "identifies a nested context with two branches present"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:cljs (Math/log|) :clj 1)"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "identifies a nested context with an alternate branch proceeding"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:clj 1 :cljs (Math/log|))"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  ;; FIXME: the following cases cause emacs to lock up in a loop as as
+  ;; `cljr--point-in-reader-conditional-branch-p' or
+  ;; `cljr--goto-reader-conditional' have infinite loops.
+  (xit "returns nil in an incomplete reader conditional"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(|)"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" nil)))))
+
+  (xit "returns :default context if specified"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:default (Math/sin |))"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "default")))))
+
+  (xit "returns :cljr context if specified"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:bb (Math/sin |))"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljr")))))
+
+  (xit "returns :bb context if specified"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:bb (Math/sin |))"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "bb"))))))
 
 (describe "cljr--prompt-or-select-libspec"
   (it "prompts user for namespace selection"
