@@ -274,14 +274,13 @@
               :to-equal "[a.a :as a]"))))
 
 (describe "cljr-slash"
-  (before-each (setq cljr-slash-uses-suggest-libspec t))
-  (after-each (setq cljr-slash-uses-suggest-libspec nil))
   (it "inserts single selection from suggest-libspec"
     (spy-on 'cljr--call-middleware-suggest-libspec
             :and-return-value (parseedn-read-str "[\"[bar.alias :as alias]\"]"))
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo)\nalias|"
-        (cljr-slash))
+        (let ((cljr-slash-uses-suggest-libspec t))
+          (cljr-slash)))
       (expect (buffer-string) :to-equal "(ns foo
   (:require [bar.alias :as alias]))
 alias/")))
@@ -293,7 +292,8 @@ alias/")))
             :and-return-value "[baz.example :as ex]")
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo)\nex|"
-        (cljr-slash))
+        (let ((cljr-slash-uses-suggest-libspec t))
+          (cljr-slash)))
       (expect (buffer-string) :to-equal "(ns foo
   (:require [baz.example :as ex]))
 ex/")))
@@ -305,7 +305,8 @@ ex/")))
             :and-return-value "[baz.example :as ex :refer [a b c] ]")
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo)\nex|"
-        (cljr-slash))
+        (let ((cljr-slash-uses-suggest-libspec t))
+          (cljr-slash)))
       (expect (buffer-string) :to-equal "(ns foo
   (:require [baz.example :as ex :refer [a b c] ]))
 ex/"))))
