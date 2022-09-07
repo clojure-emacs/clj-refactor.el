@@ -1965,13 +1965,19 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
     parseedn-read-str))
 
 (defun cljr--call-middleware-suggest-libspec (alias-ref language-context)
-  "Suggest libspec entries for an `alias-ref' in a `language-context'.
+  "Suggest namespace require libspecs for an alias.
 
-Returns a candidate list of libspec entry strings. `alias-ref' is
-a string representing a namespace alias. `language-context' is a
-2 element list representing the language context of the buffer,
-followed by the language context at the current point. Assume
-same context as buffer if context at current point is nil.
+Returns a candidate list of libspec entry strings. An alias
+\"set\" might return (\"[clojure.set :as set]\").
+
+`alias-ref' is a string representing a namespace alias entered by
+the user.
+
+`language-context' is a 2 element tuple representing the language
+context of the buffer, and the context of the reader conditional
+where the alias is being used. Assume same context as
+buffer if context at current point is nil. See
+`cljr--language-context-at-point' for details on this tuple.
 
 Passes through the custom `cljr-magic-require-namespaces' so that
 users can specify default recommended alias prefixes that may not
@@ -1994,7 +2000,14 @@ appear in the project yet."
 
 Returns a tuple, the first value represents the language context
 of the file, the second represents the language context at the
-current point if it is within a reader conditional. If a given value is unknown, it will be expressed as nil"
+current point if it is within a reader conditional. If a given
+value is unknown, it will be expressed as nil.
+
+Reader conditionals are forms like #?(:clj (expr)) or
+#?@(:cljs (expr) :default (expr2)) (see
+URL`https://clojure.org/guides/reader_conditionals'). As
+example, `(\"cljc\", \"cljs\")' represents a point in a cljs path
+of a reader conditional inside of a cljc file."
   (list (cond ((cljr--cljc-file-p)
                "cljc")
               ((cljr--cljs-file-p)
