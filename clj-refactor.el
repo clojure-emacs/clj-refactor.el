@@ -2015,11 +2015,14 @@ of a reader conditional inside of a cljc file."
                "cljs")
               ((cljr--clj-file-p)
                "clj"))
-        (when (cljr--point-in-reader-conditional-p)
-          (cond ((cljr--point-in-reader-conditional-branch-p :clj)
-                 "clj")
-                ((cljr--point-in-reader-conditional-branch-p :cljs)
-                 "cljs")))))
+        nil
+        ;; See https://github.com/clojure-emacs/clj-refactor.el/issues/533
+        ;; (when (cljr--point-in-reader-conditional-p)
+        ;;   (cond ((cljr--point-in-reader-conditional-branch-p :clj)
+        ;;          "clj")
+        ;;         ((cljr--point-in-reader-conditional-branch-p :cljs)
+        ;;          "cljs")))
+        ))
 
 (defun cljr--prompt-or-select-libspec (candidates)
   "Prompts for namespace selection or returns only candidate.

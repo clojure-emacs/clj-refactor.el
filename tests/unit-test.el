@@ -197,25 +197,26 @@
       (expect (cljr--language-context-at-point)
               :to-equal '("cljc" nil))))
 
-  (it "identifies a cljc file with a cljs context"
+  ;; Marked as pending per discussion in https://github.com/clojure-emacs/clj-refactor.el/issues/533
+  (xit "identifies a cljc file with a cljs context"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:cljs (Math/log|))"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "cljs")))))
 
-  (it "identifies a cljc file with a clj context"
+  (xit "identifies a cljc file with a clj context"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:clj (Math/log|))"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "clj")))))
 
-  (it "identifies a nested context with two branches present"
+  (xit "identifies a nested context with two branches present"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:cljs (Math/log|) :clj 1)"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "cljs")))))
 
-  (it "identifies a nested context with an alternate branch proceeding"
+  (xit "identifies a nested context with an alternate branch proceeding"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:clj 1 :cljs (Math/log|))"
         (expect (cljr--language-context-at-point)
