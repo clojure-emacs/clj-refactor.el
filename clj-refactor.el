@@ -2134,23 +2134,26 @@ will add the corresponding require statement to the ns form."
                             (clojure-find-ns)
                             (cljr--unresolved-alias-ref (cljr--ns-alias-at-point))))
     (if cljr-slash-uses-suggest-libspec
+        ;; New path creates suggestions from `suggest-libspec' middleware op
         (when-let (libspec
                    (thread-first
                      alias-ref
                      (cljr--call-middleware-suggest-libspec (cljr--language-context-at-point))
                      cljr--prompt-or-select-libspec))
+          ;; only insert a require if a candidate exists and was selected
           (cljr--insert-require-libspec libspec))
-        (when-let (aliases (cljr--magic-requires-lookup-alias alias-ref))
-          (let ((short (cl-first aliases))
-                ;; Ensure it's a list (and not a vector):
-                (candidates (mapcar 'identity (cl-second aliases))))
-            (when-let (long (cljr--prompt-user-for "Require " candidates))
-              (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
-                         (not (cljr--in-namespace-declaration-p (concat ":as-alias " short "\b")))
-                         (or (not (eq :prompt cljr-magic-requires))
-                             (not (> (length candidates) 1)) ; already prompted
-                             (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
-                (cljr--insert-require-libspec (format "[%s :as %s]" long short)))))))))
+      ;; Old path creates suggestions from `namespace-aliases' middleware op
+      (when-let (aliases (cljr--magic-requires-lookup-alias alias-ref))
+        (let ((short (cl-first aliases))
+              ;; Ensure it's a list (and not a vector):
+              (candidates (mapcar 'identity (cl-second aliases))))
+          (when-let (long (cljr--prompt-user-for "Require " candidates))
+            (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
+                       (not (cljr--in-namespace-declaration-p (concat ":as-alias " short "\b")))
+                       (or (not (eq :prompt cljr-magic-requires))
+                           (not (> (length candidates) 1)) ; already prompted
+                           (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
+              (cljr--insert-require-libspec (format "[%s :as %s]" long short)))))))))
 
 (defun cljr--in-namespace-declaration-p (s)
   (save-excursion
