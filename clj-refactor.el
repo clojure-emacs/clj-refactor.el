@@ -1982,7 +1982,8 @@ buffer if context at current point is nil. See
 Passes through the custom `cljr-magic-require-namespaces' so that
 users can specify default recommended alias prefixes that may not
 appear in the project yet."
-  (seq-let (buffer-context point-context) language-context
+  (let ((buffer-context (car language-context))
+        (point-context (cadr language-context)))
     (thread-first
       "cljr-suggest-libspecs"
       cljr--ensure-op-supported
