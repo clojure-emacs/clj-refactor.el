@@ -75,7 +75,7 @@ Any other non-nil value means to add the form without asking."
                  (const :tag "false" nil)))
 
 (defcustom cljr-slash-uses-suggest-libspec nil
-  "If t, `cljr-slash' magic require functionality will use the
+  "If t, `cljr-slash' magic require functionality will use the newer
 `cljr-suggest-libspec' middleware op instead of the
 `namespace-aliases' op."
   :type 'boolean
@@ -1994,8 +1994,7 @@ appear in the project yet."
 
 Returns a tuple, the first value represents the language context
 of the file, the second represents the language context at the
-current point if it is within a reader conditional. If either
-value is unknown, return nil."
+current point if it is within a reader conditional. If a given value is unknown, it will be expressed as nil"
   (list (cond ((cljr--cljc-file-p)
                "cljc")
               ((cljr--cljs-file-p)
