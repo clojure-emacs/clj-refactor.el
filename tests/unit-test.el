@@ -253,25 +253,28 @@
     (spy-on 'completing-read :and-return-value "[a.a :as a]")
     (expect (cljr--prompt-or-select-libspec '("[a.a :as a]"
                                               "[a.b :as b]"))
-            :to-equal "[a.a :as a]"))
+            :to-equal "[a.a :as a]")
+    (expect 'completing-read :to-have-been-called-times 1))
 
   (it "returns user content from prompt regardless of candidates"
     (spy-on 'completing-read :and-return-value "[alpha :as a]")
     (expect (cljr--prompt-or-select-libspec
              '("[a.a :as a]"
                "[a.b :as b]"))
-            :to-equal "[alpha :as a]"))
+            :to-equal "[alpha :as a]")
+    (expect 'completing-read :to-have-been-called-times 1))
 
   (it "short-circuits if only one candidate matches"
-    (expect 'completing-read :to-have-been-called-times 0)
     (expect (cljr--prompt-or-select-libspec '("[a.a :as a]"))
-            :to-equal "[a.a :as a]"))
+            :to-equal "[a.a :as a]")
+    (expect 'completing-read :to-have-been-called-times 0))
 
   (it "prompts anyway if `cljr-magic-requires' is `:prompt'"
     (spy-on 'completing-read :and-return-value "[a.a :as a]")
     (let ((cljr-magic-requires :prompt))
       (expect (cljr--prompt-or-select-libspec '("[a.a :as a]"))
-              :to-equal "[a.a :as a]"))))
+              :to-equal "[a.a :as a]"))
+    (expect 'completing-read :to-have-been-called-times 1)))
 
 (describe "cljr-slash"
   (it "inserts single selection from suggest-libspec"
