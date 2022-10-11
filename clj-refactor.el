@@ -74,6 +74,13 @@ Any other non-nil value means to add the form without asking."
                  (const :tag "prompt" :prompt)
                  (const :tag "false" nil)))
 
+(defcustom cljr-slash-uses-suggest-libspec nil
+  "If t, `cljr-slash' magic require functionality will use the newer
+`cljr-suggest-libspec' middleware op instead of the
+`namespace-aliases' op."
+  :type 'boolean
+  :safe #'booleanp)
+
 (defcustom cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
     ("set"  . "clojure.set")
@@ -1957,6 +1964,77 @@ following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace
     (cljr--call-middleware-sync "namespace-aliases")
     parseedn-read-str))
 
+(defun cljr--call-middleware-suggest-libspec (alias-ref language-context)
+  "Suggest namespace require libspecs for an alias.
+
+Returns a candidate list of libspec entry strings. An alias
+\"set\" might return (\"[clojure.set :as set]\").
+
+`alias-ref' is a string representing a namespace alias entered by
+the user.
+
+`language-context' is a 2 element tuple representing the language
+context of the buffer, and the context of the reader conditional
+where the alias is being used. Assume same context as
+buffer if context at current point is nil. See
+`cljr--language-context-at-point' for details on this tuple.
+
+Passes through the custom `cljr-magic-require-namespaces' so that
+users can specify default recommended alias prefixes that may not
+appear in the project yet."
+  (let ((buffer-context (car language-context))
+        (point-context (cadr language-context)))
+    (thread-first
+      "cljr-suggest-libspecs"
+      cljr--ensure-op-supported
+      (cljr--create-msg "lib-prefix" alias-ref
+                        "language-context" buffer-context
+                        "buffer-language-context" buffer-context
+                        "input-language-context" (or point-context buffer-context)
+                        "preferred-aliases" (prin1-to-string cljr-magic-require-namespaces))
+      (cljr--call-middleware-sync "suggestions")
+      parseedn-read-str
+      (seq-into 'list))))
+
+(defun cljr--language-context-at-point ()
+  "Detects the current language-context at a given point.
+
+Returns a tuple, the first value represents the language context
+of the file, the second represents the language context at the
+current point if it is within a reader conditional. If a given
+value is unknown, it will be expressed as nil.
+
+Reader conditionals are forms like #?(:clj (expr)) or
+#?@(:cljs (expr) :default (expr2)) (see
+URL`https://clojure.org/guides/reader_conditionals'). As
+example, `(\"cljc\", \"cljs\")' represents a point in a cljs path
+of a reader conditional inside of a cljc file."
+  (list (cond ((cljr--cljc-file-p)
+               "cljc")
+              ((cljr--cljs-file-p)
+               "cljs")
+              ((cljr--clj-file-p)
+               "clj"))
+        nil
+        ;; See https://github.com/clojure-emacs/clj-refactor.el/issues/533
+        ;; (when (cljr--point-in-reader-conditional-p)
+        ;;   (cond ((cljr--point-in-reader-conditional-branch-p :clj)
+        ;;          "clj")
+        ;;         ((cljr--point-in-reader-conditional-branch-p :cljs)
+        ;;          "cljs")))
+        ))
+
+(defun cljr--prompt-or-select-libspec (candidates)
+  "Prompts for namespace selection or returns only candidate.
+
+This will auto-select the only candidate if `cljr-magic-requires'
+is not set to `:prompt'."
+  (cond
+   ((or (> (length candidates) 1) (eq :prompt cljr-magic-requires))
+    (completing-read "Add require: " candidates nil))
+   ((= (length candidates) 1)
+    (seq-first candidates))))
+
 (defun cljr--get-aliases-from-middleware ()
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
     (if (cljr--clj-context-p)
@@ -2059,17 +2137,27 @@ will add the corresponding require statement to the ns form."
                             (not (cljr--in-number-p))
                             (clojure-find-ns)
                             (cljr--unresolved-alias-ref (cljr--ns-alias-at-point))))
-    (when-let (aliases (cljr--magic-requires-lookup-alias alias-ref))
-      (let ((short (cl-first aliases))
-            ;; Ensure it's a list (and not a vector):
-            (candidates (mapcar 'identity (cl-second aliases))))
-        (when-let (long (cljr--prompt-user-for "Require " candidates))
-          (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
-                     (not (cljr--in-namespace-declaration-p (concat ":as-alias " short "\b")))
-                     (or (not (eq :prompt cljr-magic-requires))
-                         (not (> (length candidates) 1)) ; already prompted
-                         (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
-            (cljr--insert-require-libspec (format "[%s :as %s]" long short))))))))
+    (if cljr-slash-uses-suggest-libspec
+        ;; New path creates suggestions from `suggest-libspec' middleware op
+        (when-let (libspec
+                   (thread-first
+                     alias-ref
+                     (cljr--call-middleware-suggest-libspec (cljr--language-context-at-point))
+                     cljr--prompt-or-select-libspec))
+          ;; only insert a require if a candidate exists and was selected
+          (cljr--insert-require-libspec libspec))
+      ;; Old path creates suggestions from `namespace-aliases' middleware op
+      (when-let (aliases (cljr--magic-requires-lookup-alias alias-ref))
+        (let ((short (cl-first aliases))
+              ;; Ensure it's a list (and not a vector):
+              (candidates (mapcar 'identity (cl-second aliases))))
+          (when-let (long (cljr--prompt-user-for "Require " candidates))
+            (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
+                       (not (cljr--in-namespace-declaration-p (concat ":as-alias " short "\b")))
+                       (or (not (eq :prompt cljr-magic-requires))
+                           (not (> (length candidates) 1)) ; already prompted
+                           (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
+              (cljr--insert-require-libspec (format "[%s :as %s]" long short)))))))))
 
 (defun cljr--in-namespace-declaration-p (s)
   (save-excursion

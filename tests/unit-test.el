@@ -141,31 +141,176 @@
 
 (describe "cljr--unresolved-alias-ref"
   (it "returns unresolved alias reference"
-    (expect (cljr--with-clojure-temp-file "foo.clj"
-              (insert "(ns foo)")
-              (cljr--unresolved-alias-ref "ns-name"))
-            :to-equal "ns-name"))
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo)")
+      (expect (cljr--unresolved-alias-ref "ns-name")
+              :to-equal "ns-name")))
 
   (it "returns nil for resolved alias"
-    (expect (cljr--with-clojure-temp-file "foo.clj"
-              (insert "(ns foo (:require [user.ns-name :as ns-name]))")
-              (cljr--unresolved-alias-ref "ns-name"))
-            :to-be nil))
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo (:require [user.ns-name :as ns-name]))")
+      (expect (cljr--unresolved-alias-ref "ns-name")
+              :to-be nil)))
 
   (it "returns nil for js alias in cljs file."
-    (expect (cljr--with-clojure-temp-file "foo.cljs"
-              (insert "(ns foo)")
-              (cljr--unresolved-alias-ref "js"))
-            :to-be nil))
+    (cljr--with-clojure-temp-file "foo.cljs"
+      (insert "(ns foo)")
+      (expect (cljr--unresolved-alias-ref "js")
+              :to-be nil)))
 
   (it "returns js for js alias in clj file."
-    (expect (cljr--with-clojure-temp-file "foo.clj"
-              (insert "(ns foo)")
-              (cljr--unresolved-alias-ref "js"))
-            :to-equal "js"))
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo)")
+      (expect (cljr--unresolved-alias-ref "js")
+              :to-equal "js")))
 
   (it "returns js for js alias in cljc file."
-    (expect (cljr--with-clojure-temp-file "foo.cljc"
-              (insert "(ns foo)")
-              (cljr--unresolved-alias-ref "js"))
-            :to-equal "js")))
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (insert "(ns foo)")
+      (expect (cljr--unresolved-alias-ref "js")
+              :to-equal "js"))))
+
+(defmacro with-point-at (text &rest body)
+  (declare (indent 1))
+  `(progn (insert ,text)
+          (goto-char (point-min))
+          (re-search-forward "|")
+          (delete-char -1)
+          ,@body))
+
+(describe "cljr--language-context-at-point"
+  (it "identifies a clj file"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo)")
+      (expect (cljr--language-context-at-point)
+              :to-equal '("clj" nil))))
+
+  (it "identifies a cljs file"
+    (cljr--with-clojure-temp-file "foo.cljs"
+      (insert "(ns foo)")
+      (expect (cljr--language-context-at-point)
+              :to-equal '("cljs" nil))))
+
+  (it "identifies a cljc file"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (insert "(ns foo)")
+      (expect (cljr--language-context-at-point)
+              :to-equal '("cljc" nil))))
+
+  ;; Marked as pending per discussion in https://github.com/clojure-emacs/clj-refactor.el/issues/533
+  (xit "identifies a cljc file with a cljs context"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:cljs (Math/log|))"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (xit "identifies a cljc file with a clj context"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:clj (Math/log|))"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "clj")))))
+
+  (xit "identifies a nested context with two branches present"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:cljs (Math/log|) :clj 1)"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (xit "identifies a nested context with an alternate branch proceeding"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:clj 1 :cljs (Math/log|))"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  ;; FIXME: the following cases cause emacs to lock up in a loop as as
+  ;; `cljr--point-in-reader-conditional-branch-p' or
+  ;; `cljr--goto-reader-conditional' have infinite loops.
+  (xit "returns nil in an incomplete reader conditional"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(|)"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" nil)))))
+
+  (xit "returns :default context if specified"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:default (Math/sin |))"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "default")))))
+
+  (xit "returns :cljr context if specified"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:bb (Math/sin |))"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljr")))))
+
+  (xit "returns :bb context if specified"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:bb (Math/sin |))"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "bb"))))))
+
+(describe "cljr--prompt-or-select-libspec"
+  (it "prompts user for namespace selection"
+    (spy-on 'completing-read :and-return-value "[a.a :as a]")
+    (expect (cljr--prompt-or-select-libspec '("[a.a :as a]"
+                                              "[a.b :as b]"))
+            :to-equal "[a.a :as a]")
+    (expect 'completing-read :to-have-been-called-times 1))
+
+  (it "returns user content from prompt regardless of candidates"
+    (spy-on 'completing-read :and-return-value "[alpha :as a]")
+    (expect (cljr--prompt-or-select-libspec
+             '("[a.a :as a]"
+               "[a.b :as b]"))
+            :to-equal "[alpha :as a]")
+    (expect 'completing-read :to-have-been-called-times 1))
+
+  (it "short-circuits if only one candidate matches"
+    (expect (cljr--prompt-or-select-libspec '("[a.a :as a]"))
+            :to-equal "[a.a :as a]")
+    (expect 'completing-read :to-have-been-called-times 0))
+
+  (it "prompts anyway if `cljr-magic-requires' is `:prompt'"
+    (spy-on 'completing-read :and-return-value "[a.a :as a]")
+    (let ((cljr-magic-requires :prompt))
+      (expect (cljr--prompt-or-select-libspec '("[a.a :as a]"))
+              :to-equal "[a.a :as a]"))
+    (expect 'completing-read :to-have-been-called-times 1)))
+
+(describe "cljr-slash"
+  (it "inserts single selection from suggest-libspec"
+    (spy-on 'cljr--call-middleware-suggest-libspec
+            :and-return-value (parseedn-read-str "[\"[bar.alias :as alias]\"]"))
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo)\nalias|"
+        (let ((cljr-slash-uses-suggest-libspec t))
+          (cljr-slash)))
+      (expect (buffer-string) :to-equal "(ns foo
+  (:require [bar.alias :as alias]))
+alias/")))
+
+  (it "prompts user for selection from suggest-libspec"
+    (spy-on 'cljr--call-middleware-suggest-libspec
+            :and-return-value (parseedn-read-str "[\"[bar.example :as ex]\" \"[baz.example :as ex]\"]"))
+    (spy-on 'completing-read
+            :and-return-value "[baz.example :as ex]")
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo)\nex|"
+        (let ((cljr-slash-uses-suggest-libspec t))
+          (cljr-slash)))
+      (expect (buffer-string) :to-equal "(ns foo
+  (:require [baz.example :as ex]))
+ex/")))
+
+  (it "inserts modified user input from completing-read"
+    (spy-on 'cljr--call-middleware-suggest-libspec
+            :and-return-value (parseedn-read-str "[\"[bar.example :as ex]\" \"[baz.example :as ex]\"]"))
+    (spy-on 'completing-read
+            :and-return-value "[baz.example :as ex :refer [a b c] ]")
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo)\nex|"
+        (let ((cljr-slash-uses-suggest-libspec t))
+          (cljr-slash)))
+      (expect (buffer-string) :to-equal "(ns foo
+  (:require [baz.example :as ex :refer [a b c] ]))
+ex/"))))
