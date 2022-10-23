@@ -2,7 +2,10 @@
 
 ## Unreleased
 
+## 3.6.0
+
 - [#532] Introduce `cljr-slash-uses-suggest-libspec` to use the language context aware `suggest-libspec` middleware for alias to libspec suggestions.
+- [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.6.0/CHANGELOG.md#360).
 
 ## 3.5.6
 
