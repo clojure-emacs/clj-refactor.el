@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- [#537](https://github.com/clojure-emacs/clj-refactor.el/issues/537): Fail early in `cljr-rename-symbol` in case narrowing is in effect.
+
 ## 3.6.1
 
 - Add the [clojure.math namespace](https://clojure.github.io/clojure/clojure.math-api.html) to magic requires (new with Clojure 1.11.0)
