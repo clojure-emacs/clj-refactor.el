@@ -2827,7 +2827,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
   (interactive)
-  (if (buffer-narrowed-p) (error "Cannot rename symbols while narrowing is in effect"))
+  (when (buffer-narrowed-p) (error "Cannot rename symbols while narrowing is in effect"))
   (cljr--ensure-op-supported "find-symbol")
   (when (cljr--asts-y-or-n-p)
     (save-buffer)
