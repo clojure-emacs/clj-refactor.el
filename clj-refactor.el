@@ -83,6 +83,7 @@ Any other non-nil value means to add the form without asking."
 
 (defcustom cljr-magic-require-namespaces
   '(("io"   . "clojure.java.io")
+    ("math" . "clojure.math")
     ("set"  . "clojure.set")
     ("str"  . "clojure.string")
     ("walk" . "clojure.walk")

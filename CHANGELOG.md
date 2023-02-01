@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.6.1
+
+- Add the [clojure.math namespace](https://clojure.github.io/clojure/clojure.math-api.html) to magic requires (new with Clojure 1.11.0)
+
 ## 3.6.0
 
 - [#532] Introduce `cljr-slash-uses-suggest-libspec` to use the language context aware `suggest-libspec` middleware for alias to libspec suggestions.
