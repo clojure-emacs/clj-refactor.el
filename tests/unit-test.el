@@ -197,57 +197,89 @@
       (expect (cljr--language-context-at-point)
               :to-equal '("cljc" nil))))
 
-  ;; Marked as pending per discussion in https://github.com/clojure-emacs/clj-refactor.el/issues/533
-  (xit "identifies a cljc file with a cljs context"
+  (it "identifies a cljc file with a cljs context"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:cljs (Math/log|))"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "cljs")))))
 
-  (xit "identifies a cljc file with a clj context"
+  (it "identifies a cljc file with a clj context"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:clj (Math/log|))"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "clj")))))
 
-  (xit "identifies a nested context with two branches present"
+  (it "identifies a nested context with two branches present"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:cljs (Math/log|) :clj 1)"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "cljs")))))
 
-  (xit "identifies a nested context with an alternate branch proceeding"
+  (it "identifies a nested context with an alternate branch proceeding"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:clj 1 :cljs (Math/log|))"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "cljs")))))
 
-  ;; FIXME: the following cases cause emacs to lock up in a loop as as
-  ;; `cljr--point-in-reader-conditional-branch-p' or
-  ;; `cljr--goto-reader-conditional' have infinite loops.
-  (xit "returns nil in an incomplete reader conditional"
+  (it "identifies a nested context when point is on symbol"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:clj 1 |:cljs 2)"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "identifies a nested context if point is between symbol and form"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:cljs |1)"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "returns nil in an incomplete reader conditional"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(|)"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" nil)))))
 
-  (xit "returns :default context if specified"
+  (it "returns last context in an incomplete reader conditional"
     (cljr--with-clojure-temp-file "foo.cljc"
-      (with-point-at "(ns foo) #?(:default (Math/sin |))"
+      (with-point-at "(ns foo) #?(:cljs |)"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "returns proceeding context if between two contexts"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?@(:cljs 1| :clj [2])"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "returns :default context if specified"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:default [|])"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "default")))))
 
-  (xit "returns :cljr context if specified"
+  (it "returns :cljr context if specified"
     (cljr--with-clojure-temp-file "foo.cljc"
-      (with-point-at "(ns foo) #?(:bb (Math/sin |))"
+      (with-point-at "(ns foo) #?(:cljr (|))"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "cljr")))))
 
-  (xit "returns :bb context if specified"
+  (it "returns :bb context if specified"
     (cljr--with-clojure-temp-file "foo.cljc"
-      (with-point-at "(ns foo) #?(:bb (Math/sin |))"
+      (with-point-at "(ns foo) #?(:bb |)"
         (expect (cljr--language-context-at-point)
-                :to-equal '("cljc" "bb"))))))
+                :to-equal '("cljc" "bb")))))
+
+  (it "returns :cljs context if specified in #?@ conditional"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?@(:cljs [|])"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "returns closest context if in nested conditional"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:default #?(:clj [1|]) :cljs [])"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "clj"))))))
 
 (describe "cljr--prompt-or-select-libspec"
   (it "prompts user for namespace selection"
