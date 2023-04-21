@@ -1973,12 +1973,14 @@ context. Valid outputs include, but are not limited to `:clj',
         (while (and (<= (point) starting-point) (not language))
           (if-let ((current (cider-symbol-at-point)))
               ;; attempt to move forward a language/context pair. Accept if
-              ;; starting point was before next language pair, or if last pair.
-              (when (< starting-point
-                       (condition-case nil
-                           (progn (cider-start-of-next-sexp 2)
-                                  (point)) ; start of next context
-                         (error (1+ starting-point))))
+              ;; starting point was before next language pair, or if last pair,
+              ;; or end of file.
+              (when (or (< starting-point
+                           (condition-case nil
+                               (progn (cider-start-of-next-sexp 2)
+                                      (point)) ; start of next context
+                             (error (1+ starting-point))))
+                        (= (point) (point-max)))
                 (setq language current))
             ;; otherwise move out of bounds of search to exit without language
             (goto-char (1+ starting-point))))
