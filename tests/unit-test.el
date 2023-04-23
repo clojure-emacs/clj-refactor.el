@@ -197,57 +197,139 @@
       (expect (cljr--language-context-at-point)
               :to-equal '("cljc" nil))))
 
-  ;; Marked as pending per discussion in https://github.com/clojure-emacs/clj-refactor.el/issues/533
-  (xit "identifies a cljc file with a cljs context"
+  (it "identifies a cljc file with a cljs context"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:cljs (Math/log|))"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "cljs")))))
 
-  (xit "identifies a cljc file with a clj context"
+  (it "identifies a cljc file with a clj context"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:clj (Math/log|))"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "clj")))))
 
-  (xit "identifies a nested context with two branches present"
+  (it "identifies a nested context with two branches present"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:cljs (Math/log|) :clj 1)"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "cljs")))))
 
-  (xit "identifies a nested context with an alternate branch proceeding"
+  (it "identifies a nested context with an alternate branch preceding"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:clj 1 :cljs (Math/log|))"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "cljs")))))
 
-  ;; FIXME: the following cases cause emacs to lock up in a loop as as
-  ;; `cljr--point-in-reader-conditional-branch-p' or
-  ;; `cljr--goto-reader-conditional' have infinite loops.
-  (xit "returns nil in an incomplete reader conditional"
+  (it "identifies a nested context when point is on symbol"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:clj 1 |:cljs 2)"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "identifies a nested context if point is between symbol and form"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:cljs |1)"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "returns nil in an incomplete reader conditional"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(|)"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" nil)))))
 
-  (xit "returns :default context if specified"
+  (it "returns last context in an incomplete reader conditional"
     (cljr--with-clojure-temp-file "foo.cljc"
-      (with-point-at "(ns foo) #?(:default (Math/sin |))"
+      (with-point-at "(ns foo) #?(:cljs |)"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "returns preceding context if between two contexts"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?@(:cljs 1| :clj [2])"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "returns :default context if specified"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:default [|])"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "default")))))
 
-  (xit "returns :cljr context if specified"
+  (it "returns :cljr context if specified"
     (cljr--with-clojure-temp-file "foo.cljc"
-      (with-point-at "(ns foo) #?(:bb (Math/sin |))"
+      (with-point-at "(ns foo) #?(:cljr (|))"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "cljr")))))
 
-  (xit "returns :bb context if specified"
+  (it "returns :bb context if specified"
     (cljr--with-clojure-temp-file "foo.cljc"
-      (with-point-at "(ns foo) #?(:bb (Math/sin |))"
+      (with-point-at "(ns foo) #?(:bb |)"
         (expect (cljr--language-context-at-point)
-                :to-equal '("cljc" "bb"))))))
+                :to-equal '("cljc" "bb")))))
+
+  (it "returns :cljs context if specified in #?@ conditional"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?@(:cljs [|])"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "returns closest context if in nested conditional"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "(ns foo) #?(:default #?(:clj [1|]) :cljs [])"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "clj")))))
+
+  (it "returns context even if sexp is not closed"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "#?(:cljs |"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  (it "returns context even if sexp is succeeded by unbalanced group"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "#?(:cljs |) ("
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" "cljs")))))
+
+  ;; should be '("cljc" "clj") if cljr--beginning-of-reader-conditional handled
+  ;; unbalanced preceding parentheses
+  (it "can't find context if sexp is preceded by unbalanced group"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at ") #?(:clj |)"
+        (expect (cljr--language-context-at-point)
+                :to-equal '("cljc" nil))))))
+
+(describe "cljr--beginning-of-reader-conditional"
+  (it "returns position of start of reader-conditional if sexp is valid"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "#?(:clj |)"
+        (expect (cljr--beginning-of-reader-conditional) :to-equal 4))))
+
+  (it "returns position of start of reader-conditional splice if sexp is valid"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "#?@(:clj |)"
+        (expect (cljr--beginning-of-reader-conditional) :to-equal 5))))
+
+  (it "cljr--top-level-p is correct if in a balanced group"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at "#?(:clj |)"
+        (expect (cljr--top-level-p) :to-be nil))))
+
+  ;; Following examples can't find context as `cljr--top-level-p' erroneously
+  ;; reports it is a top level if preceded by unbalanced group
+  (it "cljr--top-level-p erroneously passes if preceded by unbalanced group"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at ") #?(:clj |)"
+        (expect (cljr--top-level-p) :to-be-truthy))))
+
+  ;; should be 6 if could detect unbalanced preceding parentheses
+  (it "can't find position of start if sexp is preceded by unbalanced group"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (with-point-at ") #?(:clj |)"
+        (expect (cljr--beginning-of-reader-conditional)
+                :to-equal nil)))))
 
 (describe "cljr--prompt-or-select-libspec"
   (it "prompts user for namespace selection"

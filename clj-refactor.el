@@ -1947,6 +1947,45 @@ FEATURE is either :clj or :cljs."
                                                (list "clj" "cljs"))
                         "clj"))))))
 
+(defun cljr--beginning-of-reader-conditional ()
+  "Return position of beginning of containing reader conditional.
+
+Otherwise `nil' if outside of reader conditional."
+  (save-excursion
+    (let ((reader-start nil))
+      (while (not (or reader-start (cljr--top-level-p)))
+        (backward-up-list)
+        (when (looking-back (regexp-opt (list "#\?@" "#\?")) (- (point) 3))
+          (setq reader-start (1+ (point)))))
+      reader-start)))
+
+(defun cljr--reader-conditional-context ()
+  "Returns keyword name of closest language context containing point.
+
+Otherwise `nil' if outside conditional or unable to find a
+context. Valid outputs include, but are not limited to `:clj',
+`:cljs', `:cljr', `:bb', or `:default' as strings."
+  (save-excursion
+    (let ((starting-point (point))
+          (language nil))
+      (when-let ((reader-start (cljr--beginning-of-reader-conditional)))
+        (goto-char reader-start)
+        (while (and (<= (point) starting-point) (not language))
+          (if-let ((current (cider-symbol-at-point)))
+              ;; attempt to move forward a language/context pair. Accept if
+              ;; starting point was before next language pair, or if last pair,
+              ;; or end of file.
+              (when (or (< starting-point
+                           (condition-case nil
+                               (progn (cider-start-of-next-sexp 2)
+                                      (point)) ; start of next context
+                             (error (1+ starting-point))))
+                        (= (point) (point-max)))
+                (setq language current))
+            ;; otherwise move out of bounds of search to exit without language
+            (goto-char (1+ starting-point))))
+        language))))
+
 (defun cljr--aget (map key)
   (cdr (assoc key map)))
 
@@ -2016,14 +2055,8 @@ of a reader conditional inside of a cljc file."
                "cljs")
               ((cljr--clj-file-p)
                "clj"))
-        nil
-        ;; See https://github.com/clojure-emacs/clj-refactor.el/issues/533
-        ;; (when (cljr--point-in-reader-conditional-p)
-        ;;   (cond ((cljr--point-in-reader-conditional-branch-p :clj)
-        ;;          "clj")
-        ;;         ((cljr--point-in-reader-conditional-branch-p :cljs)
-        ;;          "cljs")))
-        ))
+        (when-let ((context (cljr--reader-conditional-context)))
+          (string-remove-prefix ":" context))))
 
 (defun cljr--prompt-or-select-libspec (candidates)
   "Prompts for namespace selection or returns only candidate.
