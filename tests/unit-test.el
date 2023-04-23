@@ -215,7 +215,7 @@
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "cljs")))))
 
-  (it "identifies a nested context with an alternate branch proceeding"
+  (it "identifies a nested context with an alternate branch preceding"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?(:clj 1 :cljs (Math/log|))"
         (expect (cljr--language-context-at-point)
@@ -245,7 +245,7 @@
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" "cljs")))))
 
-  (it "returns proceeding context if between two contexts"
+  (it "returns preceding context if between two contexts"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "(ns foo) #?@(:cljs 1| :clj [2])"
         (expect (cljr--language-context-at-point)
@@ -294,20 +294,20 @@
                 :to-equal '("cljc" "cljs")))))
 
   ;; should be '("cljc" "clj") if cljr--beginning-of-reader-conditional handled
-  ;; unbalanced proceeding parentheses
-  (it "can't find context if sexp is proceeded by unbalanced group"
+  ;; unbalanced preceding parentheses
+  (it "can't find context if sexp is preceded by unbalanced group"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at ") #?(:clj |)"
         (expect (cljr--language-context-at-point)
                 :to-equal '("cljc" nil))))))
 
 (describe "cljr--beginning-of-reader-conditional"
-  (it "position of start of reader-conditional if sexp is valid"
+  (it "returns position of start of reader-conditional if sexp is valid"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "#?(:clj |)"
         (expect (cljr--beginning-of-reader-conditional) :to-equal 4))))
 
-  (it "position of start of reader-conditional splice if sexp is valid"
+  (it "returns position of start of reader-conditional splice if sexp is valid"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at "#?@(:clj |)"
         (expect (cljr--beginning-of-reader-conditional) :to-equal 5))))
@@ -318,14 +318,14 @@
         (expect (cljr--top-level-p) :to-be nil))))
 
   ;; Following examples can't find context as `cljr--top-level-p' erroneously
-  ;; reports it is a top level if proceeded by unbalanced group
-  (it "cljr--top-level-p erroneously passes if proceeded by unbalanced group"
+  ;; reports it is a top level if preceded by unbalanced group
+  (it "cljr--top-level-p erroneously passes if preceded by unbalanced group"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at ") #?(:clj |)"
         (expect (cljr--top-level-p) :to-be-truthy))))
 
-  ;; should be 6 if could detect unbalanced proceeding paren
-  (it "can't find position of start if sexp is proceeded by unbalanced group"
+  ;; should be 6 if could detect unbalanced preceding parentheses
+  (it "can't find position of start if sexp is preceded by unbalanced group"
     (cljr--with-clojure-temp-file "foo.cljc"
       (with-point-at ") #?(:clj |)"
         (expect (cljr--beginning-of-reader-conditional)
