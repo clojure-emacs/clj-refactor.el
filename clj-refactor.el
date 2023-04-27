@@ -4343,14 +4343,6 @@ If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-
 (define-obsolete-function-alias 'cljr-cycle-if 'clojure-cycle-if "2.3.0")
 (make-obsolete 'cljr-cycle-coll "reworked into convert collection to list, quoted list, map, vector, set in Clojure mode." "2.3.0")
 
-(define-obsolete-function-alias 'cljr--point-in-reader-conditional-p 'cljr--reader-conditional-context "3.6.0")
-(make-obsolete 'cljr--point-in-reader-conditional-branch-p
-               "assert a return value of (cljr--reader-conditional-context)"
-               "3.6.0")
-(make-obsolete 'cljr--goto-reader-conditional
-               "use cljr--beginning-of-reader-conditional"
-               "3.6.0")
-
 ;; ------ minor mode -----------
 ;;;###autoload
 (define-minor-mode clj-refactor-mode
