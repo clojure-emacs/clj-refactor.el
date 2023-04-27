@@ -1910,31 +1910,13 @@ Return the value of point if we moved."
       (goto-char start)
       nil)))
 
-(defun cljr--point-in-reader-conditional-branch-p (feature)
-  "Is point in a reader conditional branch for FEATURE?
-
-FEATURE is either :clj or :cljs."
-  (cl-assert (or (eq feature :clj) (eq feature :cljs)) nil
-             "FEATURE has to be either :clj or :cljs.  Received: %s" feature)
-  (save-excursion
-    (let ((start-reader-conditional
-           (cljr--point-after 'cljr--goto-reader-conditional))
-          (other (if (eq feature :clj) ":cljs\\b" ":clj\\b"))
-          found)
-      (when start-reader-conditional
-        (while (not (or (setq found (looking-at-p (format "%s\\b" feature)))
-                        (looking-at-p other)
-                        (< (point) start-reader-conditional)))
-          (paredit-backward))
-        found))))
-
 (defun cljr--clj-context-p ()
   "Is point in a clj context?"
   (or (cljr--clj-file-p)
       (when (cljr--cljc-file-p)
         (cond
          ((cljr--beginning-of-reader-conditional)
-          (cljr--point-in-reader-conditional-branch-p :clj))
+          (string-equal (cljr--reader-conditional-context) ":clj"))
          (cljr-assume-language-context
           (string-equal cljr-assume-language-context "clj"))
          (t
@@ -4373,6 +4355,9 @@ If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-
 (make-obsolete 'cljr-cycle-coll "reworked into convert collection to list, quoted list, map, vector, set in Clojure mode." "2.3.0")
 
 (define-obsolete-function-alias 'cljr--point-in-reader-conditional-p 'cljr--reader-conditional-context "3.6.0")
+(make-obsolete 'cljr--point-in-reader-conditional-branch-p
+               "assert a return value of (cljr--reader-conditional-context)"
+               "3.6.0")
 
 ;; ------ minor mode -----------
 ;;;###autoload
