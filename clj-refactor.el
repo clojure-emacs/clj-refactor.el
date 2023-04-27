@@ -1894,22 +1894,6 @@ front of function literals and sets."
 (defun cljr--magic-requires-re ()
   (regexp-opt (seq-map 'car cljr-magic-require-namespaces)))
 
-(defun cljr--goto-reader-conditional ()
-  "Move point just before #?.
-
-Return the value of point if we moved."
-  (let ((start (point))
-        found)
-    (while (not (or found (cljr--top-level-p)))
-      (paredit-backward-up)
-      (when (looking-back (regexp-opt (list "#\?@" "#\?")) (point-at-bol))
-        (paredit-backward)
-        (setq found t)))
-    (if found
-        (point)
-      (goto-char start)
-      nil)))
-
 (defun cljr--clj-context-p ()
   "Is point in a clj context?"
   (or (cljr--clj-file-p)
@@ -4357,6 +4341,9 @@ If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-
 (define-obsolete-function-alias 'cljr--point-in-reader-conditional-p 'cljr--reader-conditional-context "3.6.0")
 (make-obsolete 'cljr--point-in-reader-conditional-branch-p
                "assert a return value of (cljr--reader-conditional-context)"
+               "3.6.0")
+(make-obsolete 'cljr--goto-reader-conditional
+               "use cljr--beginning-of-reader-conditional"
                "3.6.0")
 
 ;; ------ minor mode -----------
