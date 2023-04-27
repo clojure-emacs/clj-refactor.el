@@ -234,6 +234,8 @@ won't run if there is a broken namespace in the project."
   :type 'boolean
   :safe #'booleanp)
 
+;; TODO: remove after `cljr--clj-context-p' is deprecated by enabling
+;; `cljr-slash-uses-suggest-libspec'.
 (defcustom cljr-assume-language-context nil
   "If set to 'clj' or 'cljs', clj-refactor will use that value in situations
   where the language context is ambiguous. If set to nil, a popup will be
@@ -1894,6 +1896,8 @@ front of function literals and sets."
 (defun cljr--magic-requires-re ()
   (regexp-opt (seq-map 'car cljr-magic-require-namespaces)))
 
+;; TODO: remove after `cljr--get-aliases-from-middleware' is deprecated by
+;; enabling `cljr-slash-uses-suggest-libspec'.
 (defun cljr--clj-context-p ()
   "Is point in a clj context?"
   (or (cljr--clj-file-p)
@@ -2051,6 +2055,7 @@ is not set to `:prompt'."
     '(re-search-forward "[0-9`':#]*" nil t))
    (1- (point))))
 
+;; TODO: deprecated after enabling `cljr-slash-uses-suggest-libspec'
 (defun cljr--magic-requires-lookup-alias (short)
   "Generate a mapping from alias to candidate namespaces.
 
