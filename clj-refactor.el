@@ -234,6 +234,8 @@ won't run if there is a broken namespace in the project."
   :type 'boolean
   :safe #'booleanp)
 
+;; TODO: remove after `cljr--clj-context-p' is deprecated by enabling
+;; `cljr-slash-uses-suggest-libspec'.
 (defcustom cljr-assume-language-context nil
   "If set to 'clj' or 'cljs', clj-refactor will use that value in situations
   where the language context is ambiguous. If set to nil, a popup will be
@@ -1894,52 +1896,15 @@ front of function literals and sets."
 (defun cljr--magic-requires-re ()
   (regexp-opt (seq-map 'car cljr-magic-require-namespaces)))
 
-(defun cljr--goto-reader-conditional ()
-  "Move point just before #?.
-
-Return the value of point if we moved."
-  (let ((start (point))
-        found)
-    (while (not (or found (cljr--top-level-p)))
-      (paredit-backward-up)
-      (when (looking-back (regexp-opt (list "#\?@" "#\?")) (point-at-bol))
-        (paredit-backward)
-        (setq found t)))
-    (if found
-        (point)
-      (goto-char start)
-      nil)))
-
-(defun cljr--point-in-reader-conditional-p ()
-  "Return t if point is inside a reader conditional."
-  (save-excursion
-    (cljr--goto-reader-conditional)))
-
-(defun cljr--point-in-reader-conditional-branch-p (feature)
-  "Is point in a reader conditional branch for FEATURE?
-
-FEATURE is either :clj or :cljs."
-  (cl-assert (or (eq feature :clj) (eq feature :cljs)) nil
-             "FEATURE has to be either :clj or :cljs.  Received: %s" feature)
-  (save-excursion
-    (let ((start-reader-conditional
-           (cljr--point-after 'cljr--goto-reader-conditional))
-          (other (if (eq feature :clj) ":cljs\\b" ":clj\\b"))
-          found)
-      (when start-reader-conditional
-        (while (not (or (setq found (looking-at-p (format "%s\\b" feature)))
-                        (looking-at-p other)
-                        (< (point) start-reader-conditional)))
-          (paredit-backward))
-        found))))
-
+;; TODO: remove after `cljr--get-aliases-from-middleware' is deprecated by
+;; enabling `cljr-slash-uses-suggest-libspec'.
 (defun cljr--clj-context-p ()
   "Is point in a clj context?"
   (or (cljr--clj-file-p)
       (when (cljr--cljc-file-p)
         (cond
-         ((cljr--point-in-reader-conditional-p)
-          (cljr--point-in-reader-conditional-branch-p :clj))
+         ((cljr--beginning-of-reader-conditional)
+          (string-equal (cljr--reader-conditional-context) ":clj"))
          (cljr-assume-language-context
           (string-equal cljr-assume-language-context "clj"))
          (t
@@ -2090,6 +2055,7 @@ is not set to `:prompt'."
     '(re-search-forward "[0-9`':#]*" nil t))
    (1- (point))))
 
+;; TODO: deprecated after enabling `cljr-slash-uses-suggest-libspec'
 (defun cljr--magic-requires-lookup-alias (short)
   "Generate a mapping from alias to candidate namespaces.
 
