@@ -51,8 +51,8 @@ Either in your project's `project.clj` or in the `:user`
 profile found at `~/.lein/profiles.clj`:
 
 ```clojure
-:plugins [[refactor-nrepl "3.6.0"]
-          [cider/cider-nrepl "0.28.5"]]
+:plugins [[refactor-nrepl "3.7.0"]
+          [cider/cider-nrepl "0.31.0"]]
 ```
 
 Check out the much longer
