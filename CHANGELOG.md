@@ -5,6 +5,7 @@
 ## 3.7.0
 
 - [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.7.0/CHANGELOG.md#370).
+- [#537](https://github.com/clojure-emacs/clj-refactor.el/issues/537): Fail early in `cljr-rename-symbol` in case narrowing is in effect.
 
 ## 3.6.1
 
