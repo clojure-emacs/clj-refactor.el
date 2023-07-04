@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.7.0
+
+- [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.7.0/CHANGELOG.md#370).
+
 ## 3.6.1
 
 - Add the [clojure.math namespace](https://clojure.github.io/clojure/clojure.math-api.html) to magic requires (new with Clojure 1.11.0)
