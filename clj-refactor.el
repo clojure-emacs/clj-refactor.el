@@ -2032,7 +2032,8 @@ is not set to `:prompt'."
    ((or (> (length candidates) 1) (eq :prompt cljr-magic-requires))
     (completing-read "Add require: " candidates nil))
    ((= (length candidates) 1)
-    (seq-first candidates))))
+    ;; this is like seq-first, but compatible with older Emacsen:
+    (seq-elt candidates 0))))
 
 (defun cljr--get-aliases-from-middleware ()
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
