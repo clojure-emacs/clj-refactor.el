@@ -51,7 +51,7 @@ Either in your project's `project.clj` or in the `:user`
 profile found at `~/.lein/profiles.clj`:
 
 ```clojure
-:plugins [[refactor-nrepl "3.7.1"]
+:plugins [[refactor-nrepl "3.8.0"]
           [cider/cider-nrepl "0.31.0"]]
 ```
 
@@ -169,7 +169,7 @@ There's also another channel named `#emacs` for generic Emacs discussions.
 ## License
 
 Copyright © 2012-2014 Magnar Sveen
-Copyright © 2014-2022 Magnar Sveen, Lars Andersen, Benedek Fazekas, Bozhidar Batsov
+Copyright © 2014-2023 Magnar Sveen, Lars Andersen, Benedek Fazekas, Bozhidar Batsov
 
 Author: Magnar Sveen <magnars@gmail.com>
         Lars Andersen <expez@expez.com>
