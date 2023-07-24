@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.9.0
+
+- [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.9.0/CHANGELOG.md#390).
+
 ## 3.8.0
 
 - [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.8.0/CHANGELOG.md#380).
