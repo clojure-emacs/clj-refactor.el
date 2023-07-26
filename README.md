@@ -23,6 +23,14 @@ It's available on [MELPA](http://melpa.org/) and [MELPA Stable](http://stable.me
 
     M-x package-install clj-refactor
 
+#### Better IDO completions
+
+If you are a IDO user, you will get better completions by installing the [`ido-completing-read+`](https://github.com/DarwinAwardWinner/ido-completing-read-plus) package:
+
+    M-x package-install ido-completing-read+
+
+...if you use a framework other than IDO, for best results, please check that it can take over `completing-read` automatically. 
+
 ## Setup
 
 ```emacs-lisp

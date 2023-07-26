@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- [#430](https://github.com/clojure-emacs/clj-refactor.el/issues/430) `cljr-add-missing-libspec`: produce more friendly prompts.
+
 ## 3.9.0
 
 - [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.9.0/CHANGELOG.md#390).
