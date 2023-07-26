@@ -2939,12 +2939,25 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   (cider-eval-ns-form)
   (cljr--clean-ns))
 
+(defun cljr--uses-completion-framework-p ()
+  "Whether the user is using something richer than the stock `completing-read'."
+  (or (not (eq completing-read-function #'completing-read-default))
+      (member 'ido-completing-read+ package-activated-list)))
+
 (defun cljr--narrow-candidates (candidates symbol)
   (if (= (length candidates) 0)
       (error "Couldn't find any symbols matching %s on classpath."
              (cljr--symbol-suffix symbol))
-    (let* ((names (seq-map (lambda (c) (gethash :name c)) candidates))
-           (name (intern-soft (cljr--prompt-user-for "Require: " names))))
+    (let* ((tag (if (seq-every-p (lambda (m)
+                                   (eq :class (gethash :type m)))
+                                 candidates)
+                    "Import"
+                  "Require"))
+           (prompt-text (if (cljr--uses-completion-framework-p)
+                            (format "%s: " tag )
+                          (format "%s (hit your 'complete' keybinding for options): " tag)))
+           (names (seq-map (lambda (c) (gethash :name c)) candidates))
+           (name (intern-soft (cljr--prompt-user-for prompt-text names))))
       (seq-find (lambda (c) (equal name (gethash :name c))) candidates))))
 
 (defun cljr--insert-libspec-verbosely (libspec)
