@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-- [#430](https://github.com/clojure-emacs/clj-refactor.el/issues/430) `cljr-add-missing-libspec`: produce more friendly prompts.
+## 3.9.1
+
+* [#430](https://github.com/clojure-emacs/clj-refactor.el/issues/430) `cljr-add-missing-libspec`: produce more friendly prompts.
+* `cljr-add-missing-libspec`: don't suggest members that are already interned into the current namespace.
+  * e.g. the class `Thread` or the var `+` are already interned by default in Clojure namespaces, so they are redundant to suggest or insert into the `ns` form. 
 
 ## 3.9.0
 
