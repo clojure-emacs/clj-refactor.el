@@ -60,7 +60,7 @@ profile found at `~/.lein/profiles.clj`:
 
 ```clojure
 :plugins [[refactor-nrepl "3.9.0"]
-          [cider/cider-nrepl "0.31.0"]]
+          [cider/cider-nrepl "0.32.0"]]
 ```
 
 Check out the much longer

@@ -7,7 +7,7 @@
 ;;         Lars Andersen <expez@expez.com>
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;;         Bozhidar Batsov <bozhidar@batsov.dev>
-;; Version: 3.9.0
+;; Version: 3.9.1
 ;; Keywords: convenience, clojure, cider
 
 ;; Package-Requires: ((emacs "26.1") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.14") (cider "1.4.1") (parseedn "1.1.0") (inflections "2.6") (hydra "0.13.2"))
@@ -2945,20 +2945,33 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
       (member 'ido-completing-read+ package-activated-list)))
 
 (defun cljr--narrow-candidates (candidates symbol)
-  (if (= (length candidates) 0)
-      (error "Couldn't find any symbols matching %s on classpath."
-             (cljr--symbol-suffix symbol))
-    (let* ((tag (if (seq-every-p (lambda (m)
-                                   (eq :class (gethash :type m)))
-                                 candidates)
-                    "Import"
-                  "Require"))
-           (prompt-text (if (cljr--uses-completion-framework-p)
-                            (format "%s: " tag )
-                          (format "%s (hit your 'complete' keybinding for options): " tag)))
-           (names (seq-map (lambda (c) (gethash :name c)) candidates))
-           (name (intern-soft (cljr--prompt-user-for prompt-text names))))
-      (seq-find (lambda (c) (equal name (gethash :name c))) candidates))))
+  (cond
+   ((= (length candidates) 0)
+    (error "Couldn't find any symbols matching `%s' on classpath." (cljr--symbol-suffix symbol)))
+
+   ((seq-every-p (lambda (m)
+                   (gethash :already-interned m))
+                 candidates)
+    (error "`%s' is already interned into the current namespace." (cljr--symbol-suffix symbol)))
+
+   (t (let* ((candidates (seq-remove (lambda (m)
+                                       (gethash :already-interned m))
+                                     candidates))
+             (tag (if (seq-every-p (lambda (m)
+                                     (eq :class (gethash :type m)))
+                                   candidates)
+                      "Import"
+                    "Require"))
+             (prompt-text (if (cljr--uses-completion-framework-p)
+                              (format "%s: " tag )
+                            (format "%s (hit your 'complete' keybinding for options): " tag)))
+             (names (seq-map (lambda (c)
+                               (propertize (symbol-name (gethash :name c)) 'face 'font-lock-type-face))
+                             candidates))
+             (name (intern-soft (cljr--prompt-user-for prompt-text names))))
+        (seq-find (lambda (c)
+                    (equal name (gethash :name c)))
+                  candidates)))))
 
 (defun cljr--insert-libspec-verbosely (libspec)
   (insert (format "%s" libspec))
@@ -3065,15 +3078,17 @@ Date. -> Date
     (thread-last name (string-remove-prefix "@") cljr--normalize-symbol-name))
    (t name)))
 
-(defun cljr--call-middleware-to-resolve-missing (symbol)
+(defun cljr--call-middleware-to-resolve-missing (symbol &optional ns)
   ;; Just so this part can be mocked out in a step definition
-  (when-let (candidates (thread-first (cljr--create-msg "resolve-missing"
-                                                        "symbol" symbol
-                                                        "session"
-                                                        (with-no-warnings (cider-nrepl-eval-session)))
-                          (cljr--call-middleware-sync
-                           "candidates")))
-    (parseedn-read-str candidates)))
+  (let ((request (cljr--create-msg "resolve-missing"
+                                   "symbol" symbol
+                                   "session"
+                                   (with-no-warnings (cider-nrepl-eval-session)))))
+    (when ns
+      (setq request (append request (list "ns" ns))))
+    (when-let (candidates (thread-first request
+                            (cljr--call-middleware-sync "candidates")))
+      (parseedn-read-str candidates))))
 
 (defun cljr--get-error-value (response)
   "Gets the error value from the middleware response.
@@ -3118,12 +3133,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
   (interactive)
   (cljr--ensure-op-supported "resolve-missing")
   (let* ((symbol (cider-symbol-at-point))
-         (candidates (cljr--call-middleware-to-resolve-missing symbol)))
+         (candidates (cljr--call-middleware-to-resolve-missing symbol (cider-current-ns))))
     (if (and candidates (< 0 (length candidates)))
-        (cljr--add-missing-libspec symbol candidates)
-      (cljr--post-command-message "Can't find %s on classpath" (cljr--symbol-suffix symbol))))
-  (cljr--maybe-clean-ns)
-  (cljr--maybe-eval-ns-form))
+        (progn
+          (cljr--add-missing-libspec symbol candidates)
+          (cljr--maybe-clean-ns)
+          (cljr--maybe-eval-ns-form))
+      (cljr--post-command-message "Can't find `%s' on classpath" (cljr--symbol-suffix symbol)))))
 
 (defun cljr--dependency-at-point ()
   "Returns project dependency at point.
