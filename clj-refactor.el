@@ -2045,11 +2045,11 @@ is not set to `:prompt'."
       (gethash :cljs aliases))))
 
 (defun cljr--js-alias-p (alias)
-  (and (member "cljs" (condition-case nil
+  (and (string-equal "js" alias)
+       (member "cljs" (condition-case nil
                           (cljr--language-context-at-point) ;; it shouldn't fail, but we can leave it like this until consideredfully time-proven.
                         (error (when (cljr--cljs-file-p)
-                                 '("cljs")))))
-       (string-equal "js" alias)))
+                                 '("cljs")))))))
 
 (defun cljr--ns-alias-at-point ()
   "Returns the (alias)/ just prior to the point excluding the trailing slash."
@@ -2113,8 +2113,8 @@ match. Returns a structure of (alias (ns1 ns2 ...))."
 
 Filters out existing alias in the namespace, or a global alias
  like `js' in cljs."
-  (unless (or (cljr--resolve-alias alias-ref)
-              (cljr--js-alias-p alias-ref))
+  (unless (or (cljr--js-alias-p alias-ref)
+              (cljr--resolve-alias alias-ref))
     alias-ref))
 
 (defun cljr--insert-require-libspec (libspec)
