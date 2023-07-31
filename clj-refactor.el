@@ -2017,14 +2017,16 @@ Reader conditionals are forms like #?(:clj (expr)) or
 URL`https://clojure.org/guides/reader_conditionals'). As
 example, `(\"cljc\", \"cljs\")' represents a point in a cljs path
 of a reader conditional inside of a cljc file."
-  (list (cond ((cljr--cljc-file-p)
-               "cljc")
-              ((cljr--cljs-file-p)
-               "cljs")
-              ((cljr--clj-file-p)
-               "clj"))
-        (when-let ((context (cljr--reader-conditional-context)))
-          (string-remove-prefix ":" context))))
+  (let ((cljc? (cljr--cljc-file-p)))
+    (list (cond (cljc?
+                 "cljc")
+                ((cljr--cljs-file-p)
+                 "cljs")
+                ((cljr--clj-file-p)
+                 "clj"))
+          (when-let ((context (when cljc?
+                                (cljr--reader-conditional-context))))
+            (string-remove-prefix ":" context)))))
 
 (defun cljr--prompt-or-select-libspec (candidates)
   "Prompts for namespace selection or returns only candidate.
