@@ -1087,19 +1087,22 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
 
 (defun cljr--cljs-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a cljs file?"
-  (string-equal (file-name-extension (buffer-file-name (or buf (current-buffer))))
-                "cljs"))
+  (when-let ((bfn (buffer-file-name (or buf (current-buffer)))))
+    (string-equal (file-name-extension bfn)
+                  "cljs")))
 
 (defun cljr--cljc-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a cljc file?"
-  (string-equal (file-name-extension (buffer-file-name (or buf (current-buffer))))
-                "cljc"))
+  (when-let ((bfn (buffer-file-name (or buf (current-buffer)))))
+    (string-equal (file-name-extension bfn)
+                  "cljc")))
 
 (defun cljr--clj-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a clj file?"
   (or (eq major-mode 'clojure-mode)
-      (string-equal (file-name-extension (buffer-file-name (or buf (current-buffer))))
-                    "clj")))
+      (when-let ((bfn (buffer-file-name (or buf (current-buffer)))))
+        (string-equal (file-name-extension bfn)
+                      "clj"))))
 
 (defun cljr--add-test-declarations ()
   (save-excursion
@@ -2042,7 +2045,10 @@ is not set to `:prompt'."
       (gethash :cljs aliases))))
 
 (defun cljr--js-alias-p (alias)
-  (and (cljr--cljs-file-p)
+  (and (member "cljs" (condition-case nil
+                          (cljr--language-context-at-point) ;; it shouldn't fail, but we can leave it like this until consideredfully time-proven.
+                        (error (when (cljr--cljs-file-p)
+                                 '("cljs")))))
        (string-equal "js" alias)))
 
 (defun cljr--ns-alias-at-point ()
