@@ -1099,7 +1099,7 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
 
 (defun cljr--clj-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a clj file?"
-  (or (derived-mode-p 'clojure-mode)
+  (or (eq major-mode 'clojure-mode)
       (when-let ((bfn (buffer-file-name (or buf (current-buffer)))))
         (string-equal (file-name-extension bfn)
                       "clj"))))
