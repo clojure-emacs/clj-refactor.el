@@ -1099,7 +1099,7 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
 
 (defun cljr--clj-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a clj file?"
-  (or (eq major-mode 'clojure-mode)
+  (or (derived-mode-p 'clojure-mode)
       (when-let ((bfn (buffer-file-name (or buf (current-buffer)))))
         (string-equal (file-name-extension bfn)
                       "clj"))))
@@ -1933,26 +1933,29 @@ Otherwise `nil' if outside of reader conditional."
 Otherwise `nil' if outside conditional or unable to find a
 context. Valid outputs include, but are not limited to `:clj',
 `:cljs', `:cljr', `:bb', or `:default' as strings."
-  (save-excursion
-    (let ((starting-point (point))
-          (language nil))
-      (when-let ((reader-start (cljr--beginning-of-reader-conditional)))
-        (goto-char reader-start)
-        (while (and (<= (point) starting-point) (not language))
-          (if-let ((current (cider-symbol-at-point)))
-              ;; attempt to move forward a language/context pair. Accept if
-              ;; starting point was before next language pair, or if last pair,
-              ;; or end of file.
-              (when (or (< starting-point
-                           (condition-case nil
-                               (progn (cider-start-of-next-sexp 2)
-                                      (point)) ; start of next context
-                             (error (1+ starting-point))))
-                        (= (point) (point-max)))
-                (setq language current))
-            ;; otherwise move out of bounds of search to exit without language
-            (goto-char (1+ starting-point))))
-        language))))
+  ;; it shouldn't fail, but we can leave it like this until considered fully time-proven.
+  (condition-case nil
+      (save-excursion
+        (let ((starting-point (point))
+              (language nil))
+          (when-let ((reader-start (cljr--beginning-of-reader-conditional)))
+            (goto-char reader-start)
+            (while (and (<= (point) starting-point) (not language))
+              (if-let ((current (cider-symbol-at-point)))
+                  ;; attempt to move forward a language/context pair. Accept if
+                  ;; starting point was before next language pair, or if last pair,
+                  ;; or end of file.
+                  (when (or (< starting-point
+                               (condition-case nil
+                                   (progn (cider-start-of-next-sexp 2)
+                                          (point)) ; start of next context
+                                 (error (1+ starting-point))))
+                            (= (point) (point-max)))
+                    (setq language current))
+                ;; otherwise move out of bounds of search to exit without language
+                (goto-char (1+ starting-point))))
+            language)))
+    (error nil)))
 
 (defun cljr--aget (map key)
   (cdr (assoc key map)))
@@ -2048,10 +2051,8 @@ is not set to `:prompt'."
 
 (defun cljr--js-alias-p (alias)
   (and (string-equal "js" alias)
-       (member "cljs" (condition-case nil
-                          (cljr--language-context-at-point) ;; it shouldn't fail, but we can leave it like this until consideredfully time-proven.
-                        (error (when (cljr--cljs-file-p)
-                                 '("cljs")))))))
+       (or (member "cljs" (cljr--language-context-at-point))
+           (cljr--cljs-file-p))))
 
 (defun cljr--ns-alias-at-point ()
   "Returns the (alias)/ just prior to the point excluding the trailing slash."
