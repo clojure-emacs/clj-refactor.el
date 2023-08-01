@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* [#523](https://github.com/clojure-emacs/clj-refactor.el/issues/523): Increase `js/` namespace detection accuracy for .cljc files. 
+
 ## 3.9.1
 
 * [#430](https://github.com/clojure-emacs/clj-refactor.el/issues/430) `cljr-add-missing-libspec`: produce more friendly prompts.

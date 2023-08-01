@@ -10,7 +10,7 @@
 ;; Version: 3.9.1
 ;; Keywords: convenience, clojure, cider
 
-;; Package-Requires: ((emacs "26.1") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.14") (cider "1.4.1") (parseedn "1.1.0") (inflections "2.6") (hydra "0.13.2"))
+;; Package-Requires: ((emacs "26.1") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.16.1") (cider "1.7.0") (parseedn "1.1.0") (inflections "2.6") (hydra "0.13.2"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -1087,19 +1087,22 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
 
 (defun cljr--cljs-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a cljs file?"
-  (string-equal (file-name-extension (buffer-file-name (or buf (current-buffer))))
-                "cljs"))
+  (when-let ((bfn (buffer-file-name (or buf (current-buffer)))))
+    (string-equal (file-name-extension bfn)
+                  "cljs")))
 
 (defun cljr--cljc-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a cljc file?"
-  (string-equal (file-name-extension (buffer-file-name (or buf (current-buffer))))
-                "cljc"))
+  (when-let ((bfn (buffer-file-name (or buf (current-buffer)))))
+    (string-equal (file-name-extension bfn)
+                  "cljc")))
 
 (defun cljr--clj-file-p (&optional buf)
   "Is BUF, or the current buffer, visiting a clj file?"
   (or (eq major-mode 'clojure-mode)
-      (string-equal (file-name-extension (buffer-file-name (or buf (current-buffer))))
-                    "clj")))
+      (when-let ((bfn (buffer-file-name (or buf (current-buffer)))))
+        (string-equal (file-name-extension bfn)
+                      "clj"))))
 
 (defun cljr--add-test-declarations ()
   (save-excursion
@@ -1930,26 +1933,29 @@ Otherwise `nil' if outside of reader conditional."
 Otherwise `nil' if outside conditional or unable to find a
 context. Valid outputs include, but are not limited to `:clj',
 `:cljs', `:cljr', `:bb', or `:default' as strings."
-  (save-excursion
-    (let ((starting-point (point))
-          (language nil))
-      (when-let ((reader-start (cljr--beginning-of-reader-conditional)))
-        (goto-char reader-start)
-        (while (and (<= (point) starting-point) (not language))
-          (if-let ((current (cider-symbol-at-point)))
-              ;; attempt to move forward a language/context pair. Accept if
-              ;; starting point was before next language pair, or if last pair,
-              ;; or end of file.
-              (when (or (< starting-point
-                           (condition-case nil
-                               (progn (cider-start-of-next-sexp 2)
-                                      (point)) ; start of next context
-                             (error (1+ starting-point))))
-                        (= (point) (point-max)))
-                (setq language current))
-            ;; otherwise move out of bounds of search to exit without language
-            (goto-char (1+ starting-point))))
-        language))))
+  ;; it shouldn't fail, but we can leave it like this until considered fully time-proven.
+  (condition-case nil
+      (save-excursion
+        (let ((starting-point (point))
+              (language nil))
+          (when-let ((reader-start (cljr--beginning-of-reader-conditional)))
+            (goto-char reader-start)
+            (while (and (<= (point) starting-point) (not language))
+              (if-let ((current (cider-symbol-at-point)))
+                  ;; attempt to move forward a language/context pair. Accept if
+                  ;; starting point was before next language pair, or if last pair,
+                  ;; or end of file.
+                  (when (or (< starting-point
+                               (condition-case nil
+                                   (progn (cider-start-of-next-sexp 2)
+                                          (point)) ; start of next context
+                                 (error (1+ starting-point))))
+                            (= (point) (point-max)))
+                    (setq language current))
+                ;; otherwise move out of bounds of search to exit without language
+                (goto-char (1+ starting-point))))
+            language)))
+    (error nil)))
 
 (defun cljr--aget (map key)
   (cdr (assoc key map)))
@@ -2014,14 +2020,16 @@ Reader conditionals are forms like #?(:clj (expr)) or
 URL`https://clojure.org/guides/reader_conditionals'). As
 example, `(\"cljc\", \"cljs\")' represents a point in a cljs path
 of a reader conditional inside of a cljc file."
-  (list (cond ((cljr--cljc-file-p)
-               "cljc")
-              ((cljr--cljs-file-p)
-               "cljs")
-              ((cljr--clj-file-p)
-               "clj"))
-        (when-let ((context (cljr--reader-conditional-context)))
-          (string-remove-prefix ":" context))))
+  (let ((cljc? (cljr--cljc-file-p)))
+    (list (cond (cljc?
+                 "cljc")
+                ((cljr--cljs-file-p)
+                 "cljs")
+                ((cljr--clj-file-p)
+                 "clj"))
+          (when-let ((context (when cljc?
+                                (cljr--reader-conditional-context))))
+            (string-remove-prefix ":" context)))))
 
 (defun cljr--prompt-or-select-libspec (candidates)
   "Prompts for namespace selection or returns only candidate.
@@ -2042,8 +2050,9 @@ is not set to `:prompt'."
       (gethash :cljs aliases))))
 
 (defun cljr--js-alias-p (alias)
-  (and (cljr--cljs-file-p)
-       (string-equal "js" alias)))
+  (and (string-equal "js" alias)
+       (or (member "cljs" (cljr--language-context-at-point))
+           (cljr--cljs-file-p))))
 
 (defun cljr--ns-alias-at-point ()
   "Returns the (alias)/ just prior to the point excluding the trailing slash."
@@ -2107,8 +2116,8 @@ match. Returns a structure of (alias (ns1 ns2 ...))."
 
 Filters out existing alias in the namespace, or a global alias
  like `js' in cljs."
-  (unless (or (cljr--resolve-alias alias-ref)
-              (cljr--js-alias-p alias-ref))
+  (unless (or (cljr--js-alias-p alias-ref)
+              (cljr--resolve-alias alias-ref))
     alias-ref))
 
 (defun cljr--insert-require-libspec (libspec)
