@@ -45,8 +45,13 @@ commands:
   lint:
     steps:
       - run:
-          name: Run regression tests
-          command: eldev -dtT compile
+          name: Lint
+          command: eldev lint
+  compile:
+    steps:
+      - run:
+          name: Check for byte-compilation errors
+          command: eldev -dtT compile --warnings-as-errors
 
 jobs:
   test-ubuntu-emacs-26:
@@ -57,6 +62,7 @@ jobs:
       - setup
       - test
       - lint
+      - compile
   test-ubuntu-emacs-27:
     docker:
       - image: silex/emacs:27-ci
@@ -65,6 +71,7 @@ jobs:
       - setup
       - test
       - lint
+      - compile
   test-ubuntu-emacs-28:
     docker:
       - image: silex/emacs:28-ci
@@ -73,6 +80,7 @@ jobs:
       - setup
       - test
       - lint
+      - compile
   test-ubuntu-emacs-29:
     docker:
       - image: silex/emacs:29-ci
@@ -81,6 +89,7 @@ jobs:
       - setup
       - test
       - lint
+      - compile
   test-ubuntu-emacs-master:
     docker:
       - image: silex/emacs:master-ci
@@ -89,6 +98,7 @@ jobs:
       - setup
       - test
       - lint
+      - compile
   test-macos-emacs-latest:
     macos:
       xcode: "14.0.0"
@@ -96,6 +106,7 @@ jobs:
       - setup-macos
       - test
       - lint
+      - compile
   test-windows-emacs-latest:
     executor: win/default
     steps:
@@ -106,6 +117,7 @@ jobs:
       - setup-windows
       - test
       - lint
+      - compile
 
 workflows:
   version: 2.1
