@@ -128,7 +128,8 @@ This only applies to dependencies added by `cljr-add-project-dependency'."
   :safe #'booleanp)
 
 (defcustom cljr-insert-newline-after-require t
-  "If t, `cljr-clean-ns' will place a newline after the `:require` and `:import` tokens."
+  "If t, `cljr-clean-ns' will place a newline after the `:require`
+and `:import` tokens."
   :type 'boolean
   :safe #'booleanp)
 
@@ -178,6 +179,8 @@ will not work as expected in such REPLs."
   :type 'boolean
   :safe #'booleanp)
 
+(define-obsolete-variable-alias 'cljr-find-usages-ignore-analyzer-errors 'cljr-ignore-analyzer-errors "2.3.0")
+
 (defcustom cljr-ignore-analyzer-errors nil
   "If t, `cljr-find-usages' `cljr-inline-symbol' `cljr-rename-symbol'
 ignores namespaces that cannot be analyzed.
@@ -189,8 +192,6 @@ If nil, `cljr-find-usages'  `cljr-inline-symbol' `cljr-rename-symbol'
 won't run if there is a broken namespace in the project."
   :type 'boolean
   :safe #'booleanp)
-
-(define-obsolete-variable-alias 'cljr-find-usages-ignore-analyzer-errors 'cljr-ignore-analyzer-errors "2.3.0")
 
 (defcustom cljr-auto-eval-ns-form t
   "When true refactorings which change the ns form also trigger
@@ -210,7 +211,8 @@ won't run if there is a broken namespace in the project."
 
 (defcustom cljr-cljc-clojure-test-declaration "#?(:clj [clojure.test :as t]
 :cljs [cljs.test :as t :include-macros true])"
-  "The require form to use when clojure.test and cljs.test is in use in a cljc file."
+  "The require form to use when clojure.test and cljs.test is in use
+in a cljc file."
   :type 'string
   :safe #'stringp)
 
@@ -230,7 +232,8 @@ won't run if there is a broken namespace in the project."
   :safe #'stringp)
 
 (defcustom cljr-inject-dependencies-at-jack-in t
-  "When nil, do not inject repl dependencies (most likely nREPL middlewares) at `cider-jack-in' time."
+  "When nil, do not inject repl dependencies (most likely nREPL middlewares)
+at `cider-jack-in' time."
   :type 'boolean
   :safe #'booleanp)
 
@@ -273,7 +276,8 @@ if it appears to be unused."
 
 (defvar cljr--file-column-pattern
   "^\\(.+?\\):\\([1-9][0-9]*\\):\\([0-9][0-9]*\\): "
-  "A regexp pattern that groups output into filename, line number and column number.")
+  "A regexp pattern that groups output into filename,
+line number and column number.")
 
 (defvar cljr--debug-mode nil)
 
@@ -1961,8 +1965,9 @@ context. Valid outputs include, but are not limited to `:clj',
   (cdr (assoc key map)))
 
 (defcustom cljr-suggest-namespace-aliases t
-  "If `t', `namespace-aliases' and `cljr-slash' will take into account suggested namespace aliases,
-following this convention: https://stuartsierra.com/2015/05/10/clojure-namespace-aliases"
+  "If `t', `namespace-aliases' and `cljr-slash' will take into account
+suggested namespace aliases, following this convention:
+https://stuartsierra.com/2015/05/10/clojure-namespace-aliases"
   :group 'cljr
   :type 'boolean)
 
@@ -2131,10 +2136,12 @@ Filters out existing alias in the namespace, or a global alias
 
 ;;;###autoload
 (defun cljr-slash ()
-  "Inserts / as normal, but also checks for common namespace shorthands to require.
-If `cljr-magic-requires' is non-nil, executing this command after one of the aliases
-listed in `cljr-magic-require-namespaces', or any alias used elsewhere in the project,
-will add the corresponding require statement to the ns form."
+  "Inserts / as normal, but also checks for common namespace shorthands
+to require.
+If `cljr-magic-requires' is non-nil, executing this command after one
+of the aliases listed in `cljr-magic-require-namespaces', or any alias
+used elsewhere in the project, will add the corresponding require statement
+to the ns form."
   (interactive)
   (insert "/")
   (when-let (alias-ref (and cljr-magic-requires
@@ -2865,8 +2872,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
 (defun cljr--replace-refer-all (ns alias)
   "Replaces :refer :all style require with alias :as style require.
 
-Also adds the alias prefix to all occurrences of public symbols in the namespace.
-"
+Also adds the alias prefix to all occurrences of public symbols
+in the namespace."
   (cljr--ensure-op-supported "find-used-publics")
   (let ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name))))
     (let* ((alias (or alias
@@ -3153,9 +3160,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libs
 (defun cljr--dependency-at-point ()
   "Returns project dependency at point.
 
-Recognizes both leiningen- and deps.edn-style dependencies, but the latter is always
-transformed back to leiningen dependency vector which is what nrepl backend
-expects for hot-loading."
+Recognizes both leiningen- and deps.edn-style dependencies,
+but the latter is always transformed back to Leiningen dependency vector
+which is what nrepl backend expects for hot-loading."
   (save-excursion
     (ignore-errors
       (while (not (cljr--looking-at-dependency-p))
@@ -3431,17 +3438,27 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
             (cljr--post-command-message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
     (cljr--indent-defun)))
 
-(defun cljr--version (&optional remove-package-version)
-  "Get the version of `clj-refactor' from the package header.
+(defvar cljr-version)
 
-if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
-  (let ((version (replace-regexp-in-string "snapshot" "-SNAPSHOT"
-                                           (string-trim (pkg-info-version-info 'clj-refactor)))))
-    (if remove-package-version
-        (replace-regexp-in-string " (.*)" "" version)
-      version)))
+(defun cljr--pkg-version ()
+  "Extract the package version from its package metadata."
+  ;; Use `cond' below to avoid a compiler unused return value warning
+  ;; when `package-get-version' returns nil. See cider#3181.
+  ;; FIXME: Inline the logic from package-get-version and adapt it
+  (cond ((fboundp 'package-get-version)
+         (package-get-version))))
 
-;; We used to derive the version out of `(cljr--version t)`,
+(defun cljr--version (&optional _for-compat)
+  "Retrieve the version."
+  (if (string-match-p "-snapshot" cljr-version)
+      (let ((pkg-version (cljr--pkg-version)))
+        (if pkg-version
+            ;; snapshot versions include the MELPA package version
+            (format "%s (package: %s)" cljr-version pkg-version)
+          cljr-version))
+    cljr-version))
+
+;; We used to derive the version out of `(cljr--version)`,
 ;; but now prefer a fixed version to fully decouple things and prevent unforeseen behavior.
 ;; This suits better our current pace of development.
 (defcustom cljr-injected-middleware-version "3.9.0"
@@ -3449,7 +3466,8 @@ if REMOVE-PACKAGE_VERSION is t get rid of the (package: 20150828.1048) suffix."
 
 You can customize this in order to try out new releases.
 
-If customizing it, you most likely should `(setq cljr-suppress-middleware-warnings nil)' too,
+If customizing it, you most likely should
+`(setq cljr-suppress-middleware-warnings nil)' too,
 for avoiding a warning that would be irrelevant for this case."
   :type 'string
   :safe #'stringp
@@ -4348,7 +4366,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
 ;;;###autoload
 (defun cljr--inject-jack-in-dependencies ()
   "Inject the REPL dependencies of clj-refactor at `cider-jack-in'.
-If injecting the dependencies is not preferred set `cljr-inject-dependencies-at-jack-in' to nil."
+If injecting the dependencies is not preferred set
+`cljr-inject-dependencies-at-jack-in' to nil."
   (when (and cljr-inject-dependencies-at-jack-in
              (fboundp 'cider-add-to-alist)
              (boundp 'cider-preferred-build-tool)

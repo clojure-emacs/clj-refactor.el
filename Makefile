@@ -1,47 +1,23 @@
-CASK = cask
-export EMACS ?= emacs
-EMACSFLAGS =
+.PHONY: clean compile lint test
+.DEFAULT_GOAL := all
 
-PKGDIR := $(shell EMACS=$(EMACS) $(CASK) package-directory)
-
-SRCS = $(wildcard *.el)
-OBJS = $(SRCS:.el=.elc)
-
-.PHONY: compile unit-tests integration-tests test clean elpa
-
-all: compile
-
-elpa-$(EMACS):
-	$(CASK) install
-	$(CASK) update
-	touch $@
-
-elpa: elpa-$(EMACS)
-
-elpaclean:
-	rm -f elpa*
-	rm -rf .cask # Clean packages installed for development
-
-compile: elpa
-	$(CASK) build
+# Something like this can be handy if you need Eldev to run on an Emacs other than your default one:
+# export ELDEV_EMACS="$HOME/emacs28/Emacs.app/Contents/MacOS/Emacs"
 
 clean:
-	rm -f $(OBJS)
+	echo
 
-integration-tests: $(PKGDIR)
-	$(CASK) exec ecukes --no-win
+# You can find a generic `eldev` installation script in https://github.com/emacs-eldev/eldev/blob/master/webinstall/eldev
+# (Don't use the one defined for CircleCI in your local machine)
 
-unit-tests:
-	$(CASK) exec buttercup -L .
+lint: clean
+	eldev lint
 
-test: unit-tests integration-tests
+# Checks for byte-compilation warnings.
+compile: clean
+	 eldev -dtT compile --warnings-as-errors
 
-test-checks:
-	$(CASK) exec $(EMACS) --no-site-file --no-site-lisp --batch \
-		-l test/test-checks.el ./
+test: clean
+	eldev -dtT -p test
 
-test-bytecomp: $(SRCS:.el=.elc-test)
-
-%.elc-test: %.el elpa
-	$(CASK) exec $(EMACS) --no-site-file --no-site-lisp --batch \
-		-l test/clojure-mode-bytecomp-warnings.el $
+all: lint compile test
