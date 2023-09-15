@@ -2,7 +2,10 @@
 
 ## Unreleased
 
+## 3.9.2
+
 * [#523](https://github.com/clojure-emacs/clj-refactor.el/issues/523): Increase `js/` namespace detection accuracy for .cljc files. 
+* [#517](https://github.com/clojure-emacs/clj-refactor.el/issues/517): Remove `pkg-info` dependency.
 
 ## 3.9.1
 
