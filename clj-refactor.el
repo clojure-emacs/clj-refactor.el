@@ -150,8 +150,7 @@ This makes `cljr-add-project-dependency' as snappy as can be."
   :safe #'booleanp)
 
 (defcustom cljr-warn-on-eval t
-  "If t,
-warn the user before running any op that requires ASTs to be built,
+  "If t, warn the user before running any op that requires ASTs to be built,
 that the project will be evaled.
 
 If this is not preferred the op will
@@ -194,7 +193,7 @@ won't run if there is a broken namespace in the project."
   :safe #'booleanp)
 
 (defcustom cljr-auto-eval-ns-form t
-  "When true refactorings which change the ns form also trigger its re-evaluation."
+  "When t, refactorings which change the ns form also trigger its re-evaluation."
   :type 'boolean
   :safe #'booleanp)
 
@@ -238,7 +237,7 @@ at `cider-jack-in' time."
 ;; TODO: remove after `cljr--clj-context-p' is deprecated by enabling
 ;; `cljr-slash-uses-suggest-libspec'.
 (defcustom cljr-assume-language-context nil
-  "If set to 'clj' or 'cljs',
+  "If set to `clj' or `cljs',
 clj-refactor will use that value in situations where the language context is ambiguous.
 
 If set to nil, a popup will be created in each ambiguous case asking user to choose language context."
@@ -561,7 +560,7 @@ If optional `with-whitespace' is T sexp elements are not trimmed."
 
 (defun cljr--comment-line-p ()
   (save-excursion
-    (goto-char (point-at-bol))
+    (goto-char (line-beginning-position))
     (looking-at "\\s-*;+")))
 
 (defun cljr--search-forward-within-sexp (s &optional save-excursion regexp)
@@ -600,14 +599,14 @@ if SAVE-EXCURSION is T POINT does not move."
     (goto-char (point-min))
     (delete-blank-lines)
     (when (looking-at "[ \t]*$")
-      (delete-region (point-at-bol) (point-at-eol)))
+      (delete-region (line-beginning-position) (line-end-position)))
     (let ((delete-trailing-lines t))
       (delete-trailing-whitespace)
       (buffer-substring-no-properties (point-min) (point-max)))))
 
 (defun cljr--delete-line ()
   "Deletes the current line without introducing whitespace errors."
-  (delete-region (point-at-bol) (line-end-position))
+  (delete-region (line-beginning-position) (line-end-position))
   (join-line)
   (paredit-forward-delete 1))
 
@@ -648,7 +647,7 @@ list of (fn args) to pass to `apply''"
              (open-line 1)
              (forward-line))
     (cljr--goto-toplevel)
-    (goto-char (point-at-bol))
+    (goto-char (line-beginning-position))
     (open-line 2)))
 
 (defun cljr--new-toplevel-form (form)
@@ -2206,7 +2205,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
        (cljr--point-after '(re-search-forward "\\s-") 'backward-char))
     (backward-char)
     (clojure-delete-and-extract-sexp)
-    (delete-region (point-at-bol) (point-at-eol))
+    (delete-region (line-beginning-position) (line-end-position))
     (forward-line)
     (join-line)))
 
@@ -2253,20 +2252,20 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
   ;;; comments to the end of the buffer
   (goto-char (point-min))
   (while (not (looking-at dividing-line))
-    (let ((dep (string-trim (cljr--extract-region (point) (point-at-eol))))
+    (let ((dep (string-trim (cljr--extract-region (point) (line-end-position))))
           start end vector-and-meta)
       (forward-line)
       (join-line)
       (re-search-forward dividing-line)
       (re-search-forward (concat "\\[" dep "\\s-+\""))
       (paredit-backward-up 2)
-      (while (not (looking-back "^\\s-*" (point-at-bol)))
+      (while (not (looking-back "^\\s-*" (line-beginning-position)))
         (forward-char -1))
       (while (save-excursion (forward-line -1) (cljr--comment-line-p))
         (forward-line -1))
       (setq start (point))
       (re-search-forward (concat "\\[" dep "\\s-+\""))
-      (setq end (max (point-at-eol)
+      (setq end (max (line-end-position)
                      (cljr--point-after
                       '(paredit-forward-up 2) '(move-end-of-line 1))))
       (setq vector-and-meta (buffer-substring-no-properties start end))
@@ -3068,8 +3067,8 @@ str/split => split"
 
 Date. -> Date
 @sym => sym
-#'sym => sym
-'sym => sym
+#\\='sym => sym
+\\='sym => sym
 ~sym => sym
 ~@sym => sym"
   (cond
@@ -3250,7 +3249,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-function
 (add-to-list 'mc--default-cmds-to-run-once 'cljr-extract-function)
 
 (defun cljr--at-end-of-symbol-at-point ()
-  (looking-back (regexp-quote (cider-symbol-at-point)) (point-at-bol)))
+  (looking-back (regexp-quote (cider-symbol-at-point)) (line-beginning-position)))
 
 (defun cljr--insert-function-stubs (functions)
   (unless (cljr--at-end-of-symbol-at-point)
@@ -3359,7 +3358,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
           (forward-line (1- line-beg))
           (forward-char (1- col-beg))
           (let* ((call-site-p (and inline-fn-p
-                                   (looking-back "(\s*" (point-at-bol))))
+                                   (looking-back "(\s*" (line-beginning-position))))
                  (sexp (if call-site-p
                            (prog1 (cljr--extract-sexp-as-list)
                              (paredit-backward-up)
@@ -4003,7 +4002,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
          (parameter-info (nth index cljr--signature-changes)))
     (puthash :new-name new-name parameter-info)
     (view-mode -1)
-    (delete-region (point-at-bol) (point-at-eol))
+    (delete-region (line-beginning-position) (line-end-position))
     (insert new-name)
     (view-mode 1)))
 
@@ -4070,7 +4069,7 @@ Point is assumed to be at the end of the form."
                         80)))
     (when (> (current-column) breakpoint)
       (paredit-backward-up)
-      (if (and (not (looking-back "^\\s-*" (point-at-bol))) (looking-at-p "\\["))
+      (if (and (not (looking-back "^\\s-*" (line-beginning-position))) (looking-at-p "\\["))
           (newline-and-indent) ; Put lambdalist on its own line
         (paredit-forward-down)
         (cljr--forward-parameter) ; don't break right after ( or [
@@ -4159,7 +4158,7 @@ to here:  (defn foo [|bar baz] ...)"
 (defun cljr--append-to-manual-intervention-buffer ()
   "Append the current line to the buffer of stuff requiring manual intervention."
   (let ((line (string-trim (buffer-substring-no-properties
-                            (point-at-bol) (point-at-eol))))
+                            (line-beginning-position) (line-end-position))))
         (linum (line-number-at-pos))
         (file (buffer-file-name)))
     (with-current-buffer (get-buffer-create cljr--manual-intervention-buffer)
@@ -4397,7 +4396,6 @@ If injecting the dependencies is not preferred set
   (if clj-refactor-mode
       (add-hook 'post-command-hook #'cljr--post-command-hook :append :local)
     (remove-hook 'post-command-hook #'cljr--post-command-hook :local)))
-
 
 (provide 'clj-refactor)
 ;;; clj-refactor.el ends here
