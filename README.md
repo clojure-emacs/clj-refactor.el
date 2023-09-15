@@ -137,17 +137,9 @@ You'll find the repo at:
 
     https://github.com/clojure-emacs/clj-refactor.el
 
-To fetch the test dependencies, install
-[cask](https://github.com/cask/cask) if you haven't already,
-then:
-
-    $ cd /path/to/clj-refactor
-    $ cask
-
 Run the tests with:
 
     $ make test
-
 
 Before submitting a patch, or a pull request, make sure all tests are
 passing and that your patch is in line with the [contribution
@@ -159,12 +151,6 @@ Thanks to [everyone](https://github.com/clojure-emacs/clj-refactor.el/graphs/con
 
 Due to clj-refactor's kinship with CIDER, you can get help for it
 in most CIDER-related support channels.
-
-### Discord
-
-CIDER has its own Discord chat server, created by CIDER's
-author Bozhidar. You can join the Discord server
-[here](https://discord.com/invite/nFPpynQPME).
 
 ### Slack
 
