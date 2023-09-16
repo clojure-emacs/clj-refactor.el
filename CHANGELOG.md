@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 3.9.3
+
 * Internal: avoid the use of deprecated Elisp functions.
 
 ## 3.9.2
