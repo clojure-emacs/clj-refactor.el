@@ -1,7 +1,6 @@
 [![MELPA](http://melpa.org/packages/clj-refactor-badge.svg)](http://melpa.org/#/clj-refactor)
 [![MELPA Stable](http://stable.melpa.org/packages/clj-refactor-badge.svg)](http://stable.melpa.org/#/clj-refactor)
 [![circleci][badge-circleci]][circleci]
-[![Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true)](https://discord.com/invite/nFPpynQPME)
 
 [badge-circleci]: https://circleci.com/gh/clojure-emacs/clj-refactor.el.svg?style=svg
 [circleci]: https://circleci.com/gh/clojure-emacs/clj-refactor.el
@@ -163,6 +162,7 @@ There's also another channel named `#emacs` for generic Emacs discussions.
 ## License
 
 Copyright © 2012-2014 Magnar Sveen
+
 Copyright © 2014-2023 Magnar Sveen, Lars Andersen, Benedek Fazekas, Bozhidar Batsov
 
 Author: Magnar Sveen <magnars@gmail.com>
