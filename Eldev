@@ -13,8 +13,13 @@
 ;; CIDER cannot be compiled otherwise.
 (setf eldev-build-load-before-byte-compiling t)
 
+(setq byte-compile-docstring-max-column 240)
+(setq checkdoc-force-docstrings-flag nil)
+(setq checkdoc-permit-comma-termination-flag t)
+(setq checkdoc--interactive-docstring-flag nil)
+
 (setf eldev-lint-default '(elisp))
 (with-eval-after-load 'elisp-lint
   ;; We will byte-compile with Eldev.
-  (setf elisp-lint-ignored-validators '("package-lint" "fill-column" "byte-compile")
+  (setf elisp-lint-ignored-validators '("package-lint" "fill-column" "byte-compile" "checkdoc")
         enable-local-variables        :safe))

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Internal: avoid the use of deprecated Elisp functions.
+
 ## 3.9.2
 
 * [#523](https://github.com/clojure-emacs/clj-refactor.el/issues/523): Increase `js/` namespace detection accuracy for .cljc files. 
