@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.9.4
+
+* Fix `cljr-version`.
+
 ## 3.9.3
 
 * Internal: avoid the use of deprecated Elisp functions.
