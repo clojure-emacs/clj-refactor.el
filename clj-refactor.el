@@ -7,10 +7,10 @@
 ;;         Lars Andersen <expez@expez.com>
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;;         Bozhidar Batsov <bozhidar@batsov.dev>
-;; Version: 3.9.4
+;; Version: 3.10.0
 ;; Keywords: convenience, clojure, cider
 
-;; Package-Requires: ((emacs "26.1") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.16.1") (cider "1.7.0") (parseedn "1.1.0") (inflections "2.6") (hydra "0.13.2"))
+;; Package-Requires: ((emacs "26.1") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.17.0") (cider "1.7.0") (parseedn "1.1.0") (inflections "2.6") (hydra "0.13.2"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -746,26 +746,43 @@ if the point is currently placed at the opening parentheses of an anonymous func
   ;; evenp lives in cl.el...
   (zerop (mod n 2)))
 
+(defun cljr--remove-tramp-prefix-from-msg (entry)
+  (let* ((k (car entry))
+         (v (cadr entry)))
+    (list k
+          (if (and (member k '("file" "dir" "path" "old-path" "new-path"))
+                   (stringp v))
+              (if-let* ((p (cider-tramp-prefix)))
+                  (string-remove-prefix p v)
+                v)
+            v))))
+
 (defun cljr--create-msg (op &rest kvs)
   "Create a msg for the middleware for OP and optionally include the kv pairs KVS.
 
 All config settings are included in the created msg."
   (cl-assert (cljr--evenp (length kvs)) nil "Can't create msg to send to the middleware.\
   Received an uneven number of kv pairs: %s " kvs)
-  (apply #'list "op" op
+  (apply #'list
+         "op" op
+
          "prefix-rewriting"
          (if cljr-favor-prefix-notation
              "true"
            "false")
+
          "insert-newline-after-require"
          (if cljr-insert-newline-after-require
              "true"
            "false")
+
          "debug"
          (if cljr--debug-mode
              "true"
            "false")
-         kvs))
+
+         (seq-mapcat #'cljr--remove-tramp-prefix-from-msg
+                     (seq-partition kvs 2))))
 
 (defun cljr--post-command-message (format-string &rest args)
   "Display msg in a post command hook, to ensure it doesn't drown in emacs' general chatter."
@@ -2709,8 +2726,14 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
   (string-remove-prefix (cljr--project-dir) path))
 
 (defun cljr--get-valid-filename (hash)
-  "Get :file value from the hash table and convert path if necessary."
-  (funcall cider-from-nrepl-filename-function (gethash :file hash)))
+  "Get :file value from the hash table and convert path if necessary.
+
+Translate it back to TRAMP notation if needed."
+  (let ((file (funcall cider-from-nrepl-filename-function (gethash :file hash)))
+        (current (funcall cider-from-nrepl-filename-function (buffer-file-name))))
+    (if (tramp-tramp-file-p current)
+        (concat (cider-tramp-prefix) file)
+      file)))
 
 (defun cljr--format-symbol-occurrence (occurrence)
   (let ((file (cljr--get-valid-filename occurrence))
@@ -3429,7 +3452,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
             (cljr--post-command-message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
     (cljr--indent-defun)))
 
-(defconst cljr-version "3.9.4"
+(defconst cljr-version "3.10.0"
   "The current version of clj-refactor.")
 
 (defun cljr--pkg-version ()

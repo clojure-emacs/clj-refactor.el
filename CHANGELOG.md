@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.10.0
+
+* [#552](https://github.com/clojure-emacs/clj-refactor.el/issues/552): support TRAMP connections.
+
 ## 3.9.4
 
 * Fix `cljr-version`.
