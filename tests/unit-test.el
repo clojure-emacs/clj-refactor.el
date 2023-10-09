@@ -18,6 +18,14 @@
      (delay-mode-hooks (clojure-mode))
      ,@body))
 
+(defmacro with-point-at (text &rest body)
+  (declare (indent 1))
+  `(progn (insert ,text)
+          (goto-char (point-min))
+          (re-search-forward "|")
+          (delete-char -1)
+          ,@body))
+
 (describe "cljr--insert-require-libspec"
   :var (after-inserting-a
         after-inserting-b)
@@ -169,14 +177,6 @@
       (insert "(ns foo)")
       (expect (cljr--unresolved-alias-ref "js")
               :to-equal "js"))))
-
-(defmacro with-point-at (text &rest body)
-  (declare (indent 1))
-  `(progn (insert ,text)
-          (goto-char (point-min))
-          (re-search-forward "|")
-          (delete-char -1)
-          ,@body))
 
 (describe "cljr--language-context-at-point"
   (it "identifies a clj file"
@@ -396,3 +396,14 @@ ex/")))
       (expect (buffer-string) :to-equal "(ns foo
   (:require [baz.example :as ex :refer [a b c] ]))
 ex/"))))
+
+(describe "cljr--remove-tramp-prefix-from-msg"
+  (it "Removes the tramp prefix from specifc nrepl message attributes"
+    (with-temp-buffer
+      (setq buffer-file-name "/ssh:cider-devs@192.168.50.9#22:a.clj")
+      (let* ((v (seq-mapcat #'cljr--remove-tramp-prefix-from-msg
+                            (seq-partition (list "file" "/ssh:cider-devs@192.168.50.9#22:a.clj"
+                                                 "something" "else")
+                                           2))))
+        (setq-local tramp-mode nil) ;; prevent hanging
+        (expect v :to-equal '("file" "a.clj" "something" "else"))))))
