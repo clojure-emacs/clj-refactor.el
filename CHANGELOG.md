@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* [#554](https://github.com/clojure-emacs/clj-refactor.el/pull/554): Enable `cljr-slash-uses-suggest-libspec` by default
+
 ## 3.10.0
 
 * [#552](https://github.com/clojure-emacs/clj-refactor.el/issues/552): support TRAMP connections.

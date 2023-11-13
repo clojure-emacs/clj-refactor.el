@@ -74,9 +74,19 @@ Any other non-nil value means to add the form without asking."
                  (const :tag "prompt" :prompt)
                  (const :tag "false" nil)))
 
-(defcustom cljr-slash-uses-suggest-libspec nil
+(defcustom cljr-slash-uses-suggest-libspec t
   "If t, `cljr-slash'' magic requires' functionality will use `cljr-suggest-libspec'.
-It's a middleware op, newer than the `namespace-aliases' op."
+
+The `suggest-libspec' middleware operation replaces the `namespace-aliases'
+operation. It incorporates the requested namespace alias, buffer and scoped
+language context (clj, cljs, cljc, etc), preferred-aliases from the
+`cljr-magic-require-namespaces', with existing aliases from the project and
+returns a candidate list of suitable libspec entries. This is passed to the
+completion framework along with language context information to add a
+require which will satisfy the alias for a given namespace.
+
+Currently testing this flag as the default, remove associated deprecated
+paths once this flag is removed."
   :type 'boolean
   :safe #'booleanp)
 
@@ -234,8 +244,7 @@ at `cider-jack-in' time."
   :type 'boolean
   :safe #'booleanp)
 
-;; TODO: remove after `cljr--clj-context-p' is deprecated by enabling
-;; `cljr-slash-uses-suggest-libspec'.
+;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
 (defcustom cljr-assume-language-context nil
   "If set to `clj' or `cljs',
 clj-refactor will use that value in situations where the language context is ambiguous.
@@ -1909,11 +1918,11 @@ but removes # in front of function literals and sets."
 
 ;; ------ magic requires -------
 
+;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
 (defun cljr--magic-requires-re ()
   (regexp-opt (seq-map 'car cljr-magic-require-namespaces)))
 
-;; TODO: remove after `cljr--get-aliases-from-middleware' is deprecated by
-;; enabling `cljr-slash-uses-suggest-libspec'.
+;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
 (defun cljr--clj-context-p ()
   "Is point in a clj context?"
   (or (cljr--clj-file-p)
@@ -1973,12 +1982,14 @@ context. Valid outputs include, but are not limited to `:clj',
 (defun cljr--aget (map key)
   (cdr (assoc key map)))
 
+;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
 (defcustom cljr-suggest-namespace-aliases t
   "If `t', `namespace-aliases' and `cljr-slash' will take into account suggested namespace aliases,
 following this convention: `https://stuartsierra.com/2015/05/10/clojure-namespace-aliases'."
   :group 'cljr
   :type 'boolean)
 
+;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
 (defun cljr--call-middleware-for-namespace-aliases ()
   (thread-first "namespace-aliases"
                 cljr--ensure-op-supported
@@ -2055,6 +2066,7 @@ is not set to `:prompt'."
     ;; this is like seq-first, but compatible with older Emacsen:
     (seq-elt candidates 0))))
 
+;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
 (defun cljr--get-aliases-from-middleware ()
   (when-let (aliases (cljr--call-middleware-for-namespace-aliases))
     (if (cljr--clj-context-p)
@@ -2077,7 +2089,7 @@ is not set to `:prompt'."
     '(re-search-forward "[0-9`':#]*" nil t))
    (1- (point))))
 
-;; TODO: deprecated after enabling `cljr-slash-uses-suggest-libspec'
+;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
 (defun cljr--magic-requires-lookup-alias (short)
   "Generate a mapping from alias to candidate namespaces.
 
@@ -2161,14 +2173,14 @@ to the ns form."
                             (clojure-find-ns)
                             (cljr--unresolved-alias-ref (cljr--ns-alias-at-point))))
     (if cljr-slash-uses-suggest-libspec
-        ;; New path creates suggestions from `suggest-libspec' middleware op
+        ;; creates suggestions from `suggest-libspec' middleware op
         (when-let (libspec
                    (thread-first alias-ref
                                  (cljr--call-middleware-suggest-libspec (cljr--language-context-at-point))
                                  cljr--prompt-or-select-libspec))
           ;; only insert a require if a candidate exists and was selected
           (cljr--insert-require-libspec libspec))
-      ;; Old path creates suggestions from `namespace-aliases' middleware op
+      ;; Deprecated, creates suggestions from `namespace-aliases' middleware op
       (when-let (aliases (cljr--magic-requires-lookup-alias alias-ref))
         (let ((short (cl-first aliases))
               ;; Ensure it's a list (and not a vector):
@@ -2181,6 +2193,7 @@ to the ns form."
                            (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
               (cljr--insert-require-libspec (format "[%s :as %s]" long short)))))))))
 
+;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
 (defun cljr--in-namespace-declaration-p (s)
   (save-excursion
     (cljr--goto-ns)
