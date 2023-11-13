@@ -408,6 +408,11 @@
            (cljr--change-function-signature (list (cljr--plist-to-hash (cl-second cljr--test-occurrences)))
                                             cljr--baz-renamed-to-qux))))
 
+;; TODO: deprecate dependent tests after `cljr-slash-uses-suggest-libspec' is the only path.
+(Given "The `cljr-slash-uses-suggest-libspec' flag is disabled"
+       (lambda ()
+         (setq-local cljr-slash-uses-suggest-libspec nil)))
+
 (Given "The cache of namespace aliases is populated"
        (lambda ()
          (defun cljr--call-middleware-for-namespace-aliases ()

@@ -4,6 +4,7 @@ Feature: Magic requires
     Given I have a project "cljr" in "tmp"
     And I have a clojure-file "tmp/src/cljr/core.clj"
     And I open file "tmp/src/cljr/core.clj"
+    And the `cljr-slash-uses-suggest-libspec' flag is disabled
     And I clear the buffer
 
   Scenario: Require is inserted automagically

@@ -2,6 +2,7 @@
     Given I have a project "cljr" in "tmp"
     And I have a clojure-file "tmp/src/cljr/core.cljc"
     And I open file "tmp/src/cljr/core.cljc"
+    And the `cljr-slash-uses-suggest-libspec' flag is disabled
     And I clear the buffer
 
   Scenario: Does the right thing when facing clj reader conditionals
