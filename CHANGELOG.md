@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-* [#554](https://github.com/clojure-emacs/clj-refactor.el/pull/554): Enable `cljr-slash-uses-suggest-libspec` by default
+## 3.11.0
+
+* [#554](https://github.com/clojure-emacs/clj-refactor.el/pull/554): Enable `cljr-slash-uses-suggest-libspec` by default.
 
 ## 3.10.0
 
