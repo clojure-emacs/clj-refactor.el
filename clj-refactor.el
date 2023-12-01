@@ -91,7 +91,8 @@ paths once this flag is removed."
   :safe #'booleanp)
 
 (defcustom cljr-magic-require-namespaces
-  '(("io"   . "clojure.java.io")
+  '(("edn"  . "clojure.edn")
+    ("io"   . "clojure.java.io")
     ("math" . "clojure.math")
     ("set"  . "clojure.set")
     ("str"  . "clojure.string")
