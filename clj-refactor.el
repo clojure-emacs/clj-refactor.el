@@ -2107,8 +2107,13 @@ match. Returns a structure of (alias (ns1 ns2 ...))."
                (string-match-p (cljr--magic-requires-re) short))
       ;; This when-let might seem unnecessary but the regexp match
       ;; isn't perfect.
-      (when-let (long (cljr--aget cljr-magic-require-namespaces short))
-        (list short (list long))))))
+      (let ((long  (cljr--aget cljr-magic-require-namespaces short)))
+        (when-let (libspec (cond ((stringp long)
+                                  (list long))
+                                 ;; handle ("io" "clojure.java.io" :only ("clj"))
+                                 ((and (listp long) (stringp (car long)))
+                                  (list (car long)))))
+          (list short libspec))))))
 
 (defun cljr--in-keyword-sans-alias-p ()
   "Checks if thing at point is keyword without an alias."
