@@ -101,7 +101,7 @@ paths once this flag is removed."
   "Alist of aliases to namespace libspec recommendations for `\\[cljr-slash]'.
 
 An optional keyword `:only` can limit a recommendation to the set of
-language contexts the libspec is available in."
+language contexts (clj, cljs) the libspec is available in."
   :type '(repeat (cons (string :tag "Short alias")
                        (string :tag "Full namespace")))
   :safe #'listp)
