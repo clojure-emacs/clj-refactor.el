@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* [#555](https://github.com/clojure-emacs/clj-refactor.el/pull/555): Document :only syntax for `cljr-magic-require-namespace` and improve default aliases.
+
 ## 3.11.0
 
 * [#554](https://github.com/clojure-emacs/clj-refactor.el/pull/554): Enable `cljr-slash-uses-suggest-libspec` by default.
