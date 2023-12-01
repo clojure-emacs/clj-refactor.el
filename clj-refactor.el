@@ -92,13 +92,16 @@ paths once this flag is removed."
 
 (defcustom cljr-magic-require-namespaces
   '(("edn"  . "clojure.edn")
-    ("io"   . "clojure.java.io")
+    ("io"     "clojure.java.io" :only ("clj"))
     ("math" . "clojure.math")
     ("set"  . "clojure.set")
     ("str"  . "clojure.string")
     ("walk" . "clojure.walk")
     ("zip"  . "clojure.zip"))
-  "Alist of aliases and namespaces used by `cljr-slash'."
+  "Alist of aliases to namespace libspec recommendations for `\\[cljr-slash]'.
+
+An optional keyword `:only` can limit a recommendation to the set of
+language contexts the libspec is available in."
   :type '(repeat (cons (string :tag "Short alias")
                        (string :tag "Full namespace")))
   :safe #'listp)
