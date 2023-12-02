@@ -91,13 +91,17 @@ paths once this flag is removed."
   :safe #'booleanp)
 
 (defcustom cljr-magic-require-namespaces
-  '(("io"   . "clojure.java.io")
+  '(("edn"  . "clojure.edn")
+    ("io"     "clojure.java.io" :only ("clj"))
     ("math" . "clojure.math")
     ("set"  . "clojure.set")
     ("str"  . "clojure.string")
     ("walk" . "clojure.walk")
     ("zip"  . "clojure.zip"))
-  "Alist of aliases and namespaces used by `cljr-slash'."
+  "Alist of aliases to namespace libspec recommendations for `\\[cljr-slash]'.
+
+An optional keyword `:only` can limit a recommendation to the set of
+language contexts (clj, cljs) the libspec is available in."
   :type '(repeat (cons (string :tag "Short alias")
                        (string :tag "Full namespace")))
   :safe #'listp)
@@ -2103,8 +2107,13 @@ match. Returns a structure of (alias (ns1 ns2 ...))."
                (string-match-p (cljr--magic-requires-re) short))
       ;; This when-let might seem unnecessary but the regexp match
       ;; isn't perfect.
-      (when-let (long (cljr--aget cljr-magic-require-namespaces short))
-        (list short (list long))))))
+      (let ((long  (cljr--aget cljr-magic-require-namespaces short)))
+        (when-let (libspec (cond ((stringp long)
+                                  (list long))
+                                 ;; handle ("io" "clojure.java.io" :only ("clj"))
+                                 ((and (listp long) (stringp (car long)))
+                                  (list (car long)))))
+          (list short libspec))))))
 
 (defun cljr--in-keyword-sans-alias-p ()
   "Checks if thing at point is keyword without an alias."
