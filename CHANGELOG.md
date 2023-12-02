@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-* [#555](https://github.com/clojure-emacs/clj-refactor.el/pull/555): Document :only syntax for `cljr-magic-require-namespace` and improve default aliases.
+* [#555](https://github.com/clojure-emacs/clj-refactor.el/pull/555): expand default `cljr-magic-require-namespaces` aliases.
+* Handle an edge case for `cljr-slash`.
 
 ## 3.11.0
 
