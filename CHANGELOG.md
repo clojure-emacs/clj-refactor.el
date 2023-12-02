@@ -2,8 +2,10 @@
 
 ## Unreleased
 
+## 3.11.1
+
 * [#555](https://github.com/clojure-emacs/clj-refactor.el/pull/555): expand default `cljr-magic-require-namespaces` aliases.
-* Handle an edge case for `cljr-slash`.
+* [#555](https://github.com/clojure-emacs/clj-refactor.el/pull/555): Handle an edge case for `cljr-slash`.
 
 ## 3.11.0
 
