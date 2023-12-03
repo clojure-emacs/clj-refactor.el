@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 3.11.2
+
+- [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.9.1/CHANGELOG.md#391).
+  - Fixes https://github.com/clojure-emacs/clj-refactor.el/issues/556
+
 ## 3.11.1
 
 * [#555](https://github.com/clojure-emacs/clj-refactor.el/pull/555): expand default `cljr-magic-require-namespaces` aliases.
