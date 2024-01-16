@@ -59,7 +59,7 @@ profile found at `~/.lein/profiles.clj`:
 
 ```clojure
 :plugins [[refactor-nrepl "3.9.1"]
-          [cider/cider-nrepl "0.32.0"]]
+          [cider/cider-nrepl "0.45.0"]]
 ```
 
 Check out the much longer
@@ -76,7 +76,7 @@ clj-refactor | refactor-nrepl | CIDER       | Clojure | Java |
 -------------|----------------|-------------|---------|------|
 2.4.0        |  2.4.0         | 0.17, 0.18  | 1.7+    | 8+   |
 2.5.0        |  2.5.0         | 0.24        | 1.8+    | 8+   |
-3.0.0+       |  3.0.0+        | 1.0         | 1.8+    | 8+   |
+3.0.0+       |  3.0.0+        | 1.0         | 1.9+    | 11+  |
 
 ### Middleware
 

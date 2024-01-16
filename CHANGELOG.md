@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.11.3
+
+- Fix incorrectly serialized values for `cljr-slash` when using `cljr-suggest-libspecs`.
+
 ## 3.11.2
 
 - [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.9.1/CHANGELOG.md#391).

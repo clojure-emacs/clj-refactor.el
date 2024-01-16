@@ -7,7 +7,7 @@
 ;;         Lars Andersen <expez@expez.com>
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;;         Bozhidar Batsov <bozhidar@batsov.dev>
-;; Version: 3.11.2
+;; Version: 3.11.3
 ;; Keywords: convenience, clojure, cider
 
 ;; Package-Requires: ((emacs "26.1") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.18.0") (cider "1.11.1") (parseedn "1.2.0") (inflections "2.6") (hydra "0.13.2"))
@@ -2029,7 +2029,9 @@ appear in the project yet."
                                     "language-context" buffer-context
                                     "buffer-language-context" buffer-context
                                     "input-language-context" (or point-context buffer-context)
-                                    "preferred-aliases" (prin1-to-string cljr-magic-require-namespaces))
+                                    "preferred-aliases" (let ((print-length nil) ;; prevent large lists from being serialized with `...`, which would cause issues
+                                                              (print-level nil))
+                                                          (prin1-to-string cljr-magic-require-namespaces)))
                   (cljr--call-middleware-sync "suggestions")
                   parseedn-read-str
                   (seq-into 'list))))
@@ -3474,7 +3476,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
             (cljr--post-command-message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
     (cljr--indent-defun)))
 
-(defconst cljr-version "3.11.2"
+(defconst cljr-version "3.11.3"
   "The current version of clj-refactor.")
 
 (defun cljr--pkg-version ()
