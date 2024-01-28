@@ -2472,8 +2472,8 @@ possible choices. If the choice is trivial, return it."
 
 
 (defun cljr--add-project-dependency (artifact version)
-  (let* ((project-file (cljr--project-file))
-         (deps (cljr--project-with-deps-p project-file)))
+  (if-let ((project-file (cljr--project-file))
+           (deps (cljr--project-with-deps-p project-file)))
     (cljr--update-file project-file
       (goto-char (point-min))
       (if deps
@@ -2484,11 +2484,12 @@ possible choices. If the choice is trivial, return it."
         (if deps
             (back-to-indentation)
           (paredit-backward-down))
-        (cljr-hotload-dependency)))))
+        (cljr-hotload-dependency)))
+    (error "No project file found")))
 
 ;;;###autoload
 (defun cljr-add-project-dependency (force)
-  "Add a dependency to the project.clj file.
+  "Add a dependency to the project dependencies file.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-dependency"
   (interactive "P")
