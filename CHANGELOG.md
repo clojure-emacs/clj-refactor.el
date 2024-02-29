@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- `clean-ns` will reformat `ns` form even when no structural changes were made.
+- `clean-ns` will reformat `ns` form even when no structural changes were made. This is useful when there are only whitespace changes which were previously discarded.
 
 ## 3.11.3
 
