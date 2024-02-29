@@ -2970,6 +2970,7 @@ removed."
                        (cljr--create-msg "clean-ns"
                                          "path" path
                                          "relative-path" relative-path
+                                         "always-return-ns-form" "true"
                                          "libspec-whitelist" cljr-libspec-whitelist
                                          "print-right-margin" cljr-print-right-margin
                                          "print-miser-width" cljr-print-miser-width

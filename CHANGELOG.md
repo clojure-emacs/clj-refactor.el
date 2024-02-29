@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `clean-ns` will reformat `ns` form even when no structural changes were made.
+
 ## 3.11.3
 
 - Fix incorrectly serialized values for `cljr-slash` when using `cljr-suggest-libspecs`.
