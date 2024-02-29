@@ -2951,9 +2951,13 @@ in the namespace."
 (defun cljr--replace-ns (new-ns)
   (save-excursion
     (cljr--goto-ns)
-    (clojure-delete-and-extract-sexp)
-    (insert new-ns)
-    (cljr--just-one-blank-line)))
+    (let ((begin (point)))
+      (forward-sexp)
+      (let ((old-ns (buffer-substring begin (point))))
+        (when (not (string-equal old-ns (string-trim-right new-ns)))
+          (delete-region begin (point))
+          (insert new-ns)
+          (cljr--just-one-blank-line))))))
 
 (defun cljr--clean-ns (&optional path no-prune?)
   "If PATH is passed use, that instead of the path to the current buffer.
