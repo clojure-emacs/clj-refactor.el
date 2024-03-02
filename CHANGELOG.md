@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-- `clean-ns` will reformat `ns` form even when no structural changes were made. This is useful when there are only whitespace changes which were previously discarded.
+## 3.12.0
+
+- `clean-ns` will now also reformat the `ns` form for whitespace-only changes, if needed.
+  - Previously, this wasn't possible since refactor-nrepl generally only works at the structural level.
+- Use refactor-nrepl [3.10.0](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.10.0/CHANGELOG.md#3100).
 
 ## 3.11.3
 
