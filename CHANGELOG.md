@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 3.12.0
+
+- `clean-ns` will now also reformat the `ns` form for whitespace-only changes, if needed.
+  - Previously, this wasn't possible since refactor-nrepl generally only works at the structural level.
+- Use refactor-nrepl [3.10.0](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.10.0/CHANGELOG.md#3100).
+
 ## 3.11.3
 
 - Fix incorrectly serialized values for `cljr-slash` when using `cljr-suggest-libspecs`.
