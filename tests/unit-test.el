@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t; -*-
 (require 'paredit)
 (require 'clj-refactor)
 (require 'buttercup)
@@ -358,6 +359,21 @@
       (expect (cljr--prompt-or-select-libspec '("[a.a :as a]"))
               :to-equal "[a.a :as a]"))
     (expect 'completing-read :to-have-been-called-times 1)))
+
+(describe "cljr--magic-requires-libspec-defcustom"
+  (it "generates libspec for aliases from `cljr-magic-require-namespaces'"
+    (spy-on 'cljr--in-namespace-declaration-p :and-return-value nil)
+    (expect
+     (let ((cljr-magic-require-namespaces '(("foo" . "clojure.foo"))))
+       (cljr--magic-requires-libspec-defcustom "foo")
+       :to-equal "[clojure.foo :as foo]")))
+
+  (it "doesn't generate libspec when alias is unknown"
+    (spy-on 'cljr--in-namespace-declaration-p :and-return-value nil)
+    (expect
+     (let ((cljr-magic-require-namespaces '(("foo" . "clojure.foo"))))
+       (cljr--magic-requires-libspec-defcustom "bar")
+       :to-be nil))))
 
 (describe "cljr-slash"
   (it "inserts single selection from suggest-libspec"
