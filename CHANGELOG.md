@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Introduce `cljr-magic-requires-fallback` defcustom to fallback magic requires to `cljr-magic-require-namespaces` if the middlware is not available.
+
 ## 3.12.0
 
 - `clean-ns` will now also reformat the `ns` form for whitespace-only changes, if needed.
