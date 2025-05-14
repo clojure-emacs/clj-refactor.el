@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.11.0/CHANGELOG.md#3110).
+
 ## 3.12.0
 
 - `clean-ns` will now also reformat the `ns` form for whitespace-only changes, if needed.
@@ -40,14 +42,14 @@
 
 ## 3.9.2
 
-* [#523](https://github.com/clojure-emacs/clj-refactor.el/issues/523): Increase `js/` namespace detection accuracy for .cljc files. 
+* [#523](https://github.com/clojure-emacs/clj-refactor.el/issues/523): Increase `js/` namespace detection accuracy for .cljc files.
 * [#517](https://github.com/clojure-emacs/clj-refactor.el/issues/517): Remove `pkg-info` dependency.
 
 ## 3.9.1
 
 * [#430](https://github.com/clojure-emacs/clj-refactor.el/issues/430) `cljr-add-missing-libspec`: produce more friendly prompts.
 * `cljr-add-missing-libspec`: don't suggest members that are already interned into the current namespace.
-  * e.g. the class `Thread` or the var `+` are already interned by default in Clojure namespaces, so they are redundant to suggest or insert into the `ns` form. 
+  * e.g. the class `Thread` or the var `+` are already interned by default in Clojure namespaces, so they are redundant to suggest or insert into the `ns` form.
 
 ## 3.9.0
 
@@ -126,7 +128,7 @@
 
 ## 3.3.3
 
-- Adapt `cljr--inject-jack-in-dependencies` to upstream changes in CIDER. 
+- Adapt `cljr--inject-jack-in-dependencies` to upstream changes in CIDER.
 
 ## 3.3.2
 
