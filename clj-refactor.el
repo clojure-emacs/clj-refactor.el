@@ -3505,7 +3505,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
 ;; We used to derive the version out of `(cljr--version)`,
 ;; but now prefer a fixed version to fully decouple things and prevent unforeseen behavior.
 ;; This suits better our current pace of development.
-(defcustom cljr-injected-middleware-version "3.10.0"
+(defcustom cljr-injected-middleware-version "3.11.0"
   "The refactor-nrepl version to be injected.
 
 You can customize this in order to try out new releases.
