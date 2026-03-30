@@ -36,6 +36,7 @@ jobs:
 
       - run: eldev lint
         name: Lint
+        if: matrix.emacs-version == '30.1' && matrix.os == 'ubuntu-latest'
 
       - run: eldev -dtT compile --warnings-as-errors
         name: Compile

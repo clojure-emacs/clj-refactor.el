@@ -1457,9 +1457,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
         (setq ns (cljr--current-namespace)
               names (cljr--name-of-defns forms)
               target-ns-alias (when-let* ((filtered-require (seq-find
-                                                            (lambda (it)
-                                                              (string-match-p (format target-ns-regexp-template ns) it))
-                                                            requires)))
+                                                             (lambda (it)
+                                                               (string-match-p (format target-ns-regexp-template ns) it))
+                                                             requires)))
                                 (thread-last filtered-require
                                              (cljr--slice-at ":as")
                                              last
@@ -1620,7 +1620,7 @@ With a prefix add a declaration for the symbol under the cursor instead.
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-declaration"
   (interactive "P")
   (if-let* ((def (and (not for-thing-at-point-p)
-                     (save-excursion (cljr--name-of-current-def)))))
+                      (save-excursion (cljr--name-of-current-def)))))
       (cljr--add-declaration def)
     (cljr--add-declaration (cider-symbol-at-point))))
 
@@ -2057,7 +2057,7 @@ of a reader conditional inside of a cljc file."
                 ((cljr--clj-file-p)
                  "clj"))
           (when-let* ((context (when cljc?
-                                (cljr--reader-conditional-context))))
+                                 (cljr--reader-conditional-context))))
             (string-remove-prefix ":" context)))))
 
 (defun cljr--prompt-or-select-libspec (candidates)
@@ -2103,7 +2103,7 @@ If we recognize the `short' alias in the project, use namespaces
 from the middleware or any `cljr-magic-require-namespaces' that
 match. Returns a structure of (alias (ns1 ns2 ...))."
   (if-let* ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
-           (candidates (gethash (intern short) aliases)))
+            (candidates (gethash (intern short) aliases)))
       (list short candidates)
     (when (and cljr-magic-require-namespaces ; a regex against "" always triggers
                (string-match-p (cljr--magic-requires-re) short))
@@ -2111,10 +2111,10 @@ match. Returns a structure of (alias (ns1 ns2 ...))."
       ;; isn't perfect.
       (let ((long  (cljr--aget cljr-magic-require-namespaces short)))
         (when-let* ((libspec (cond ((stringp long)
-                                   (list long))
-                                  ;; handle ("io" "clojure.java.io" :only ("clj"))
-                                  ((and (listp long) (stringp (car long)))
-                                   (list (car long))))))
+                                    (list long))
+                                   ;; handle ("io" "clojure.java.io" :only ("clj"))
+                                   ((and (listp long) (stringp (car long)))
+                                    (list (car long))))))
           (list short libspec))))))
 
 (defun cljr--in-keyword-sans-alias-p ()
@@ -2174,21 +2174,21 @@ to the ns form."
   (interactive)
   (insert "/")
   (when-let* ((alias-ref (and cljr-magic-requires
-                             (not (cljr--in-map-destructuring?))
-                             (not (cljr--in-ns-above-point-p))
-                             (not (cljr--in-reader-literal-p))
-                             (not (cider-in-comment-p))
-                             (not (cider-in-string-p))
-                             (not (cljr--in-keyword-sans-alias-p))
-                             (not (cljr--in-number-p))
-                             (clojure-find-ns)
-                             (cljr--unresolved-alias-ref (cljr--ns-alias-at-point)))))
+                              (not (cljr--in-map-destructuring?))
+                              (not (cljr--in-ns-above-point-p))
+                              (not (cljr--in-reader-literal-p))
+                              (not (cider-in-comment-p))
+                              (not (cider-in-string-p))
+                              (not (cljr--in-keyword-sans-alias-p))
+                              (not (cljr--in-number-p))
+                              (clojure-find-ns)
+                              (cljr--unresolved-alias-ref (cljr--ns-alias-at-point)))))
     (if cljr-slash-uses-suggest-libspec
         ;; creates suggestions from `suggest-libspec' middleware op
         (when-let* ((libspec
-                    (thread-first alias-ref
-                                  (cljr--call-middleware-suggest-libspec (cljr--language-context-at-point))
-                                  cljr--prompt-or-select-libspec)))
+                     (thread-first alias-ref
+                                   (cljr--call-middleware-suggest-libspec (cljr--language-context-at-point))
+                                   cljr--prompt-or-select-libspec)))
           ;; only insert a require if a candidate exists and was selected
           (cljr--insert-require-libspec libspec))
       ;; Deprecated, creates suggestions from `namespace-aliases' middleware op
@@ -2494,9 +2494,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
   (interactive "P")
   (cljr--ensure-op-supported "artifact-list")
   (when-let* ((lib-name (thread-last (cljr--get-artifacts-from-middleware force)
-                                    (cljr--prompt-user-for "Artifact: ")))
-             (version (thread-last (cljr--get-versions-from-middleware lib-name)
-                                   (cljr--prompt-user-for "Version: "))))
+                                     (cljr--prompt-user-for "Artifact: ")))
+              (version (thread-last (cljr--get-versions-from-middleware lib-name)
+                                    (cljr--prompt-user-for "Version: "))))
     (cljr--add-project-dependency lib-name version)))
 
 ;;;###autoload
@@ -2971,16 +2971,16 @@ removed."
   (let* ((path (funcall cider-to-nrepl-filename-function (or path (buffer-file-name))))
          (relative-path (cljr--project-relative-path path)))
     (when-let* ((new-ns (cljr--call-middleware-sync
-                       (cljr--create-msg "clean-ns"
-                                         "path" path
-                                         "relative-path" relative-path
-                                         "always-return-ns-form" "true"
-                                         "libspec-whitelist" cljr-libspec-whitelist
-                                         "print-right-margin" cljr-print-right-margin
-                                         "print-miser-width" cljr-print-miser-width
-                                         "prune-ns-form" (if no-prune? "false"
-                                                           "true"))
-                       "ns")))
+                        (cljr--create-msg "clean-ns"
+                                          "path" path
+                                          "relative-path" relative-path
+                                          "always-return-ns-form" "true"
+                                          "libspec-whitelist" cljr-libspec-whitelist
+                                          "print-right-margin" cljr-print-right-margin
+                                          "print-miser-width" cljr-print-miser-width
+                                          "prune-ns-form" (if no-prune? "false"
+                                                            "true"))
+                        "ns")))
       (cljr--replace-ns new-ns))
     (unless *cljr--noninteractive*
       (cljr--post-command-message "Namespace form cleaned!"))))
@@ -3147,7 +3147,7 @@ Date. -> Date
     (when ns
       (setq request (append request (list "ns" ns))))
     (when-let* ((candidates (thread-first request
-                                         (cljr--call-middleware-sync "candidates"))))
+                                          (cljr--call-middleware-sync "candidates"))))
       (parseedn-read-str candidates))))
 
 (defun cljr--get-error-value (response)
