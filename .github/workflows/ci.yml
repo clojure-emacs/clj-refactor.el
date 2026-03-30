@@ -20,6 +20,7 @@ jobs:
             emacs-version: '30.1'
           - os: windows-latest
             emacs-version: '30.1'
+    continue-on-error: ${{ matrix.emacs-version == 'snapshot' }}
 
     steps:
       - uses: actions/checkout@v4
