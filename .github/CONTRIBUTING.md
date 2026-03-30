@@ -32,12 +32,11 @@ To help us, please, follow these guidelines:
 ## Development Setup
 
 1. Fork and clone the repository.
-1. Install [Cask][7].
-1. Run `cask install` in the repository folder.
+1. Install [Eldev][7].
 1. Run tests with `make test`.
 
 [1]: https://github.com/clojure-emacs/clj-refactor.el/issues
-[7]: https://github.com/cask/cask
+[7]: https://github.com/emacs-eldev/eldev
 [2]: http://gun.io/blog/how-to-github-fork-branch-and-pull-request
 [3]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
 [4]: https://help.github.com/articles/using-pull-requests

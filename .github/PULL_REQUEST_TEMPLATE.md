@@ -3,7 +3,7 @@ by checking the relevant checkboxes):
 
 - [ ] The commits are consistent with our [contribution guidelines](CONTRIBUTING.md)
 - [ ] You've added tests (if possible) to cover your change(s)
-- [ ] The new code is not generating byte compile warnings (run `cask exec emacs -batch -Q -L . -eval "(progn (setq byte-compile-error-on-warn t) (batch-byte-compile))" clj-refactor.el`)
+- [ ] The new code is not generating byte compile warnings (run `make compile`)
 - [ ] All tests are passing (run `./run-tests.sh`)
 - [ ] You've updated the changelog (if adding/changing user-visible functionality)
 - [ ] You've updated the readme (if adding/changing user-visible functionality)
