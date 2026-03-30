@@ -23,7 +23,7 @@ jobs:
     continue-on-error: ${{ matrix.emacs-version == 'snapshot' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: jcs090218/setup-emacs@master
         with:
