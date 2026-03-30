@@ -1,3 +1,5 @@
+;;; unit-test.el --- Unit tests for clj-refactor -*- lexical-binding: t; -*-
+
 (require 'paredit)
 (require 'clj-refactor)
 (require 'buttercup)
