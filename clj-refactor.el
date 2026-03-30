@@ -420,7 +420,7 @@ Otherwise open the file and do the changes non-interactively."
 
 
 (defhydra hydra-cljr-ns-menu (:color pink :hint nil)
-	  "
+  "
  Ns related refactorings
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 _ai_: Add import to ns                             _am_: Add missing libspec                          _ap_: Add project dependency
@@ -428,15 +428,15 @@ _ar_: Add require to ns                            _au_: Add use to ns          
 _rm_: Require a macro into the ns                  _sr_: Stop referring
 _b_: Back to previous Hydra
 "
-	  ("ai" cljr-add-import-to-ns) ("am" cljr-add-missing-libspec)
-	  ("ap" cljr-add-project-dependency) ("ar" cljr-add-require-to-ns)
-	  ("au" cljr-add-use-to-ns) ("cn" cljr-clean-ns)
-	  ("rm" cljr-require-macro) ("sr" cljr-stop-referring)
-	  ("b" hydra-cljr-help-menu/body :exit t)
-	  ("q" nil "quit"))
+  ("ai" cljr-add-import-to-ns) ("am" cljr-add-missing-libspec)
+  ("ap" cljr-add-project-dependency) ("ar" cljr-add-require-to-ns)
+  ("au" cljr-add-use-to-ns) ("cn" cljr-clean-ns)
+  ("rm" cljr-require-macro) ("sr" cljr-stop-referring)
+  ("b" hydra-cljr-help-menu/body :exit t)
+  ("q" nil "quit"))
 
 (defhydra hydra-cljr-code-menu (:color pink :hint nil)
-	  "
+  "
  Code related refactorings
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 _ci_: Cycle if                                     _ct_: Cycle thread
@@ -447,19 +447,19 @@ _tf_: Thread first all                             _th_: Thread                 
 _ua_: Unwind all                                   _uw_: Unwind
 _b_: Back to previous Hydra
 "
-	  ("ci" clojure-cycle-if) ("ct" cljr-cycle-thread)
-	  ("dk" cljr-destructure-keys) ("el" cljr-expand-let)
-	  ("fu" cljr-find-usages) ("il" cljr-introduce-let)
-	  ("is" cljr-inline-symbol) ("ml" cljr-move-to-let)
-	  ("pf" cljr-promote-function) ("rl" cljr-remove-let)
-	  ("rs" cljr-rename-symbol) ("tf" clojure-thread-first-all)
-	  ("th" clojure-thread) ("tl" clojure-thread-last-all)
-	  ("ua" clojure-unwind-all) ("uw" clojure-unwind)
-	  ("b" hydra-cljr-help-menu/body :exit t)
-	  ("q" nil "quit"))
+  ("ci" clojure-cycle-if) ("ct" cljr-cycle-thread)
+  ("dk" cljr-destructure-keys) ("el" cljr-expand-let)
+  ("fu" cljr-find-usages) ("il" cljr-introduce-let)
+  ("is" cljr-inline-symbol) ("ml" cljr-move-to-let)
+  ("pf" cljr-promote-function) ("rl" cljr-remove-let)
+  ("rs" cljr-rename-symbol) ("tf" clojure-thread-first-all)
+  ("th" clojure-thread) ("tl" clojure-thread-last-all)
+  ("ua" clojure-unwind-all) ("uw" clojure-unwind)
+  ("b" hydra-cljr-help-menu/body :exit t)
+  ("q" nil "quit"))
 
 (defhydra hydra-cljr-project-menu (:color pink :hint nil)
-	  "
+  "
  Project related refactorings
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 _ap_: Add project dependency                       _cs_: Change function signature                    _fu_: Find usages
@@ -468,17 +468,17 @@ _pc_: Project clean                                _rf_: Rename file-or-dir _rs_
 _up_: Update project dependencies
 _b_: Back to previous Hydra
 "
-	  ("ap" cljr-add-project-dependency) ("cs" cljr-change-function-signature)
-	  ("fu" cljr-find-usages) ("hd" cljr-hotload-dependency)
-	  ("is" cljr-inline-symbol) ("mf" cljr-move-form)
-	  ("pc" cljr-project-clean) ("rf" cljr-rename-file-or-dir)
-	  ("rs" cljr-rename-symbol) ("sp" cljr-sort-project-dependencies)
-	  ("up" cljr-update-project-dependencies)
-	  ("b" hydra-cljr-help-menu/body :exit t)
-	  ("q" nil "quit"))
+  ("ap" cljr-add-project-dependency) ("cs" cljr-change-function-signature)
+  ("fu" cljr-find-usages) ("hd" cljr-hotload-dependency)
+  ("is" cljr-inline-symbol) ("mf" cljr-move-form)
+  ("pc" cljr-project-clean) ("rf" cljr-rename-file-or-dir)
+  ("rs" cljr-rename-symbol) ("sp" cljr-sort-project-dependencies)
+  ("up" cljr-update-project-dependencies)
+  ("b" hydra-cljr-help-menu/body :exit t)
+  ("q" nil "quit"))
 
 (defhydra hydra-cljr-toplevel-form-menu (:color pink :hint nil)
-	  "
+  "
  Toplevel form related refactorings
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 _as_: Add stubs for the interface/protocol at point_cp_: Cycle privacy                                _cs_: Change function signature
@@ -487,28 +487,28 @@ _fe_: Create function from example                 _is_: Inline symbol          
 _pf_: Promote function                             _rf_: Rename file-or-dir                           _ad_: Add declaration
 _b_: Back to previous Hydra
 "
-	  ("as" cljr-add-stubs) ("cp" clojure-cycle-privacy)
-	  ("cs" cljr-change-function-signature) ("ec" cljr-extract-constant)
-	  ("ed" cljr-extract-def) ("ef" cljr-extract-function)
-	  ("fe" cljr-create-fn-from-example) ("is" cljr-inline-symbol)
-	  ("mf" cljr-move-form) ("pf" cljr-promote-function)
-	  ("rf" cljr-rename-file-or-dir) ("ad" cljr-add-declaration)
-	  ("b" hydra-cljr-help-menu/body :exit t)
-	  ("q" nil "quit"))
+  ("as" cljr-add-stubs) ("cp" clojure-cycle-privacy)
+  ("cs" cljr-change-function-signature) ("ec" cljr-extract-constant)
+  ("ed" cljr-extract-def) ("ef" cljr-extract-function)
+  ("fe" cljr-create-fn-from-example) ("is" cljr-inline-symbol)
+  ("mf" cljr-move-form) ("pf" cljr-promote-function)
+  ("rf" cljr-rename-file-or-dir) ("ad" cljr-add-declaration)
+  ("b" hydra-cljr-help-menu/body :exit t)
+  ("q" nil "quit"))
 
 (defhydra hydra-cljr-cljr-menu (:color pink :hint nil)
-	  "
+  "
  Cljr related refactorings
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 _sc_: Show the project's changelog                 _?_: Describe refactoring
 _b_: Back to previous Hydra
 "
-	  ("sc" cljr-show-changelog) ("?" cljr-describe-refactoring)
-	  ("b" hydra-cljr-help-menu/body :exit t)
-	  ("q" nil "quit"))
+  ("sc" cljr-show-changelog) ("?" cljr-describe-refactoring)
+  ("b" hydra-cljr-help-menu/body :exit t)
+  ("q" nil "quit"))
 
 (defhydra hydra-cljr-help-menu (:color pink :hint nil)
-	  "
+  "
 Available refactoring types
 -----------------------------------------------------------------------------
 _n_: Ns related refactorings      _c_: Code related refactorings
@@ -516,12 +516,12 @@ _p_: Project related refactorings _t_: Top level forms related refactorings
 _s_: Refactor related functions
 "
 
-	  ("n" hydra-cljr-ns-menu/body :exit t)
-	  ("c" hydra-cljr-code-menu/body :exit t)
-	  ("p" hydra-cljr-project-menu/body :exit t)
-	  ("t" hydra-cljr-toplevel-form-menu/body :exit t)
-	  ("s" hydra-cljr-cljr-menu/body :exit t)
-	  ("q" nil "quit" :color blue))
+  ("n" hydra-cljr-ns-menu/body :exit t)
+  ("c" hydra-cljr-code-menu/body :exit t)
+  ("p" hydra-cljr-project-menu/body :exit t)
+  ("t" hydra-cljr-toplevel-form-menu/body :exit t)
+  ("s" hydra-cljr-cljr-menu/body :exit t)
+  ("q" nil "quit" :color blue))
 
 (defun cljr--add-keybindings (key-fn)
   "Build the keymap from the list of keys/functions in `cljr--all-helpers'."
@@ -1457,9 +1457,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
         (setq ns (cljr--current-namespace)
               names (cljr--name-of-defns forms)
               target-ns-alias (when-let* ((filtered-require (seq-find
-                                                             (lambda (it)
-                                                               (string-match-p (format target-ns-regexp-template ns) it))
-                                                             requires)))
+                                                            (lambda (it)
+                                                              (string-match-p (format target-ns-regexp-template ns) it))
+                                                            requires)))
                                 (thread-last filtered-require
                                              (cljr--slice-at ":as")
                                              last
@@ -1550,18 +1550,18 @@ Optionally adds :refer [REFER-NAMES] clause."
   "Returns a list of the function names in STRING-WITH-DEFNS,
 optionally including those that are declared private."
   (cljr--with-string-content string-with-defns
-			     (let ((count (paredit-count-sexps-forward))
-				   (names '()))
-			       (dotimes (_ count)
-				 (paredit-forward-down)
-				 (cljr--goto-toplevel)
-				 (forward-char)
-				 (if (and include-private (looking-at "defn-"))
-				     (push (cljr--name-of-current-def) names)
-				   (when (looking-at "defn ")
-				     (push (cljr--name-of-current-def) names)))
-				 (paredit-forward-up))
-			       names)))
+    (let ((count (paredit-count-sexps-forward))
+          (names '()))
+      (dotimes (_ count)
+        (paredit-forward-down)
+        (cljr--goto-toplevel)
+        (forward-char)
+        (if (and include-private (looking-at "defn-"))
+            (push (cljr--name-of-current-def) names)
+          (when (looking-at "defn ")
+            (push (cljr--name-of-current-def) names)))
+        (paredit-forward-up))
+      names)))
 
 (defun cljr--current-namespace ()
   (save-excursion
@@ -1620,7 +1620,7 @@ With a prefix add a declaration for the symbol under the cursor instead.
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-declaration"
   (interactive "P")
   (if-let* ((def (and (not for-thing-at-point-p)
-                      (save-excursion (cljr--name-of-current-def)))))
+                     (save-excursion (cljr--name-of-current-def)))))
       (cljr--add-declaration def)
     (cljr--add-declaration (cider-symbol-at-point))))
 
@@ -2057,7 +2057,7 @@ of a reader conditional inside of a cljc file."
                 ((cljr--clj-file-p)
                  "clj"))
           (when-let* ((context (when cljc?
-                                 (cljr--reader-conditional-context))))
+                                (cljr--reader-conditional-context))))
             (string-remove-prefix ":" context)))))
 
 (defun cljr--prompt-or-select-libspec (candidates)
@@ -2103,7 +2103,7 @@ If we recognize the `short' alias in the project, use namespaces
 from the middleware or any `cljr-magic-require-namespaces' that
 match. Returns a structure of (alias (ns1 ns2 ...))."
   (if-let* ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
-            (candidates (gethash (intern short) aliases)))
+           (candidates (gethash (intern short) aliases)))
       (list short candidates)
     (when (and cljr-magic-require-namespaces ; a regex against "" always triggers
                (string-match-p (cljr--magic-requires-re) short))
@@ -2111,10 +2111,10 @@ match. Returns a structure of (alias (ns1 ns2 ...))."
       ;; isn't perfect.
       (let ((long  (cljr--aget cljr-magic-require-namespaces short)))
         (when-let* ((libspec (cond ((stringp long)
-                                    (list long))
-                                   ;; handle ("io" "clojure.java.io" :only ("clj"))
-                                   ((and (listp long) (stringp (car long)))
-                                    (list (car long))))))
+                                   (list long))
+                                  ;; handle ("io" "clojure.java.io" :only ("clj"))
+                                  ((and (listp long) (stringp (car long)))
+                                   (list (car long))))))
           (list short libspec))))))
 
 (defun cljr--in-keyword-sans-alias-p ()
@@ -2174,21 +2174,21 @@ to the ns form."
   (interactive)
   (insert "/")
   (when-let* ((alias-ref (and cljr-magic-requires
-                              (not (cljr--in-map-destructuring?))
-                              (not (cljr--in-ns-above-point-p))
-                              (not (cljr--in-reader-literal-p))
-                              (not (cider-in-comment-p))
-                              (not (cider-in-string-p))
-                              (not (cljr--in-keyword-sans-alias-p))
-                              (not (cljr--in-number-p))
-                              (clojure-find-ns)
-                              (cljr--unresolved-alias-ref (cljr--ns-alias-at-point)))))
+                             (not (cljr--in-map-destructuring?))
+                             (not (cljr--in-ns-above-point-p))
+                             (not (cljr--in-reader-literal-p))
+                             (not (cider-in-comment-p))
+                             (not (cider-in-string-p))
+                             (not (cljr--in-keyword-sans-alias-p))
+                             (not (cljr--in-number-p))
+                             (clojure-find-ns)
+                             (cljr--unresolved-alias-ref (cljr--ns-alias-at-point)))))
     (if cljr-slash-uses-suggest-libspec
         ;; creates suggestions from `suggest-libspec' middleware op
         (when-let* ((libspec
-                     (thread-first alias-ref
-                                   (cljr--call-middleware-suggest-libspec (cljr--language-context-at-point))
-                                   cljr--prompt-or-select-libspec)))
+                    (thread-first alias-ref
+                                  (cljr--call-middleware-suggest-libspec (cljr--language-context-at-point))
+                                  cljr--prompt-or-select-libspec)))
           ;; only insert a require if a candidate exists and was selected
           (cljr--insert-require-libspec libspec))
       ;; Deprecated, creates suggestions from `namespace-aliases' middleware op
@@ -2232,7 +2232,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
         (when (and (cljr--clojure-filename-p filename)
                    (not (cljr--excluded-from-project-clean-p filename)))
           (cljr--update-file filename
-			     (ignore-errors (seq-map 'funcall cljr-project-clean-functions))))))
+            (ignore-errors (seq-map 'funcall cljr-project-clean-functions))))))
     (if (and (cider-connected-p) (not cljr-warn-on-eval) (cljr--op-supported-p "warm-ast-cache"))
         (cljr--warm-ast-cache))
     (cljr--post-command-message "Project clean done.")))
@@ -2337,20 +2337,20 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
     (if (cljr--project-with-deps-p project-file)
         (user-error "Dependencies sorting not supported in deps.edn yet")
       (cljr--update-file project-file
-			 (goto-char (point-min))
-			 (while (re-search-forward ":dependencies" (point-max) t)
-			   ;; Boot has quoted vectors, leiningen does not
-			   (while (not (looking-at-p "\\["))
-			     (forward-char))
-			   (thread-first (buffer-substring-no-properties (point)
-									 (cljr--point-after 'paredit-forward))
-					 cljr--get-sorted-dependency-names
-					 (cljr--sort-dependency-vectors (thread-last (clojure-delete-and-extract-sexp)
-										     (string-remove-prefix "[")
-										     (string-remove-suffix "]")))
-					 insert))
-			 (indent-region (point-min) (point-max))
-			 (save-buffer)))))
+        (goto-char (point-min))
+        (while (re-search-forward ":dependencies" (point-max) t)
+          ;; Boot has quoted vectors, leiningen does not
+          (while (not (looking-at-p "\\["))
+            (forward-char))
+          (thread-first (buffer-substring-no-properties (point)
+                                                        (cljr--point-after 'paredit-forward))
+                        cljr--get-sorted-dependency-names
+                        (cljr--sort-dependency-vectors (thread-last (clojure-delete-and-extract-sexp)
+                                                                    (string-remove-prefix "[")
+                                                                    (string-remove-suffix "]")))
+                        insert))
+        (indent-region (point-min) (point-max))
+        (save-buffer)))))
 
 (defun cljr--call-middleware-sync (request &optional key)
   "Call the middleware with REQUEST.
@@ -2475,16 +2475,16 @@ possible choices. If the choice is trivial, return it."
   (let* ((project-file (cljr--project-file))
          (deps (cljr--project-with-deps-p project-file)))
     (cljr--update-file project-file
-		       (goto-char (point-min))
-		       (if deps
-			   (cljr--insert-into-clj-dependencies artifact version)
-			 (cljr--insert-into-leiningen-dependencies artifact version))
-		       (cljr--post-command-message "Added %s version %s as a project dependency" artifact version)
-		       (when cljr-hotload-dependencies
-			 (if deps
-			     (back-to-indentation)
-			   (paredit-backward-down))
-			 (cljr-hotload-dependency)))))
+      (goto-char (point-min))
+      (if deps
+          (cljr--insert-into-clj-dependencies artifact version)
+        (cljr--insert-into-leiningen-dependencies artifact version))
+      (cljr--post-command-message "Added %s version %s as a project dependency" artifact version)
+      (when cljr-hotload-dependencies
+        (if deps
+            (back-to-indentation)
+          (paredit-backward-down))
+        (cljr-hotload-dependency)))))
 
 ;;;###autoload
 (defun cljr-add-project-dependency (force)
@@ -2494,9 +2494,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
   (interactive "P")
   (cljr--ensure-op-supported "artifact-list")
   (when-let* ((lib-name (thread-last (cljr--get-artifacts-from-middleware force)
-                                     (cljr--prompt-user-for "Artifact: ")))
-              (version (thread-last (cljr--get-versions-from-middleware lib-name)
-                                    (cljr--prompt-user-for "Version: "))))
+                                    (cljr--prompt-user-for "Artifact: ")))
+             (version (thread-last (cljr--get-versions-from-middleware lib-name)
+                                   (cljr--prompt-user-for "Version: "))))
     (cljr--add-project-dependency lib-name version)))
 
 ;;;###autoload
@@ -2971,16 +2971,16 @@ removed."
   (let* ((path (funcall cider-to-nrepl-filename-function (or path (buffer-file-name))))
          (relative-path (cljr--project-relative-path path)))
     (when-let* ((new-ns (cljr--call-middleware-sync
-			 (cljr--create-msg "clean-ns"
-                                           "path" path
-                                           "relative-path" relative-path
-                                           "always-return-ns-form" "true"
-                                           "libspec-whitelist" cljr-libspec-whitelist
-                                           "print-right-margin" cljr-print-right-margin
-                                           "print-miser-width" cljr-print-miser-width
-                                           "prune-ns-form" (if no-prune? "false"
-                                                             "true"))
-			 "ns")))
+                       (cljr--create-msg "clean-ns"
+                                         "path" path
+                                         "relative-path" relative-path
+                                         "always-return-ns-form" "true"
+                                         "libspec-whitelist" cljr-libspec-whitelist
+                                         "print-right-margin" cljr-print-right-margin
+                                         "print-miser-width" cljr-print-miser-width
+                                         "prune-ns-form" (if no-prune? "false"
+                                                           "true"))
+                       "ns")))
       (cljr--replace-ns new-ns))
     (unless *cljr--noninteractive*
       (cljr--post-command-message "Namespace form cleaned!"))))
@@ -3147,7 +3147,7 @@ Date. -> Date
     (when ns
       (setq request (append request (list "ns" ns))))
     (when-let* ((candidates (thread-first request
-                                          (cljr--call-middleware-sync "candidates"))))
+                                         (cljr--call-middleware-sync "candidates"))))
       (parseedn-read-str candidates))))
 
 (defun cljr--get-error-value (response)
@@ -3766,14 +3766,14 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                         (cljr--extract-sexp)))
          (unwound (cljr--unwind-s parent-sexp)))
     (cljr--with-string-content unwound
-			       (search-forward (concat "(" name))
-			       (cljr--extract-sexp-as-list))))
+      (search-forward (concat "(" name))
+      (cljr--extract-sexp-as-list))))
 
 (defun cljr--unwind-s (s)
   (if (string-prefix-p "(->" s)
       (cljr--with-string-content s
-				 (clojure-unwind-all)
-				 (buffer-substring (point-min) (point-max)))
+        (clojure-unwind-all)
+        (buffer-substring (point-min) (point-max)))
     s))
 
 (defun cljr--keywordp (s)
@@ -3790,23 +3790,23 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 
 (defun cljr--first-fn-call-s (s)
   (cljr--with-string-content s
-			     (when (looking-at "(")
-			       (paredit-forward-down)
-			       (cljr--extract-sexp))))
+    (when (looking-at "(")
+      (paredit-forward-down)
+      (cljr--extract-sexp))))
 
 (defun cljr--first-arg-s (s)
   (cljr--with-string-content s
-			     (paredit-forward-down)
-			     (paredit-forward)
-			     (cljr--skip-past-whitespace-and-comments)
-			     (cljr--extract-sexp)))
+    (paredit-forward-down)
+    (paredit-forward)
+    (cljr--skip-past-whitespace-and-comments)
+    (cljr--extract-sexp)))
 
 (defun cljr--last-arg-s (s)
   (cljr--with-string-content s
-			     (paredit-forward)
-			     (paredit-backward-down)
-			     (paredit-backward)
-			     (cljr--extract-sexp)))
+    (paredit-forward)
+    (paredit-backward-down)
+    (paredit-backward)
+    (cljr--extract-sexp)))
 
 (defvar cljr--fns-that-get-item-out-of-coll
   (list "first" "second" "last" "fnext" "nth" "rand-nth"))
@@ -3866,40 +3866,40 @@ and make the whole string lower-cased."
 when called on something, doesn't truly change what that something is,
 so we can ignore them when trying to figure out a name for a parameter."
   (cljr--with-string-content form
-			     (let* ((fn-at-point (lambda ()
-						   (ignore-errors
-						     (save-excursion
-						       (paredit-forward-down)
-						       (cljr--extract-sexp)))))
-				    (fn (funcall fn-at-point)))
-			       (while (or (member fn cljr--semantic-noops--first-position)
-					  (member fn cljr--semantic-noops--last-position))
-				 (if (member fn cljr--semantic-noops--first-position)
-				     (progn
-				       (paredit-forward-down)
-				       (paredit-forward)
-				       (cljr--skip-past-whitespace-and-comments))
-				   (paredit-forward)
-				   (paredit-backward-down)
-				   (paredit-backward))
-				 (setq fn (funcall fn-at-point))))
-			     (cljr--extract-sexp)))
+    (let* ((fn-at-point (lambda ()
+                          (ignore-errors
+                            (save-excursion
+                              (paredit-forward-down)
+                              (cljr--extract-sexp)))))
+           (fn (funcall fn-at-point)))
+      (while (or (member fn cljr--semantic-noops--first-position)
+                 (member fn cljr--semantic-noops--last-position))
+        (if (member fn cljr--semantic-noops--first-position)
+            (progn
+              (paredit-forward-down)
+              (paredit-forward)
+              (cljr--skip-past-whitespace-and-comments))
+          (paredit-forward)
+          (paredit-backward-down)
+          (paredit-backward))
+        (setq fn (funcall fn-at-point))))
+    (cljr--extract-sexp)))
 
 (defun cljr--find-param-name-from-get-in (form)
   (let ((last-path-entry (cljr--with-string-content form
-						    (paredit-forward-down)
-						    (paredit-forward 3)
-						    (paredit-backward-down)
-						    (cider-symbol-at-point))))
+                           (paredit-forward-down)
+                           (paredit-forward 3)
+                           (paredit-backward-down)
+                           (cider-symbol-at-point))))
     (when (cljr--keywordp last-path-entry)
       (string-remove-prefix ":" last-path-entry))))
 
 (defun cljr--find-param-name-from-get (form)
   (let ((key (cljr--with-string-content form
-					(paredit-forward-down)
-					(paredit-forward 2)
-					(cljr--skip-past-whitespace-and-comments)
-					(cljr--extract-sexp))))
+               (paredit-forward-down)
+               (paredit-forward 2)
+               (cljr--skip-past-whitespace-and-comments)
+               (cljr--extract-sexp))))
     (when (cljr--keywordp key)
       (string-remove-prefix ":" key))))
 
