@@ -1,9 +1,6 @@
 [![MELPA](http://melpa.org/packages/clj-refactor-badge.svg)](http://melpa.org/#/clj-refactor)
 [![MELPA Stable](http://stable.melpa.org/packages/clj-refactor-badge.svg)](http://stable.melpa.org/#/clj-refactor)
-[![circleci][badge-circleci]][circleci]
-
-[badge-circleci]: https://circleci.com/gh/clojure-emacs/clj-refactor.el.svg?style=svg
-[circleci]: https://circleci.com/gh/clojure-emacs/clj-refactor.el
+[![CI](https://github.com/clojure-emacs/clj-refactor.el/actions/workflows/ci.yml/badge.svg)](https://github.com/clojure-emacs/clj-refactor.el/actions/workflows/ci.yml)
 
 # clj-refactor.el
 

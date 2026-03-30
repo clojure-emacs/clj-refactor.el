@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: Emacs ${{ matrix.emacs-version }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        emacs-version: ['28', '29', '30', 'snapshot']
+        include:
+          - os: macos-latest
+            emacs-version: '30'
+          - os: windows-latest
+            emacs-version: '30'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jcs090218/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs-version }}
+
+      - uses: emacs-eldev/setup-eldev@v1
+
+      - run: eldev -dtT -p test
+        name: Test
+
+      - run: eldev lint
+        name: Lint
+
+      - run: eldev -dtT compile --warnings-as-errors
+        name: Compile
