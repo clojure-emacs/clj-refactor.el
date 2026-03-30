@@ -24,7 +24,7 @@ It's available on [MELPA](http://melpa.org/) and [MELPA Stable](http://stable.me
 
 #### Better IDO completions
 
-If you are a IDO user, you will get better completions by installing the [`ido-completing-read+`](https://github.com/DarwinAwardWinner/ido-completing-read-plus) package:
+If you are an IDO user, you will get better completions by installing the [`ido-completing-read+`](https://github.com/DarwinAwardWinner/ido-completing-read-plus) package:
 
     M-x package-install ido-completing-read+
 
@@ -49,7 +49,7 @@ The more advanced refactorings require our nREPL middleware
 version *2.2.0* onwards if `cider-jack-in` is used it is injected
 automatically.
 
-**`profiles.clj` or `profile.boot` don't need to be modified anymore for the above usecase!**
+**`profiles.clj` or `profile.boot` don't need to be modified anymore for the above use case!**
 
 On the other hand if a standalone REPL or an embedded nREPL server is
 used you will need to manually add this dependency (see below).
@@ -85,7 +85,7 @@ Most users will not need to worry about this, but if you wish to configure middl
 > `refactor-nrepl.middleware/wrap-refactor`
 
 Unlike `cider-nrepl` which defines many middleware with a handful of related
-ops, `refactor-repl` defines a single middleware which houses all of the provided nREPL
+ops, `refactor-nrepl` defines a single middleware which houses all of the provided nREPL
 ops.
 
 ### In case `refactor-nrepl` is used for advanced (AST-based) refactorings
@@ -104,7 +104,7 @@ evalled without any risks set `cljr-warn-on-eval` to nil so
 
 We create ASTs for all the namespaces at REPL start up if
 `cljr-warn-on-eval` is set to nil. If that is not desired set
-`cljr-eagerly-build-asts-on-startup` to `nil` in your emacs
+`cljr-eagerly-build-asts-on-startup` to `nil` in your Emacs
 configuration. AST dependent features at the moment are `find usages`,
 `rename symbol`, `extract function`, `inline symbol`, `rename file or
 dir`, `change function signature`, `promote function`.
@@ -163,7 +163,7 @@ There's also another channel named `#emacs` for generic Emacs discussions.
 
 Copyright © 2012-2014 Magnar Sveen
 
-Copyright © 2014-2023 Magnar Sveen, Lars Andersen, Benedek Fazekas, Bozhidar Batsov
+Copyright © 2014-2026 Magnar Sveen, Lars Andersen, Benedek Fazekas, Bozhidar Batsov
 
 Author: Magnar Sveen <magnars@gmail.com>
         Lars Andersen <expez@expez.com>

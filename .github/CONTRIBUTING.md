@@ -37,6 +37,7 @@ To help us, please, follow these guidelines:
 1. Run tests with `make test`.
 
 [1]: https://github.com/clojure-emacs/clj-refactor.el/issues
+[7]: https://github.com/cask/cask
 [2]: http://gun.io/blog/how-to-github-fork-branch-and-pull-request
 [3]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
 [4]: https://help.github.com/articles/using-pull-requests

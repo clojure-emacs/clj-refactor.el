@@ -106,7 +106,7 @@
 
 * Use refactor-nrepl [3.5.0](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.0/CHANGELOG.md#350).
 * Improve integration with Clojure 1.11's new `:as-alias` namespace directive.
-  * Closes [#515](https://github.com/clojure-emacs/clj-refactor.el/issues/515), [#515](https://github.com/clojure-emacs/clj-refactor.el/issues/516)
+  * Closes [#515](https://github.com/clojure-emacs/clj-refactor.el/issues/515), [#516](https://github.com/clojure-emacs/clj-refactor.el/issues/516)
 
 ## 3.4.3
 
@@ -124,7 +124,7 @@
 ## 3.4.0
 
 - Use refactor-nrepl [3.4.0](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.4.0/CHANGELOG.md#340).
-- [#512](https://github.com/clojure-emacs/clj-refactor.el/issues/512): Fix occasional :require` / `:require-macros` confusion in `cljr-slash`.
+- [#512](https://github.com/clojure-emacs/clj-refactor.el/issues/512): Fix occasional `:require` / `:require-macros` confusion in `cljr-slash`.
 
 ## 3.3.3
 
@@ -183,7 +183,7 @@
 - Dropped support for Emacs < 25.1 (to match clojure-mode and CIDER).
 - [#426](https://github.com/clojure-emacs/clj-refactor.el/issues/426): New variable, `cljr-middleware-ignored-paths`, to make the middleware ignore certain paths.
 - [#408](https://github.com/clojure-emacs/clj-refactor.el/pull/408): New `cljr-before-warming-ast-cache-hook`, `cljr-after-warming-ast-cache-hook` callbacks around AST warming.
-- [#394](https://github.com/clojure-emacs/clj-refactor.el/issues/394): New config option `cljr-assume-language-context`: by default, when clj-refactor encounters an ambiguous context (clj vs cljs) it creates a popup asking user which context is meant. If this option is changed to "clj" or "cljs", clj-refactor will use that as the assumed context in such ambigous cases.
+- [#394](https://github.com/clojure-emacs/clj-refactor.el/issues/394): New config option `cljr-assume-language-context`: by default, when clj-refactor encounters an ambiguous context (clj vs cljs) it creates a popup asking user which context is meant. If this option is changed to "clj" or "cljs", clj-refactor will use that as the assumed context in such ambiguous cases.
 - [#391](https://github.com/clojure-emacs/clj-refactor.el/issues/391): Prevent refactor-nrepl from being injected when starting a REPL outside a project, and add an option `cljr-suppress-outside-project-warning` to suppress the resultant warning.
 
 ## 2.3.1 (2017-07-04)
@@ -200,7 +200,7 @@
 
 - [#302](https://github.com/clojure-emacs/clj-refactor.el/issues/302): `ad` now understands def-like things, e.g. defs created by Schema.
 - When inserting ns form to blank clojure-ish file, check if cider is available and connected for better detecting the expected namespace.
-- Remove the warning about missing nREPl ops.
+- Remove the warning about missing nREPL ops.
 - Remove threading macro related features because they are moved to Clojure mode. However, the usual mnemonics for these features still work only they reference the Clojure mode implementations.
 - Remove cycle privacy, cycle if and cycle collection type features. They are moved to Clojure mode. The usual mnemonics for cycle privacy and cycle if features still work only they refer the Clojure mode implementations. Cycle collection type got reworked into convert collection to list, quoted list, map, vector and set. *Cycle* collection type is no longer supported.
 - Compatible with clojure-mode 5.6.1 and above.
@@ -233,7 +233,7 @@ to act on stale data.
 ### Changes
 
 - Compatible with CIDER 0.11
-- Follow up CIDER 0.11 injecting its own dependencies at `cider-jack-in` by adding clj-refactor's own dependencies to the approriate vars in CIDER. Both leiningen and boot are supported. Set `cljr-inject-dependencies-at-jack-in` to nil to opt out.
+- Follow up CIDER 0.11 injecting its own dependencies at `cider-jack-in` by adding clj-refactor's own dependencies to the appropriate vars in CIDER. Both leiningen and boot are supported. Set `cljr-inject-dependencies-at-jack-in` to nil to opt out.
 
 ## 2.0.0 (2016-02-06)
 
@@ -323,7 +323,7 @@ to act on stale data.
 - Removed `cljr-cycle-stringlike`.  This function was duplicating the functionality of `clojure-mode`s `clojure-toggle-keyword-string`
 - Add `cljr-cycle-if`
 - Common namespace shorthands are (optionally) automatically required when you type it.
-- Comparator for sort require, use and import is configurable, add optional lenght based comparator to sort longer first
+- Comparator for sort require, use and import is configurable, add optional length based comparator to sort longer first
 - Add semantic comparator to sort items closer to the current namespace first
 - Add `cljr-project-clean` with configurable clean functions
 - Add `cljr-sort-project-dependencies`
