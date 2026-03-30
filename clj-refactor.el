@@ -2971,16 +2971,16 @@ removed."
   (let* ((path (funcall cider-to-nrepl-filename-function (or path (buffer-file-name))))
          (relative-path (cljr--project-relative-path path)))
     (when-let* ((new-ns (cljr--call-middleware-sync
-                        (cljr--create-msg "clean-ns"
-                                          "path" path
-                                          "relative-path" relative-path
-                                          "always-return-ns-form" "true"
-                                          "libspec-whitelist" cljr-libspec-whitelist
-                                          "print-right-margin" cljr-print-right-margin
-                                          "print-miser-width" cljr-print-miser-width
-                                          "prune-ns-form" (if no-prune? "false"
-                                                            "true"))
-                        "ns")))
+                         (cljr--create-msg "clean-ns"
+                                           "path" path
+                                           "relative-path" relative-path
+                                           "always-return-ns-form" "true"
+                                           "libspec-whitelist" cljr-libspec-whitelist
+                                           "print-right-margin" cljr-print-right-margin
+                                           "print-miser-width" cljr-print-miser-width
+                                           "prune-ns-form" (if no-prune? "false"
+                                                             "true"))
+                         "ns")))
       (cljr--replace-ns new-ns))
     (unless *cljr--noninteractive*
       (cljr--post-command-message "Namespace form cleaned!"))))
