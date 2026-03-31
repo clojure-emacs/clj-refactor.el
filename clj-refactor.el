@@ -3486,11 +3486,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
 
 (defun cljr--pkg-version ()
   "Extract the package version from its package metadata."
-  ;; Use `cond' below to avoid a compiler unused return value warning
-  ;; when `package-get-version' returns nil. See cider#3181.
-  ;; FIXME: Inline the logic from package-get-version and adapt it
-  (cond ((fboundp 'package-get-version)
-         (package-get-version))))
+  (package-get-version))
 
 (defun cljr--version (&optional _for-compat)
   "Retrieve the version."
