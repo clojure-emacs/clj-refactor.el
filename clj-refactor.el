@@ -273,14 +273,14 @@ if it appears to be unused."
 
 (defvar cljr--add-require-snippet
   "${1:[${2:${3:} :as ${4:${3:$(cljr--ns-name yas-text)}}}]}"
-  "The snippet used in in `cljr-add-require-to-ns'.")
+  "The snippet used in `cljr-add-require-to-ns'.")
 
 (defun cljr--ns-name (ns)
   "Return the last name in a full NS."
   (replace-regexp-in-string ".*\\." "" ns))
 
 (defvar cljr--add-use-snippet "[$1 :refer ${2:[$3]}]"
-  "The snippet used in in `cljr-add-use-to-ns'.")
+  "The snippet used in `cljr-add-use-to-ns'.")
 
 (defvar *cljr--noninteractive* nil
   "t, when our interactive functions are called programmatically.")
@@ -316,7 +316,7 @@ line number and column number.")
 
 ;; tracking state of find-symbol buffer
 
-(defvar-local cjr--occurrence-count 0 "Counts occurrences of found symbols.")
+(defvar-local cljr--occurrence-count 0 "Counts occurrences of found symbols.")
 
 (defvar-local cljr--num-syms -1 "Keeps track of overall number of symbol occurrences.")
 
@@ -755,9 +755,7 @@ if the point is currently placed at the opening parentheses of an anonymous func
           (when (<= (point) search-bound)
             (error "Can't find definition of anonymous function")))))))
 
-(defun cljr--evenp (n)
-  ;; evenp lives in cl.el...
-  (zerop (mod n 2)))
+(defalias 'cljr--evenp #'cl-evenp)
 
 (defun cljr--remove-tramp-prefix-from-msg (entry)
   (let* ((k (car entry))
@@ -1983,9 +1981,6 @@ context. Valid outputs include, but are not limited to `:clj',
             language)))
     (error nil)))
 
-(defun cljr--aget (map key)
-  (cdr (assoc key map)))
-
 ;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
 (defcustom cljr-suggest-namespace-aliases t
   "If `t', `namespace-aliases' and `cljr-slash' will take into account suggested namespace aliases,
@@ -2069,8 +2064,7 @@ is not set to `:prompt'."
    ((or (> (length candidates) 1) (eq :prompt cljr-magic-requires))
     (completing-read "Add require: " candidates nil))
    ((= (length candidates) 1)
-    ;; this is like seq-first, but compatible with older Emacsen:
-    (seq-elt candidates 0))))
+    (seq-first candidates))))
 
 ;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
 (defun cljr--get-aliases-from-middleware ()
@@ -2109,7 +2103,7 @@ match. Returns a structure of (alias (ns1 ns2 ...))."
                (string-match-p (cljr--magic-requires-re) short))
       ;; This when-let might seem unnecessary but the regexp match
       ;; isn't perfect.
-      (let ((long  (cljr--aget cljr-magic-require-namespaces short)))
+      (let ((long  (alist-get short cljr-magic-require-namespaces nil nil #'equal)))
         (when-let* ((libspec (cond ((stringp long)
                                     (list long))
                                    ;; handle ("io" "clojure.java.io" :only ("clj"))
@@ -2251,9 +2245,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
     (join-line)))
 
 (defun cljr--empty-buffer-p (&optional buffer)
-  (let ((buffer (or buffer (current-buffer))))
-    (with-current-buffer buffer
-      (string-blank-p (string-trim (buffer-substring-no-properties (point-min) (point-max)))))))
+  (with-current-buffer (or buffer (current-buffer))
+    (save-excursion
+      (goto-char (point-min))
+      (not (re-search-forward "[^ \t\n]" nil t)))))
 
 (defun cljr--extract-next-dependency-name ()
   (while (not (or (cljr--empty-buffer-p)
@@ -2737,7 +2732,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
                             "ignore-errors"
                             (when cljr-ignore-analyzer-errors "true"))))
     (with-current-buffer (with-no-warnings (cider-current-repl))
-      (setq cjr--occurrence-count 0)
+      (setq cljr--occurrence-count 0)
       (setq cljr--num-syms -1)
       (setq cljr--occurrence-ids '()))
     (cljr--call-middleware-async find-symbol-request callback)))
@@ -2774,14 +2769,14 @@ Translate it back to TRAMP notation if needed."
   (if-let* ((count (nrepl-dict-get occurrence-resp "count")))
       (progn
         (setq cljr--num-syms count)
-        (when (= cjr--occurrence-count cljr--num-syms)
+        (when (= cljr--occurrence-count cljr--num-syms)
           (cljr--finalise-find-symbol-buffer cljr--num-syms)))
     (when-let* ((occurrence-data (nrepl-dict-get occurrence-resp "occurrence")))
       (let* ((occurrence (parseedn-read-str occurrence-data))
              (occurrence-id (format "%s%s"
                                     (cljr--get-valid-filename occurrence)
                                     (gethash :line-beg occurrence))))
-        (cl-incf cjr--occurrence-count)
+        (cl-incf cljr--occurrence-count)
         (unless (member occurrence-id cljr--occurrence-ids)
           (setq cljr--occurrence-ids
                 (cons occurrence-id cljr--occurrence-ids))
