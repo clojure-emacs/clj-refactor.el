@@ -10,7 +10,7 @@
 ;; Version: 3.12.0
 ;; Keywords: convenience, clojure, cider
 
-;; Package-Requires: ((emacs "28.1") (seq "2.19") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.18.0") (cider "1.11.1") (parseedn "1.2.0") (inflections "2.6") (hydra "0.13.2"))
+;; Package-Requires: ((emacs "28.1") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.18.0") (cider "1.11.1") (parseedn "1.2.0") (inflections "2.6") (hydra "0.13.2"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
