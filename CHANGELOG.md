@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **(Breaking)** Remove the `cljr-thread`, `cljr-thread-first-all`, `cljr-thread-last-all`, `cljr-unwind`, `cljr-unwind-all`, `cljr-cycle-privacy`, `cljr-cycle-if`, `cljr-cycle-coll`, `cljr-thread-all-but-last`, `cljr-use-metadata-for-privacy` and `cljr-find-usages-ignore-analyzer-errors` aliases, all deprecated back in 2.3.0. Use the `clojure-*` equivalents (now in clojure-mode) and `cljr-ignore-analyzer-errors`.
 - Use CIDER 1.23's renamed nREPL API (`cider-nrepl-sync-request`, `cider-ensure-session`) when available, while staying compatible with older CIDER releases. Fixes byte-compilation warnings against recent CIDER.
 - Re-enable `cljr-hotload-dependency`, now that refactor-nrepl hotloads dependencies on top of `clojure.tools.deps` ([refactor-nrepl #231](https://github.com/clojure-emacs/refactor-nrepl/issues/231)). It also accepts `deps.edn`-style coordinate maps in addition to Leiningen vectors.
 - [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.11.0/CHANGELOG.md#3110).
