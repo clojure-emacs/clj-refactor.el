@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Use CIDER 1.23's renamed nREPL API (`cider-nrepl-sync-request`, `cider-ensure-session`) when available, while staying compatible with older CIDER releases. Fixes byte-compilation warnings against recent CIDER.
+- Re-enable `cljr-hotload-dependency`, now that refactor-nrepl hotloads dependencies on top of `clojure.tools.deps` ([refactor-nrepl #231](https://github.com/clojure-emacs/refactor-nrepl/issues/231)). It also accepts `deps.edn`-style coordinate maps in addition to Leiningen vectors.
 - [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.11.0/CHANGELOG.md#3110).
 
 ## 3.12.0
