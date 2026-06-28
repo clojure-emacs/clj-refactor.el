@@ -2352,12 +2352,26 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
         (indent-region (point-min) (point-max))
         (save-buffer)))))
 
+;; CIDER 1.23 renamed `cider-nrepl-send-sync-request' to
+;; `cider-nrepl-sync-request' and `cider-ensure-connected' to
+;; `cider-ensure-session'.  Prefer the modern names when they're available and
+;; fall back to the old ones, so we keep working with older CIDER releases.
+(defalias 'cljr--nrepl-sync-request
+  (if (fboundp 'cider-nrepl-sync-request)
+      'cider-nrepl-sync-request
+    'cider-nrepl-send-sync-request))
+
+(defalias 'cljr--ensure-session
+  (if (fboundp 'cider-ensure-session)
+      'cider-ensure-session
+    'cider-ensure-connected))
+
 (defun cljr--call-middleware-sync (request &optional key)
   "Call the middleware with REQUEST.
 
 If it's present KEY indicates the key to extract from the response."
   (let* ((nrepl-sync-request-timeout (if cljr-warn-on-eval nil 25))
-         (response (thread-first request cider-nrepl-send-sync-request cljr--maybe-rethrow-error)))
+         (response (thread-first request cljr--nrepl-sync-request cljr--maybe-rethrow-error)))
     (if key
         (nrepl-dict-get response key)
       response)))
@@ -3595,8 +3609,10 @@ warning by customizing `cljr-suppress-no-project-warning'.)"))))
 
 (defun cljr--ns-path (ns-name)
   "Find the file path to the ns named NS-NAME."
-  (cider-ensure-connected)
-  (cider-ensure-op-supported "ns-path")
+  (cljr--ensure-session)
+  ;; No explicit op-support check: `cider-sync-request:ns-path' sends the
+  ;; namespaced `cider/ns-path' op, whose support modern CIDER enforces in the
+  ;; nREPL sender automatically.
   (cljr--chop-prefix "file:"
                      (cider-sync-request:ns-path ns-name)))
 
