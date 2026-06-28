@@ -4,7 +4,7 @@ by checking the relevant checkboxes):
 - [ ] The commits are consistent with our [contribution guidelines](CONTRIBUTING.md)
 - [ ] You've added tests (if possible) to cover your change(s)
 - [ ] The new code is not generating byte compile warnings (run `make compile`)
-- [ ] All tests are passing (run `./run-tests.sh`)
+- [ ] All tests are passing (run `make test`)
 - [ ] You've updated the changelog (if adding/changing user-visible functionality)
 - [ ] You've updated the readme (if adding/changing user-visible functionality)
 
