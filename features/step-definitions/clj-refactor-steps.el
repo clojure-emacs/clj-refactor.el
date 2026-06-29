@@ -60,10 +60,6 @@
        (lambda ()
          (setq cljr-warn-on-eval nil)))
 
-(Given "^I don't use multiple-cursors"
-       (lambda ()
-         (setq cljr-use-multiple-cursors nil)))
-
 (defun cljr--plist-to-hash (plist)
   (let ((h (make-hash-table)))
     (dolist (k (-filter #'keywordp plist))
