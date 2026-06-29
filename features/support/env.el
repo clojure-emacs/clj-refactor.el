@@ -26,7 +26,6 @@
    (when (file-directory-p tmp-dir)
      (delete-directory tmp-dir t)))
  (yas-global-mode 1)
- (setq cljr-use-multiple-cursors t)
  (cljr-add-keybindings-with-prefix "C-!")
  (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode))))
 

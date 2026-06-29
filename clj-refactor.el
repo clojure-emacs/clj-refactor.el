@@ -10,7 +10,7 @@
 ;; Version: 3.12.0
 ;; Keywords: convenience, clojure, cider
 
-;; Package-Requires: ((emacs "28.1") (yasnippet "0.6.1") (paredit "24") (multiple-cursors "1.2.2") (clojure-mode "5.18.0") (cider "1.11.1") (parseedn "1.2.0") (inflections "2.6") (hydra "0.13.2"))
+;; Package-Requires: ((emacs "28.1") (yasnippet "0.6.1") (paredit "24") (clojure-mode "5.18.0") (cider "1.11.1") (parseedn "1.2.0"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -35,13 +35,10 @@
 
 (require 'yasnippet)
 (require 'paredit)
-(require 'multiple-cursors-core)
 (require 'clojure-mode)
 (require 'cider)
 (require 'parseedn)
 (require 'sgml-mode)
-(require 'inflections)
-(require 'hydra)
 (require 'subword)
 
 (defgroup cljr nil
@@ -142,13 +139,6 @@ This only applies to dependencies added by `cljr-add-project-dependency'."
 
 (defcustom cljr-insert-newline-after-require t
   "If t, `cljr-clean-ns' will place a newline after the `:require` and `:import` tokens."
-  :type 'boolean
-  :safe #'booleanp)
-
-(defcustom cljr-use-multiple-cursors t
-  "If t, some refactorings use the `multiple-cursors' package.
-This improves interactivity of the commands.  If nil, those
-refactorings will use regular prompts instead."
   :type 'boolean
   :safe #'booleanp)
 
@@ -344,10 +334,6 @@ Otherwise open the file and do the changes non-interactively."
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-forward] 'cljr-splice-sexp-killing-forward)
 (define-key clj-refactor-map (kbd "/") 'cljr-slash)
 
-(defun cljr--use-multiple-cursors-p ()
-  (and cljr-use-multiple-cursors
-       (not (bound-and-true-p evil-mode))))
-
 (defun cljr--vector-at-point-p ()
   (eq (char-after) ?\[))
 
@@ -408,118 +394,7 @@ Otherwise open the file and do the changes non-interactively."
     ("up" . (cljr-update-project-dependencies "Update project dependencies" ?U ("project")))
     ("uw" . (clojure-unwind "Unwind" ?w ("code")))
     ("ad" . (cljr-add-declaration "Add declaration" ?d ("toplevel-form")))
-    ("?" . (cljr-describe-refactoring "Describe refactoring" ?d ("cljr")))
-    ("hh" . (hydra-cljr-help-menu/body "Parent menu for hydra menus" ?h ("hydra")))
-    ("hn" . (hydra-cljr-ns-menu/body "Hydra menu for ns refactorings" ?n ("hydra")))
-    ("hc" . (hydra-cljr-code-menu/body "Hydra menu for code refactorings" ?c ("hydra")))
-    ("hp" . (hydra-cljr-project-menu/body "Hydra menu for project refactorings" ?p ("hydra")))
-    ("ht" . (hydra-cljr-toplevel-form-menu/body "Hydra menu for top level refactorings " ?t ("hydra")))
-    ("hs" . (hydra-cljr-cljr-menu/body "Hydra menu for self features" ?s ("hydra")))))
-
-
-(defhydra hydra-cljr-ns-menu (:color pink :hint nil)
-  "
- Ns related refactorings
-------------------------------------------------------------------------------------------------------------------------------------------------------
-_ai_: Add import to ns                             _am_: Add missing libspec                          _ap_: Add project dependency
-_ar_: Add require to ns                            _au_: Add use to ns                                _cn_: Clean ns
-_rm_: Require a macro into the ns                  _sr_: Stop referring
-_b_: Back to previous Hydra
-"
-  ("ai" cljr-add-import-to-ns) ("am" cljr-add-missing-libspec)
-  ("ap" cljr-add-project-dependency) ("ar" cljr-add-require-to-ns)
-  ("au" cljr-add-use-to-ns) ("cn" cljr-clean-ns)
-  ("rm" cljr-require-macro) ("sr" cljr-stop-referring)
-  ("b" hydra-cljr-help-menu/body :exit t)
-  ("q" nil "quit"))
-
-(defhydra hydra-cljr-code-menu (:color pink :hint nil)
-  "
- Code related refactorings
-------------------------------------------------------------------------------------------------------------------------------------------------------
-_ci_: Cycle if                                     _ct_: Cycle thread
-_dk_: Destructure keys                             _el_: Expand let                                   _fu_: Find usages
-_il_: Introduce let                                _is_: Inline symbol                                _ml_: Move to let
-_pf_: Promote function                             _rl_: Remove let                                   _rs_: Rename symbol
-_tf_: Thread first all                             _th_: Thread                                       _tl_: Thread last all
-_ua_: Unwind all                                   _uw_: Unwind
-_b_: Back to previous Hydra
-"
-  ("ci" clojure-cycle-if) ("ct" cljr-cycle-thread)
-  ("dk" cljr-destructure-keys) ("el" cljr-expand-let)
-  ("fu" cljr-find-usages) ("il" cljr-introduce-let)
-  ("is" cljr-inline-symbol) ("ml" cljr-move-to-let)
-  ("pf" cljr-promote-function) ("rl" cljr-remove-let)
-  ("rs" cljr-rename-symbol) ("tf" clojure-thread-first-all)
-  ("th" clojure-thread) ("tl" clojure-thread-last-all)
-  ("ua" clojure-unwind-all) ("uw" clojure-unwind)
-  ("b" hydra-cljr-help-menu/body :exit t)
-  ("q" nil "quit"))
-
-(defhydra hydra-cljr-project-menu (:color pink :hint nil)
-  "
- Project related refactorings
-------------------------------------------------------------------------------------------------------------------------------------------------------
-_ap_: Add project dependency                       _cs_: Change function signature                    _fu_: Find usages
-_hd_: Hotload dependency                           _is_: Inline symbol                                _mf_: Move form
-_pc_: Project clean                                _rf_: Rename file-or-dir _rs_: Rename symbol       _sp_: Sort project dependencies
-_up_: Update project dependencies
-_b_: Back to previous Hydra
-"
-  ("ap" cljr-add-project-dependency) ("cs" cljr-change-function-signature)
-  ("fu" cljr-find-usages) ("hd" cljr-hotload-dependency)
-  ("is" cljr-inline-symbol) ("mf" cljr-move-form)
-  ("pc" cljr-project-clean) ("rf" cljr-rename-file-or-dir)
-  ("rs" cljr-rename-symbol) ("sp" cljr-sort-project-dependencies)
-  ("up" cljr-update-project-dependencies)
-  ("b" hydra-cljr-help-menu/body :exit t)
-  ("q" nil "quit"))
-
-(defhydra hydra-cljr-toplevel-form-menu (:color pink :hint nil)
-  "
- Toplevel form related refactorings
-------------------------------------------------------------------------------------------------------------------------------------------------------
-_as_: Add stubs for the interface/protocol at point_cp_: Cycle privacy                                _cs_: Change function signature
-_ec_: Extract constant                             _ed_: Extract form as def                          _ef_: Extract function
-_fe_: Create function from example                 _is_: Inline symbol                                _mf_: Move form
-_pf_: Promote function                             _rf_: Rename file-or-dir                           _ad_: Add declaration
-_b_: Back to previous Hydra
-"
-  ("as" cljr-add-stubs) ("cp" clojure-cycle-privacy)
-  ("cs" cljr-change-function-signature) ("ec" cljr-extract-constant)
-  ("ed" cljr-extract-def) ("ef" cljr-extract-function)
-  ("fe" cljr-create-fn-from-example) ("is" cljr-inline-symbol)
-  ("mf" cljr-move-form) ("pf" cljr-promote-function)
-  ("rf" cljr-rename-file-or-dir) ("ad" cljr-add-declaration)
-  ("b" hydra-cljr-help-menu/body :exit t)
-  ("q" nil "quit"))
-
-(defhydra hydra-cljr-cljr-menu (:color pink :hint nil)
-  "
- Cljr related refactorings
-------------------------------------------------------------------------------------------------------------------------------------------------------
-_sc_: Show the project's changelog                 _?_: Describe refactoring
-_b_: Back to previous Hydra
-"
-  ("sc" cljr-show-changelog) ("?" cljr-describe-refactoring)
-  ("b" hydra-cljr-help-menu/body :exit t)
-  ("q" nil "quit"))
-
-(defhydra hydra-cljr-help-menu (:color pink :hint nil)
-  "
-Available refactoring types
------------------------------------------------------------------------------
-_n_: Ns related refactorings      _c_: Code related refactorings
-_p_: Project related refactorings _t_: Top level forms related refactorings
-_s_: Refactor related functions
-"
-
-  ("n" hydra-cljr-ns-menu/body :exit t)
-  ("c" hydra-cljr-code-menu/body :exit t)
-  ("p" hydra-cljr-project-menu/body :exit t)
-  ("t" hydra-cljr-toplevel-form-menu/body :exit t)
-  ("s" hydra-cljr-cljr-menu/body :exit t)
-  ("q" nil "quit" :color blue))
+    ("?" . (cljr-describe-refactoring "Describe refactoring" ?d ("cljr")))))
 
 (defun cljr--add-keybindings (key-fn)
   "Build the keymap from the list of keys/functions in `cljr--all-helpers'."
@@ -1733,19 +1608,7 @@ The resulting let form can then be expanded with `\\[cljr-expand-let]'.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-introduce-let"
   (interactive "P")
-  (if (not (cljr--use-multiple-cursors-p))
-      (clojure-introduce-let n)
-    (paredit-wrap-round)
-    (insert "let ")
-    (paredit-wrap-square)
-    (insert " ")
-    (backward-char)
-    (mc/create-fake-cursor-at-point)
-    (paredit-forward-up)
-    (newline-and-indent)
-    (mc/maybe-multiple-cursors-mode)))
-
-(add-to-list 'mc--default-cmds-to-run-once 'cljr-introduce-let)
+  (clojure-introduce-let n))
 
 (defun cljr--get-let-bindings ()
   "Returns a list of lists.
@@ -1780,7 +1643,6 @@ The inner lists contain two elements first is the binding, second is the init-ex
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-expand-let"
   (interactive)
-  (multiple-cursors-mode 0)
   (clojure--goto-let)
   (paredit-forward-down 2)
   (paredit-forward-up)
@@ -1789,31 +1651,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-expand-let"
   (mapc 'cljr--replace-sexp-with-binding (cljr--get-let-bindings))
   (cljr--one-shot-keybinding "l" 'cljr-expand-let))
 
-(defun cljr--replace-sexp-with-binding-in-let ()
-  (remove-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
-  (save-excursion
-    (mapc 'cljr--replace-sexp-with-binding (cljr--get-let-bindings))))
-
 ;;;###autoload
 (defun cljr-move-to-let ()
   "Move the form at point to a binding in the nearest let.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-to-let"
   (interactive)
-  (if (not (cljr--use-multiple-cursors-p))
-      (clojure-move-to-let)
-    (if (not (save-excursion (clojure--goto-let)))
-        (cljr-introduce-let)
-      (save-excursion
-        (let ((contents (clojure-delete-and-extract-sexp)))
-          (clojure--prepare-to-insert-new-let-binding)
-          (insert contents))
-        (backward-sexp)
-        (insert " ")
-        (backward-char)
-        (mc/create-fake-cursor-at-point))
-      (add-hook 'multiple-cursors-mode-disabled-hook 'cljr--replace-sexp-with-binding-in-let)
-      (mc/maybe-multiple-cursors-mode))))
+  (clojure-move-to-let))
 
 (defun cljr--eliminate-let ()
   "Remove a the nearest let form.
@@ -1836,8 +1680,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-let"
       (dotimes (_ (length (save-excursion (cljr--get-let-bindings))))
         (cljr-inline-symbol)
         (cljr--skip-past-whitespace-and-comments)))))
-
-(add-to-list 'mc--default-cmds-to-run-once 'cljr-move-to-let)
 
 ;; ------ Destructuring ----
 
@@ -2591,11 +2433,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
            (fn (cljr--extract-sexp))
            (namedp (cljr--extract-anon-fn-name fn))
            (name (or namedp
-                     (unless (cljr--use-multiple-cursors-p)
-                       (let ((highlight (cljr--highlight-sexp)))
-                         (unwind-protect
-                             (read-string "Name: ")
-                           (delete-overlay highlight))))))
+                     (let ((highlight (cljr--highlight-sexp)))
+                       (unwind-protect
+                           (read-string "Name: ")
+                         (delete-overlay highlight)))))
            fn-start)
       (cljr--delete-sexp)
       (save-excursion
@@ -2614,9 +2455,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
           (insert " ")
           (newline)
           (backward-char)
-          (if name
-              (insert name)
-            (mc/create-fake-cursor-at-point)))
+          (insert name))
         (re-search-forward "\\[")
         (when (cljr--string-present-p locals)
           (insert locals)
@@ -2629,9 +2468,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
       (when (cljr--string-present-p locals)
         (insert (format "(partial  %s)" locals))
         (backward-char (length (concat " " locals ")"))))
-      (if name
-          (insert name)
-        (mc/maybe-multiple-cursors-mode)))))
+      (insert name))))
 
 (defun cljr--append-fn-parameter (param)
   (cljr--goto-fn-definition)
@@ -2690,8 +2527,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
         (cljr--promote-fn)))
     (when promote-to-defn
       (cljr--promote-fn))))
-
-(add-to-list 'mc--default-cmds-to-run-once 'cljr-promote-function)
 
 (defun cljr--insert-in-find-symbol-buffer (occurrence)
   (save-excursion
@@ -3301,33 +3136,26 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-function
                      ;; +1 more because point has to be inside the sexp,
                      ;; not on the opening paren
                      (+ (current-column) 2)))
-           (name (unless (cljr--use-multiple-cursors-p)
-                   (let ((highlight (cljr--highlight-sexp)))
-                     (unwind-protect
-                         (cljr--prompt-user-for "Name: ")
-                       (delete-overlay highlight)))))
+           (name (let ((highlight (cljr--highlight-sexp)))
+                   (unwind-protect
+                       (cljr--prompt-user-for "Name: ")
+                     (delete-overlay highlight))))
            (body (clojure-delete-and-extract-sexp)))
       (save-excursion
         (cljr--make-room-for-toplevel-form)
         (insert (cljr--defn-str))
-        (if name
-            (insert name)
-          (mc/create-fake-cursor-at-point))
+        (insert name)
         (newline)
         (indent-according-to-mode)
         (insert "[" unbound "]")
         (newline-and-indent)
         (insert body ")"))
       (insert "(")
-      (when name (insert name))
+      (insert name)
       (save-excursion
         (unless (string-blank-p unbound)
           (insert " " unbound))
-        (insert ")"))
-      (unless name
-        (mc/maybe-multiple-cursors-mode)))))
-
-(add-to-list 'mc--default-cmds-to-run-once 'cljr-extract-function)
+        (insert ")")))))
 
 (defun cljr--at-end-of-symbol-at-point ()
   (looking-back (regexp-quote (cider-symbol-at-point)) (line-beginning-position)))
@@ -3701,6 +3529,30 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                (cljr--insert-example-fn fn-name args path)))
       (cljr--insert-example-fn fn-name args path))))
 
+(defun cljr--singularize-string (word)
+  "Return a naive English singular form of WORD.
+Covers the common cases good enough for guessing parameter names in
+`cljr-create-fn-from-example'; it is not a full inflection engine."
+  (cond
+   ((string-match-p "[^aeiou]ies\\'" word)
+    (concat (substring word 0 -3) "y"))
+   ((string-match-p "\\(?:ss\\|sh\\|ch\\|x\\|z\\)es\\'" word)
+    (substring word 0 -2))
+   ((and (string-suffix-p "s" word)
+         (not (string-suffix-p "ss" word)))
+    (substring word 0 -1))
+   (t word)))
+
+(defun cljr--pluralize-string (word)
+  "Return a naive English plural form of WORD.
+See `cljr--singularize-string' for the caveats."
+  (cond
+   ((string-match-p "[^aeiou]y\\'" word)
+    (concat (substring word 0 -1) "ies"))
+   ((string-match-p "\\(?:s\\|sh\\|ch\\|x\\|z\\)\\'" word)
+    (concat word "es"))
+   (t (concat word "s"))))
+
 (defun cljr--inflect-last-word (f s)
   (when s
     (save-match-data
@@ -3716,7 +3568,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                            (seq-map
                             (lambda (it)
                               (when-let* ((name (cljr--guess-param-name it)))
-                                (cljr--inflect-last-word 'inflection-singularize-string name)))
+                                (cljr--inflect-last-word 'cljr--singularize-string name)))
                             (cdr args))
                            path))
 
@@ -3726,7 +3578,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                                  (seq-map
                                   (lambda (it)
                                     (when-let* ((name (cljr--guess-param-name it)))
-                                      (cljr--inflect-last-word 'inflection-singularize-string name)))
+                                      (cljr--inflect-last-word 'cljr--singularize-string name)))
                                   (cdr args)))
                            path))
 
@@ -3751,7 +3603,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
 (defun cljr--create-fn-from-sort (args path)
   (let* ((fn-name (cider-symbol-at-point))
          (param-name (when-let* ((coll-name (cljr--guess-param-name (car (last args)))))
-                       (cljr--inflect-last-word 'inflection-singularize-string coll-name))))
+                       (cljr--inflect-last-word 'cljr--singularize-string coll-name))))
     (cljr--insert-example-fn fn-name
                              (if param-name
                                  (list (concat param-name "-a")
@@ -3767,7 +3619,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                          (when (cljr--keywordp (car args))
                            (string-remove-prefix ":" (car args)))
                        (when-let* ((coll-name (cljr--guess-param-name (car (last args)))))
-                         (cljr--inflect-last-word 'inflection-singularize-string coll-name)))))
+                         (cljr--inflect-last-word 'cljr--singularize-string coll-name)))))
     (cljr--insert-example-fn fn-name
                              (if making-comparator?
                                  (if param-name
@@ -3784,7 +3636,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-create-fn-from-e
                   (cljr--guess-param-name (nth 1 args)))
              "acc")
          (when-let* ((name (cljr--guess-param-name (car (last args)))))
-           (cljr--inflect-last-word 'inflection-singularize-string name)))
+           (cljr--inflect-last-word 'cljr--singularize-string name)))
    path))
 
 (defun cljr--unwind-and-extract-this-as-list (name)
@@ -3873,10 +3725,10 @@ and make the whole string lower-cased."
      ((string= "get" fn-call)
       (cljr--find-param-name-from-get prepped-form))
      ((string= "repeat" fn-call)
-      (inflection-pluralize-string
+      (cljr--pluralize-string
        (cljr--guess-param-name (cljr--last-arg-s prepped-form))))
      ((member fn-call cljr--fns-that-get-item-out-of-coll)
-      (cljr--inflect-last-word 'inflection-singularize-string
+      (cljr--inflect-last-word 'cljr--singularize-string
                                (cljr--guess-param-name (cljr--first-arg-s prepped-form)))))))
 
 (defvar cljr--semantic-noops--first-position

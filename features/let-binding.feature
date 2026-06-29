@@ -13,8 +13,11 @@ Feature: Let bindings
      :body (find-body abc)}
     """
     And I place the cursor before "(find-body abc)"
+    And I start an action chain
     And I press "C-! il"
     And I type "body"
+    And I press "RET"
+    And I execute the action chain
     Then I should see:
     """
     {:status 200
@@ -107,8 +110,11 @@ Feature: Let bindings
          :body body}))
     """
     And I place the cursor before "(or status 500)"
+    And I start an action chain
     And I press "C-! ml"
     And I type "status"
+    And I press "RET"
+    And I execute the action chain
     Then I should see:
     """
     (defn handle-request
@@ -127,8 +133,11 @@ Feature: Let bindings
          :body body}))
     """
     And I place the cursor before "42"
+    And I start an action chain
     And I press "C-! ml"
     And I type "status"
+    And I press "RET"
+    And I execute the action chain
     Then I should see:
     """
     (defn handle-request
@@ -147,8 +156,11 @@ Feature: Let bindings
          :body body}))
     """
     And I place the cursor before "(or status 500)"
+    And I start an action chain
     And I press "C-! ml"
     And I type "status"
+    And I press "RET"
+    And I execute the action chain
     Then I should see:
     """
     (defn handle-request
@@ -165,8 +177,11 @@ Feature: Let bindings
        :body body})
     """
     And I place the cursor before "(or status 500)"
+    And I start an action chain
     And I press "C-! ml"
     And I type "status"
+    And I press "RET"
+    And I execute the action chain
     Then I should see:
     """
     (defn handle-request
