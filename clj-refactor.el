@@ -330,6 +330,35 @@ Otherwise open the file and do the changes non-interactively."
            ;; Don't accumulate open buffers, since this can slow down Emacs for large projects:
            (kill-buffer))))))
 
+(defvar cljr--opened-buffers 'unset
+  "Collector for buffers opened during a project-wide operation.
+Bound to a list by `cljr--with-opened-buffers'; otherwise the symbol
+`unset', which means `cljr--find-file-noselect' does not record anything.")
+
+(defun cljr--find-file-noselect (file)
+  "Like `find-file-noselect' for FILE, but track newly-opened buffers.
+When called within `cljr--with-opened-buffers', a buffer opened here for a
+file that wasn't already being visited is collected so the wrapper can
+kill it afterwards.  This avoids the buffer accumulation that slows Emacs
+down on large project-wide refactorings (rename, inline, change
+signature)."
+  (let ((already (get-file-buffer file))
+        (buffer (find-file-noselect file)))
+    (when (and (null already) (listp cljr--opened-buffers))
+      (push buffer cljr--opened-buffers))
+    buffer))
+
+(defmacro cljr--with-opened-buffers (&rest body)
+  "Run BODY, then kill any file buffers it opened via `cljr--find-file-noselect'.
+Buffers that were already being visited before BODY ran are left alone."
+  (declare (indent 0) (debug (body)))
+  `(let ((cljr--opened-buffers nil))
+     (unwind-protect
+         (progn ,@body)
+       (dolist (buffer cljr--opened-buffers)
+         (when (buffer-live-p buffer)
+           (kill-buffer buffer))))))
+
 (define-key clj-refactor-map [remap paredit-raise-sexp] 'cljr-raise-sexp)
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-backward] 'cljr-splice-sexp-killing-backward)
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-forward] 'cljr-splice-sexp-killing-forward)
@@ -2172,12 +2201,18 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-project-clean"
   (interactive)
   (when (or (not cljr-project-clean-prompt)
             (yes-or-no-p "Cleaning your project might change many of your clj files. Do you want to proceed?"))
-    (let ((*cljr--noninteractive* t))
-      (dolist (filename (cljr--project-files))
-        (when (and (cljr--clojure-filename-p filename)
-                   (not (cljr--excluded-from-project-clean-p filename)))
-          (cljr--update-file filename
-            (ignore-errors (seq-map 'funcall cljr-project-clean-functions))))))
+    (let* ((*cljr--noninteractive* t)
+           (files (seq-filter (lambda (filename)
+                                (and (cljr--clojure-filename-p filename)
+                                     (not (cljr--excluded-from-project-clean-p filename))))
+                              (cljr--project-files)))
+           (reporter (make-progress-reporter "Cleaning project..." 0 (max 1 (length files))))
+           (i 0))
+      (dolist (filename files)
+        (cljr--update-file filename
+          (ignore-errors (seq-map 'funcall cljr-project-clean-functions)))
+        (progress-reporter-update reporter (setq i (1+ i)) filename))
+      (progress-reporter-done reporter))
     (if (and (cider-connected-p) (not cljr-warn-on-eval) (cljr--op-supported-p "warm-ast-cache"))
         (cljr--warm-ast-cache))
     (cljr--post-command-message "Project clean done.")))
@@ -2325,13 +2360,42 @@ If it's present KEY indicates the key to extract from the response."
 (defun cljr--call-middleware-async (request &optional callback)
   (cider-nrepl-send-request request callback))
 
+(defcustom cljr-artifact-cache-ttl 300
+  "Number of seconds to cache artifact and version lists on the Emacs side.
+
+The dependency commands (`cljr-add-project-dependency' and friends) fetch
+the list of available artifacts, and the versions of a given artifact,
+from the middleware.  Those lists change rarely, so they are cached for
+this many seconds to avoid a round-trip on every invocation.  Set to nil
+to disable the cache."
+  :type '(choice (const :tag "Disable" nil) integer)
+  :package-version '(clj-refactor . "4.0.0")
+  :safe (lambda (x) (or (null x) (integerp x))))
+
+;; Each cache entry is a cons of (timestamp . value).
+(defvar cljr--artifacts-cache nil
+  "Cached artifact list, as a cons of (timestamp . artifacts).")
+
+(defvar cljr--versions-cache (make-hash-table :test #'equal)
+  "Per-artifact version cache, mapping artifact to (timestamp . versions).")
+
+(defun cljr--cache-fresh-p (entry)
+  "Return non-nil if cache ENTRY is present and within `cljr-artifact-cache-ttl'."
+  (and cljr-artifact-cache-ttl
+       entry
+       (< (- (float-time) (car entry)) cljr-artifact-cache-ttl)))
+
 (defun cljr--get-artifacts-from-middleware (force)
-  (message "Retrieving list of available libraries...")
-  (let* ((request (cljr--create-msg "artifact-list" "force" (if force "true" "false")))
-         (artifacts (cljr--call-middleware-sync request "artifacts")))
-    (if artifacts
-        artifacts
-      (user-error "Empty artifact list received from middleware"))))
+  (if (and (not force) (cljr--cache-fresh-p cljr--artifacts-cache))
+      (cdr cljr--artifacts-cache)
+    (message "Retrieving list of available libraries...")
+    (let* ((request (cljr--create-msg "artifact-list" "force" (if force "true" "false")))
+           (artifacts (cljr--call-middleware-sync request "artifacts")))
+      (if artifacts
+          (progn
+            (setq cljr--artifacts-cache (cons (float-time) artifacts))
+            artifacts)
+        (user-error "Empty artifact list received from middleware")))))
 
 (defun cljr--update-artifact-cache ()
   (cljr--call-middleware-async (cljr--create-msg "artifact-list"
@@ -2396,11 +2460,16 @@ before non-empty. This lets 1.7.0 be sorted above 1.7.0-RC1."
       (reverse res))))
 
 (defun cljr--get-versions-from-middleware (artifact)
-  (let* ((request (cljr--create-msg "artifact-versions" "artifact" artifact))
-         (versions (nreverse (sort (cljr--call-middleware-sync request "versions") 'cljr--dictionary-lessp))))
-    (if versions
-        versions
-      (error "Empty version list received from middleware"))))
+  (let ((cached (gethash artifact cljr--versions-cache)))
+    (if (cljr--cache-fresh-p cached)
+        (cdr cached)
+      (let* ((request (cljr--create-msg "artifact-versions" "artifact" artifact))
+             (versions (nreverse (sort (cljr--call-middleware-sync request "versions") 'cljr--dictionary-lessp))))
+        (if versions
+            (progn
+              (puthash artifact (cons (float-time) versions) cljr--versions-cache)
+              versions)
+          (error "Empty version list received from middleware"))))))
 
 (defun cljr--prompt-user-for (prompt &optional choices)
   "Prompt the user with PROMPT.
@@ -2792,7 +2861,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
 (defun cljr--rename-occurrence (file line-beg col-beg line-end col-end name new-name)
   (save-excursion
     (with-current-buffer
-        (find-file-noselect file)
+        (cljr--find-file-noselect file)
       (let* ((name (thread-last name cljr--symbol-suffix regexp-quote))
              (search-limit (save-excursion
                              (progn
@@ -2813,17 +2882,18 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
       (save-buffer))))
 
 (defun cljr--rename-occurrences (occurrences new-name)
-  (dolist (symbol-meta occurrences)
-    (let* ((file (cljr--get-valid-filename symbol-meta))
-           (line-beg (gethash :line-beg symbol-meta))
-           (col-beg (gethash :col-beg symbol-meta))
-           (line-end (gethash :line-end symbol-meta))
-           (col-end (gethash :col-end symbol-meta))
-           (name (gethash :name symbol-meta))
-           (new-name* (if (stringp new-name)
-                          new-name
-                        (funcall new-name name))))
-      (cljr--rename-occurrence file line-beg col-beg line-end col-end name new-name*))))
+  (cljr--with-opened-buffers
+    (dolist (symbol-meta occurrences)
+      (let* ((file (cljr--get-valid-filename symbol-meta))
+             (line-beg (gethash :line-beg symbol-meta))
+             (col-beg (gethash :col-beg symbol-meta))
+             (line-end (gethash :line-end symbol-meta))
+             (col-end (gethash :col-end symbol-meta))
+             (name (gethash :name symbol-meta))
+             (new-name* (if (stringp new-name)
+                            new-name
+                          (funcall new-name name))))
+        (cljr--rename-occurrence file line-beg col-beg line-end col-end name new-name*)))))
 
 ;;;###autoload
 (defun cljr-rename-symbol (&optional new-name)
@@ -3309,7 +3379,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
   (let ((file (cljr--get-valid-filename definition))
         (line-beg (gethash :line-beg definition))
         (col-beg (gethash :col-beg definition)))
-    (with-current-buffer (find-file-noselect file)
+    (with-current-buffer (cljr--find-file-noselect file)
       (goto-char (point-min))
       (forward-line (1- line-beg))
       (forward-char (1- col-beg))
@@ -3367,28 +3437,29 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
     (insert def)))
 
 (defun cljr--inline-symbol (definition occurrences)
-  (let* ((def (gethash :definition definition))
-         (inline-fn-p (string-prefix-p "(fn" def)))
-    (dolist (symbol-meta (cljr--sort-occurrences occurrences))
-      (let* ((file (cljr--get-valid-filename symbol-meta))
-             (line-beg (gethash :line-beg symbol-meta))
-             (col-beg (gethash :col-beg symbol-meta)))
-        (with-current-buffer (find-file-noselect file)
-          (goto-char (point-min))
-          (forward-line (1- line-beg))
-          (forward-char (1- col-beg))
-          (let* ((call-site-p (and inline-fn-p
-                                   (looking-back "(\s*" (line-beginning-position))))
-                 (sexp (if call-site-p
-                           (prog1 (cljr--extract-sexp-as-list)
-                             (paredit-backward-up)
-                             (clojure-delete-and-extract-sexp))
-                         (clojure-delete-and-extract-sexp))))
-            (if call-site-p
-                (cljr--inline-fn-at-call-site def sexp)
-              (insert def)))))))
-  (save-buffer)
-  (cljr--delete-definition definition))
+  (cljr--with-opened-buffers
+    (let* ((def (gethash :definition definition))
+           (inline-fn-p (string-prefix-p "(fn" def)))
+      (dolist (symbol-meta (cljr--sort-occurrences occurrences))
+        (let* ((file (cljr--get-valid-filename symbol-meta))
+               (line-beg (gethash :line-beg symbol-meta))
+               (col-beg (gethash :col-beg symbol-meta)))
+          (with-current-buffer (cljr--find-file-noselect file)
+            (goto-char (point-min))
+            (forward-line (1- line-beg))
+            (forward-char (1- col-beg))
+            (let* ((call-site-p (and inline-fn-p
+                                     (looking-back "(\s*" (line-beginning-position))))
+                   (sexp (if call-site-p
+                             (prog1 (cljr--extract-sexp-as-list)
+                               (paredit-backward-up)
+                               (clojure-delete-and-extract-sexp))
+                           (clojure-delete-and-extract-sexp))))
+              (if call-site-p
+                  (cljr--inline-fn-at-call-site def sexp)
+                (insert def)))))))
+    (save-buffer)
+    (cljr--delete-definition definition)))
 
 (defun cljr--var-info (&optional symbol all)
   "Like `cider-var-info' but also handles locally bound vars.
@@ -4297,28 +4368,29 @@ Point is assumed to be at the function being called."
   ;; Indexing is from 0
   ;; The OCCURRENCES are the same as those returned by `cljr--find-symbol'
   (let ((*cljr--noninteractive* t))
-    (dolist (symbol-meta occurrences)
-      (let ((file (cljr--get-valid-filename symbol-meta))
-            (line-beg (gethash :line-beg symbol-meta))
-            (col-beg (gethash :col-beg symbol-meta))
-            (name (gethash :name symbol-meta))
-            (match (gethash :match symbol-meta)))
-        (with-current-buffer
-            (find-file-noselect file)
-          (goto-char (point-min))
-          (forward-line (1- line-beg))
-          (move-to-column (1- col-beg))
-          (cond
-           ((cljr--ignorable-occurrence-p) :do-nothing)
-           ((cljr--call-site-p name) (cljr--update-call-site signature-changes))
-           ((cljr--partial-call-site-p)
-            (cljr--update-partial-call-site signature-changes))
-           ((cljr--apply-call-site-p)
-            (cljr--update-apply-call-site signature-changes))
-           ((cljr--defnp match)
-            (cljr--update-function-signature signature-changes))
-           (t (cljr--append-to-manual-intervention-buffer)))
-          (save-buffer)))))
+    (cljr--with-opened-buffers
+      (dolist (symbol-meta occurrences)
+        (let ((file (cljr--get-valid-filename symbol-meta))
+              (line-beg (gethash :line-beg symbol-meta))
+              (col-beg (gethash :col-beg symbol-meta))
+              (name (gethash :name symbol-meta))
+              (match (gethash :match symbol-meta)))
+          (with-current-buffer
+              (cljr--find-file-noselect file)
+            (goto-char (point-min))
+            (forward-line (1- line-beg))
+            (move-to-column (1- col-beg))
+            (cond
+             ((cljr--ignorable-occurrence-p) :do-nothing)
+             ((cljr--call-site-p name) (cljr--update-call-site signature-changes))
+             ((cljr--partial-call-site-p)
+              (cljr--update-partial-call-site signature-changes))
+             ((cljr--apply-call-site-p)
+              (cljr--update-apply-call-site signature-changes))
+             ((cljr--defnp match)
+              (cljr--update-function-signature signature-changes))
+             (t (cljr--append-to-manual-intervention-buffer)))
+            (save-buffer))))))
   (unless (cljr--empty-buffer-p (get-buffer-create cljr--manual-intervention-buffer))
     (pop-to-buffer cljr--manual-intervention-buffer)
     (goto-char (point-min))
