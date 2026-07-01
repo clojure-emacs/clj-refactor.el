@@ -142,11 +142,6 @@ in the example setup you'd call this function by hitting `C-c C-m rs`
 See the wiki for a complete [list of available refactorings](https://github.com/clojure-emacs/clj-refactor.el/wiki),
 demonstrations and customization points.
 
-If you're having trouble remembering the mnemonic shortcuts, check out
-the [hydra](https://github.com/abo-abo/hydra) powered popup menus.
-They are described
-[here](https://github.com/clojure-emacs/clj-refactor.el/wiki/Hydra).
-
 ## Changelog
 
 An extensive changelog is available [here](CHANGELOG.md).
