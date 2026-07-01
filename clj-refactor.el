@@ -1978,6 +1978,14 @@ following this convention: `https://stuartsierra.com/2015/05/10/clojure-namespac
                 (cljr--call-middleware-sync "namespace-aliases")
                 parseedn-read-str))
 
+(defvar cljr--suggest-libspecs-cache (make-hash-table :test #'equal)
+  "Cache of `cljr-suggest-libspecs' results used by `cljr-slash'.
+Maps a (alias-ref buffer-context point-context) key to a
+\(timestamp . candidates) cons.  `cljr-slash' fires on every `/'
+keystroke, so caching keeps the common case (typing the same alias, e.g.
+`str/', repeatedly) from doing a middleware round-trip each time.  The
+entries expire per `cljr-artifact-cache-ttl'.")
+
 (defun cljr--call-middleware-suggest-libspec (alias-ref language-context)
   "Suggest namespace require libspecs for an alias.
 
@@ -1995,21 +2003,32 @@ buffer if context at current point is nil. See
 
 Passes through the custom `cljr-magic-require-namespaces' so that
 users can specify default recommended alias prefixes that may not
-appear in the project yet."
-  (let ((buffer-context (car language-context))
-        (point-context (cadr language-context)))
-    (thread-first "cljr-suggest-libspecs"
-                  cljr--ensure-op-supported
-                  (cljr--create-msg "lib-prefix" alias-ref
-                                    "language-context" buffer-context
-                                    "buffer-language-context" buffer-context
-                                    "input-language-context" (or point-context buffer-context)
-                                    "preferred-aliases" (let ((print-length nil) ;; prevent large lists from being serialized with `...`, which would cause issues
-                                                              (print-level nil))
-                                                          (prin1-to-string cljr-magic-require-namespaces)))
-                  (cljr--call-middleware-sync "suggestions")
-                  parseedn-read-str
-                  (seq-into 'list))))
+appear in the project yet.
+
+Results are cached per alias and language context (see
+`cljr--suggest-libspecs-cache' and `cljr-artifact-cache-ttl'), since
+`cljr-slash' calls this on every `/' keystroke."
+  (let* ((buffer-context (car language-context))
+         (point-context (cadr language-context))
+         (key (list alias-ref buffer-context point-context))
+         (cached (gethash key cljr--suggest-libspecs-cache)))
+    (if (cljr--cache-fresh-p cached)
+        (cdr cached)
+      (let ((candidates
+             (thread-first "cljr-suggest-libspecs"
+                           cljr--ensure-op-supported
+                           (cljr--create-msg "lib-prefix" alias-ref
+                                             "language-context" buffer-context
+                                             "buffer-language-context" buffer-context
+                                             "input-language-context" (or point-context buffer-context)
+                                             "preferred-aliases" (let ((print-length nil) ;; prevent large lists from being serialized with `...`, which would cause issues
+                                                                       (print-level nil))
+                                                                   (prin1-to-string cljr-magic-require-namespaces)))
+                           (cljr--call-middleware-sync "suggestions")
+                           parseedn-read-str
+                           (seq-into 'list))))
+        (puthash key (cons (float-time) candidates) cljr--suggest-libspecs-cache)
+        candidates))))
 
 (defun cljr--language-context-at-point ()
   "Detects the current language-context at a given point.
@@ -2361,13 +2380,17 @@ If it's present KEY indicates the key to extract from the response."
   (cider-nrepl-send-request request callback))
 
 (defcustom cljr-artifact-cache-ttl 300
-  "Number of seconds to cache artifact and version lists on the Emacs side.
+  "Number of seconds to cache middleware lookups whose results change rarely.
 
-The dependency commands (`cljr-add-project-dependency' and friends) fetch
-the list of available artifacts, and the versions of a given artifact,
-from the middleware.  Those lists change rarely, so they are cached for
-this many seconds to avoid a round-trip on every invocation.  Set to nil
-to disable the cache."
+This governs two Emacs-side caches:
+
+- The dependency commands (`cljr-add-project-dependency' and friends) fetch
+  the list of available artifacts, and the versions of a given artifact.
+- `cljr-slash' fetches libspec suggestions for an unresolved alias on every
+  `/' keystroke.
+
+Caching these for this many seconds avoids a middleware round-trip on every
+invocation.  Set to nil to disable the caches."
   :type '(choice (const :tag "Disable" nil) integer)
   :package-version '(clj-refactor . "4.0.0")
   :safe (lambda (x) (or (null x) (integerp x))))

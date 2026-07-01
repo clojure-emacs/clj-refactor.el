@@ -6,6 +6,7 @@
 - Performance: project-wide refactorings (rename symbol, inline symbol, change function signature) no longer leave behind buffers they had to open, which previously slowed Emacs down on large renames.
 - `cljr-project-clean` now shows a progress reporter instead of freezing Emacs silently.
 - Performance: cache the artifact and version lists fetched by the dependency commands, so they aren't re-requested on every invocation. The TTL is configurable via `cljr-artifact-cache-ttl` (default 300s; set to nil to disable).
+- Performance: `cljr-slash` caches libspec suggestions per alias (also governed by `cljr-artifact-cache-ttl`), so repeatedly typing an unresolved alias like `str/` no longer does a middleware round-trip on every `/`.
 - **(Breaking)** Drop the `multiple-cursors`, `hydra` and `inflections` dependencies.
   - The hydra menus are replaced by the new `clj-refactor-menu` transient (see above).
   - The `multiple-cursors` integration is gone; let/extract/promote refactorings now always prompt for names. The `cljr-use-multiple-cursors` option is removed.
