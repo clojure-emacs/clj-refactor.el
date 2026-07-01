@@ -10,7 +10,7 @@
 ;; Version: 3.12.0
 ;; Keywords: convenience, clojure, cider
 
-;; Package-Requires: ((emacs "28.1") (yasnippet "0.6.1") (paredit "24") (clojure-mode "5.18.0") (cider "1.11.1") (parseedn "1.2.0"))
+;; Package-Requires: ((emacs "28.1") (yasnippet "0.6.1") (paredit "24") (clojure-mode "5.18.0") (cider "1.11.1") (parseedn "1.2.0") (transient "0.4.1"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -39,6 +39,7 @@
 (require 'cider)
 (require 'parseedn)
 (require 'sgml-mode)
+(require 'transient)
 (require 'subword)
 
 (defgroup cljr nil
@@ -394,6 +395,7 @@ Otherwise open the file and do the changes non-interactively."
     ("up" . (cljr-update-project-dependencies "Update project dependencies" ?U ("project")))
     ("uw" . (clojure-unwind "Unwind" ?w ("code")))
     ("ad" . (cljr-add-declaration "Add declaration" ?d ("toplevel-form")))
+    ("hh" . (clj-refactor-menu "Menu of refactorings" ?h ("cljr")))
     ("?" . (cljr-describe-refactoring "Describe refactoring" ?d ("cljr")))))
 
 (defun cljr--add-keybindings (key-fn)
@@ -412,6 +414,117 @@ Otherwise open the file and do the changes non-interactively."
 (defun cljr-add-keybindings-with-modifier (modifier)
   "Bind keys in `cljr--all-helpers' under a MODIFIER key."
   (cljr--add-keybindings (apply-partially 'cljr--key-pairs-with-modifier modifier)))
+
+
+;; ------ transient menu -----------
+
+(defun cljr--menu-toggle-description (label enabled)
+  "Format the transient toggle LABEL, showing whether it is ENABLED."
+  (format "%s %s" (if enabled "[X]" "[ ]") label))
+
+(transient-define-suffix cljr--toggle-warn-on-eval ()
+  "Toggle `cljr-warn-on-eval' from the menu."
+  :transient t
+  :description (lambda ()
+                 (cljr--menu-toggle-description "Warn before evaluating code"
+                                                cljr-warn-on-eval))
+  (interactive)
+  (setq cljr-warn-on-eval (not cljr-warn-on-eval)))
+
+(transient-define-suffix cljr--toggle-auto-clean-ns ()
+  "Toggle `cljr-auto-clean-ns' from the menu."
+  :transient t
+  :description (lambda ()
+                 (cljr--menu-toggle-description "Auto clean-ns after ns changes"
+                                                cljr-auto-clean-ns))
+  (interactive)
+  (setq cljr-auto-clean-ns (not cljr-auto-clean-ns)))
+
+(transient-define-suffix cljr--toggle-favor-private-functions ()
+  "Toggle `cljr-favor-private-functions' from the menu."
+  :transient t
+  :description (lambda ()
+                 (cljr--menu-toggle-description "Favor private functions"
+                                                cljr-favor-private-functions))
+  (interactive)
+  (setq cljr-favor-private-functions (not cljr-favor-private-functions)))
+
+(transient-define-suffix cljr--toggle-hotload-dependencies ()
+  "Toggle `cljr-hotload-dependencies' from the menu."
+  :transient t
+  :description (lambda ()
+                 (cljr--menu-toggle-description "Hotload added dependencies"
+                                                cljr-hotload-dependencies))
+  (interactive)
+  (setq cljr-hotload-dependencies (not cljr-hotload-dependencies)))
+
+(transient-define-suffix cljr--toggle-ignore-analyzer-errors ()
+  "Toggle `cljr-ignore-analyzer-errors' from the menu."
+  :transient t
+  :description (lambda ()
+                 (cljr--menu-toggle-description "Ignore analyzer errors"
+                                                cljr-ignore-analyzer-errors))
+  (interactive)
+  (setq cljr-ignore-analyzer-errors (not cljr-ignore-analyzer-errors)))
+
+;;;###autoload (autoload 'clj-refactor-menu "clj-refactor" nil t)
+(transient-define-prefix clj-refactor-menu ()
+  "A transient menu of clj-refactor commands, grouped by category.
+
+The entries mirror the two-letter keybindings, so the menu doubles as a
+way to learn them.  The Options section toggles common settings for the
+current session."
+  [["Namespace"
+    ("ai" "Add import to ns" cljr-add-import-to-ns)
+    ("am" "Add missing libspec" cljr-add-missing-libspec)
+    ("ar" "Add require to ns" cljr-add-require-to-ns)
+    ("au" "Add use to ns" cljr-add-use-to-ns)
+    ("cn" "Clean ns" cljr-clean-ns)
+    ("rm" "Require macro" cljr-require-macro)
+    ("sr" "Stop referring" cljr-stop-referring)
+    ("ap" "Add project dependency" cljr-add-project-dependency)]
+   ["Code"
+    ("ci" "Cycle if" clojure-cycle-if)
+    ("ct" "Cycle thread" cljr-cycle-thread)
+    ("dk" "Destructure keys" cljr-destructure-keys)
+    ("il" "Introduce let" cljr-introduce-let)
+    ("el" "Expand let" cljr-expand-let)
+    ("ml" "Move to let" cljr-move-to-let)
+    ("rl" "Remove let" cljr-remove-let)
+    ("pf" "Promote function" cljr-promote-function)
+    ("tf" "Thread first all" clojure-thread-first-all)
+    ("th" "Thread" clojure-thread)
+    ("tl" "Thread last all" clojure-thread-last-all)
+    ("ua" "Unwind all" clojure-unwind-all)
+    ("uw" "Unwind" clojure-unwind)]
+   ["Top-level form"
+    ("ad" "Add declaration" cljr-add-declaration)
+    ("as" "Add stubs for interface/protocol" cljr-add-stubs)
+    ("cp" "Cycle privacy" clojure-cycle-privacy)
+    ("cs" "Change function signature" cljr-change-function-signature)
+    ("ec" "Extract constant" cljr-extract-constant)
+    ("ed" "Extract form as def" cljr-extract-def)
+    ("ef" "Extract function" cljr-extract-function)
+    ("fe" "Create function from example" cljr-create-fn-from-example)
+    ("mf" "Move form" cljr-move-form)]]
+  [["Project"
+    ("fu" "Find usages" cljr-find-usages)
+    ("rs" "Rename symbol" cljr-rename-symbol)
+    ("rf" "Rename file-or-dir" cljr-rename-file-or-dir)
+    ("is" "Inline symbol" cljr-inline-symbol)
+    ("pc" "Project clean" cljr-project-clean)
+    ("hd" "Hotload dependency" cljr-hotload-dependency)
+    ("sp" "Sort project dependencies" cljr-sort-project-dependencies)
+    ("up" "Update project dependencies" cljr-update-project-dependencies)]
+   ["clj-refactor"
+    ("sc" "Show the changelog" cljr-show-changelog)
+    ("?" "Describe refactoring" cljr-describe-refactoring)]
+   ["Options"
+    ("W" cljr--toggle-warn-on-eval)
+    ("N" cljr--toggle-auto-clean-ns)
+    ("P" cljr--toggle-favor-private-functions)
+    ("H" cljr--toggle-hotload-dependencies)
+    ("E" cljr--toggle-ignore-analyzer-errors)]])
 
 
 ;; ------ utilities -----------
