@@ -106,6 +106,33 @@ configuration. AST dependent features at the moment are `find usages`,
 `rename symbol`, `extract function`, `inline symbol`, `rename file or
 dir`, `change function signature`, `promote function`.
 
+#### What to expect from the AST-based refactorings
+
+Because these features build (and therefore load and evaluate) an AST of your
+code, they come with some inherent limitations. Knowing about them up front saves
+a lot of head-scratching:
+
+- They **need a live, connected REPL** with your project on the classpath - you
+  can't use them before the project starts.
+- They **don't work on code that doesn't compile** (missing dependencies,
+  load-order issues, or a namespace you're in the middle of editing). You'll get
+  an "unable to build an AST" error.
+- They **don't support ClojureScript** (`.cljs`), and only analyze the `:clj`
+  branch of `.cljc` files.
+- The **first invocation can be slow** on a large project, since it may need to
+  load much of it.
+- **Macro-generated code** is only approximated, so occurrences that appear only
+  after macroexpansion may be missed.
+
+If a namespace can't be analyzed, set `cljr-ignore-analyzer-errors` to `t` so
+these commands skip it instead of aborting (best reserved for read-only commands
+like find usages). See refactor-nrepl's
+[Limitations of the AST-based analysis](https://github.com/clojure-emacs/refactor-nrepl#limitations-of-the-ast-based-analysis)
+for the full picture and tuning options.
+
+If you need static analysis, ClojureScript support, or refactoring without a
+running REPL, consider [clojure-lsp](https://clojure-lsp.io) alongside CIDER.
+
 ## Usage
 
 All functions in `clj-refactor` have a two-letter mnemonic
