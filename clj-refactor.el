@@ -548,6 +548,13 @@ current session."
    ["clj-refactor"
     ("sc" "Show the changelog" cljr-show-changelog)
     ("?" "Describe refactoring" cljr-describe-refactoring)]
+   ["Convert collection to"
+    ;; These commands live in clojure-mode; surfaced here for discoverability.
+    ("xl" "List" clojure-convert-collection-to-list)
+    ("xq" "Quoted list" clojure-convert-collection-to-quoted-list)
+    ("xm" "Map" clojure-convert-collection-to-map)
+    ("xv" "Vector" clojure-convert-collection-to-vector)
+    ("xs" "Set" clojure-convert-collection-to-set)]
    ["Options"
     ("W" cljr--toggle-warn-on-eval)
     ("N" cljr--toggle-auto-clean-ns)
