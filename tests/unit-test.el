@@ -465,3 +465,19 @@ ex/"))))
         (expect calls :to-equal 1)
         (cljr--get-artifacts-from-middleware t)
         (expect calls :to-equal 2)))))
+
+(describe "cljr--call-middleware-suggest-libspec"
+  (it "caches suggestions per alias within the TTL"
+    (let ((cljr-artifact-cache-ttl 300)
+          (cljr--suggest-libspecs-cache (make-hash-table :test #'equal))
+          (calls 0))
+      (cl-letf (((symbol-function 'cljr--ensure-op-supported) (lambda (op) op))
+                ((symbol-function 'cljr--call-middleware-sync)
+                 (lambda (&rest _) (setq calls (1+ calls)) "([clojure.set :as set])")))
+        (let ((first (cljr--call-middleware-suggest-libspec "set" '("clj" nil)))
+              (second (cljr--call-middleware-suggest-libspec "set" '("clj" nil))))
+          (expect calls :to-equal 1)
+          (expect second :to-equal first))
+        ;; a different alias is a cache miss
+        (cljr--call-middleware-suggest-libspec "io" '("clj" nil))
+        (expect calls :to-equal 2)))))
