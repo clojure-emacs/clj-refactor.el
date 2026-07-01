@@ -3,6 +3,7 @@
 (require 'paredit)
 (require 'clj-refactor)
 (require 'buttercup)
+(require 'cl-lib)
 
 ;; NOTE: please remember, without an `it` block, your tests will not be run!
 ;; You can learn about Buttercup's syntax here:
@@ -424,3 +425,43 @@ ex/"))))
         (unless (eq command 'clj-refactor-menu)
           (let ((suffix (ignore-errors (transient-get-suffix 'clj-refactor-menu key))))
             (expect suffix :not :to-be nil)))))))
+
+(describe "cljr--with-opened-buffers"
+  (it "kills buffers it opens but leaves already-visited ones alone"
+    (let* ((already (make-temp-file "cljrtmp" nil ".txt" "already\n"))
+           (fresh (make-temp-file "cljrtmp" nil ".txt" "fresh\n"))
+           (already-buf (find-file-noselect already)))
+      (unwind-protect
+          (progn
+            (cljr--with-opened-buffers
+              (cljr--find-file-noselect already)
+              (cljr--find-file-noselect fresh))
+            (expect (buffer-live-p already-buf) :to-be-truthy)
+            (expect (get-file-buffer fresh) :to-be nil))
+        (when (buffer-live-p already-buf) (kill-buffer already-buf))
+        (when (get-file-buffer fresh) (kill-buffer (get-file-buffer fresh)))
+        (delete-file already)
+        (delete-file fresh)))))
+
+(describe "cljr--cache-fresh-p"
+  (it "honors the TTL and the disable setting"
+    (let ((cljr-artifact-cache-ttl 300))
+      (expect (cljr--cache-fresh-p (cons (float-time) '("x"))) :to-be-truthy)
+      (expect (cljr--cache-fresh-p (cons (- (float-time) 10000) '("x"))) :to-be nil)
+      (expect (cljr--cache-fresh-p nil) :to-be nil))
+    (let ((cljr-artifact-cache-ttl nil))
+      (expect (cljr--cache-fresh-p (cons (float-time) '("x"))) :to-be nil))))
+
+(describe "cljr--get-artifacts-from-middleware"
+  (it "caches within the TTL and refetches when forced"
+    (let ((cljr-artifact-cache-ttl 300)
+          (cljr--artifacts-cache nil)
+          (calls 0))
+      (cl-letf (((symbol-function 'cljr--call-middleware-sync)
+                 (lambda (&rest _) (setq calls (1+ calls)) '("a" "b")))
+                ((symbol-function 'message) #'ignore))
+        (expect (cljr--get-artifacts-from-middleware nil) :to-equal '("a" "b"))
+        (expect (cljr--get-artifacts-from-middleware nil) :to-equal '("a" "b"))
+        (expect calls :to-equal 1)
+        (cljr--get-artifacts-from-middleware t)
+        (expect calls :to-equal 2)))))
