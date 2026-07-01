@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add `clj-refactor-menu`, a `transient` menu of all commands grouped by category (bound to `hh` under your keybinding prefix, e.g. `C-c C-m hh`). It mirrors the two-letter keybindings, so it doubles as a way to learn them, and its Options section toggles common settings for the session.
+- Surface clojure-mode's collection-type conversions (`clojure-convert-collection-to-list`/`-map`/`-vector`/`-set`/`-quoted-list`) in `clj-refactor-menu` under "Convert collection to", so they're discoverable from clj-refactor.
 - Performance: project-wide refactorings (rename symbol, inline symbol, change function signature) no longer leave behind buffers they had to open, which previously slowed Emacs down on large renames.
 - `cljr-project-clean` now shows a progress reporter instead of freezing Emacs silently.
 - Performance: cache the artifact and version lists fetched by the dependency commands, so they aren't re-requested on every invocation. The TTL is configurable via `cljr-artifact-cache-ttl` (default 300s; set to nil to disable).
