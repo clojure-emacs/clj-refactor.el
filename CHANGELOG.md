@@ -2,8 +2,9 @@
 
 ## Unreleased
 
+- Add `clj-refactor-menu`, a `transient` menu of all commands grouped by category (bound to `hh` under your keybinding prefix, e.g. `C-c C-m hh`). It mirrors the two-letter keybindings, so it doubles as a way to learn them, and its Options section toggles common settings for the session.
 - **(Breaking)** Drop the `multiple-cursors`, `hydra` and `inflections` dependencies.
-  - The hydra menus (`C-c C-m h*`) are gone; use the regular keybindings (e.g. via `which-key`) for discovery.
+  - The hydra menus are replaced by the new `clj-refactor-menu` transient (see above).
   - The `multiple-cursors` integration is gone; let/extract/promote refactorings now always prompt for names. The `cljr-use-multiple-cursors` option is removed.
   - Parameter-name guessing in `cljr-create-fn-from-example` now uses a small built-in inflector instead of `inflections`.
 - **(Breaking)** Remove the `cljr-thread`, `cljr-thread-first-all`, `cljr-thread-last-all`, `cljr-unwind`, `cljr-unwind-all`, `cljr-cycle-privacy`, `cljr-cycle-if`, `cljr-cycle-coll`, `cljr-thread-all-but-last`, `cljr-use-metadata-for-privacy` and `cljr-find-usages-ignore-analyzer-errors` aliases, all deprecated back in 2.3.0. Use the `clojure-*` equivalents (now in clojure-mode) and `cljr-ignore-analyzer-errors`.

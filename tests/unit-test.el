@@ -409,3 +409,18 @@ ex/"))))
                                            2))))
         (setq-local tramp-mode nil) ;; prevent hanging
         (expect v :to-equal '("file" "a.clj" "something" "else"))))))
+
+(describe "clj-refactor-menu"
+  (it "is a transient prefix"
+    (expect (get 'clj-refactor-menu 'transient--prefix) :not :to-be nil))
+  (it "exposes every command from `cljr--all-helpers' under its own key"
+    ;; Guards against adding a command to `cljr--all-helpers' but forgetting
+    ;; to list it in the transient menu.
+    (dolist (entry cljr--all-helpers)
+      (let ((key (car entry))
+            (command (cadr entry)))
+        ;; The menu itself is bound in `cljr--all-helpers' but is the entry
+        ;; point, so it isn't one of the menu's own suffixes.
+        (unless (eq command 'clj-refactor-menu)
+          (let ((suffix (ignore-errors (transient-get-suffix 'clj-refactor-menu key))))
+            (expect suffix :not :to-be nil)))))))

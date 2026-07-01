@@ -142,6 +142,12 @@ All functions in `clj-refactor` have a two-letter mnemonic
 shortcut. E.g. `rs` for `cljr-rename-symbol`.  Given the prefix choice
 in the example setup you'd call this function by hitting `C-c C-m rs`
 
+If you can't remember a shortcut, run `M-x clj-refactor-menu` (or hit `hh`
+under your prefix, e.g. `C-c C-m hh`) for a [transient](https://github.com/magit/transient)
+menu of every command grouped by category. It shows the keys as you go, so
+it doubles as a way to learn them, and its Options section toggles common
+settings for the current session.
+
 See the wiki for a complete [list of available refactorings](https://github.com/clojure-emacs/clj-refactor.el/wiki),
 demonstrations and customization points.
 
