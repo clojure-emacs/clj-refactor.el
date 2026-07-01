@@ -628,8 +628,6 @@ if the point is currently placed at the opening parentheses of an anonymous func
           (when (<= (point) search-bound)
             (error "Can't find definition of anonymous function")))))))
 
-(defalias 'cljr--evenp #'cl-evenp)
-
 (defun cljr--remove-tramp-prefix-from-msg (entry)
   (let* ((k (car entry))
          (v (cadr entry)))
@@ -645,7 +643,7 @@ if the point is currently placed at the opening parentheses of an anonymous func
   "Create a msg for the middleware for OP and optionally include the kv pairs KVS.
 
 All config settings are included in the created msg."
-  (cl-assert (cljr--evenp (length kvs)) nil "Can't create msg to send to the middleware.\
+  (cl-assert (cl-evenp (length kvs)) nil "Can't create msg to send to the middleware.\
   Received an uneven number of kv pairs: %s " kvs)
   (apply #'list
          "op" op
@@ -2578,7 +2576,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
                             "ignore-paths" cljr-middleware-ignored-paths
                             "ignore-errors"
                             (when cljr-ignore-analyzer-errors "true"))))
-    (with-current-buffer (with-no-warnings (cider-current-repl))
+    (with-current-buffer (cider-current-repl)
       (setq cljr--occurrence-count 0)
       (setq cljr--num-syms -1)
       (setq cljr--occurrence-ids '()))
@@ -2985,7 +2983,7 @@ Date. -> Date
   (let ((request (cljr--create-msg "resolve-missing"
                                    "symbol" symbol
                                    "session"
-                                   (with-no-warnings (cider-nrepl-eval-session)))))
+                                   (cider-nrepl-eval-session))))
     (when ns
       (setq request (append request (list "ns" ns))))
     (when-let* ((candidates (thread-first request
@@ -3345,7 +3343,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
   "Extract the package version from its package metadata."
   (package-get-version))
 
-(defun cljr--version (&optional _for-compat)
+(defun cljr--version ()
   "Retrieve the version."
   (if (string-match-p "-snapshot" cljr-version)
       (let ((pkg-version (cljr--pkg-version)))
@@ -4299,8 +4297,8 @@ If injecting the dependencies is not preferred set
                                                     :predicate cljr--inject-middleware-p))))
 
 ;;;###autoload
-(eval-after-load 'cider
-  '(cljr--inject-jack-in-dependencies))
+(with-eval-after-load 'cider
+  (cljr--inject-jack-in-dependencies))
 
 (add-hook 'cider-connected-hook #'cljr--init-middleware)
 
