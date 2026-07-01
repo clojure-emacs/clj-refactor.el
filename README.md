@@ -55,8 +55,8 @@ Either in your project's `project.clj` or in the `:user`
 profile found at `~/.lein/profiles.clj`:
 
 ```clojure
-:plugins [[refactor-nrepl "3.10.0"]
-          [cider/cider-nrepl "0.45.0"]]
+:plugins [[refactor-nrepl "3.14.0"]
+          [cider/cider-nrepl "0.61.0"]]
 ```
 
 Check out the much longer
@@ -74,6 +74,9 @@ clj-refactor | refactor-nrepl | CIDER       | Clojure | Java |
 2.4.0        |  2.4.0         | 0.17, 0.18  | 1.7+    | 8+   |
 2.5.0        |  2.5.0         | 0.24        | 1.8+    | 8+   |
 3.0.0+       |  3.0.0+        | 1.0         | 1.9+    | 11+  |
+4.0.0+       |  3.x           | 1.11+       | 1.10+   | 8+   |
+
+clj-refactor 4.0.0+ requires Emacs 28.1 or newer.
 
 ### Middleware
 
