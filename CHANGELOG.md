@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `cljr-slash` now works without a running REPL. When refactor-nrepl's `suggest-libspecs` op isn't available, it falls back to the static `cljr-magic-require-namespaces` table (honoring each entry's `:only` language context) instead of erroring, so common aliases like `str`/`io` still get required before you jack in.
 - Add `clj-refactor-menu`, a `transient` menu of all commands grouped by category (bound to `hh` under your keybinding prefix, e.g. `C-c C-m hh`). It mirrors the two-letter keybindings, so it doubles as a way to learn them, and its Options section toggles common settings for the session.
 - Surface clojure-mode's collection-type conversions (`clojure-convert-collection-to-list`/`-map`/`-vector`/`-set`/`-quoted-list`) in `clj-refactor-menu` under "Convert collection to", so they're discoverable from clj-refactor.
 - Performance: project-wide refactorings (rename symbol, inline symbol, change function signature) no longer leave behind buffers they had to open, which previously slowed Emacs down on large renames.
