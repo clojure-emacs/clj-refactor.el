@@ -2164,6 +2164,40 @@ Filters out existing alias in the namespace, or a global alias
     (cljr--indent-defun)
     (cljr--post-command-message "Required %s" libspec)))
 
+(defun cljr--slash-suggest-op-available-p ()
+  "Non-nil when the `cljr-suggest-libspecs' middleware op can be used.
+When it can't (e.g. no REPL is connected yet), `cljr-slash' falls back to
+the static `cljr-magic-require-namespaces' table."
+  (cljr--op-supported-p "cljr-suggest-libspecs"))
+
+(defun cljr--magic-require-libspec-from-table (alias-ref)
+  "Return a libspec string for ALIAS-REF from `cljr-magic-require-namespaces'.
+Return nil when the alias isn't in the table, or when the table entry is
+restricted (via `:only') to language contexts that exclude the current
+one.  This is the offline fallback used by `cljr-slash' when the
+suggest-libspecs middleware isn't available."
+  (when-let* ((entry (assoc alias-ref cljr-magic-require-namespaces)))
+    (let (ns only)
+      (if (consp (cdr entry))
+          (setq ns (cadr entry)
+                only (plist-get (cddr entry) :only))
+        (setq ns (cdr entry)))
+      (let ((context (car (cljr--language-context-at-point))))
+        (when (or (null only)
+                  (equal context "cljc")
+                  (member context only))
+          (format "[%s :as %s]" ns alias-ref))))))
+
+(defun cljr--slash-suggested-libspec (alias-ref)
+  "Return a libspec string to require for ALIAS-REF, or nil.
+Use the `cljr-suggest-libspecs' middleware op when it is available, and
+otherwise fall back to `cljr-magic-require-namespaces', so that common
+aliases still work without a running REPL."
+  (if (cljr--slash-suggest-op-available-p)
+      (cljr--prompt-or-select-libspec
+       (cljr--call-middleware-suggest-libspec alias-ref (cljr--language-context-at-point)))
+    (cljr--magic-require-libspec-from-table alias-ref)))
+
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts `/' as normal, but also checks for common namespace shorthands to require.
@@ -2184,11 +2218,10 @@ to the ns form."
                               (clojure-find-ns)
                               (cljr--unresolved-alias-ref (cljr--ns-alias-at-point)))))
     (if cljr-slash-uses-suggest-libspec
-        ;; creates suggestions from `suggest-libspec' middleware op
-        (when-let* ((libspec
-                     (thread-first alias-ref
-                                   (cljr--call-middleware-suggest-libspec (cljr--language-context-at-point))
-                                   cljr--prompt-or-select-libspec)))
+        ;; Use the `cljr-suggest-libspecs' middleware op when it's available,
+        ;; otherwise fall back to the static `cljr-magic-require-namespaces'
+        ;; table so common aliases still work without a running REPL.
+        (when-let* ((libspec (cljr--slash-suggested-libspec alias-ref)))
           ;; only insert a require if a candidate exists and was selected
           (cljr--insert-require-libspec libspec))
       ;; Deprecated, creates suggestions from `namespace-aliases' middleware op

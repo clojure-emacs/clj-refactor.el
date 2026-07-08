@@ -364,6 +364,7 @@
 
 (describe "cljr-slash"
   (it "inserts single selection from suggest-libspec"
+    (spy-on 'cljr--slash-suggest-op-available-p :and-return-value t)
     (spy-on 'cljr--call-middleware-suggest-libspec
             :and-return-value (parseedn-read-str "[\"[bar.alias :as alias]\"]"))
     (cljr--with-clojure-temp-file "foo.cljc"
@@ -375,6 +376,7 @@
 alias/")))
 
   (it "prompts user for selection from suggest-libspec"
+    (spy-on 'cljr--slash-suggest-op-available-p :and-return-value t)
     (spy-on 'cljr--call-middleware-suggest-libspec
             :and-return-value (parseedn-read-str "[\"[bar.example :as ex]\" \"[baz.example :as ex]\"]"))
     (spy-on 'completing-read
@@ -388,6 +390,7 @@ alias/")))
 ex/")))
 
   (it "inserts modified user input from completing-read"
+    (spy-on 'cljr--slash-suggest-op-available-p :and-return-value t)
     (spy-on 'cljr--call-middleware-suggest-libspec
             :and-return-value (parseedn-read-str "[\"[bar.example :as ex]\" \"[baz.example :as ex]\"]"))
     (spy-on 'completing-read
@@ -399,6 +402,17 @@ ex/")))
       (expect (buffer-string) :to-equal "(ns foo
   (:require [baz.example :as ex :refer [a b c] ]))
 ex/"))))
+
+(describe "cljr-slash offline fallback"
+  (it "inserts a require from the static table when the middleware is unavailable"
+    (spy-on 'cljr--slash-suggest-op-available-p :and-return-value nil)
+    (cljr--with-clojure-temp-file "foo.clj"
+      (with-point-at "(ns foo)\nstr|"
+        (let ((cljr-slash-uses-suggest-libspec t))
+          (cljr-slash)))
+      (expect (buffer-string) :to-equal "(ns foo
+  (:require [clojure.string :as str]))
+str/"))))
 
 (describe "cljr--remove-tramp-prefix-from-msg"
   (it "Removes the tramp prefix from specifc nrepl message attributes"
@@ -481,3 +495,29 @@ ex/"))))
         ;; a different alias is a cache miss
         (cljr--call-middleware-suggest-libspec "io" '("clj" nil))
         (expect calls :to-equal 2)))))
+
+(describe "cljr--magic-require-libspec-from-table"
+  (it "resolves a known alias in a clj file"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo)")
+      (expect (cljr--magic-require-libspec-from-table "str")
+              :to-equal "[clojure.string :as str]")
+      (expect (cljr--magic-require-libspec-from-table "io")
+              :to-equal "[clojure.java.io :as io]")))
+  (it "honors an entry's :only language context"
+    (cljr--with-clojure-temp-file "foo.cljs"
+      (insert "(ns foo)")
+      ;; io is restricted to clj, so it does not apply in a cljs file
+      (expect (cljr--magic-require-libspec-from-table "io") :to-be nil)
+      ;; but an unrestricted alias still resolves
+      (expect (cljr--magic-require-libspec-from-table "str")
+              :to-equal "[clojure.string :as str]")))
+  (it "is permissive in cljc files"
+    (cljr--with-clojure-temp-file "foo.cljc"
+      (insert "(ns foo)")
+      (expect (cljr--magic-require-libspec-from-table "io")
+              :to-equal "[clojure.java.io :as io]")))
+  (it "returns nil for an unknown alias"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo)")
+      (expect (cljr--magic-require-libspec-from-table "nope") :to-be nil))))
