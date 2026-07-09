@@ -521,3 +521,52 @@ str/"))))
     (cljr--with-clojure-temp-file "foo.clj"
       (insert "(ns foo)")
       (expect (cljr--magic-require-libspec-from-table "nope") :to-be nil))))
+
+(describe "cljr--magic-require-artifact"
+  (it "reads the :artifact coordinate from a table entry"
+    (let ((cljr-magic-require-namespaces
+           '(("json" "cheshire.core" :artifact "cheshire/cheshire")
+             ("str" . "clojure.string"))))
+      (expect (cljr--magic-require-artifact "json") :to-equal "cheshire/cheshire")
+      (expect (cljr--magic-require-artifact "str") :to-be nil)
+      (expect (cljr--magic-require-artifact "nope") :to-be nil))))
+
+(describe "cljr--libspec-ns"
+  (it "extracts the namespace from a libspec string"
+    (expect (cljr--libspec-ns "[cheshire.core :as json]") :to-equal "cheshire.core")
+    (expect (cljr--libspec-ns "[foo.bar :as fb :refer [a b]]") :to-equal "foo.bar")))
+
+(describe "cljr--slash-maybe-add-missing-lib"
+  (before-each
+    (spy-on 'cljr--add-project-dependency)
+    (spy-on 'cider-connected-p :and-return-value t)
+    (spy-on 'cljr--get-versions-from-middleware :and-return-value '("1.2.3"))
+    (spy-on 'y-or-n-p :and-return-value t))
+  (it "adds the configured artifact when the namespace is missing"
+    (spy-on 'cljr--ns-on-classpath-p :and-return-value nil)
+    (let ((cljr-slash-add-missing-libs t)
+          (cljr-magic-require-namespaces
+           '(("json" "cheshire.core" :artifact "cheshire/cheshire"))))
+      (cljr--slash-maybe-add-missing-lib "json" "[cheshire.core :as json]")
+      (expect 'cljr--add-project-dependency
+              :to-have-been-called-with "cheshire/cheshire" "1.2.3")))
+  (it "does nothing when the namespace is already on the classpath"
+    (spy-on 'cljr--ns-on-classpath-p :and-return-value "/path/cheshire/core.clj")
+    (let ((cljr-slash-add-missing-libs t)
+          (cljr-magic-require-namespaces
+           '(("json" "cheshire.core" :artifact "cheshire/cheshire"))))
+      (cljr--slash-maybe-add-missing-lib "json" "[cheshire.core :as json]")
+      (expect 'cljr--add-project-dependency :not :to-have-been-called)))
+  (it "does nothing when disabled"
+    (spy-on 'cljr--ns-on-classpath-p :and-return-value nil)
+    (let ((cljr-slash-add-missing-libs nil)
+          (cljr-magic-require-namespaces
+           '(("json" "cheshire.core" :artifact "cheshire/cheshire"))))
+      (cljr--slash-maybe-add-missing-lib "json" "[cheshire.core :as json]")
+      (expect 'cljr--add-project-dependency :not :to-have-been-called)))
+  (it "does nothing when no :artifact is configured"
+    (spy-on 'cljr--ns-on-classpath-p :and-return-value nil)
+    (let ((cljr-slash-add-missing-libs t)
+          (cljr-magic-require-namespaces '(("str" . "clojure.string"))))
+      (cljr--slash-maybe-add-missing-lib "str" "[clojure.string :as str]")
+      (expect 'cljr--add-project-dependency :not :to-have-been-called))))

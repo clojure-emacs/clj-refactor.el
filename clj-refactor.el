@@ -98,11 +98,31 @@ paths once this flag is removed."
     ("zip"  . "clojure.zip"))
   "Alist of aliases to namespace libspec recommendations for `\\[cljr-slash]'.
 
-An optional keyword `:only` can limit a recommendation to the set of
-language contexts (clj, cljs) the libspec is available in."
-  :type '(repeat (cons (string :tag "Short alias")
-                       (string :tag "Full namespace")))
+Each entry is either a cons of the alias and the full namespace, e.g.
+\(\"str\" . \"clojure.string\"), or a list of the alias, the namespace and
+optional keywords:
+
+- `:only' limits the recommendation to the given language contexts (clj,
+  cljs), e.g. (\"io\" \"clojure.java.io\" :only (\"clj\")).
+- `:artifact' names the Maven/Clojars coordinate that provides the
+  namespace, e.g. (\"json\" \"cheshire.core\" :artifact \"cheshire/cheshire\").
+  When the namespace isn't on the classpath, `cljr-slash' can offer to add
+  and hotload that artifact (see `cljr-slash-add-missing-libs')."
+  :type '(alist :key-type (string :tag "Short alias")
+                :value-type sexp)
   :safe #'listp)
+
+(defcustom cljr-slash-add-missing-libs t
+  "Whether `cljr-slash' offers to add and hotload a missing library.
+
+When an alias in `cljr-magic-require-namespaces' carries an `:artifact'
+coordinate and the namespace it resolves to isn't on the classpath,
+`cljr-slash' asks whether to add that artifact as a project dependency and
+hotload it (the hotload itself still honors `cljr-hotload-dependencies').
+Set to nil to disable."
+  :type 'boolean
+  :package-version '(clj-refactor . "4.0.0")
+  :safe #'booleanp)
 
 (defcustom cljr-project-clean-prompt t
   "If t, `cljr-project-clean' asks before doing anything.
@@ -2198,6 +2218,44 @@ aliases still work without a running REPL."
        (cljr--call-middleware-suggest-libspec alias-ref (cljr--language-context-at-point)))
     (cljr--magic-require-libspec-from-table alias-ref)))
 
+(defun cljr--magic-require-artifact (alias-ref)
+  "Return the `:artifact' coordinate configured for ALIAS-REF, or nil.
+See `cljr-magic-require-namespaces'."
+  (when-let* ((entry (assoc alias-ref cljr-magic-require-namespaces))
+              ((consp (cdr entry))))
+    (plist-get (cddr entry) :artifact)))
+
+(defun cljr--libspec-ns (libspec)
+  "Return the namespace part of LIBSPEC as a string.
+E.g. \"[foo.bar :as fb]\" -> \"foo.bar\".  Returns nil if LIBSPEC can't be
+parsed."
+  (ignore-errors
+    (symbol-name (aref (car (read-from-string libspec)) 0))))
+
+(defun cljr--ns-on-classpath-p (ns)
+  "Return non-nil when NS resolves to a file on the classpath.
+Requires a connected REPL; returns nil when disconnected."
+  (and (cider-connected-p)
+       (ignore-errors (cider-sync-request:ns-path ns))))
+
+(defun cljr--slash-maybe-add-missing-lib (alias-ref libspec)
+  "Offer to add and hotload the library that provides LIBSPEC's namespace.
+
+Only acts when `cljr-slash-add-missing-libs' is non-nil, ALIAS-REF has an
+`:artifact' configured in `cljr-magic-require-namespaces', a REPL is
+connected, and the namespace isn't already on the classpath.  Adds (with
+confirmation) the artifact at its latest version, hotloading it per
+`cljr-hotload-dependencies'."
+  (when-let* (((and cljr-slash-add-missing-libs (cider-connected-p)))
+              (artifact (cljr--magic-require-artifact alias-ref))
+              (ns (cljr--libspec-ns libspec))
+              ((not (cljr--ns-on-classpath-p ns))))
+    (when (y-or-n-p (format "%s isn't on the classpath.  Add and hotload %s? "
+                            ns artifact))
+      (if-let* ((version (car (cljr--get-versions-from-middleware artifact))))
+          (cljr--add-project-dependency artifact version)
+        (user-error "Couldn't find any versions of %s" artifact)))))
+
 ;;;###autoload
 (defun cljr-slash ()
   "Inserts `/' as normal, but also checks for common namespace shorthands to require.
@@ -2223,6 +2281,7 @@ to the ns form."
         ;; table so common aliases still work without a running REPL.
         (when-let* ((libspec (cljr--slash-suggested-libspec alias-ref)))
           ;; only insert a require if a candidate exists and was selected
+          (cljr--slash-maybe-add-missing-lib alias-ref libspec)
           (cljr--insert-require-libspec libspec))
       ;; Deprecated, creates suggestions from `namespace-aliases' middleware op
       (when-let* ((aliases (cljr--magic-requires-lookup-alias alias-ref)))
