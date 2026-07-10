@@ -570,3 +570,18 @@ str/"))))
           (cljr-magic-require-namespaces '(("str" . "clojure.string"))))
       (cljr--slash-maybe-add-missing-lib "str" "[clojure.string :as str]")
       (expect 'cljr--add-project-dependency :not :to-have-been-called))))
+
+(describe "cljr-require-alias-at-point"
+  (it "requires the unresolved alias of the symbol at point (offline)"
+    (spy-on 'cljr--slash-suggest-op-available-p :and-return-value nil)
+    (cljr--with-clojure-temp-file "foo.clj"
+      (with-point-at "(ns foo)\n(str/joi|n [])"
+        (cljr-require-alias-at-point))
+      (expect (buffer-string) :to-equal "(ns foo
+  (:require [clojure.string :as str]))
+(str/join [])")))
+  (it "errors when there is no unresolved alias at point"
+    (spy-on 'cljr--slash-suggest-op-available-p :and-return-value nil)
+    (cljr--with-clojure-temp-file "foo.clj"
+      (with-point-at "(ns foo)\n(printl|n :x)"
+        (expect (cljr-require-alias-at-point) :to-throw 'user-error)))))
