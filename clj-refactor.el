@@ -1828,18 +1828,46 @@ This function only does the actual removal."
   (paredit-forward 2)
   (paredit-splice-sexp-killing-backward))
 
+(defun cljr--let-body-start ()
+  "Return the position of the start of the nearest let form's body."
+  (save-excursion
+    (clojure--goto-let)
+    (down-list)
+    (forward-sexp 2) ; past the `let' symbol and the bindings vector
+    (point)))
+
+(defun cljr--inline-let-binding (bind-var init-expr limit)
+  "Replace occurrences of BIND-VAR with INIT-EXPR up to LIMIT.
+BIND-VAR and INIT-EXPR are strings; LIMIT is a marker.  Only whole-symbol
+occurrences are replaced (see `clojure--sexp-regexp'); INIT-EXPR is
+inserted literally."
+  (let ((case-fold-search nil))
+    (while (re-search-forward (clojure--sexp-regexp bind-var) limit t)
+      ;; the symbol sits between the two boundary chars (groups 1 and 2)
+      (let ((beg (match-end 1))
+            (end (match-beginning 2)))
+        (delete-region beg end)
+        (goto-char beg)
+        (insert init-expr)))))
+
 (defun cljr-remove-let ()
-  "Inlines all variables in the let form and removes it.
+  "Inline all bindings of the nearest let form and remove it.
+
+This is a local edit and does not require a running REPL.  Bindings are
+inlined in reverse order, so a binding that refers to an earlier one is
+resolved correctly.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-remove-let"
   (interactive)
   (save-excursion
-    (let ((*cljr--noninteractive* t)) ; make `cljr-inline-symbol' be quiet
-      (clojure--goto-let)
-      (paredit-forward-down 2)
-      (dotimes (_ (length (save-excursion (cljr--get-let-bindings))))
-        (cljr-inline-symbol)
-        (cljr--skip-past-whitespace-and-comments)))))
+    (clojure--goto-let)
+    (let ((bindings (cljr--get-let-bindings))
+          (body-end (save-excursion (clojure--goto-let) (forward-sexp) (point-marker))))
+      (dolist (binding (reverse bindings))
+        (save-excursion
+          (goto-char (cljr--let-body-start))
+          (cljr--inline-let-binding (car binding) (car (last binding)) body-end)))
+      (cljr--eliminate-let))))
 
 ;; ------ Destructuring ----
 

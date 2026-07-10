@@ -617,3 +617,23 @@ str/"))))
       (with-point-at "(map |#(foo) xs)"
         (cljr-promote-function nil))
       (expect (buffer-string) :to-equal "(map (fn [] (foo)) xs)"))))
+(describe "cljr-remove-let"
+  (before-each
+    ;; the command is a local edit and must not reach for the middleware
+    (spy-on 'cljr--ensure-op-supported
+            :and-call-fake (lambda (&rest _) (error "should not need the middleware"))))
+  (it "inlines a single binding"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (with-point-at "(let [x 1] (+ x| x))"
+        (cljr-remove-let))
+      (expect (string-trim (buffer-string)) :to-equal "(+ 1 1)")))
+  (it "inlines multiple independent bindings"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (with-point-at "(let [x 1 y 2] (+ x| y))"
+        (cljr-remove-let))
+      (expect (string-trim (buffer-string)) :to-equal "(+ 1 2)")))
+  (it "resolves bindings that depend on earlier ones"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (with-point-at "(let [x 1 y (+ x 1)] (* y| y))"
+        (cljr-remove-let))
+      (expect (string-trim (buffer-string)) :to-equal "(* (+ 1 1) (+ 1 1))"))))
