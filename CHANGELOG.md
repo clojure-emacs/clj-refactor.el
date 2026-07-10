@@ -2,7 +2,6 @@
 
 ## Unreleased
 
-- Add `cljr-require-alias-at-point` (mnemonic `ra`): add a require for the unresolved namespace alias of the symbol at point, without retyping `/` - handy after pasting code that uses an alias which isn't required yet. It resolves the alias the same way `cljr-slash` does (works offline, and can add a missing library).
 - `cljr-slash` now works without a running REPL. When refactor-nrepl's `suggest-libspecs` op isn't available, it falls back to the static `cljr-magic-require-namespaces` table (honoring each entry's `:only` language context) instead of erroring, so common aliases like `str`/`io` still get required before you jack in.
 - `cljr-slash` can add and hotload a missing library. Entries in `cljr-magic-require-namespaces` may now carry an `:artifact` coordinate (e.g. `("json" "cheshire.core" :artifact "cheshire/cheshire")`); when the namespace isn't on the classpath, `cljr-slash` offers to add that artifact as a project dependency and hotload it. Controlled by the new `cljr-slash-add-missing-libs` (default on).
 - Add `clj-refactor-menu`, a `transient` menu of all commands grouped by category (bound to `hh` under your keybinding prefix, e.g. `C-c C-m hh`). It mirrors the two-letter keybindings, so it doubles as a way to learn them, and its Options section toggles common settings for the session.

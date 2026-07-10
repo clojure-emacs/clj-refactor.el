@@ -409,7 +409,6 @@ Buffers that were already being visited before BODY ran are left alone."
     ("am" . (cljr-add-missing-libspec "Add missing libspec" ?m ("ns")))
     ("ap" . (cljr-add-project-dependency "Add project dependency" ?p ("ns" "project")))
     ("ar" . (cljr-add-require-to-ns "Add require to ns" ?r ("ns")))
-    ("ra" . (cljr-require-alias-at-point "Require the alias at point" ?a ("ns")))
     ("as" . (cljr-add-stubs "Add stubs for the interface/protocol at point" ?s ("toplevel-form")))
     ("au" . (cljr-add-use-to-ns "Add use to ns" ?U ("ns")))
     ("ci" . (clojure-cycle-if "Cycle if" ?I ("code")))
@@ -528,7 +527,6 @@ current session."
     ("ai" "Add import to ns" cljr-add-import-to-ns)
     ("am" "Add missing libspec" cljr-add-missing-libspec)
     ("ar" "Add require to ns" cljr-add-require-to-ns)
-    ("ra" "Require alias at point" cljr-require-alias-at-point)
     ("au" "Add use to ns" cljr-add-use-to-ns)
     ("cn" "Clean ns" cljr-clean-ns)
     ("rm" "Require macro" cljr-require-macro)
@@ -2257,32 +2255,6 @@ confirmation) the artifact at its latest version, hotloading it per
       (if-let* ((version (car (cljr--get-versions-from-middleware artifact))))
           (cljr--add-project-dependency artifact version)
         (user-error "Couldn't find any versions of %s" artifact)))))
-
-;;;###autoload
-(defun cljr-require-alias-at-point ()
-  "Add a require for the unresolved namespace alias of the symbol at point.
-
-Like `cljr-slash', but it works when the `/' is already present - for
-example after pasting code that uses an alias which isn't required yet.
-Point may be anywhere in the aliased symbol (e.g. on `str/join').
-
-Resolves the alias the same way `cljr-slash' does, so it works offline via
-`cljr-magic-require-namespaces' and can add a missing library (see
-`cljr-slash-add-missing-libs')."
-  (interactive)
-  (let* ((symbol (cider-symbol-at-point))
-         (alias (when (and symbol (string-search "/" symbol))
-                  (car (split-string symbol "/"))))
-         (alias-ref (and alias
-                         (clojure-find-ns)
-                         (cljr--unresolved-alias-ref alias))))
-    (unless alias-ref
-      (user-error "No unresolved namespace alias at point"))
-    (if-let* ((libspec (cljr--slash-suggested-libspec alias-ref)))
-        (progn
-          (cljr--slash-maybe-add-missing-lib alias-ref libspec)
-          (cljr--insert-require-libspec libspec))
-      (user-error "Couldn't find a namespace for the alias `%s'" alias-ref))))
 
 ;;;###autoload
 (defun cljr-slash ()
