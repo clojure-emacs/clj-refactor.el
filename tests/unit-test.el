@@ -607,3 +607,13 @@ str/"))))
     (cljr--with-clojure-temp-file "foo.clj"
       (with-point-at "(println| :x)"
         (expect (cljr-cycle-thread) :to-throw 'user-error)))))
+
+(describe "cljr-promote-function"
+  (it "promotes a #() literal to (fn ...) without touching the middleware"
+    ;; the literal->fn path is a local edit and must not require a REPL
+    (spy-on 'cljr--ensure-op-supported
+            :and-call-fake (lambda (&rest _) (error "should not need the middleware")))
+    (cljr--with-clojure-temp-file "foo.clj"
+      (with-point-at "(map |#(foo) xs)"
+        (cljr-promote-function nil))
+      (expect (buffer-string) :to-equal "(map (fn [] (foo)) xs)"))))

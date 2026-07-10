@@ -2763,35 +2763,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
         (backward-char (length (concat " " locals ")"))))
       (insert name))))
 
-(defun cljr--append-fn-parameter (param)
-  (cljr--goto-fn-definition)
-  (paredit-forward-down)
-  (paredit-forward 2)
-  (paredit-backward-down)
-  (if (looking-back "\\[" 1)
-      (insert param)
-    (insert " " param)))
-
-(defun cljr--promote-function-literal ()
-  (delete-char 1)
-  (let ((body (clojure-delete-and-extract-sexp)))
-    (insert "(fn [] " body ")"))
-  (backward-char)
-  (cljr--goto-fn-definition)
-  (let ((fn-start (point))
-        var replacement)
-    (while (re-search-forward "%[1-9&]?" (cljr--point-after 'paredit-forward) t)
-      (setq var (buffer-substring (point) (cljr--point-after 'paredit-backward)))
-      (setq replacement (read-string (format "%s => " var)))
-      (cljr--append-fn-parameter (if (string= "%&" var)
-                                     (format "& %s" replacement)
-                                   replacement))
-      (goto-char (1+ fn-start))
-      (let ((end (cljr--point-after '(paredit-forward-up 2))))
-        (while (re-search-forward (format "\\s-%s\\(\\s-\\|\\|\n)\\)" var)
-                                  end :no-error)
-          (replace-match (format " %s\\1" replacement))))
-      (goto-char fn-start))))
+(defun cljr--promote-to-defn ()
+  "Promote the `fn' at point to a top-level `defn'.
+Uses the `find-used-locals' middleware op to build the argument list, so
+it requires a connected REPL."
+  (cljr--ensure-op-supported "find-used-locals")
+  (when (cljr--asts-y-or-n-p)
+    (cljr--promote-fn)))
 
 ;;;###autoload
 (defun cljr-promote-function (promote-to-defn)
@@ -2799,27 +2777,30 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-update-project-d
 With prefix PROMOTE-TO-DEFN, promote to a defn even if it is a
 function literal.
 
+Promoting a `#(...)' literal to `(fn ...)' is a local edit (it delegates
+to `clojure-promote-fn-literal') and needs no REPL.  Promoting an `fn' to
+a top-level `defn' uses the `find-used-locals' middleware op to build the
+argument list, so it requires a connected REPL.
+
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function"
   (interactive "P")
-  (cljr--ensure-op-supported "find-used-locals")
-  (when (cljr--asts-y-or-n-p)
-    (save-excursion
-      (cond
-       ;; Already in the right place.
-       ((or (looking-at-p "#(")
-            (looking-at-p "(fn")))
-       ;; Right after the #.
-       ((and (eq (char-after) ?\()
-             (eq (char-before) ?#))
-        (forward-char -1))
-       ;; Possibly inside a function.
-       (t (cljr--goto-fn-definition)))
-      ;; Now promote it.
-      (if (looking-at "#(")
-          (cljr--promote-function-literal)
-        (cljr--promote-fn)))
-    (when promote-to-defn
-      (cljr--promote-fn))))
+  (save-excursion
+    (cond
+     ;; Already in the right place.
+     ((or (looking-at-p "#(")
+          (looking-at-p "(fn")))
+     ;; Right after the #.
+     ((and (eq (char-after) ?\()
+           (eq (char-before) ?#))
+      (forward-char -1))
+     ;; Possibly inside a function.
+     (t (cljr--goto-fn-definition)))
+    ;; Now promote it.
+    (if (looking-at "#(")
+        (clojure-promote-fn-literal)
+      (cljr--promote-to-defn)))
+  (when promote-to-defn
+    (cljr--promote-to-defn)))
 
 (defun cljr--insert-in-find-symbol-buffer (occurrence)
   (save-excursion
