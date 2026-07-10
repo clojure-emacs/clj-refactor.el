@@ -597,3 +597,13 @@ str/"))))
       ;; these are substrings of the declared symbols, not declared themselves
       (expect (cljr--already-declared-p "db") :to-be nil)
       (expect (cljr--already-declared-p "valid") :to-be nil))))
+(describe "cljr-cycle-thread"
+  (it "cycles -> to ->>"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (with-point-at "(-> x| foo)"
+        (cljr-cycle-thread))
+      (expect (buffer-string) :to-equal "(->> x foo)")))
+  (it "errors when point isn't in a threading macro"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (with-point-at "(println| :x)"
+        (expect (cljr-cycle-thread) :to-throw 'user-error)))))
