@@ -3,6 +3,7 @@
 ## Unreleased
 
 - `cljr-promote-function`: promoting a `#(...)` literal to `(fn ...)` now works without a REPL - it delegates to clojure-mode's `clojure-promote-fn-literal` instead of a home-grown, less robust converter. Only the `fn` -> `defn` promotion (which needs captured-locals analysis) still requires the middleware, and it no longer shows the "the project will be evaluated" warning for the pure literal case.
+- `cljr-remove-let` now works without a REPL. It inlines the let's bindings locally - in reverse order, so a binding that refers to an earlier one still resolves - and removes the let, instead of driving `cljr-inline-symbol` (which required the middleware and showed the "the project will be evaluated" warning once per binding).
 
 - Fix `cljr-add-declaration` treating a name as "already declared" when it merely contains, or is contained by, another symbol - names with regexp specials like `*db*` or `valid?` were matched incorrectly.
 - `cljr-describe-refactoring` now opens the refactoring's wiki page in your browser. The previous in-Emacs rendering scraped the wiki's HTML, which broke when GitHub changed its markup and 404'd for the clojure-mode commands in the menu; the candidate list is now limited to the `cljr-*` commands that actually have wiki pages. This also drops the `sgml-mode` dependency.
