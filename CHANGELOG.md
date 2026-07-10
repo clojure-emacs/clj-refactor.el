@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fix `cljr-add-declaration` treating a name as "already declared" when it merely contains, or is contained by, another symbol - names with regexp specials like `*db*` or `valid?` were matched incorrectly.
+- `cljr-describe-refactoring` now opens the refactoring's wiki page in your browser. The previous in-Emacs rendering scraped the wiki's HTML, which broke when GitHub changed its markup and 404'd for the clojure-mode commands in the menu; the candidate list is now limited to the `cljr-*` commands that actually have wiki pages. This also drops the `sgml-mode` dependency.
+- `cljr-add-project-dependency`/`cljr-update-project-dependency`: give a clear error instead of a raw "search failed" when the project file has no `:deps`/`:dependencies`, and drop a stray, no-op middleware check after hotloading.
+
 - `cljr-add-missing-libspec` degrades gracefully without a REPL. For an aliased symbol like `str/join`, when refactor-nrepl's `resolve-missing` op isn't available (or finds nothing) it now falls back to `cljr-magic-require-namespaces` - so common aliases still work offline, and a missing library can be added and hotloaded (see `cljr-slash-add-missing-libs`). Previously it errored without a connected REPL.
 - `cljr-slash` now works without a running REPL. When refactor-nrepl's `suggest-libspecs` op isn't available, it falls back to the static `cljr-magic-require-namespaces` table (honoring each entry's `:only` language context) instead of erroring, so common aliases like `str`/`io` still get required before you jack in.
 - `cljr-slash` can add and hotload a missing library. Entries in `cljr-magic-require-namespaces` may now carry an `:artifact` coordinate (e.g. `("json" "cheshire.core" :artifact "cheshire/cheshire")`); when the namespace isn't on the classpath, `cljr-slash` offers to add that artifact as a project dependency and hotload it. Controlled by the new `cljr-slash-add-missing-libs` (default on).
