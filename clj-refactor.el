@@ -3327,6 +3327,23 @@ itself might be `nil'."
   (when (and cljr-auto-eval-ns-form (cider-connected-p))
     (cider-eval-ns-form)))
 
+(defun cljr--add-missing-libspec-from-alias (symbol)
+  "Add a require for the alias of SYMBOL from `cljr-magic-require-namespaces'.
+
+Handles the `alias/name' case the same way `cljr-slash' does: it works
+without a REPL (via the static table) and, when `cljr-slash-add-missing-libs'
+is set and the alias has an `:artifact', can offer to add and hotload the
+library.  Returns non-nil when it added a require."
+  (when-let* ((alias (and symbol
+                          (string-search "/" symbol)
+                          (car (split-string symbol "/"))))
+              (alias-ref (and (clojure-find-ns)
+                              (cljr--unresolved-alias-ref alias)))
+              (libspec (cljr--slash-suggested-libspec alias-ref)))
+    (cljr--slash-maybe-add-missing-lib alias-ref libspec)
+    (cljr--insert-require-libspec libspec)
+    t))
+
 ;;;###autoload
 (defun cljr-add-missing-libspec ()
   "Requires or imports the symbol at point.
@@ -3334,17 +3351,29 @@ itself might be `nil'."
 If the symbol at point is of the form str/join then the ns
 containing join will be aliased to str.
 
+Uses refactor-nrepl's `resolve-missing' op when it is available.  When it
+isn't (e.g. no REPL is connected) or it finds nothing, falls back to
+resolving an `alias/name' symbol via `cljr-magic-require-namespaces', so
+common aliases still work offline and a missing library can be added (see
+`cljr-slash-add-missing-libs').
+
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libspec"
   (interactive)
-  (cljr--ensure-op-supported "resolve-missing")
-  (let* ((symbol (cider-symbol-at-point))
-         (candidates (cljr--call-middleware-to-resolve-missing symbol (cider-current-ns))))
-    (if (and candidates (< 0 (length candidates)))
-        (progn
-          (cljr--add-missing-libspec symbol candidates)
-          (cljr--maybe-clean-ns)
-          (cljr--maybe-eval-ns-form))
-      (cljr--post-command-message "Can't find `%s' on classpath" (cljr--symbol-suffix symbol)))))
+  (let ((symbol (cider-symbol-at-point)))
+    (if (cljr--op-supported-p "resolve-missing")
+        (let ((candidates (cljr--call-middleware-to-resolve-missing symbol (cider-current-ns))))
+          (cond
+           ((and candidates (< 0 (length candidates)))
+            (cljr--add-missing-libspec symbol candidates)
+            (cljr--maybe-clean-ns)
+            (cljr--maybe-eval-ns-form))
+           ((cljr--add-missing-libspec-from-alias symbol))
+           (t (cljr--post-command-message "Can't find `%s' on classpath"
+                                          (cljr--symbol-suffix symbol)))))
+      (or (cljr--add-missing-libspec-from-alias symbol)
+          (user-error "Can't resolve `%s': the refactor-nrepl `resolve-missing' \
+op isn't available and the alias isn't in `cljr-magic-require-namespaces'"
+                      symbol)))))
 
 (defun cljr--dependency-at-point ()
   "Returns project dependency at point.
