@@ -423,10 +423,10 @@ Buffers that were already being visited before BODY ran are left alone."
     ("fe" . (cljr-create-fn-from-example "Create function from example" ?f ("toplevel-form")))
     ("fu" . (cljr-find-usages "Find usages" ?u ("project" "code")))
     ("hd" . (cljr-hotload-dependency "Hotload dependency" ?h ("project")))
-    ("il" . (cljr-introduce-let "Introduce let" ?l ("code")))
+    ("il" . (clojure-introduce-let "Introduce let" ?l ("code")))
     ("is" . (cljr-inline-symbol "Inline symbol" ?i ("project" "toplevel-form" "code")))
     ("mf" . (cljr-move-form "Move form" ?m ("toplevel-form" "project")))
-    ("ml" . (cljr-move-to-let "Move to let" ?m ("code")))
+    ("ml" . (clojure-move-to-let "Move to let" ?m ("code")))
     ("pc" . (cljr-project-clean "Project clean" ?c ("project")))
     ("pf" . (cljr-promote-function "Promote function" ?p ("code" "toplevel-form")))
     ("rf" . (cljr-rename-file-or-dir "Rename file-or-dir" ?r ("project" "toplevel-form")))
@@ -535,9 +535,9 @@ current session."
     ("ci" "Cycle if" clojure-cycle-if)
     ("ct" "Cycle thread" cljr-cycle-thread)
     ("dk" "Destructure keys" cljr-destructure-keys)
-    ("il" "Introduce let" cljr-introduce-let)
+    ("il" "Introduce let" clojure-introduce-let)
     ("el" "Expand let" cljr-expand-let)
-    ("ml" "Move to let" cljr-move-to-let)
+    ("ml" "Move to let" clojure-move-to-let)
     ("rl" "Remove let" cljr-remove-let)
     ("pf" "Promote function" cljr-promote-function)
     ("tf" "Thread first all" clojure-thread-first-all)
@@ -554,7 +554,8 @@ current session."
     ("ed" "Extract form as def" cljr-extract-def)
     ("ef" "Extract function" cljr-extract-function)
     ("fe" "Create function from example" cljr-create-fn-from-example)
-    ("mf" "Move form" cljr-move-form)]]
+    ("mf" "Move form" cljr-move-form)
+    ("rd" "Reify to defrecord" cljr-reify-to-defrecord)]]
   [["Project"
     ("fu" "Find usages" cljr-find-usages)
     ("rs" "Rename symbol" cljr-rename-symbol)
@@ -1490,7 +1491,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
              (target-ns-regexp-template "[\(\[]\\s-*%s")
              (target-ns-alias-template ":as\\s-*\n*\\s-*\\(.*\\)\\_>\\s-*\n*\\s-*[\]\)]"))
       (save-window-excursion
-        (ido-find-file)
+        (find-file (read-file-name "Move form to file: "))
         (setq ns (cljr--current-namespace)
               names (cljr--name-of-defns forms)
               target-ns-alias (when-let* ((filtered-require (seq-find
@@ -1767,18 +1768,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-cycle-thread"
       (paredit-forward-down)
       (paredit-forward)
       (insert ">")
-      (cljr--reindent-thread)))))
+      (cljr--reindent-thread))
+
+     (t (user-error "Point is not inside a threading macro")))))
 
 ;; ------ let binding ----------
 
-;;;###autoload
-(defun cljr-introduce-let (&optional n)
-  "Create a let form, binding the form at point.
-The resulting let form can then be expanded with `\\[cljr-expand-let]'.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-introduce-let"
-  (interactive "P")
-  (clojure-introduce-let n))
+(define-obsolete-function-alias 'cljr-introduce-let #'clojure-introduce-let "4.0.0")
 
 (defun cljr--get-let-bindings ()
   "Returns a list of lists.
@@ -1821,13 +1817,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-expand-let"
   (mapc 'cljr--replace-sexp-with-binding (cljr--get-let-bindings))
   (cljr--one-shot-keybinding "l" 'cljr-expand-let))
 
-;;;###autoload
-(defun cljr-move-to-let ()
-  "Move the form at point to a binding in the nearest let.
-
-See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-to-let"
-  (interactive)
-  (clojure-move-to-let))
+(define-obsolete-function-alias 'cljr-move-to-let #'clojure-move-to-let "4.0.0")
 
 (defun cljr--eliminate-let ()
   "Remove a the nearest let form.
@@ -1895,11 +1885,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-destructure-keys
             (if include-as (concat " :as " symbol) "") "}")))
 
 ;; ------ Cycling ----------
-
-(defun cljr--goto-if ()
-  (while (not (or (cljr--top-level-p)
-                  (looking-at "\\((if \\)\\|\\((if-not \\)")))
-    (paredit-backward-up)))
 
 ;;;###autoload
 (defun cljr-raise-sexp (&optional argument)
