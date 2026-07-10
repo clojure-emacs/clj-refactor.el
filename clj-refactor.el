@@ -38,7 +38,6 @@
 (require 'clojure-mode)
 (require 'cider)
 (require 'parseedn)
-(require 'sgml-mode)
 (require 'transient)
 (require 'subword)
 
@@ -1638,7 +1637,11 @@ optionally including those that are declared private."
 (defun cljr--already-declared-p (def)
   (save-excursion
     (cljr--goto-declare)
-    (re-search-backward def (cljr--point-after 'paredit-backward) :no-error)))
+    ;; `def' is a symbol name; quote it and match on symbol boundaries so
+    ;; names containing regexp specials (*foo*, valid?, +, ...) work and we
+    ;; don't match a longer symbol that merely contains it.
+    (re-search-backward (concat "\\_<" (regexp-quote def) "\\_>")
+                        (cljr--point-after 'paredit-backward) :no-error)))
 
 (defun cljr--add-declaration (def)
   (when (cljr--already-declared-p def)
@@ -2605,14 +2608,16 @@ possible choices. If the choice is trivial, return it."
     (read-from-minibuffer prompt)))
 
 (defun cljr--insert-into-leiningen-dependencies (artifact version)
-  (re-search-forward ":dependencies")
+  (unless (re-search-forward ":dependencies" nil :no-error)
+    (user-error "Couldn't find a `:dependencies' vector in the project file"))
   (paredit-forward)
   (paredit-backward-down)
   (newline-and-indent)
   (insert "[" artifact " \"" version "\"]"))
 
 (defun cljr--insert-into-clj-dependencies (artifact version)
-  (re-search-forward ":deps")
+  (unless (re-search-forward ":deps" nil :no-error)
+    (user-error "Couldn't find a `:deps' map in the project file"))
   (forward-sexp)
   (backward-char)
   (newline-and-indent)
@@ -2639,7 +2644,9 @@ possible choices. If the choice is trivial, return it."
 
 ;;;###autoload
 (defun cljr-add-project-dependency (force)
-  "Add a dependency to the project.clj file.
+  "Add a dependency to the project's `deps.edn' or `project.clj'.
+
+With a prefix arg FORCE, refresh the cached artifact list first.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-dependency"
   (interactive "P")
@@ -2673,8 +2680,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
             (insert "\"" artifact-version "\"")
           (insert "\{:mvn/version \"" artifact-version "\"\}")))))
   (when cljr-hotload-dependencies
-    (cljr-hotload-dependency)
-    (cljr--ensure-op-supported "artifact-list")))
+    (cljr-hotload-dependency)))
 
 ;;;###autoload
 (defun cljr-update-project-dependencies ()
@@ -4135,32 +4141,20 @@ at PATH."
     (cljr--make-room-for-toplevel-form)
     (yas-expand-snippet stub)))
 
-(defun cljr--extract-wiki-description (description-buffer)
-  (with-current-buffer description-buffer
-    (goto-char (point-min))
-    (while (not (looking-at-p "<div id=\"wiki-body\""))
-      (delete-char 1))
-    (sgml-skip-tag-forward 1)
-    (buffer-substring (point-min) (point))))
-
 ;;;###autoload
 (defun cljr-describe-refactoring (cljr-fn)
-  "Show the wiki page, in emacs, for one of the available refactorings.
+  "Open the wiki page for one of the available refactorings in a browser.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refactoring"
-  (interactive (list (cljr--prompt-user-for "Refactoring to describe: "
-                                            (mapcar (lambda (entry) (cadr entry))
-                                                    cljr--all-helpers))))
-  (let* ((wiki-base-url "https://github.com/clojure-emacs/clj-refactor.el/wiki/")
-         (description-buffer "*cljr-describe-refactoring*")
-         (description (cljr--extract-wiki-description
-                       (url-retrieve-synchronously
-                        (concat wiki-base-url cljr-fn)))))
-    (pop-to-buffer description-buffer)
-    (delete-region (point-min) (point-max))
-    (insert description)
-    (shr-render-region (point-min) (point-max))
-    (view-mode 1)))
+  (interactive
+   (list (cljr--prompt-user-for
+          "Refactoring to describe: "
+          ;; Only the cljr-* commands have their own wiki pages; the
+          ;; clojure-mode commands surfaced in the menu don't.
+          (thread-last cljr--all-helpers
+                       (mapcar (lambda (entry) (symbol-name (cadr entry))))
+                       (seq-filter (lambda (name) (string-prefix-p "cljr-" name)))))))
+  (browse-url (concat "https://github.com/clojure-emacs/clj-refactor.el/wiki/" cljr-fn)))
 
 (defun cljr--get-function-params (fn)
   "Retrieve the parameters for FN."

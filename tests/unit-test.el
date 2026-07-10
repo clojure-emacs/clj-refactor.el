@@ -587,3 +587,13 @@ str/"))))
     (cljr--with-clojure-temp-file "foo.clj"
       (with-point-at "(ns foo)\n(printl|n :x)"
         (expect (cljr-add-missing-libspec) :to-throw 'user-error)))))
+
+(describe "cljr--already-declared-p"
+  (it "matches declared names with regexp specials, not substrings of a symbol"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo)\n(declare *db* valid?)")
+      (expect (cljr--already-declared-p "*db*") :to-be-truthy)
+      (expect (cljr--already-declared-p "valid?") :to-be-truthy)
+      ;; these are substrings of the declared symbols, not declared themselves
+      (expect (cljr--already-declared-p "db") :to-be nil)
+      (expect (cljr--already-declared-p "valid") :to-be nil))))
