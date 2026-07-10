@@ -570,3 +570,20 @@ str/"))))
           (cljr-magic-require-namespaces '(("str" . "clojure.string"))))
       (cljr--slash-maybe-add-missing-lib "str" "[clojure.string :as str]")
       (expect 'cljr--add-project-dependency :not :to-have-been-called))))
+
+(describe "cljr-add-missing-libspec (offline fallback)"
+  (it "requires an aliased symbol via the table when resolve-missing is unavailable"
+    (spy-on 'cljr--op-supported-p :and-return-value nil)
+    (spy-on 'cljr--slash-suggest-op-available-p :and-return-value nil)
+    (cljr--with-clojure-temp-file "foo.clj"
+      (with-point-at "(ns foo)\n(str/joi|n [])"
+        (cljr-add-missing-libspec))
+      (expect (buffer-string) :to-equal "(ns foo
+  (:require [clojure.string :as str]))
+(str/join [])")))
+  (it "errors on a non-alias symbol when resolve-missing is unavailable"
+    (spy-on 'cljr--op-supported-p :and-return-value nil)
+    (spy-on 'cljr--slash-suggest-op-available-p :and-return-value nil)
+    (cljr--with-clojure-temp-file "foo.clj"
+      (with-point-at "(ns foo)\n(printl|n :x)"
+        (expect (cljr-add-missing-libspec) :to-throw 'user-error)))))
