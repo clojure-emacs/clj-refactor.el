@@ -1011,7 +1011,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
 
 (defun cljr--op-supported-p (op)
   "Is the OP we require provided by the current middleware stack?"
-  (cider-nrepl-op-supported-p op))
+  ;; Guard on the connection first: `cider-nrepl-op-supported-p' resolves the
+  ;; REPL with the `ensure' flag and signals `No linked CIDER sessions' when
+  ;; nothing is connected.  We want a plain nil there, so the offline fallbacks
+  ;; that gate on this predicate (`cljr-slash', `cljr-clean-ns', ...) can kick in.
+  (and (cider-connected-p)
+       (cider-nrepl-op-supported-p op)))
 
 (defun cljr--assert-middleware ()
   (unless (featurep 'cider)
