@@ -2426,19 +2426,25 @@ invocation.  Set to nil to disable the caches."
             artifacts)
         (user-error "Empty artifact list received from middleware")))))
 
+(defun cljr--cache-artifacts-from-response (response)
+  "Populate `cljr--artifacts-cache' from an async artifact-list RESPONSE.
+Does nothing for responses without an \"artifacts\" entry (e.g. the
+trailing status message), so the Emacs-side cache is only replaced once
+the list actually arrives."
+  (when-let* ((artifacts (nrepl-dict-get response "artifacts")))
+    (setq cljr--artifacts-cache (cons (float-time) artifacts))
+    (when cljr--debug-mode
+      (message "Artifact cache updated"))))
+
 (defun cljr--update-artifact-cache ()
   (cljr--call-middleware-async (cljr--create-msg "artifact-list"
                                                  "force" "true")
-                               (lambda (_)
-                                 (when cljr--debug-mode
-                                   (message "Artifact cache updated")))))
+                               #'cljr--cache-artifacts-from-response))
 
 (defun cljr--init-artifact-cache ()
   (cljr--call-middleware-async (cljr--create-msg "artifact-list"
                                                  "force" "false")
-                               (lambda (_)
-                                 (when cljr--debug-mode
-                                   (message "Artifact cache updated")))))
+                               #'cljr--cache-artifacts-from-response))
 
 (defun cljr--dictionary-lessp (str1 str2)
   "Return t if STR1 is < STR2 when doing a dictionary compare,
