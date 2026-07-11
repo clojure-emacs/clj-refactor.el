@@ -404,21 +404,23 @@
            (cljr--change-function-signature (list (cljr--plist-to-hash (cl-second cljr--test-occurrences)))
                                             cljr--baz-renamed-to-qux))))
 
-;; TODO: deprecate dependent tests after `cljr-slash-uses-suggest-libspec' is the only path.
-(Given "The `cljr-slash-uses-suggest-libspec' flag is disabled"
+(Given "The suggest-libspec middleware is stubbed"
        (lambda ()
-         (setq-local cljr-slash-uses-suggest-libspec nil)))
-
-(Given "The cache of namespace aliases is populated"
-       (lambda ()
-         (defun cljr--call-middleware-for-namespace-aliases ()
-           (parseedn-read-str "{:clj {t (clojure.test)
-set (clojure.set)
-pprint (clojure.pprint)
-util (refactor-nrepl.util clojure.tools.analyzer.jvm.utils)
-readers (clojure.tools.reader.reader-types) }
-:cljs {set (clojure.set)
-pprint (cljs.pprint)}}"))))
+         ;; Pretend the `cljr-suggest-libspecs' op is available and hand back
+         ;; canned libspec candidates, so `cljr-slash' can be exercised without
+         ;; a live REPL. Candidates depend on the alias and language context.
+         (defun cljr--slash-suggest-op-available-p () t)
+         (defun cljr--call-middleware-suggest-libspec (alias-ref language-context)
+           (let ((ctx (or (cadr language-context) (car language-context))))
+             (pcase alias-ref
+               ("set" '("[clojure.set :as set]"))
+               ("util" '("[refactor-nrepl.util :as util]"
+                         "[clojure.tools.analyzer.jvm.utils :as util]"))
+               ("pprint" (cond ((equal ctx "clj") '("[clojure.pprint :as pprint]"))
+                               ((equal ctx "cljs") '("[cljs.pprint :as pprint]"))
+                               (t '("[clojure.pprint :as pprint]"
+                                    "[cljs.pprint :as pprint]"))))
+               (_ '()))))))
 
 (When "I kill the \"\\(.+\\)\" buffer"
       (lambda (buffer)

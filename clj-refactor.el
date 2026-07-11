@@ -61,7 +61,7 @@
 (defcustom cljr-magic-requires t
   "Whether to automatically require common namespaces when they are used.
 These are the namespaces listed in `cljr-magic-require-namespaces'
-and returned by the `namespace-aliases' middleware op.
+and suggested by the `cljr-suggest-libspecs' middleware op.
 
 If this variable is `:prompt', typing the short form followed by
 `\\[cljr-slash]' will ask if you want to add the corresponding require
@@ -70,22 +70,6 @@ Any other non-nil value means to add the form without asking."
   :type '(choice (const :tag "true" t)
                  (const :tag "prompt" :prompt)
                  (const :tag "false" nil)))
-
-(defcustom cljr-slash-uses-suggest-libspec t
-  "If t, `cljr-slash'' magic requires' functionality will use `cljr-suggest-libspec'.
-
-The `suggest-libspec' middleware operation replaces the `namespace-aliases'
-operation. It incorporates the requested namespace alias, buffer and scoped
-language context (clj, cljs, cljc, etc), preferred-aliases from the
-`cljr-magic-require-namespaces', with existing aliases from the project and
-returns a candidate list of suitable libspec entries. This is passed to the
-completion framework along with language context information to add a
-require which will satisfy the alias for a given namespace.
-
-Currently testing this flag as the default, remove associated deprecated
-paths once this flag is removed."
-  :type 'boolean
-  :safe #'booleanp)
 
 (defcustom cljr-magic-require-namespaces
   '(("edn"  . "clojure.edn")
@@ -255,15 +239,6 @@ won't run if there is a broken namespace in the project."
 at `cider-jack-in' time."
   :type 'boolean
   :safe #'booleanp)
-
-;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
-(defcustom cljr-assume-language-context nil
-  "If set to `clj' or `cljs',
-clj-refactor will use that value in situations where the language context is ambiguous.
-
-If set to nil, a popup will be created in each ambiguous case asking user to choose language context."
-  :type 'string
-  :safe #'stringp)
 
 (defcustom cljr-libspec-whitelist
   '("^cljsns" "^slingshot.test" "^monger.joda-time" "^monger.json")
@@ -1943,25 +1918,6 @@ but removes # in front of function literals and sets."
 
 ;; ------ magic requires -------
 
-;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
-(defun cljr--magic-requires-re ()
-  (regexp-opt (seq-map 'car cljr-magic-require-namespaces)))
-
-;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
-(defun cljr--clj-context-p ()
-  "Is point in a clj context?"
-  (or (cljr--clj-file-p)
-      (when (cljr--cljc-file-p)
-        (cond
-         ((cljr--beginning-of-reader-conditional)
-          (string-equal (cljr--reader-conditional-context) ":clj"))
-         (cljr-assume-language-context
-          (string-equal cljr-assume-language-context "clj"))
-         (t
-          (string-equal (cljr--prompt-user-for "Language context at point? "
-                                               (list "clj" "cljs"))
-                        "clj"))))))
-
 (defun cljr--beginning-of-reader-conditional ()
   "Return position of beginning of containing reader conditional.
 
@@ -2003,23 +1959,6 @@ context. Valid outputs include, but are not limited to `:clj',
                 (goto-char (1+ starting-point))))
             language)))
     (error nil)))
-
-;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
-(defcustom cljr-suggest-namespace-aliases t
-  "If `t', `namespace-aliases' and `cljr-slash' will take into account suggested namespace aliases,
-following this convention: `https://stuartsierra.com/2015/05/10/clojure-namespace-aliases'."
-  :group 'cljr
-  :type 'boolean)
-
-;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
-(defun cljr--call-middleware-for-namespace-aliases ()
-  (thread-first "namespace-aliases"
-                cljr--ensure-op-supported
-                (cljr--create-msg "suggest" (if cljr-suggest-namespace-aliases
-                                                "true"
-                                              "false"))
-                (cljr--call-middleware-sync "namespace-aliases")
-                parseedn-read-str))
 
 (defvar cljr--suggest-libspecs-cache (make-hash-table :test #'equal)
   "Cache of `cljr-suggest-libspecs' results used by `cljr-slash'.
@@ -2108,13 +2047,6 @@ is not set to `:prompt'."
    ((= (length candidates) 1)
     (seq-first candidates))))
 
-;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
-(defun cljr--get-aliases-from-middleware ()
-  (when-let* ((aliases (cljr--call-middleware-for-namespace-aliases)))
-    (if (cljr--clj-context-p)
-        (gethash :clj aliases)
-      (gethash :cljs aliases))))
-
 (defun cljr--js-alias-p (alias)
   (and (string-equal "js" alias)
        (or (member "cljs" (cljr--language-context-at-point))
@@ -2130,28 +2062,6 @@ is not set to `:prompt'."
     ;; symbol, and can occur in various orderings.
     '(re-search-forward "[0-9`':#]*" nil t))
    (1- (point))))
-
-;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
-(defun cljr--magic-requires-lookup-alias (short)
-  "Generate a mapping from alias to candidate namespaces.
-
-If we recognize the `short' alias in the project, use namespaces
-from the middleware or any `cljr-magic-require-namespaces' that
-match. Returns a structure of (alias (ns1 ns2 ...))."
-  (if-let* ((aliases (ignore-errors (cljr--get-aliases-from-middleware)))
-            (candidates (gethash (intern short) aliases)))
-      (list short candidates)
-    (when (and cljr-magic-require-namespaces ; a regex against "" always triggers
-               (string-match-p (cljr--magic-requires-re) short))
-      ;; This when-let might seem unnecessary but the regexp match
-      ;; isn't perfect.
-      (let ((long  (alist-get short cljr-magic-require-namespaces nil nil #'equal)))
-        (when-let* ((libspec (cond ((stringp long)
-                                    (list long))
-                                   ;; handle ("io" "clojure.java.io" :only ("clj"))
-                                   ((and (listp long) (stringp (car long)))
-                                    (list (car long))))))
-          (list short libspec))))))
 
 (defun cljr--in-keyword-sans-alias-p ()
   "Checks if thing at point is keyword without an alias."
@@ -2291,32 +2201,13 @@ to the ns form."
                               (not (cljr--in-number-p))
                               (clojure-find-ns)
                               (cljr--unresolved-alias-ref (cljr--ns-alias-at-point)))))
-    (if cljr-slash-uses-suggest-libspec
-        ;; Use the `cljr-suggest-libspecs' middleware op when it's available,
-        ;; otherwise fall back to the static `cljr-magic-require-namespaces'
-        ;; table so common aliases still work without a running REPL.
-        (when-let* ((libspec (cljr--slash-suggested-libspec alias-ref)))
-          ;; only insert a require if a candidate exists and was selected
-          (cljr--slash-maybe-add-missing-lib alias-ref libspec)
-          (cljr--insert-require-libspec libspec))
-      ;; Deprecated, creates suggestions from `namespace-aliases' middleware op
-      (when-let* ((aliases (cljr--magic-requires-lookup-alias alias-ref)))
-        (let ((short (cl-first aliases))
-              ;; Ensure it's a list (and not a vector):
-              (candidates (mapcar 'identity (cl-second aliases))))
-          (when-let* ((long (cljr--prompt-user-for "Require " candidates)))
-            (when (and (not (cljr--in-namespace-declaration-p (concat ":as " short "\b")))
-                       (not (cljr--in-namespace-declaration-p (concat ":as-alias " short "\b")))
-                       (or (not (eq :prompt cljr-magic-requires))
-                           (not (> (length candidates) 1)) ; already prompted
-                           (yes-or-no-p (format "Add %s :as %s to requires?" long short))))
-              (cljr--insert-require-libspec (format "[%s :as %s]" long short)))))))))
-
-;; TODO: deprecated by `cljr-slash-uses-suggest-libspec'
-(defun cljr--in-namespace-declaration-p (s)
-  (save-excursion
-    (cljr--goto-ns)
-    (cljr--search-forward-within-sexp s)))
+    ;; Use the `cljr-suggest-libspecs' middleware op when it's available,
+    ;; otherwise fall back to the static `cljr-magic-require-namespaces'
+    ;; table so common aliases still work without a running REPL.
+    (when-let* ((libspec (cljr--slash-suggested-libspec alias-ref)))
+      ;; only insert a require if a candidate exists and was selected
+      (cljr--slash-maybe-add-missing-lib alias-ref libspec)
+      (cljr--insert-require-libspec libspec))))
 
 ;; ------ project clean --------
 
