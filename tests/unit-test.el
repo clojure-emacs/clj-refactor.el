@@ -426,6 +426,29 @@ str/"))))
     (spy-on 'cider-connected-p :and-return-value nil)
     (expect (cljr--op-supported-p "clean-ns") :to-be nil)))
 
+(describe "cljr-clean-ns offline fallback"
+  ;; Drive the real `cljr--op-supported-p' by faking a disconnected REPL,
+  ;; instead of stubbing the predicate the fallback hinges on.
+  (before-each (spy-on 'cider-connected-p :and-return-value nil))
+  (it "sorts the ns form when no REPL is connected"
+    (spy-on 'cljr--post-command-message)
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo\n  (:require [b.b :as b]\n            [a.a :as a]))\n")
+      (cljr-clean-ns)
+      (expect (buffer-string) :to-equal "(ns foo
+  (:require [a.a :as a]
+            [b.b :as b]))
+")))
+  (it "doesn't touch the middleware when no REPL is connected"
+    (spy-on 'cljr--clean-ns)
+    (spy-on 'cider-eval-ns-form)
+    (spy-on 'cljr--post-command-message)
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo\n  (:require [a.a :as a]))\n")
+      (cljr-clean-ns)
+      (expect 'cljr--clean-ns :not :to-have-been-called)
+      (expect 'cider-eval-ns-form :not :to-have-been-called))))
+
 (describe "cljr--remove-tramp-prefix-from-msg"
   (it "Removes the tramp prefix from specifc nrepl message attributes"
     (with-temp-buffer

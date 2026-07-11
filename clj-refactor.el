@@ -1260,9 +1260,13 @@ word test in it and whether the file lives under the test/ directory."
                'cljr--maybe-eval-ns-form-and-remove-hook :local))
 
 (defun cljr--maybe-sort-ns ()
-  (when (and cljr-auto-sort-ns (cider-connected-p)
-             (cljr--op-supported-p "clean-ns"))
-    (cljr--clean-ns nil :no-pruning)))
+  (when cljr-auto-sort-ns
+    (if (and (cider-connected-p) (cljr--op-supported-p "clean-ns"))
+        (cljr--clean-ns nil :no-pruning)
+      ;; Offline: sort the ns form syntactically via clojure-mode, quietly,
+      ;; so this stays useful without a running REPL.
+      (let ((inhibit-message t))
+        (ignore-errors (clojure-sort-ns))))))
 
 (defun cljr--sort-and-remove-hook (&rest _)
   (cljr--maybe-sort-ns)
@@ -3036,11 +3040,20 @@ removed."
 (defun cljr-clean-ns ()
   "Clean the ns form for the current buffer.
 
+With the refactor-nrepl middleware available, unused libspecs are
+pruned and the ns form is sorted and reformatted.  Without a REPL, fall
+back to sorting the ns form with `clojure-sort-ns' - pruning needs
+analysis, so it is skipped.
+
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   (interactive)
-  (cljr--ensure-op-supported "clean-ns")
-  (cider-eval-ns-form)
-  (cljr--clean-ns))
+  (if (cljr--op-supported-p "clean-ns")
+      (progn
+        (cider-eval-ns-form)
+        (cljr--clean-ns))
+    (clojure-sort-ns)
+    (cljr--post-command-message
+     "Sorted the ns form (pruning unused libspecs needs the refactor-nrepl middleware).")))
 
 (defun cljr--uses-completion-framework-p ()
   "Whether the user is using something richer than the stock `completing-read'."

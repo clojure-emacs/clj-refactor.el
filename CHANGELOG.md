@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `cljr-clean-ns` degrades gracefully without a REPL. When the `clean-ns` middleware op isn't available it falls back to sorting the ns form with clojure-mode's `clojure-sort-ns` instead of erroring - pruning unused libspecs still needs the middleware and is skipped. Auto-sort after ns changes (`cljr-auto-sort-ns`) now works offline too.
 - Fix `cljr-slash` and `cljr-add-missing-libspec` erroring with "No linked CIDER sessions" when used without a connected REPL, instead of falling back to their offline behavior. `cljr--op-supported-p` now returns nil when disconnected rather than signaling.
 - Performance: the background artifact-list warming (on REPL connect, per `cljr-populate-artifact-cache-on-startup`) now populates the Emacs-side cache, not just refactor-nrepl's server-side one. Previously the first `cljr-add-project-dependency`/`cljr-update-project-dependency` still blocked on the full artifact-list transfer even though a warmer had already run; now that common case is served from cache without a middleware round-trip.
 - **(Breaking)** Remove the deprecated `namespace-aliases` code path from `cljr-slash`, along with the `cljr-slash-uses-suggest-libspec`, `cljr-suggest-namespace-aliases` and `cljr-assume-language-context` defcustoms. `cljr-slash` has used the language-context-aware `suggest-libspecs` op (with an offline fallback) by default for a while now; the old path and its options are gone.
