@@ -4,7 +4,6 @@ Feature: Magic requires
     Given I have a project "cljr" in "tmp"
     And I have a clojure-file "tmp/src/cljr/core.clj"
     And I open file "tmp/src/cljr/core.clj"
-    And the `cljr-slash-uses-suggest-libspec' flag is disabled
     And I clear the buffer
 
   Scenario: Require is inserted automagically
@@ -47,11 +46,11 @@ Feature: Magic requires
 
     (util)
     """
-    And the cache of namespace aliases is populated
+    And the suggest-libspec middleware is stubbed
     And I place the cursor after "util"
     And I start an action chain
     And I type "/"
-    And I type "refactor-nrepl.util"
+    And I type "[refactor-nrepl.util :as util]"
     And I press "RET"
     And I type "get-last-sexp"
     And I execute the action chain
@@ -70,11 +69,11 @@ Feature: Magic requires
 
     (::util)
     """
-    And the cache of namespace aliases is populated
+    And the suggest-libspec middleware is stubbed
     And I place the cursor after "util"
     And I start an action chain
     And I type "/"
-    And I type "refactor-nrepl.util"
+    And I type "[refactor-nrepl.util :as util]"
     And I press "RET"
     And I type "some-keyword"
     And I execute the action chain
@@ -94,7 +93,7 @@ Feature: Magic requires
 
     (util)
     """
-    And the cache of namespace aliases is populated
+    And the suggest-libspec middleware is stubbed
     And I place the cursor after "(util"
     And I start an action chain
     And I type "/get-last-sexp"
@@ -114,7 +113,7 @@ Scenario: Nothing happens when destructuring a map
 
     (defn f [{:keys [set]}])
     """
-    And the cache of namespace aliases is populated
+    And the suggest-libspec middleware is stubbed
     And I place the cursor after "set"
     And I start an action chain
     And I type "/union"

@@ -2,7 +2,6 @@
     Given I have a project "cljr" in "tmp"
     And I have a clojure-file "tmp/src/cljr/core.cljc"
     And I open file "tmp/src/cljr/core.cljc"
-    And the `cljr-slash-uses-suggest-libspec' flag is disabled
     And I clear the buffer
 
   Scenario: Does the right thing when facing clj reader conditionals
@@ -12,7 +11,7 @@
 
     #?(:clj (pprint))
     """
-    And the cache of namespace aliases is populated
+    And the suggest-libspec middleware is stubbed
     And I place the cursor after "pprint"
     And I start an action chain
     And I type "/"
@@ -33,7 +32,7 @@
 
     #?(:cljs (pprint))
     """
-    And the cache of namespace aliases is populated
+    And the suggest-libspec middleware is stubbed
     And I place the cursor after "pprint"
     And I start an action chain
     And I type "/"
@@ -54,11 +53,11 @@
 
     (pprint)
     """
-    And the cache of namespace aliases is populated
+    And the suggest-libspec middleware is stubbed
     And I place the cursor after "pprint"
     And I start an action chain
     And I type "/"
-    And I type "cljs"
+    And I type "[cljs.pprint :as pprint]"
     And I press "RET"
     And I type "pprint"
     And I execute the action chain
