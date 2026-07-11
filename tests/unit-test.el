@@ -476,6 +476,25 @@ str/"))))
         (cljr--get-artifacts-from-middleware t)
         (expect calls :to-equal 2)))))
 
+(describe "cljr--cache-artifacts-from-response"
+  (it "populates the Emacs-side artifact cache from an async response"
+    (let ((cljr--artifacts-cache nil))
+      (cl-letf (((symbol-function 'message) #'ignore))
+        (cljr--cache-artifacts-from-response (nrepl-dict "artifacts" '("a/a" "b/b"))))
+      (expect (cdr cljr--artifacts-cache) :to-equal '("a/a" "b/b"))))
+  (it "ignores responses without an artifacts entry"
+    (let ((cljr--artifacts-cache nil))
+      (cljr--cache-artifacts-from-response (nrepl-dict "status" '("done")))
+      (expect cljr--artifacts-cache :to-be nil)))
+  (it "lets a warmed cache serve without a middleware round-trip"
+    (let ((cljr-artifact-cache-ttl 300)
+          (cljr--artifacts-cache nil))
+      (cl-letf (((symbol-function 'message) #'ignore))
+        (cljr--cache-artifacts-from-response (nrepl-dict "artifacts" '("warmed"))))
+      (spy-on 'cljr--call-middleware-sync)
+      (expect (cljr--get-artifacts-from-middleware nil) :to-equal '("warmed"))
+      (expect 'cljr--call-middleware-sync :not :to-have-been-called))))
+
 (describe "cljr--call-middleware-suggest-libspec"
   (it "caches suggestions per alias within the TTL"
     (let ((cljr-artifact-cache-ttl 300)
