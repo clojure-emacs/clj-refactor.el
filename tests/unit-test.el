@@ -408,7 +408,23 @@ ex/"))))
         (cljr-slash))
       (expect (buffer-string) :to-equal "(ns foo
   (:require [clojure.string :as str]))
+str/")))
+  (it "falls back (rather than erroring) with no REPL connected"
+    ;; Regression: `cljr--op-supported-p' used to signal `No linked CIDER
+    ;; sessions' when disconnected, so typing `/' offline threw instead of
+    ;; falling back to the static table.
+    (spy-on 'cider-connected-p :and-return-value nil)
+    (cljr--with-clojure-temp-file "foo.clj"
+      (with-point-at "(ns foo)\nstr|"
+        (cljr-slash))
+      (expect (buffer-string) :to-equal "(ns foo
+  (:require [clojure.string :as str]))
 str/"))))
+
+(describe "cljr--op-supported-p"
+  (it "returns nil (rather than erroring) when no REPL is connected"
+    (spy-on 'cider-connected-p :and-return-value nil)
+    (expect (cljr--op-supported-p "clean-ns") :to-be nil)))
 
 (describe "cljr--remove-tramp-prefix-from-msg"
   (it "Removes the tramp prefix from specifc nrepl message attributes"

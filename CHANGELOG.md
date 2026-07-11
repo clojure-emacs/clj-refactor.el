@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix `cljr-slash` and `cljr-add-missing-libspec` erroring with "No linked CIDER sessions" when used without a connected REPL, instead of falling back to their offline behavior. `cljr--op-supported-p` now returns nil when disconnected rather than signaling.
 - Performance: the background artifact-list warming (on REPL connect, per `cljr-populate-artifact-cache-on-startup`) now populates the Emacs-side cache, not just refactor-nrepl's server-side one. Previously the first `cljr-add-project-dependency`/`cljr-update-project-dependency` still blocked on the full artifact-list transfer even though a warmer had already run; now that common case is served from cache without a middleware round-trip.
 - **(Breaking)** Remove the deprecated `namespace-aliases` code path from `cljr-slash`, along with the `cljr-slash-uses-suggest-libspec`, `cljr-suggest-namespace-aliases` and `cljr-assume-language-context` defcustoms. `cljr-slash` has used the language-context-aware `suggest-libspecs` op (with an offline fallback) by default for a while now; the old path and its options are gone.
 - `cljr-promote-function`: promoting a `#(...)` literal to `(fn ...)` now works without a REPL - it delegates to clojure-mode's `clojure-promote-fn-literal` instead of a home-grown, less robust converter. Only the `fn` -> `defn` promotion (which needs captured-locals analysis) still requires the middleware, and it no longer shows the "the project will be evaluated" warning for the pure literal case.
