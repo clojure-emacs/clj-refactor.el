@@ -969,3 +969,51 @@ str/"))))
       (cljr--call-middleware-async-collect
        (cljr--create-msg "x") "touched" (lambda (_v) (setq calls (1+ calls))))
       (expect calls :to-equal 0))))
+
+(describe "cljr--find-symbol-occurrences"
+  (before-each
+    ;; cljr--find-symbol pokes cider-current-repl and cljr--get-valid-filename
+    ;; touches tramp/nrepl filename fns; stub those out.
+    (spy-on 'cider-current-repl :and-return-value (current-buffer))
+    (spy-on 'cljr--get-valid-filename :and-call-fake
+            (lambda (occ) (gethash :file occ))))
+  (it "collects occurrences and delivers them on the count message"
+    (spy-on 'cljr--find-symbol :and-call-fake
+            (lambda (_symbol _ns cb)
+              (funcall cb (nrepl-dict "occurrence" "{:file \"a.clj\" :line-beg 1 :col-beg 1 :name \"x\"}"))
+              (funcall cb (nrepl-dict "occurrence" "{:file \"a.clj\" :line-beg 2 :col-beg 3 :name \"x\"}"))
+              (funcall cb (nrepl-dict "count" 2))))
+    (let (result done)
+      (cljr--find-symbol-occurrences "x" "ns" (lambda (occs) (setq result occs done t)))
+      (with-timeout (2) (while (not done) (sit-for 0.02)))
+      (expect (length result) :to-equal 2)
+      (expect (gethash :line-beg (car result)) :to-equal 1)))
+  (it "drops duplicate occurrences at the same location"
+    (spy-on 'cljr--find-symbol :and-call-fake
+            (lambda (_symbol _ns cb)
+              (funcall cb (nrepl-dict "occurrence" "{:file \"a.clj\" :line-beg 1 :col-beg 1 :name \"x\"}"))
+              (funcall cb (nrepl-dict "occurrence" "{:file \"a.clj\" :line-beg 1 :col-beg 1 :name \"x\"}"))
+              (funcall cb (nrepl-dict "count" 2))))
+    (let (result done)
+      (cljr--find-symbol-occurrences "x" "ns" (lambda (occs) (setq result occs done t)))
+      (with-timeout (2) (while (not done) (sit-for 0.02)))
+      (expect (length result) :to-equal 1)))
+  (it "reports a middleware error and doesn't run the callback"
+    (spy-on 'cljr--find-symbol :and-call-fake
+            (lambda (_symbol _ns cb)
+              (funcall cb (nrepl-dict "err" "boom"))))
+    (spy-on 'message)
+    (let ((called nil))
+      (cljr--find-symbol-occurrences "x" "ns" (lambda (_occs) (setq called t)))
+      (sit-for 0.05)
+      (expect called :to-be nil)
+      (expect 'message :to-have-been-called)))
+  (it "delivers on the done status when no count is sent"
+    (spy-on 'cljr--find-symbol :and-call-fake
+            (lambda (_symbol _ns cb)
+              (funcall cb (nrepl-dict "occurrence" "{:file \"a.clj\" :line-beg 1 :col-beg 1 :name \"x\"}"))
+              (funcall cb (nrepl-dict "status" '("done")))))
+    (let (result done)
+      (cljr--find-symbol-occurrences "x" "ns" (lambda (occs) (setq result occs done t)))
+      (with-timeout (2) (while (not done) (sit-for 0.02)))
+      (expect (length result) :to-equal 1))))
