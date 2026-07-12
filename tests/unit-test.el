@@ -691,3 +691,125 @@ str/"))))
       (with-point-at "(let [x 1 y (+ x 1)] (* y| y))"
         (cljr-remove-let))
       (expect (string-trim (buffer-string)) :to-equal "(* (+ 1 1) (+ 1 1))"))))
+
+;; ---- change-function-signature: tagged (add/remove) model ----
+
+(defun cljr--test-keep (old new name &optional new-name)
+  (let ((h (make-hash-table)))
+    (puthash :op :keep h)
+    (puthash :old-index old h)
+    (puthash :new-index new h)
+    (puthash :old-name name h)
+    (puthash :new-name (or new-name name) h)
+    h))
+
+(defun cljr--test-add (new name &optional default)
+  (let ((h (make-hash-table)))
+    (puthash :op :add h)
+    (puthash :new-index new h)
+    (puthash :new-name name h)
+    (puthash :default (or default "nil") h)
+    h))
+
+(defun cljr--test-remove (old name)
+  (let ((h (make-hash-table)))
+    (puthash :op :remove h)
+    (puthash :old-index old h)
+    (puthash :old-name name h)
+    h))
+
+(describe "cljr--update-function-signature (tagged model)"
+  (it "adds a parameter at the end of the definition"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(defn tt [foo bar]\n  (println foo bar))")
+      (goto-char (point-min))
+      (cljr--update-function-signature
+       (list (cljr--test-keep 0 0 "foo")
+             (cljr--test-keep 1 1 "bar")
+             (cljr--test-add 2 "qux")))
+      (expect (buffer-string) :to-equal
+              "(defn tt [foo bar qux]\n  (println foo bar))")))
+  (it "adds a parameter at the front of the definition"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(defn tt [foo bar]\n  (println foo bar))")
+      (goto-char (point-min))
+      (cljr--update-function-signature
+       (list (cljr--test-add 0 "x")
+             (cljr--test-keep 0 1 "foo")
+             (cljr--test-keep 1 2 "bar")))
+      (expect (buffer-string) :to-equal
+              "(defn tt [x foo bar]\n  (println foo bar))")))
+  (it "removes a parameter from the definition"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(defn tt [foo bar baz]\n  (println foo baz))")
+      (goto-char (point-min))
+      (cljr--update-function-signature
+       (list (cljr--test-keep 0 0 "foo")
+             (cljr--test-remove 1 "bar")
+             (cljr--test-keep 2 1 "baz")))
+      (expect (buffer-string) :to-equal
+              "(defn tt [foo baz]\n  (println foo baz))"))))
+
+(describe "cljr--update-call-site (tagged model)"
+  (it "inserts the placeholder for an added trailing parameter"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(tt 1 2)")
+      (goto-char (point-min))
+      (forward-char 1)
+      (cljr--update-call-site
+       (list (cljr--test-keep 0 0 "foo")
+             (cljr--test-keep 1 1 "bar")
+             (cljr--test-add 2 "qux" "nil")))
+      (expect (buffer-string) :to-equal "(tt 1 2 nil)")))
+  (it "inserts the placeholder for an added leading parameter"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(tt 1 2)")
+      (goto-char (point-min))
+      (forward-char 1)
+      (cljr--update-call-site
+       (list (cljr--test-add 0 "x" "nil")
+             (cljr--test-keep 0 1 "foo")
+             (cljr--test-keep 1 2 "bar")))
+      (expect (buffer-string) :to-equal "(tt nil 1 2)"))))
+
+(describe "cljr--signature helpers"
+  (it "defaults a tagless entry to :keep"
+    (let ((tagless (make-hash-table)))
+      (puthash :old-index 0 tagless)
+      (expect (cljr--change-op tagless) :to-be :keep)))
+  (it "detects adds and removes"
+    (let ((cs (list (cljr--test-keep 0 0 "foo")
+                    (cljr--test-add 1 "bar")
+                    (cljr--test-remove 2 "baz"))))
+      (expect (cljr--signature-has-add-p cs) :to-be-truthy)
+      (expect (cljr--signature-has-remove-p cs) :to-be-truthy)
+      (expect (cljr--old-arity cs) :to-equal 2)))
+  (it "treats a pure rename as no structural change"
+    (expect (cljr--signature-structurally-changed-p
+             (list (cljr--test-keep 0 0 "foo" "renamed")))
+            :to-be nil)))
+
+(describe "cljr--parse-arglists"
+  (it "parses a single arity"
+    (expect (cljr--parse-arglists "[name greeting]")
+            :to-equal '(("name" "greeting"))))
+  (it "parses a nullary arity"
+    (expect (cljr--parse-arglists "[]") :to-equal '(nil)))
+  (it "keeps the rest marker as its own element"
+    (expect (cljr--parse-arglists "[a & more]")
+            :to-equal '(("a" "&" "more"))))
+  (it "parses multiple arities separated by newlines"
+    (expect (cljr--parse-arglists "[x]\n[x y]")
+            :to-equal '(("x") ("x" "y")))))
+
+(describe "cljr--signature-variadic-p"
+  (it "detects a rest parameter"
+    (expect (cljr--signature-variadic-p
+             (list (cljr--test-keep 0 0 "a")
+                   (cljr--test-keep 1 1 "&")
+                   (cljr--test-keep 2 2 "more")))
+            :to-be-truthy))
+  (it "is nil for a fixed-arity signature"
+    (expect (cljr--signature-variadic-p
+             (list (cljr--test-keep 0 0 "a") (cljr--test-keep 1 1 "b")))
+            :to-be nil)))

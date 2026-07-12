@@ -169,3 +169,82 @@ Feature: Change function signature
     (defn tt [foo bar qux]
       (println foo bar qux))
     """
+
+  Scenario: Add a parameter in a regular call-site
+    When I insert:
+    """
+    (ns core)
+
+    (defn regular-call-site []
+      (tt 1 2 3))
+    """
+    And I call the cljr--change-function-signature function directly with mockdata to add qux in a regular call-site
+    Then I should see:
+    """
+    (ns core)
+
+    (defn regular-call-site []
+      (tt 1 2 3 nil))
+    """
+
+  Scenario: Add a parameter in the function definition
+    When I insert:
+    """
+    (ns core)
+
+    (defn tt [foo bar baz]
+      (println foo bar baz))
+    """
+    And I call the cljr--change-function-signature function directly with mockdata to add qux in function definition
+    Then I should see:
+    """
+    (ns core)
+
+    (defn tt [foo bar baz qux]
+      (println foo bar baz))
+    """
+
+  Scenario: Remove a parameter from the function definition
+    When I insert:
+    """
+    (ns core)
+
+    (defn tt [foo bar baz]
+      (println foo bar baz))
+    """
+    And I call the cljr--change-function-signature function directly with mockdata to remove baz in function definition
+    Then I should see:
+    """
+    (ns core)
+
+    (defn tt [foo bar]
+      (println foo bar baz))
+    """
+
+  Scenario: Remove a parameter in a regular call-site requires manual intervention
+    When I insert:
+    """
+    (ns core)
+
+    (defn regular-call-site []
+      (tt 1 2 3))
+    """
+    And I call the cljr--change-function-signature function directly with mockdata to remove baz in a regular call-site
+    And I switch to buffer "*cljr-manual-intervention*"
+    And I go to line "3"
+    Then I should see pattern ".*core.clj:4"
+
+  Scenario: A call on a defn line is treated as a call-site, not the definition
+    When I insert:
+    """
+    (ns core)
+
+    (defn wrapper [x] (tt x 2 3))
+    """
+    And I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a call-site on a defn line
+    Then I should see:
+    """
+    (ns core)
+
+    (defn wrapper [x] (tt 2 x 3))
+    """

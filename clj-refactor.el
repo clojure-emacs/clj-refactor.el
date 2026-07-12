@@ -276,7 +276,13 @@ line number and column number.")
 (defvar cljr--debug-mode nil)
 
 (defvar cljr--occurrences nil)
-(defvar cljr--signature-changes nil)
+(defvar cljr--signature-rows nil
+  "Rows shown in the change-signature edit buffer, in display order.
+Each row is a plist: `:origin' (index into the original params, or nil
+for an added param), `:name', `:default' (call-site placeholder for
+added params), `:removed' and `:rest'.")
+(defvar cljr--signature-original-params nil
+  "The function's original parameter names, as read from its arglist.")
 (defvar cljr--change-signature-buffer "*cljr-change-signature*")
 (defvar cljr--manual-intervention-buffer "*cljr-manual-intervention*")
 (defvar cljr--find-symbol-buffer "*cljr-find-usages*")
@@ -4065,25 +4071,44 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
                        (seq-filter (lambda (name) (string-prefix-p "cljr-" name)))))))
   (browse-url (concat "https://github.com/clojure-emacs/clj-refactor.el/wiki/" cljr-fn)))
 
+(defun cljr--parse-arglists (arglists-str)
+  "Parse ARGLISTS-STR into a list of arities.
+
+Each arity is a list of parameter-name strings.  ARGLISTS-STR carries one
+arity per line, each bracketed, e.g. \"[name greeting]\" for a single
+arity or \"[x]\\n[x y]\" for several.  A `&' rest marker is kept as its
+own element, matching how the rest of the machinery treats it."
+  (thread-last (split-string (string-trim arglists-str) "\n" t)
+               (seq-map #'string-trim)
+               (seq-map (lambda (arity)
+                          (let ((inner (string-trim (substring arity 1 -1))))
+                            (unless (string= inner "")
+                              (split-string inner " " t)))))))
+
 (defun cljr--get-function-params (fn)
-  "Retrieve the parameters for FN."
+  "Retrieve the parameters for FN.
+
+Only single-arity functions are supported; multi-arity functions signal
+an error."
   (let* ((info (cljr--var-info fn))
-         ;; arglists-str looks like this: ([arg] [arg1 arg2] ...)
          (arglists-str (nrepl-dict-get info "arglists-str")))
     (unless arglists-str
       (error "Couldn't retrieve the parameter list for %s" fn))
-    (let* ((arglists-str (substring arglists-str 1 -1)))
-      (unless (string-match-p "^\\[[^]]+\\]$" arglists-str)
+    (let ((arities (cljr--parse-arglists arglists-str)))
+      (when (> (length arities) 1)
         (error "Can't do work on functions of multiple arities"))
-      (split-string (substring arglists-str 1 -1) " "))))
+      (car arities))))
 
 (defvar cljr--change-signature-mode-map
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap (kbd "M-n") #'cljr--move-param-down)
     (define-key keymap (kbd "M-p") #'cljr--move-param-up)
+    (define-key keymap (kbd "e") #'cljr--edit-parameter-name)
+    (define-key keymap (kbd "a") #'cljr--add-parameter)
+    (define-key keymap (kbd "k") #'cljr--remove-parameter)
+    (define-key keymap (kbd "d") #'cljr--remove-parameter)
     (define-key keymap (kbd "C-c C-k") #'cljr--abort-signature-edit)
     (define-key keymap (kbd "q") #'cljr--abort-signature-edit)
-    (define-key keymap (kbd "e") #'cljr--edit-parameter-name)
     (define-key keymap (kbd "C-c C-c") #'cljr--commit-signature-edit)
     (define-key keymap (kbd "RET") #'cljr--commit-signature-edit)
     keymap))
@@ -4092,87 +4117,156 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-describe-refacto
   (interactive)
   (kill-buffer cljr--change-signature-buffer))
 
-(defun cljr--move-line-up ()
-  "Move the current line up."
-  (let ((col (current-column)))
-    (transpose-lines 1)
-    (forward-line -2)
-    (move-to-column col)))
+(defun cljr--render-signature-rows ()
+  "Redraw the change-signature buffer from `cljr--signature-rows'.
+Keeps point on the same row across redraws."
+  (let ((inhibit-read-only t)
+        (target (max 0 (min (1- (line-number-at-pos))
+                            (1- (length cljr--signature-rows))))))
+    (erase-buffer)
+    (dolist (row cljr--signature-rows)
+      (insert (plist-get row :name))
+      (cond ((plist-get row :removed) (insert "  ; to be removed"))
+            ((null (plist-get row :origin))
+             (insert (format "  ; new param (call sites get %s)"
+                             (plist-get row :default)))))
+      (insert "\n"))
+    (insert "\n")
+    (insert "# M-n / M-p  reorder    e  rename    a  add param    k  remove param\n")
+    (insert "# RET or C-c C-c  apply    q or C-c C-k  abort")
+    (goto-char (point-min))
+    (forward-line target))
+  (setq buffer-read-only t))
 
-(defun cljr--move-line-down ()
-  "Move the current line down."
-  (interactive)
-  (let ((col (current-column)))
-    (save-excursion
-      (forward-line)
-      (transpose-lines 1))
-    (forward-line)
-    (move-to-column col)))
-
-(defun cljr--signature-change-at-index (signature-changes i)
-  (seq-find (lambda (change) (= (gethash :new-index change) i))
-            signature-changes))
-
-(defun cljr--dec-parameter-index ()
-  (let* ((index (1- (line-number-at-pos)))
-         (parameter-info (cljr--signature-change-at-index
-                          cljr--signature-changes index))
-         (neighbor-info (cljr--signature-change-at-index
-                         cljr--signature-changes (1- index))))
-    (puthash :new-index (1- (gethash :new-index parameter-info))
-             parameter-info)
-    (puthash :new-index (1+ (gethash :new-index neighbor-info))
-             neighbor-info)))
-
-(defun cljr--inc-parameter-index ()
-  (let* ((index (1- (line-number-at-pos)))
-         (parameter-info (cljr--signature-change-at-index
-                          cljr--signature-changes index))
-         (neighbor-info (cljr--signature-change-at-index
-                         cljr--signature-changes (1+ index))))
-    (puthash :new-index (1+ (gethash :new-index parameter-info))
-             parameter-info)
-    (puthash :new-index (1- (gethash :new-index neighbor-info))
-             neighbor-info)))
+(defun cljr--current-signature-row-index ()
+  "Index into `cljr--signature-rows' of the row at point, or nil."
+  (let ((i (1- (line-number-at-pos))))
+    (when (and (>= i 0) (< i (length cljr--signature-rows)))
+      i)))
 
 (defun cljr--move-param-down ()
+  "Move the parameter on the current line down one position."
   (interactive)
-  (unless (save-excursion (beginning-of-line) (or (looking-at-p "\\s-*$")
-                                                  (looking-at-p "#")))
-    (when (save-excursion (beginning-of-line) (looking-at-p "& "))
-      (error "Can't move the rest parameter"))
-    (view-mode -1)
-    (cljr--move-line-down)
-    (view-mode 1)
-    (cljr--dec-parameter-index)))
+  (let ((i (cljr--current-signature-row-index)))
+    (when (and i (< (1+ i) (length cljr--signature-rows)))
+      (when (or (plist-get (nth i cljr--signature-rows) :rest)
+                (plist-get (nth (1+ i) cljr--signature-rows) :rest))
+        (error "Can't move the rest parameter"))
+      (let ((a (nth i cljr--signature-rows))
+            (b (nth (1+ i) cljr--signature-rows)))
+        (setf (nth i cljr--signature-rows) b
+              (nth (1+ i) cljr--signature-rows) a))
+      (cljr--render-signature-rows)
+      (goto-char (point-min))
+      (forward-line (1+ i)))))
 
 (defun cljr--move-param-up ()
+  "Move the parameter on the current line up one position."
   (interactive)
-  (unless (or (= (line-number-at-pos) 1)
-              (or (looking-at-p "\\s-*$")
-                  (looking-at-p "#")))
-    (when (save-excursion (beginning-of-line) (looking-at-p "& "))
-      (error "Can't move the rest parameter"))
-    (view-mode -1)
-    (cljr--move-line-up)
-    (cljr--inc-parameter-index)
-    (view-mode 1)))
+  (let ((i (cljr--current-signature-row-index)))
+    (when (and i (> i 0))
+      (when (or (plist-get (nth i cljr--signature-rows) :rest)
+                (plist-get (nth (1- i) cljr--signature-rows) :rest))
+        (error "Can't move the rest parameter"))
+      (let ((a (nth i cljr--signature-rows))
+            (b (nth (1- i) cljr--signature-rows)))
+        (setf (nth i cljr--signature-rows) b
+              (nth (1- i) cljr--signature-rows) a))
+      (cljr--render-signature-rows)
+      (goto-char (point-min))
+      (forward-line (1- i)))))
 
 (defun cljr--edit-parameter-name ()
+  "Rename the parameter on the current line."
   (interactive)
-  (let* ((index (1- (line-number-at-pos)))
-         (new-name (read-from-minibuffer
-                    "New parameter name: "
-                    (save-excursion
-                      (beginning-of-line)
-                      (buffer-substring (point)
-                                        (cljr--point-after 'paredit-forward)))))
-         (parameter-info (nth index cljr--signature-changes)))
-    (puthash :new-name new-name parameter-info)
-    (view-mode -1)
-    (delete-region (line-beginning-position) (line-end-position))
-    (insert new-name)
-    (view-mode 1)))
+  (let ((i (cljr--current-signature-row-index)))
+    (when i
+      (let* ((row (nth i cljr--signature-rows))
+             (new-name (string-trim
+                        (read-from-minibuffer "New parameter name: "
+                                              (plist-get row :name)))))
+        (when (string= new-name "")
+          (error "Parameter name can't be empty"))
+        (setf (nth i cljr--signature-rows) (plist-put row :name new-name))
+        (cljr--render-signature-rows)))))
+
+(defun cljr--add-parameter ()
+  "Add a new parameter to the signature.
+The parameter is appended after the fixed parameters (before any rest
+parameter).  You're prompted for its name and for the placeholder to
+insert at call sites."
+  (interactive)
+  (let* ((name (string-trim (read-from-minibuffer "New parameter name: ")))
+         (default (string-trim
+                   (read-from-minibuffer "Placeholder to insert at call sites: " "nil")))
+         (pos (or (seq-position cljr--signature-rows t
+                                (lambda (row _) (plist-get row :rest)))
+                  (length cljr--signature-rows)))
+         (new-row (list :origin nil :name name
+                        :default (if (string= default "") "nil" default)
+                        :removed nil :rest nil)))
+    (when (string= name "")
+      (error "Parameter name can't be empty"))
+    (setq cljr--signature-rows
+          (append (seq-take cljr--signature-rows pos)
+                  (list new-row)
+                  (seq-drop cljr--signature-rows pos)))
+    (cljr--render-signature-rows)
+    (goto-char (point-min))
+    (forward-line pos)))
+
+(defun cljr--remove-parameter ()
+  "Mark the parameter on the current line for removal (toggles).
+An added parameter is dropped outright.  Removals aren't applied to call
+sites automatically - they're routed to the manual-intervention buffer."
+  (interactive)
+  (let ((i (cljr--current-signature-row-index)))
+    (when i
+      (let ((row (nth i cljr--signature-rows)))
+        (when (plist-get row :rest)
+          (error "Can't remove the rest parameter"))
+        (if (plist-get row :origin)
+            (setf (nth i cljr--signature-rows)
+                  (plist-put row :removed (not (plist-get row :removed))))
+          (setq cljr--signature-rows
+                (append (seq-take cljr--signature-rows i)
+                        (seq-drop cljr--signature-rows (1+ i)))))
+        (cljr--render-signature-rows)))))
+
+(defun cljr--signature-rows-to-changes (rows original-params)
+  "Build the tagged `signature-changes' list from edit-buffer ROWS.
+ORIGINAL-PARAMS supplies each kept/removed row's original name."
+  (let ((j 0) changes)
+    (dolist (row rows)
+      (let ((origin (plist-get row :origin))
+            (removed (plist-get row :removed))
+            (name (plist-get row :name)))
+        (cond
+         ((and removed origin)
+          (let ((h (make-hash-table)))
+            (puthash :op :remove h)
+            (puthash :old-index origin h)
+            (puthash :old-name (nth origin original-params) h)
+            (push h changes)))
+         (removed nil)                  ; added then removed: nothing to do
+         (origin
+          (let ((h (make-hash-table)))
+            (puthash :op :keep h)
+            (puthash :old-index origin h)
+            (puthash :new-index j h)
+            (puthash :old-name (nth origin original-params) h)
+            (puthash :new-name name h)
+            (push h changes))
+          (setq j (1+ j)))
+         (t
+          (let ((h (make-hash-table)))
+            (puthash :op :add h)
+            (puthash :new-index j h)
+            (puthash :new-name name h)
+            (puthash :default (plist-get row :default) h)
+            (push h changes))
+          (setq j (1+ j))))))
+    (nreverse changes)))
 
 (defun cljr--defnp (match)
   (string-match-p (rx (seq line-start (* whitespace) "("
@@ -4197,14 +4291,84 @@ prismatic/schema and moving paste any whitespace"
     (paredit-forward 2))
   (cljr--skip-past-whitespace-and-comments))
 
+(defun cljr--change-op (change)
+  "The operation tag for CHANGE.
+
+Entries default to `:keep' (reorder/rename) when they carry no `:op',
+for backward compatibility with the pre-add/remove model.  The other
+tags are `:add' (a new parameter, with a `:default' placeholder for call
+sites and a `:new-name' for the definition) and `:remove' (a dropped
+parameter)."
+  (or (gethash :op change) :keep))
+
+(defun cljr--signature-has-add-p (signature-changes)
+  (seq-some (lambda (c) (eq (cljr--change-op c) :add)) signature-changes))
+
+(defun cljr--signature-has-remove-p (signature-changes)
+  (seq-some (lambda (c) (eq (cljr--change-op c) :remove)) signature-changes))
+
+(defun cljr--signature-variadic-p (signature-changes)
+  "Non-nil when the signature has a `&' rest parameter.
+Call sites of a variadic function can't be rewritten positionally, since
+the number of arguments varies, so they're left for manual review."
+  (seq-some (lambda (c) (equal (gethash :old-name c) "&")) signature-changes))
+
+(defun cljr--old-signature-changes (signature-changes)
+  "The changes present in the OLD signature (`:keep' + `:remove').
+
+Sorted by `:old-index', so they line up with the parameters as they
+appear in the lambda list before editing."
+  (thread-last signature-changes
+               (seq-remove (lambda (c) (eq (cljr--change-op c) :add)))
+               (seq-sort-by (lambda (c) (gethash :old-index c)) #'<)))
+
+(defun cljr--new-signature-changes (signature-changes)
+  "The changes present in the NEW signature (`:keep' + `:add').
+
+Sorted by `:new-index', i.e. the order the parameters should end up in."
+  (thread-last signature-changes
+               (seq-remove (lambda (c) (eq (cljr--change-op c) :remove)))
+               (seq-sort-by (lambda (c) (gethash :new-index c)) #'<)))
+
+(defun cljr--old-arity (signature-changes)
+  "Number of parameters in the OLD signature."
+  (length (cljr--old-signature-changes signature-changes)))
+
+(defun cljr--signature-structurally-changed-p (signature-changes)
+  "Non-nil when the parameter structure (order or count) changes.
+
+Pure renames don't count - they're applied in place and don't touch call
+sites."
+  (or (cljr--signature-has-add-p signature-changes)
+      (cljr--signature-has-remove-p signature-changes)
+      (seq-some (lambda (c) (and (eq (cljr--change-op c) :keep)
+                                 (/= (gethash :new-index c) (gethash :old-index c))))
+                signature-changes)))
+
+(defun cljr--insert-new-signature (signature-changes add-fn old-values)
+  "Insert the new parameter (or argument) sequence at point.
+
+Walks the entries in `:new-index' order.  A `:keep' entry re-inserts the
+element of OLD-VALUES (a vector indexed by `:old-index') that it refers
+to; an `:add' entry inserts the string returned by ADD-FN for it."
+  (let ((new (cljr--new-signature-changes signature-changes))
+        (leading t))
+    (dolist (change new)
+      (unless leading (insert " "))
+      (setq leading nil)
+      (if (eq (cljr--change-op change) :add)
+          (insert (funcall add-fn change))
+        (insert (aref old-values (gethash :old-index change)))))))
+
 (defun cljr--update-signature-names (signature-changes)
   "Point is assumed to be at the the first character in the lambda list.
 
-Updates the names of the function parameters."
-  (dolist (changes signature-changes)
-    (unless (string= (gethash :new-name changes)
-                     (gethash :old-name changes))
-      (cljr--update-parameter-name (gethash :new-name changes)))
+Renames kept parameters in place, walking past every old parameter."
+  (dolist (change (cljr--old-signature-changes signature-changes))
+    (when (and (eq (cljr--change-op change) :keep)
+               (not (string= (gethash :new-name change)
+                             (gethash :old-name change))))
+      (cljr--update-parameter-name (gethash :new-name change)))
     (cljr--forward-parameter)))
 
 (defun cljr--delete-and-extract-region (beg end)
@@ -4249,29 +4413,20 @@ Point is assumed to be at the end of the form."
 (defun cljr--update-signature-order (signature-changes)
   "Point is assumed to be at the first character in the lambda list.
 
-Updates the ordering of the function parameters."
-  (unless (seq-every-p (lambda (c) (= (gethash :new-index c) (gethash :old-index c)))
-                       signature-changes)
-    (let (parameters)
-      ;; extract parameters
-      (dolist (_ signature-changes)
-        (push (cljr--delete-and-extract-function-parameter)
-              parameters))
-      (setq parameters (nreverse parameters))
+Rebuilds the lambda list: reorders kept parameters, inserts added
+parameters (by name), and drops removed ones."
+  (when (cljr--signature-structurally-changed-p signature-changes)
+    (let ((params (make-vector (cljr--old-arity signature-changes) nil)))
+      ;; extract the old parameters, left to right, so index = `:old-index'
+      (dotimes (i (cljr--old-arity signature-changes))
+        (aset params i (cljr--delete-and-extract-function-parameter)))
       ;; leave point in empty lambda list
       (paredit-backward-up)
       (paredit-forward-down)
       (delete-region (point) (cljr--point-after 'cljr--skip-past-whitespace-and-comments))
-      ;; insert parameters in new order
-      (dotimes (i (length parameters))
-        (let ((old-name (gethash :old-name
-                                 (cljr--signature-change-at-index
-                                  signature-changes i))))
-          (insert (seq-find (lambda (param)
-                              (string-prefix-p old-name param))
-                            parameters)))
-        (unless (= (1+ i) (length parameters))
-          (insert " ")))
+      (cljr--insert-new-signature signature-changes
+                                  (lambda (change) (gethash :new-name change))
+                                  params)
       (cljr--maybe-wrap-form))))
 
 (defun cljr--goto-lambda-list ()
@@ -4307,20 +4462,19 @@ to here:  (defn foo [|bar baz] ...)"
                signature-changes))
 
 (defun cljr--update-call-site (signature-changes)
-  "Point is assumed to be at the name of the function being called."
-  (unless (cljr--no-changes-to-parameter-order-p signature-changes)
+  "Point is assumed to be at the name of the function being called.
+
+Rebuilds the argument list: reorders kept arguments and inserts each
+added parameter's `:default' placeholder.  Removals are never applied
+here - they're routed to the manual-intervention buffer by the caller."
+  (when (cljr--signature-structurally-changed-p signature-changes)
     (cljr--forward-parameter)
-    (let (args)
-      (dotimes (_ (length signature-changes))
-        (push (cljr--delete-and-extract-function-parameter) args))
-      (setq args (nreverse args))
-      (dotimes (i (length args))
-        (insert (nth (gethash :old-index
-                              (seq-find (lambda (c) (= (gethash :new-index c) i))
-                                        signature-changes))
-                     args))
-        (unless (= (1+ i) (length args))
-          (insert " ")))
+    (let ((args (make-vector (cljr--old-arity signature-changes) nil)))
+      (dotimes (i (cljr--old-arity signature-changes))
+        (aset args i (cljr--delete-and-extract-function-parameter)))
+      (cljr--insert-new-signature signature-changes
+                                  (lambda (change) (gethash :default change))
+                                  args)
       (cljr--maybe-wrap-form))))
 
 (defun cljr--append-to-manual-intervention-buffer ()
@@ -4417,9 +4571,12 @@ Point is assumed to be at the function being called."
     (looking-at-p "\\s-*(ns")))
 
 (defun cljr--change-function-signature (occurrences signature-changes)
-  ;; SIGNATURE-CHANGES is a list of hashmaps with keys:
-  ;; :old-index, :new-index, :old-name :new-name
-  ;; Indexing is from 0
+  ;; SIGNATURE-CHANGES is a list of hashmaps, each tagged with an `:op'
+  ;; (see `cljr--change-op'):
+  ;;   :keep   - :old-index :new-index :old-name :new-name (reorder/rename)
+  ;;   :add    - :new-index :new-name :default (placeholder at call sites)
+  ;;   :remove - :old-index :old-name
+  ;; Indexing is from 0.  An entry with no `:op' is treated as `:keep'.
   ;; The OCCURRENCES are the same as those returned by `cljr--find-symbol'
   (let ((*cljr--noninteractive* t))
     (cljr--with-opened-buffers
@@ -4436,11 +4593,31 @@ Point is assumed to be at the function being called."
             (move-to-column (1- col-beg))
             (cond
              ((cljr--ignorable-occurrence-p) :do-nothing)
-             ((cljr--call-site-p name) (cljr--update-call-site signature-changes))
+             ;; Direct call site.  Removing a parameter is destructive - an
+             ;; argument might have side effects or be needed elsewhere - so
+             ;; never auto-delete it; route the call site to manual review.
+             ;; Likewise for variadic functions, whose call sites can't be
+             ;; rewritten positionally (the arg count varies).
+             ((cljr--call-site-p name)
+              (if (or (cljr--signature-has-remove-p signature-changes)
+                      (cljr--signature-variadic-p signature-changes))
+                  (cljr--append-to-manual-intervention-buffer)
+                (cljr--update-call-site signature-changes)))
+             ;; `apply'/`partial' sites can only be handled for pure reorders;
+             ;; an added or removed arg would land in the wrong spot, so bail.
              ((cljr--partial-call-site-p)
-              (cljr--update-partial-call-site signature-changes))
+              (if (or (cljr--signature-has-add-p signature-changes)
+                      (cljr--signature-has-remove-p signature-changes))
+                  (cljr--append-to-manual-intervention-buffer)
+                (cljr--update-partial-call-site signature-changes)))
              ((cljr--apply-call-site-p)
-              (cljr--update-apply-call-site signature-changes))
+              (if (or (cljr--signature-has-add-p signature-changes)
+                      (cljr--signature-has-remove-p signature-changes))
+                  (cljr--append-to-manual-intervention-buffer)
+                (cljr--update-apply-call-site signature-changes)))
+             ;; The definition itself.  `cljr--defnp' is a loose match on the
+             ;; occurrence line, so it must stay last - a call that happens to
+             ;; sit on a `(defn ...)' line is a call site, handled above.
              ((cljr--defnp match)
               (cljr--update-function-signature signature-changes))
              (t (cljr--append-to-manual-intervention-buffer)))
@@ -4454,7 +4631,9 @@ Point is assumed to be at the function being called."
 
 (defun cljr--commit-signature-edit ()
   (interactive)
-  (cljr--change-function-signature cljr--occurrences cljr--signature-changes)
+  (let ((changes (cljr--signature-rows-to-changes
+                  cljr--signature-rows cljr--signature-original-params)))
+    (cljr--change-function-signature cljr--occurrences changes))
   (kill-buffer cljr--change-signature-buffer))
 
 (define-derived-mode cljr--change-signature-mode fundamental-mode
@@ -4465,30 +4644,18 @@ Point is assumed to be at the function being called."
   (when (get-buffer control-buffer)
     (kill-buffer control-buffer))
   (pop-to-buffer control-buffer)
-  (delete-region (point-min) (point-max))
-  (insert "
-
-# M-n and M-p to re-order parameters.
-# e or C-c C-e to edit a name.
-# RET or C-c C-c when you're happy with your changes.
-# q or C-c C-k to abort. ")
-  (goto-char (point-min))
-  (insert (string-join params "\n"))
-  (forward-line -1)
-  (when (looking-at-p "&")
-    (forward-line 1)
-    (join-line))
-  (setq cljr--signature-changes (let (signature-changes)
-                                  (dotimes (i (length params))
-                                    (let ((h (make-hash-table)))
-                                      (puthash :old-index i h)
-                                      (puthash :new-index i h)
-                                      (puthash :old-name (nth i params) h)
-                                      (puthash :new-name (nth i params) h)
-                                      (push h signature-changes)))
-                                  (nreverse signature-changes)))
   (cljr--change-signature-mode)
-  (view-mode))
+  (setq cljr--signature-original-params params)
+  (setq cljr--signature-rows
+        (let ((seen-rest nil) rows)
+          (dotimes (i (length params))
+            (let ((name (nth i params)))
+              (when (string= name "&") (setq seen-rest t))
+              (push (list :origin i :name name :default nil
+                          :removed nil :rest seen-rest)
+                    rows)))
+          (nreverse rows)))
+  (cljr--render-signature-rows))
 
 ;;;###autoload
 (defun cljr-change-function-signature ()
@@ -4502,8 +4669,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
            (params (cljr--get-function-params fn))
            (var-info (cljr--var-info fn))
            (ns (nrepl-dict-get var-info "ns")))
-      (setq cljr--occurrences (cljr--find-symbol-sync fn ns)
-            cljr--signature-changes nil)
+      (setq cljr--occurrences (cljr--find-symbol-sync fn ns))
       (cljr--setup-change-signature-buffer cljr--change-signature-buffer params)
       (when (get-buffer cljr--manual-intervention-buffer)
         (kill-buffer cljr--manual-intervention-buffer))
