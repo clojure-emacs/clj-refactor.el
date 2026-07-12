@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **(Breaking)** Use refactor-nrepl's namespaced op names (`refactor/find-symbol`, `refactor/clean-ns`, …) instead of the bare ones. refactor-nrepl treats the namespaced forms as canonical and plans to drop the bare names, and namespacing avoids op-name collisions with other middleware. This requires refactor-nrepl 3.13.0+ (the injected version is now 3.14.0).
+- `cljr-rename-symbol`, `cljr-find-usages`, `cljr-inline-symbol` and `cljr-change-function-signature` now send an explicit `ignore-errors` value that matches `cljr-ignore-analyzer-errors`, instead of a nil value that was dropped on the wire. With the default (nil) this means the strict behavior the option documents actually takes effect - a project with an unanalyzable namespace now surfaces a warning rather than silently skipping it.
+- `cljr-slash` no longer sends the obsolete `language-context` parameter to the `suggest-libspecs` op (superseded by `buffer-language-context`/`input-language-context` in refactor-nrepl 3.7.0).
+
 - The asynchronous refactorings (`cljr-rename-symbol`, `cljr-change-function-signature`, `cljr-rename-file-or-dir`) now show a mode-line spinner while the middleware is working, so it's clear the operation is still running. Uses CIDER's spinner, so it honors `cider-show-spinner` and friends.
 
 - `cljr-rename-symbol` and `cljr-change-function-signature` now find their occurrences asynchronously. Locating every occurrence analyses the whole project, which on a cold cache or a large project could freeze Emacs for a long time; now the command returns immediately and the rename (or the change-signature edit buffer) happens once the search finishes, so Emacs stays responsive meanwhile. As a side effect they now also honor `cljr-middleware-ignored-paths`.

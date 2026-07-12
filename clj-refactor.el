@@ -997,14 +997,28 @@ if the point is currently placed at the opening parentheses of an anonymous func
                 v)
             v))))
 
+(defconst cljr--middleware-op-prefix "refactor/"
+  "Namespace prefix for refactor-nrepl's op names.
+refactor-nrepl registers every op under both its bare name (e.g.
+`clean-ns') and this namespaced form (e.g. `refactor/clean-ns'), and
+treats the namespaced form as canonical - the bare names are slated for
+removal in a future refactor-nrepl major release.  We use the namespaced
+form (available since refactor-nrepl 3.13.0) so op names can't collide
+with those of other middleware.")
+
+(defun cljr--middleware-op (op)
+  "Return refactor-nrepl op OP as its canonical namespaced name."
+  (concat cljr--middleware-op-prefix op))
+
 (defun cljr--create-msg (op &rest kvs)
   "Create a msg for the middleware for OP and optionally include the kv pairs KVS.
 
-All config settings are included in the created msg."
+OP is given as its bare refactor-nrepl name and is namespaced here (see
+`cljr--middleware-op').  All config settings are included in the created msg."
   (cl-assert (cl-evenp (length kvs)) nil "Can't create msg to send to the middleware.\
   Received an uneven number of kv pairs: %s " kvs)
   (apply #'list
-         "op" op
+         "op" (cljr--middleware-op op)
 
          "prefix-rewriting"
          (if cljr-favor-prefix-notation
@@ -1230,13 +1244,15 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
   (cljr-rename-file-or-dir (buffer-file-name) new-path))
 
 (defun cljr--op-supported-p (op)
-  "Is the OP we require provided by the current middleware stack?"
+  "Is the refactor-nrepl OP (bare name) provided by the current middleware?
+OP is namespaced (see `cljr--middleware-op') so this checks for the
+canonical op, matching what `cljr--create-msg' actually sends."
   ;; Guard on the connection first: `cider-nrepl-op-supported-p' resolves the
   ;; REPL with the `ensure' flag and signals `No linked CIDER sessions' when
   ;; nothing is connected.  We want a plain nil there, so the offline fallbacks
   ;; that gate on this predicate (`cljr-slash', `cljr-clean-ns', ...) can kick in.
   (and (cider-connected-p)
-       (cider-nrepl-op-supported-p op)))
+       (cider-nrepl-op-supported-p (cljr--middleware-op op))))
 
 (defun cljr--assert-middleware ()
   (unless (featurep 'cider)
@@ -2229,7 +2245,6 @@ Results are cached per alias and language context (see
              (thread-first "cljr-suggest-libspecs"
                            cljr--ensure-op-supported
                            (cljr--create-msg "lib-prefix" alias-ref
-                                             "language-context" buffer-context
                                              "buffer-language-context" buffer-context
                                              "input-language-context" (or point-context buffer-context)
                                              "preferred-aliases" (let ((print-length nil) ;; prevent large lists from being serialized with `...`, which would cause issues
@@ -3030,7 +3045,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
                             "name" symbol
                             "ignore-paths" cljr-middleware-ignored-paths
                             "ignore-errors"
-                            (when cljr-ignore-analyzer-errors "true"))))
+                            (if cljr-ignore-analyzer-errors "true" "false"))))
     (with-current-buffer (cider-current-repl)
       (setq cljr--occurrence-count 0)
       (setq cljr--num-syms -1)
@@ -3874,7 +3889,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
              (ns (or (nrepl-dict-get var-info "ns") (cider-current-ns)))
              (symbol-name (or (nrepl-dict-get var-info "name") symbol))
              (extract-definition-request (list
-                                          "op" "extract-definition"
+                                          "op" (cljr--middleware-op "extract-definition")
                                           "ns" ns
                                           "dir" dir
                                           "file" filename
@@ -3882,7 +3897,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
                                           "column" column
                                           "name" symbol-name
                                           "ignore-errors"
-                                          (when cljr-ignore-analyzer-errors "true")))
+                                          (if cljr-ignore-analyzer-errors "true" "false")))
              (response (parseedn-read-str (cljr--call-middleware-sync
                                            extract-definition-request "definition")))
              (definition (gethash :definition response))
@@ -3914,7 +3929,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
 ;; We used to derive the version out of `(cljr--version)`,
 ;; but now prefer a fixed version to fully decouple things and prevent unforeseen behavior.
 ;; This suits better our current pace of development.
-(defcustom cljr-injected-middleware-version "3.11.0"
+(defcustom cljr-injected-middleware-version "3.14.0"
   "The refactor-nrepl version to be injected.
 
 You can customize this in order to try out new releases.
