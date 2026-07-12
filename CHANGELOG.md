@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The asynchronous refactorings (`cljr-rename-symbol`, `cljr-change-function-signature`, `cljr-rename-file-or-dir`) now show a mode-line spinner while the middleware is working, so it's clear the operation is still running. Uses CIDER's spinner, so it honors `cider-show-spinner` and friends.
+
 - `cljr-rename-symbol` and `cljr-change-function-signature` now find their occurrences asynchronously. Locating every occurrence analyses the whole project, which on a cold cache or a large project could freeze Emacs for a long time; now the command returns immediately and the rename (or the change-signature edit buffer) happens once the search finishes, so Emacs stays responsive meanwhile. As a side effect they now also honor `cljr-middleware-ignored-paths`.
 
 - `cljr-rename-file-or-dir` now runs asynchronously. Renaming a file rewrites references to it across the whole project, which can take a while; instead of freezing Emacs on a synchronous round-trip, the command returns immediately and finishes (renaming the file, revisiting affected buffers) once the middleware responds.
