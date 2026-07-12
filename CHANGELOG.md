@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Preview project-wide refactorings before they touch disk. `cljr-rename-symbol` and `cljr-change-function-signature` now gather all their edits first and show them as a diff, and nothing is written until you confirm. Controlled by the new `cljr-preview-refactorings` (default on); set it to nil for the old apply-immediately behavior.
+- New `cljr-undo-last-refactoring` reverts every file changed by the last applied rename or change-signature in one step (bound to `ur`, and in `clj-refactor-menu`).
+
 - `cljr-change-function-signature` can now add and remove parameters, not just reorder and rename them. In the edit buffer, `a` adds a parameter (you're prompted for its name and a placeholder to insert at call sites) and `k`/`d` marks one for removal. Added parameters get their placeholder inserted at every call site; removals are never auto-deleted (an argument might have side effects) - the affected call sites are routed to the manual-intervention buffer for review.
 - `cljr-change-function-signature` now handles multi-arity functions. It asks which arity to change, then updates only that arity's definition and the call sites whose argument count matches (call sites of other arities are left alone). Run it once per arity to change several.
 - Fix `cljr-change-function-signature` erroring with "Can't do work on functions of multiple arities" on ordinary single-arity functions. It parsed the middleware's `arglists-str` assuming an outer-paren format that current CIDER no longer sends, which had broken even the existing reorder/rename against a live REPL.

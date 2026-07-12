@@ -872,3 +872,71 @@ str/"))))
              (cljr--test-add 2 "z")))
       (expect (buffer-string) :to-equal
               "(defn multi\n  ([x] x)\n  ([x y z] (+ x y)))"))))
+
+(describe "cljr--run-previewable-refactoring"
+  (let (tmpfile)
+    (defun cljr--test-file-contents (f)
+      (with-temp-buffer (insert-file-contents f) (buffer-string)))
+    (defun cljr--test-rename-thunk (f)
+      "A previewable edit: replace foo with bar in F."
+      (lambda ()
+        (with-current-buffer (cljr--find-file-noselect f)
+          (goto-char (point-min))
+          (while (search-forward "foo" nil t) (replace-match "bar"))
+          (cljr--save-buffer))))
+    (before-each
+      (setq tmpfile (make-temp-file "cljr-preview" nil ".clj" "(def foo 1)\n(foo)\n"))
+      (setq cljr--last-refactoring nil))
+    (after-each
+      (when (get-file-buffer tmpfile)
+        (with-current-buffer (get-file-buffer tmpfile)
+          (set-buffer-modified-p nil)
+          (kill-buffer)))
+      (ignore-errors (delete-file tmpfile)))
+
+    (it "applies the edits to disk when confirmed"
+      (spy-on 'y-or-n-p :and-return-value t)
+      (let ((cljr-preview-refactorings t))
+        (expect (cljr--run-previewable-refactoring "test" (cljr--test-rename-thunk tmpfile))
+                :to-be-truthy))
+      (expect (cljr--test-file-contents tmpfile) :to-equal "(def bar 1)\n(bar)\n"))
+
+    (it "leaves the file untouched when declined"
+      (spy-on 'y-or-n-p :and-return-value nil)
+      (let ((cljr-preview-refactorings t))
+        (expect (cljr--run-previewable-refactoring "test" (cljr--test-rename-thunk tmpfile))
+                :to-be nil))
+      (expect (cljr--test-file-contents tmpfile) :to-equal "(def foo 1)\n(foo)\n"))
+
+    (it "applies directly (no prompt) when preview is disabled"
+      (spy-on 'y-or-n-p)
+      (let ((cljr-preview-refactorings nil))
+        (cljr--run-previewable-refactoring "test" (cljr--test-rename-thunk tmpfile)))
+      (expect 'y-or-n-p :not :to-have-been-called)
+      (expect (cljr--test-file-contents tmpfile) :to-equal "(def bar 1)\n(bar)\n"))
+
+    (it "records an applied refactoring so it can be undone"
+      (spy-on 'y-or-n-p :and-return-value t)
+      (spy-on 'yes-or-no-p :and-return-value t)
+      (let ((cljr-preview-refactorings t))
+        (cljr--run-previewable-refactoring "test" (cljr--test-rename-thunk tmpfile)))
+      (expect (cljr--test-file-contents tmpfile) :to-equal "(def bar 1)\n(bar)\n")
+      (cljr-undo-last-refactoring)
+      (expect (cljr--test-file-contents tmpfile) :to-equal "(def foo 1)\n(foo)\n"))
+
+    (it "preserves a target buffer's unrelated unsaved edits on abort"
+      ;; The buffer is dirty for reasons unrelated to the refactoring; declining
+      ;; must restore that content AND leave it marked modified (not silently
+      ;; mark it saved, which would lose the edits) and must not touch disk.
+      (spy-on 'y-or-n-p :and-return-value nil)
+      (let ((cljr-preview-refactorings t)
+            (buf (find-file-noselect tmpfile)))
+        (with-current-buffer buf
+          (goto-char (point-max))
+          (insert ";; unsaved work\n")
+          (expect (buffer-modified-p) :to-be-truthy))
+        (cljr--run-previewable-refactoring "test" (cljr--test-rename-thunk tmpfile))
+        (with-current-buffer buf
+          (expect (buffer-string) :to-equal "(def foo 1)\n(foo)\n;; unsaved work\n")
+          (expect (buffer-modified-p) :to-be-truthy))
+        (expect (cljr--test-file-contents tmpfile) :to-equal "(def foo 1)\n(foo)\n")))))
