@@ -248,3 +248,20 @@ Feature: Change function signature
 
     (defn wrapper [x] (tt 2 x 3))
     """
+
+  Scenario: Only call-sites with a matching arity are changed
+    When I insert:
+    """
+    (ns core)
+
+    (defn caller []
+      [(tt 1) (tt 1 2 3)])
+    """
+    And I call the cljr--change-function-signature function directly with mockdata to swap foo and bar across mixed-arity call-sites
+    Then I should see:
+    """
+    (ns core)
+
+    (defn caller []
+      [(tt 1) (tt 2 1 3)])
+    """

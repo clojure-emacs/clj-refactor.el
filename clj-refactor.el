@@ -4085,19 +4085,22 @@ own element, matching how the rest of the machinery treats it."
                             (unless (string= inner "")
                               (split-string inner " " t)))))))
 
-(defun cljr--get-function-params (fn)
-  "Retrieve the parameters for FN.
-
-Only single-arity functions are supported; multi-arity functions signal
-an error."
+(defun cljr--get-function-arities (fn)
+  "Retrieve FN's parameter lists, one per arity."
   (let* ((info (cljr--var-info fn))
          (arglists-str (nrepl-dict-get info "arglists-str")))
     (unless arglists-str
       (error "Couldn't retrieve the parameter list for %s" fn))
-    (let ((arities (cljr--parse-arglists arglists-str)))
-      (when (> (length arities) 1)
-        (error "Can't do work on functions of multiple arities"))
-      (car arities))))
+    (cljr--parse-arglists arglists-str)))
+
+(defun cljr--choose-arity (arities)
+  "Return the parameter list to edit from ARITIES.
+Prompts when the function has more than one arity."
+  (if (= (length arities) 1)
+      (car arities)
+    (let* ((labels (seq-map (lambda (a) (format "[%s]" (string-join a " "))) arities))
+           (choice (completing-read "Change which arity? " labels nil t)))
+      (nth (seq-position labels choice) arities))))
 
 (defvar cljr--change-signature-mode-map
   (let ((keymap (make-sparse-keymap)))
@@ -4429,25 +4432,65 @@ parameters (by name), and drops removed ones."
                                   params)
       (cljr--maybe-wrap-form))))
 
-(defun cljr--goto-lambda-list ()
-  "Move into the lambda list of the function definition beginning at point.
+(defun cljr--count-lambda-list-params ()
+  "Return the number of parameters in the lambda list at point.
 
-E.g. move point from here:  |(defn foo [bar baz] ...)
+Point must be at the opening bracket.  Schema type annotations (`:- T')
+are skipped, and a `&' rest marker counts as a parameter, so the count
+lines up with `cljr--parse-arglists'."
+  (save-excursion
+    (let ((end (cljr--point-after 'paredit-forward))
+          (count 0))
+      (paredit-forward-down)
+      (cljr--skip-past-whitespace-and-comments)
+      (while (< (point) (1- end))
+        (cljr--forward-parameter)
+        (setq count (1+ count)))
+      count)))
+
+(defun cljr--goto-arity-lambda-list (arg-count)
+  "Move into the lambda list of the arity that has ARG-COUNT parameters.
+
+Point is assumed to be just prior to the function definition.  Handles
+both single-arity defns (a bare lambda list) and multi-arity defns (each
+arity wrapped in a list).  Signals an error if no matching arity exists.
+
+E.g. with ARG-COUNT 2, move point from here:  |(defn foo [bar baz] ...)
 to here:  (defn foo [|bar baz] ...)"
   (paredit-forward-down)
-  (cljr--skip-past-whitespace-and-comments)
-  (while (not (looking-at-p "\\["))
-    (paredit-forward)
-    (cljr--skip-past-whitespace-and-comments))
-  (paredit-forward-down))
+  (let ((defn-end (save-excursion (paredit-forward-up) (1- (point))))
+        (target nil))
+    (cljr--skip-past-whitespace-and-comments)
+    (while (and (not target) (< (point) defn-end))
+      (cond
+       ;; single-arity: a bare lambda list
+       ((looking-at-p "\\[")
+        (when (= (cljr--count-lambda-list-params) arg-count)
+          (setq target (point))))
+       ;; multi-arity: a clause like ([params] body ...)
+       ((looking-at-p "(")
+        (setq target (save-excursion
+                       (paredit-forward-down)
+                       (cljr--skip-past-whitespace-and-comments)
+                       (when (and (looking-at-p "\\[")
+                                  (= (cljr--count-lambda-list-params) arg-count))
+                         (point))))))
+      (unless target
+        (paredit-forward)
+        (cljr--skip-past-whitespace-and-comments)))
+    (unless target
+      (error "Couldn't find an arity with %d parameter(s)" arg-count))
+    (goto-char target)
+    (paredit-forward-down)))
 
 (defun cljr--update-function-signature (signature-changes)
   "Point is assumed to be just prior to the function definition we're about to update."
-  (cljr--goto-lambda-list)
-  (cljr--update-signature-names signature-changes)
-  (cljr--goto-toplevel)
-  (cljr--goto-lambda-list)
-  (cljr--update-signature-order signature-changes))
+  (let ((arg-count (cljr--old-arity signature-changes)))
+    (cljr--goto-arity-lambda-list arg-count)
+    (cljr--update-signature-names signature-changes)
+    (cljr--goto-toplevel)
+    (cljr--goto-arity-lambda-list arg-count)
+    (cljr--update-signature-order signature-changes)))
 
 (defun cljr--call-site-p (fn)
   "Is point at a call-site for FN?"
@@ -4456,6 +4499,25 @@ to here:  (defn foo [|bar baz] ...)"
       (paredit-backward-up)
       (paredit-forward-down)
       (string-suffix-p (cljr--symbol-suffix fn) (cider-symbol-at-point)))))
+
+(defun cljr--call-site-arg-count ()
+  "Return the number of arguments at the call site.
+Point is assumed to be at the function name being called.
+
+Counts sexps, so `#_'-ignored forms and `#?'-reader conditionals in the
+argument list are miscounted; such a call may not match its arity and be
+left unchanged."
+  (save-excursion
+    (paredit-backward-up)
+    (let ((end (cljr--point-after 'paredit-forward))
+          ;; start at -1 so the function name itself isn't counted
+          (count -1))
+      (paredit-forward-down)
+      (cljr--skip-past-whitespace-and-comments)
+      (while (< (point) (1- end))
+        (cljr--forward-parameter)
+        (setq count (1+ count)))
+      count)))
 
 (defun cljr--no-changes-to-parameter-order-p (signature-changes)
   (seq-every-p (lambda (e) (= (gethash :new-index e) (gethash :old-index e)))
@@ -4593,16 +4655,24 @@ Point is assumed to be at the function being called."
             (move-to-column (1- col-beg))
             (cond
              ((cljr--ignorable-occurrence-p) :do-nothing)
-             ;; Direct call site.  Removing a parameter is destructive - an
-             ;; argument might have side effects or be needed elsewhere - so
-             ;; never auto-delete it; route the call site to manual review.
-             ;; Likewise for variadic functions, whose call sites can't be
-             ;; rewritten positionally (the arg count varies).
+             ;; Direct call site.
              ((cljr--call-site-p name)
-              (if (or (cljr--signature-has-remove-p signature-changes)
-                      (cljr--signature-variadic-p signature-changes))
-                  (cljr--append-to-manual-intervention-buffer)
-                (cljr--update-call-site signature-changes)))
+              (cond
+               ;; Variadic functions can't be rewritten positionally (their
+               ;; call-site arg count varies), so leave them for review.
+               ((cljr--signature-variadic-p signature-changes)
+                (cljr--append-to-manual-intervention-buffer))
+               ;; A call to a different arity than the one being changed - the
+               ;; arg count doesn't match - is correct as is, so leave it.
+               ((/= (cljr--call-site-arg-count)
+                    (cljr--old-arity signature-changes))
+                :do-nothing)
+               ;; Removing a parameter is destructive - an argument might have
+               ;; side effects or be needed elsewhere - so never auto-delete
+               ;; it; route the call site to manual review.
+               ((cljr--signature-has-remove-p signature-changes)
+                (cljr--append-to-manual-intervention-buffer))
+               (t (cljr--update-call-site signature-changes))))
              ;; `apply'/`partial' sites can only be handled for pure reorders;
              ;; an added or removed arg would land in the wrong spot, so bail.
              ((cljr--partial-call-site-p)
@@ -4661,12 +4731,16 @@ Point is assumed to be at the function being called."
 (defun cljr-change-function-signature ()
   "Change the function signature of the function at point.
 
+For a multi-arity function you're asked which arity to change; only that
+arity's definition and the call sites with a matching number of
+arguments are updated.
+
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-signature"
   (interactive)
   (cljr--ensure-op-supported "find-symbol")
   (when (cljr--asts-y-or-n-p)
     (let* ((fn (cider-symbol-at-point))
-           (params (cljr--get-function-params fn))
+           (params (cljr--choose-arity (cljr--get-function-arities fn)))
            (var-info (cljr--var-info fn))
            (ns (nrepl-dict-get var-info "ns")))
       (setq cljr--occurrences (cljr--find-symbol-sync fn ns))
