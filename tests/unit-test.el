@@ -1016,4 +1016,12 @@ str/"))))
     (let (result done)
       (cljr--find-symbol-occurrences "x" "ns" (lambda (occs) (setq result occs done t)))
       (with-timeout (2) (while (not done) (sit-for 0.02)))
-      (expect (length result) :to-equal 1))))
+      (expect (length result) :to-equal 1)))
+  (it "starts a spinner and stops it when the search completes"
+    (spy-on 'cider-spinner-start)
+    (spy-on 'cljr--stop-spinner)
+    (spy-on 'cljr--find-symbol :and-call-fake
+            (lambda (_symbol _ns cb) (funcall cb (nrepl-dict "count" 0))))
+    (cljr--find-symbol-occurrences "x" "ns" #'ignore)
+    (expect 'cider-spinner-start :to-have-been-called)
+    (expect 'cljr--stop-spinner :to-have-been-called)))

@@ -10,7 +10,7 @@
 ;; Version: 3.12.0
 ;; Keywords: convenience, clojure, cider
 
-;; Package-Requires: ((emacs "28.1") (yasnippet "0.6.1") (paredit "24") (clojure-mode "5.18.0") (cider "1.11.1") (parseedn "1.2.0") (transient "0.4.1"))
+;; Package-Requires: ((emacs "28.1") (yasnippet "0.6.1") (paredit "24") (clojure-mode "5.18.0") (cider "1.11.1") (parseedn "1.2.0") (transient "0.4.1") (spinner "1.7"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -39,6 +39,7 @@
 (require 'cider)
 (require 'parseedn)
 (require 'transient)
+(require 'spinner)
 (require 'subword)
 
 (defgroup cljr nil
@@ -2620,6 +2621,13 @@ command waiting forever, not a deadline: it is deliberately generous (10
 minutes) so it never cuts off a legitimately slow project-wide analysis
 on a large project or a cold cache.")
 
+(defun cljr--stop-spinner (buffer)
+  "Stop any mode-line spinner running in BUFFER."
+  (when (buffer-live-p buffer)
+    (with-current-buffer buffer
+      (when (bound-and-true-p spinner-current)
+        (spinner-stop)))))
+
 (defun cljr--call-middleware-async-collect (request key callback)
   "Send REQUEST to the middleware asynchronously and keep Emacs responsive.
 
@@ -2628,15 +2636,19 @@ response is checked for a middleware error and then CALLBACK is called with
 the value of KEY (or the whole response when KEY is nil).  A middleware
 error is reported to the user rather than signaled out of the nREPL filter,
 and the request is abandoned with a message if it doesn't finish within
-`cljr--async-request-timeout'.  This is the non-blocking counterpart to
+`cljr--async-request-timeout'.  A mode-line spinner runs in the calling
+buffer meanwhile.  This is the non-blocking counterpart to
 `cljr--call-middleware-sync' for commands that just act on a single result."
   (let ((accumulator (nrepl-dict))
         (settled nil)
+        (spinner-buffer (current-buffer))
         timer)
+    (cider-spinner-start spinner-buffer)
     (setq timer (run-at-time cljr--async-request-timeout nil
                              (lambda ()
                                (unless settled
                                  (setq settled t)
+                                 (cljr--stop-spinner spinner-buffer)
                                  (message "clj-refactor: middleware request timed out")))))
     (cljr--call-middleware-async
      request
@@ -2646,6 +2658,7 @@ and the request is abandoned with a message if it doesn't finish within
                   (member "done" (nrepl-dict-get response "status")))
          (setq settled t)
          (when (timerp timer) (cancel-timer timer))
+         (cljr--stop-spinner spinner-buffer)
          (condition-case err
              (progn
                (cljr--maybe-rethrow-error accumulator)
@@ -3038,11 +3051,14 @@ search is abandoned with a message if `count' never arrives within
   (let ((occurrences '())
         (seen '())
         (settled nil)
+        (spinner-buffer (current-buffer))
         timer)
+    (cider-spinner-start spinner-buffer)
     (setq timer (run-at-time cljr--async-request-timeout nil
                              (lambda ()
                                (unless settled
                                  (setq settled t)
+                                 (cljr--stop-spinner spinner-buffer)
                                  (message "clj-refactor: finding occurrences timed out")))))
     (cljr--find-symbol
      symbol ns
@@ -3058,6 +3074,7 @@ search is abandoned with a message if `count' never arrives within
                    (let ((result (nreverse occurrences)))
                      (setq settled t)
                      (when (timerp timer) (cancel-timer timer))
+                     (cljr--stop-spinner spinner-buffer)
                      (run-at-time 0 nil (lambda () (funcall callback result))))
                  (when-let* ((data (nrepl-dict-get response "occurrence")))
                    (let* ((occurrence (parseedn-read-str data))
@@ -3071,6 +3088,7 @@ search is abandoned with a message if `count' never arrives within
            (error
             (setq settled t)
             (when (timerp timer) (cancel-timer timer))
+            (cljr--stop-spinner spinner-buffer)
             (message "clj-refactor: %s" (error-message-string err)))))))))
 
 (defun cljr--first-line (s)
