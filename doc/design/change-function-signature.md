@@ -1,8 +1,17 @@
 # Design: extending `cljr-change-function-signature`
 
-Status: **proposed** (not yet implemented). Captures the plan for making
-`cljr-change-function-signature` add and remove parameters, and handle
-multi-arity functions.
+Status: **P1 implemented** (single-arity add/remove). P2 (multi-arity) still
+proposed. Captures the plan for making `cljr-change-function-signature` add and
+remove parameters, and handle multi-arity functions.
+
+P1 shipped with the tagged `signature-changes` model (`:keep`/`:add`/`:remove`),
+the edit-buffer keys `a` (add) and `k`/`d` (mark for removal), placeholder
+insertion at call sites for adds, and manual-intervention routing for removals.
+It was validated live against a real refactor-nrepl connection (add/remove/reorder
+across multiple files), which also surfaced and fixed a pre-existing bug: the
+`arglists-str` parsing in `cljr--get-function-params` assumed an outer-paren
+format that modern CIDER no longer sends, so the command was broken even for the
+single-arity reorder/rename it already claimed to support.
 
 ## Current state
 

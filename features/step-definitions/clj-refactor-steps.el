@@ -313,6 +313,21 @@
       (puthash :new-name old-name h))
     h))
 
+(defun cljr--make-signature-add (new-index new-name default)
+  (let ((h (make-hash-table)))
+    (puthash :op :add h)
+    (puthash :new-index new-index h)
+    (puthash :new-name new-name h)
+    (puthash :default default h)
+    h))
+
+(defun cljr--make-signature-remove (old-index old-name)
+  (let ((h (make-hash-table)))
+    (puthash :op :remove h)
+    (puthash :old-index old-index h)
+    (puthash :old-name old-name h)
+    h))
+
 (setq cljr--test-occurrences
       '((:line-beg 4
                    :line-end 4
@@ -357,7 +372,14 @@
                                   (cljr--make-signature-change 2 1 "baz"))
       cljr--baz-renamed-to-qux (list (cljr--make-signature-change 0 0 "foo")
                                      (cljr--make-signature-change 1 1 "bar")
-                                     (cljr--make-signature-change 2 2 "baz" "qux")))
+                                     (cljr--make-signature-change 2 2 "baz" "qux"))
+      cljr--add-qux-at-end (list (cljr--make-signature-change 0 0 "foo")
+                                 (cljr--make-signature-change 1 1 "bar")
+                                 (cljr--make-signature-change 2 2 "baz")
+                                 (cljr--make-signature-add 3 "qux" "nil"))
+      cljr--remove-baz (list (cljr--make-signature-change 0 0 "foo")
+                             (cljr--make-signature-change 1 1 "bar")
+                             (cljr--make-signature-remove 2 "baz")))
 
 (Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a regular call-site"
        (lambda ()
@@ -393,6 +415,40 @@
        (lambda ()
          (cljr--change-function-signature (list (cljr--plist-to-hash (cl-fifth cljr--test-occurrences)))
                                           cljr--foo-bar-swapped)))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to add qux in a regular call-site"
+       (lambda ()
+         (cljr--change-function-signature (list (cljr--plist-to-hash (cl-first cljr--test-occurrences)))
+                                          cljr--add-qux-at-end)))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to add qux in function definition"
+       (lambda ()
+         (cljr--change-function-signature (list (cljr--plist-to-hash (cl-second cljr--test-occurrences)))
+                                          cljr--add-qux-at-end)))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to remove baz in a regular call-site"
+       (lambda ()
+         (cljr--change-function-signature (list (cljr--plist-to-hash (cl-first cljr--test-occurrences)))
+                                          cljr--remove-baz)))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to remove baz in function definition"
+       (lambda ()
+         (cljr--change-function-signature (list (cljr--plist-to-hash (cl-second cljr--test-occurrences)))
+                                          cljr--remove-baz)))
+
+(Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a call-site on a defn line"
+       (lambda ()
+         ;; A call that happens to sit on a `(defn ...)' line must be treated
+         ;; as a call site, not as the definition.
+         (cljr--change-function-signature
+          (list (cljr--plist-to-hash '(:line-beg 3
+                                       :line-end 3
+                                       :col-beg 20
+                                       :col-end 22
+                                       :name "core/tt"
+                                       :file "core.clj"
+                                       :match "(defn wrapper [x] (tt x 2 3))")))
+          cljr--foo-bar-swapped)))
 
 (Given "I call the cljr--change-function-signature function directly with mockdata to rename baz to qux"
        (lambda ()
