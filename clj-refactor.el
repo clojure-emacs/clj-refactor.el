@@ -3679,7 +3679,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
         (cljr--indent-defun))
       (when (looking-at-p "\s*\n")
         (cljr--just-one-blank-line))
-      (save-buffer))))
+      (cljr--save-buffer))))
 
 (defun cljr--sort-occurrences (occurrences)
   "Sort the OCCURRENCES so the last ones in the file comes first."
@@ -3718,29 +3718,31 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
     (insert def)))
 
 (defun cljr--inline-symbol (definition occurrences)
-  (cljr--with-opened-buffers
-    (let* ((def (gethash :definition definition))
-           (inline-fn-p (string-prefix-p "(fn" def)))
-      (dolist (symbol-meta (cljr--sort-occurrences occurrences))
-        (let* ((file (cljr--get-valid-filename symbol-meta))
-               (line-beg (gethash :line-beg symbol-meta))
-               (col-beg (gethash :col-beg symbol-meta)))
-          (with-current-buffer (cljr--find-file-noselect file)
-            (goto-char (point-min))
-            (forward-line (1- line-beg))
-            (forward-char (1- col-beg))
-            (let* ((call-site-p (and inline-fn-p
-                                     (looking-back "(\s*" (line-beginning-position))))
-                   (sexp (if call-site-p
-                             (prog1 (cljr--extract-sexp-as-list)
-                               (paredit-backward-up)
-                               (clojure-delete-and-extract-sexp))
-                           (clojure-delete-and-extract-sexp))))
-              (if call-site-p
-                  (cljr--inline-fn-at-call-site def sexp)
-                (insert def)))))))
-    (save-buffer)
-    (cljr--delete-definition definition)))
+  (cljr--run-previewable-refactoring
+   "Inline symbol"
+   (lambda ()
+     (let* ((def (gethash :definition definition))
+            (inline-fn-p (string-prefix-p "(fn" def)))
+       (dolist (symbol-meta (cljr--sort-occurrences occurrences))
+         (let* ((file (cljr--get-valid-filename symbol-meta))
+                (line-beg (gethash :line-beg symbol-meta))
+                (col-beg (gethash :col-beg symbol-meta)))
+           (with-current-buffer (cljr--find-file-noselect file)
+             (goto-char (point-min))
+             (forward-line (1- line-beg))
+             (forward-char (1- col-beg))
+             (let* ((call-site-p (and inline-fn-p
+                                      (looking-back "(\s*" (line-beginning-position))))
+                    (sexp (if call-site-p
+                              (prog1 (cljr--extract-sexp-as-list)
+                                (paredit-backward-up)
+                                (clojure-delete-and-extract-sexp))
+                            (clojure-delete-and-extract-sexp))))
+               (if call-site-p
+                   (cljr--inline-fn-at-call-site def sexp)
+                 (insert def))))))
+       (cljr--save-buffer)
+       (cljr--delete-definition definition)))))
 
 (defun cljr--var-info (&optional symbol all)
   "Like `cider-var-info' but also handles locally bound vars.
@@ -3794,8 +3796,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
                                            extract-definition-request "definition")))
              (definition (gethash :definition response))
              (occurrences (gethash :occurrences response)))
-        (cljr--inline-symbol definition occurrences)
-        (unless *cljr--noninteractive* ; don't spam when called from `cljr-remove-let'
+        (when (and (cljr--inline-symbol definition occurrences)
+                   (not *cljr--noninteractive*))
           (if occurrences
               (cljr--post-command-message "Inlined %s occurrence(s) of '%s'" (length occurrences) symbol)
             (cljr--post-command-message "No occurrences of '%s' found.  Deleted the definition." symbol)))))

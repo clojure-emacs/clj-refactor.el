@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Preview project-wide refactorings before they touch disk. `cljr-rename-symbol` and `cljr-change-function-signature` now gather all their edits first and show them as a diff, and nothing is written until you confirm. Controlled by the new `cljr-preview-refactorings` (default on); set it to nil for the old apply-immediately behavior.
+- Preview project-wide refactorings before they touch disk. `cljr-rename-symbol`, `cljr-change-function-signature` and `cljr-inline-symbol` now gather all their edits first and show them as a diff, and nothing is written until you confirm. Controlled by the new `cljr-preview-refactorings` (default on); set it to nil for the old apply-immediately behavior.
 - New `cljr-undo-last-refactoring` reverts every file changed by the last applied rename or change-signature in one step (bound to `ur`, and in `clj-refactor-menu`).
 
 - `cljr-change-function-signature` can now add and remove parameters, not just reorder and rename them. In the edit buffer, `a` adds a parameter (you're prompted for its name and a placeholder to insert at call sites) and `k`/`d` marks one for removal. Added parameters get their placeholder inserted at every call site; removals are never auto-deleted (an argument might have side effects) - the affected call sites are routed to the manual-intervention buffer for review.
