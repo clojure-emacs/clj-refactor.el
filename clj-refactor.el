@@ -2613,11 +2613,12 @@ If it's present KEY indicates the key to extract from the response."
 (defun cljr--call-middleware-async (request &optional callback)
   (cider-nrepl-send-request request callback))
 
-(defconst cljr--async-request-timeout 120
+(defconst cljr--async-request-timeout 600
   "Seconds to wait for an async middleware request before giving up.
 A safety net so a hung request or dropped connection doesn't leave a
-command waiting forever; generous enough not to cut off a legitimately
-slow project-wide analysis.")
+command waiting forever, not a deadline: it is deliberately generous (10
+minutes) so it never cuts off a legitimately slow project-wide analysis
+on a large project or a cold cache.")
 
 (defun cljr--call-middleware-async-collect (request key callback)
   "Send REQUEST to the middleware asynchronously and keep Emacs responsive.
@@ -3001,34 +3002,6 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
     (goto-char (point-max))
     (insert occurrence)))
 
-(defun cljr--end-of-buffer-p ()
-  "True if point is at end of buffer."
-  (= (point) (cljr--point-after 'end-of-buffer)))
-
-(defun cljr--find-symbol-sync (symbol ns)
-  (let* ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name)))
-         (line (line-number-at-pos))
-         (column (1+ (current-column)))
-         (dir (funcall cider-to-nrepl-filename-function (cljr--project-dir)))
-         (request (cljr--create-msg "find-symbol"
-                                    "ns" ns
-                                    "dir" dir
-                                    "file" filename
-                                    "line" line
-                                    "column" column
-                                    "name" symbol
-                                    "ignore-errors"
-                                    (when cljr-ignore-analyzer-errors "true")))
-         occurrences)
-    (with-temp-buffer
-      (insert (cljr--call-middleware-sync request "occurrence"))
-      (unless (cljr--empty-buffer-p)
-        (goto-char (point-min))
-        (while (not (cljr--end-of-buffer-p))
-          (dolist (edn (parseedn-read))
-            (push edn occurrences)))))
-    occurrences))
-
 (defun cljr--find-symbol (symbol ns callback)
   (let* ((filename (funcall cider-to-nrepl-filename-function (buffer-file-name)))
          (line (line-number-at-pos))
@@ -3050,6 +3023,55 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
       (setq cljr--num-syms -1)
       (setq cljr--occurrence-ids '()))
     (cljr--call-middleware-async find-symbol-request callback)))
+
+(defun cljr--find-symbol-occurrences (symbol ns callback)
+  "Asynchronously find occurrences of SYMBOL in NS, keeping Emacs responsive.
+
+The middleware streams one occurrence per message and a final `count'.
+Collect the occurrences (dropping any duplicate location) and, once the
+search finishes, call CALLBACK with the full list.  CALLBACK is run in the
+command loop rather than the nREPL process filter, so it may prompt or pop
+up buffers safely.  A middleware error is reported to the user, and the
+search is abandoned with a message if `count' never arrives within
+`cljr--async-request-timeout'.  This is the collecting counterpart to
+`cljr--find-symbol', which streams occurrences to a per-message callback."
+  (let ((occurrences '())
+        (seen '())
+        (settled nil)
+        timer)
+    (setq timer (run-at-time cljr--async-request-timeout nil
+                             (lambda ()
+                               (unless settled
+                                 (setq settled t)
+                                 (message "clj-refactor: finding occurrences timed out")))))
+    (cljr--find-symbol
+     symbol ns
+     (lambda (response)
+       (unless settled
+         (condition-case err
+             (progn
+               (cljr--maybe-rethrow-error response)
+               ;; `count' is the middleware's terminal message; fall back to the
+               ;; nREPL `done' status in case it ever finishes without one.
+               (if (or (nrepl-dict-get response "count")
+                       (member "done" (nrepl-dict-get response "status")))
+                   (let ((result (nreverse occurrences)))
+                     (setq settled t)
+                     (when (timerp timer) (cancel-timer timer))
+                     (run-at-time 0 nil (lambda () (funcall callback result))))
+                 (when-let* ((data (nrepl-dict-get response "occurrence")))
+                   (let* ((occurrence (parseedn-read-str data))
+                          (id (format "%s:%s:%s"
+                                      (cljr--get-valid-filename occurrence)
+                                      (gethash :line-beg occurrence)
+                                      (gethash :col-beg occurrence))))
+                     (unless (member id seen)
+                       (push id seen)
+                       (push occurrence occurrences))))))
+           (error
+            (setq settled t)
+            (when (timerp timer) (cancel-timer timer))
+            (message "clj-refactor: %s" (error-message-string err)))))))))
 
 (defun cljr--first-line (s)
   (thread-first s (split-string "\\(\r\n\\|[\n\r]\\)") car string-trim))
@@ -3200,14 +3222,19 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
            (symbol-name (nrepl-dict-get var-info "name"))
            (ns (nrepl-dict-get var-info "ns"))
            (name (or symbol-name symbol))
-           (_ (unless *cljr--noninteractive* (message "Fetching symbol occurrences...")))
-           (occurrences (cljr--find-symbol-sync name ns))
            (new-name (or new-name (read-from-minibuffer "New name: "
                                                         (cljr--symbol-suffix symbol)))))
-      (when (cljr--rename-occurrences occurrences new-name)
-        (cljr--post-command-message "Renamed %s occurrences of %s" (length occurrences) name)
-        (when (and (> (length occurrences) 0) (not cljr-warn-on-eval))
-          (cljr--warm-ast-cache))))))
+      ;; Finding every occurrence analyses the whole project, which can be
+      ;; slow, so do it asynchronously and rename in the callback rather than
+      ;; freezing Emacs on a synchronous round-trip.
+      (unless *cljr--noninteractive* (message "Finding occurrences of %s..." name))
+      (cljr--find-symbol-occurrences
+       name ns
+       (lambda (occurrences)
+         (when (cljr--rename-occurrences occurrences new-name)
+           (cljr--post-command-message "Renamed %s occurrences of %s" (length occurrences) name)
+           (when (and (> (length occurrences) 0) (not cljr-warn-on-eval))
+             (cljr--warm-ast-cache))))))))
 
 (defun cljr--replace-refer-all-with-alias (ns publics-occurrences alias)
   (let ((ns-last-token (car (last (split-string ns "\\.")))))
@@ -5005,11 +5032,18 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-change-function-
            (params (cljr--choose-arity (cljr--get-function-arities fn)))
            (var-info (cljr--var-info fn))
            (ns (nrepl-dict-get var-info "ns")))
-      (setq cljr--occurrences (cljr--find-symbol-sync fn ns))
-      (cljr--setup-change-signature-buffer cljr--change-signature-buffer params)
-      (when (get-buffer cljr--manual-intervention-buffer)
-        (kill-buffer cljr--manual-intervention-buffer))
-      (pop-to-buffer cljr--change-signature-buffer))))
+      ;; Finding every call site analyses the whole project, which can be
+      ;; slow, so do it asynchronously and open the edit buffer in the
+      ;; callback rather than freezing Emacs on a synchronous round-trip.
+      (unless *cljr--noninteractive* (message "Finding occurrences of %s..." fn))
+      (cljr--find-symbol-occurrences
+       fn ns
+       (lambda (occurrences)
+         (setq cljr--occurrences occurrences)
+         (when (get-buffer cljr--manual-intervention-buffer)
+           (kill-buffer cljr--manual-intervention-buffer))
+         (cljr--setup-change-signature-buffer cljr--change-signature-buffer params)
+         (pop-to-buffer cljr--change-signature-buffer))))))
 
 ;;;###autoload
 (defun cljr--inject-middleware-p (&rest _)

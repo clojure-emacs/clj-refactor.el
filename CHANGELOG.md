@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `cljr-rename-symbol` and `cljr-change-function-signature` now find their occurrences asynchronously. Locating every occurrence analyses the whole project, which on a cold cache or a large project could freeze Emacs for a long time; now the command returns immediately and the rename (or the change-signature edit buffer) happens once the search finishes, so Emacs stays responsive meanwhile. As a side effect they now also honor `cljr-middleware-ignored-paths`.
+
 - `cljr-rename-file-or-dir` now runs asynchronously. Renaming a file rewrites references to it across the whole project, which can take a while; instead of freezing Emacs on a synchronous round-trip, the command returns immediately and finishes (renaming the file, revisiting affected buffers) once the middleware responds.
 
 - Preview project-wide refactorings before they touch disk. `cljr-rename-symbol`, `cljr-change-function-signature` and `cljr-inline-symbol` now gather all their edits first and show them as a diff, and nothing is written until you confirm. Controlled by the new `cljr-preview-refactorings` (default on); set it to nil for the old apply-immediately behavior.
