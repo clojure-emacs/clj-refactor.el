@@ -940,3 +940,32 @@ str/"))))
           (expect (buffer-string) :to-equal "(def foo 1)\n(foo)\n;; unsaved work\n")
           (expect (buffer-modified-p) :to-be-truthy))
         (expect (cljr--test-file-contents tmpfile) :to-equal "(def foo 1)\n(foo)\n")))))
+
+(describe "cljr--call-middleware-async-collect"
+  (it "accumulates split response messages and delivers the value on done"
+    (spy-on 'cljr--call-middleware-async :and-call-fake
+            (lambda (_request cb)
+              (funcall cb (nrepl-dict "touched" '("a.clj" "b.clj")))
+              (funcall cb (nrepl-dict "status" '("done")))))
+    (let (result (calls 0))
+      (cljr--call-middleware-async-collect
+       (cljr--create-msg "rename-file-or-dir") "touched"
+       (lambda (v) (setq result v calls (1+ calls))))
+      (expect calls :to-equal 1)
+      (expect result :to-equal '("a.clj" "b.clj"))))
+  (it "fires once when value and done arrive together"
+    (spy-on 'cljr--call-middleware-async :and-call-fake
+            (lambda (_request cb)
+              (funcall cb (nrepl-dict "touched" '("a.clj") "status" '("done")))))
+    (let ((calls 0))
+      (cljr--call-middleware-async-collect
+       (cljr--create-msg "x") "touched" (lambda (_v) (setq calls (1+ calls))))
+      (expect calls :to-equal 1)))
+  (it "doesn't fire before the request is done"
+    (spy-on 'cljr--call-middleware-async :and-call-fake
+            (lambda (_request cb)
+              (funcall cb (nrepl-dict "touched" '("a.clj")))))
+    (let ((calls 0))
+      (cljr--call-middleware-async-collect
+       (cljr--create-msg "x") "touched" (lambda (_v) (setq calls (1+ calls))))
+      (expect calls :to-equal 0))))

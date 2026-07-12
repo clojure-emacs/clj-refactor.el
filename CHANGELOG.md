@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `cljr-rename-file-or-dir` now runs asynchronously. Renaming a file rewrites references to it across the whole project, which can take a while; instead of freezing Emacs on a synchronous round-trip, the command returns immediately and finishes (renaming the file, revisiting affected buffers) once the middleware responds.
+
 - Preview project-wide refactorings before they touch disk. `cljr-rename-symbol`, `cljr-change-function-signature` and `cljr-inline-symbol` now gather all their edits first and show them as a diff, and nothing is written until you confirm. Controlled by the new `cljr-preview-refactorings` (default on); set it to nil for the old apply-immediately behavior.
 - New `cljr-undo-last-refactoring` reverts every file changed by the last applied rename or change-signature in one step (bound to `ur`, and in `clj-refactor-menu`).
 

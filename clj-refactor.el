@@ -1193,24 +1193,30 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
            (nrepl-new-path (funcall cider-to-nrepl-filename-function new-path))
            (nrepl-old-path (funcall cider-to-nrepl-filename-function old-path)))
       (when (y-or-n-p (format "Really rename %s to %s?" old-path new-path))
-        (let* ((changed-files (cljr--call-middleware-sync
-                               (cljr--create-msg "rename-file-or-dir"
-                                                 "old-path" nrepl-old-path
-                                                 "new-path" nrepl-new-path
-                                                 "print-right-margin" cljr-print-right-margin
-                                                 "print-miser-width" cljr-print-miser-width)
-                               "touched"))
-               (changed-files-count (length changed-files)))
-          (cond
-           ((null changed-files) (cljr--post-command-message "Rename complete! No files affected."))
-           ((= changed-files-count 1) (cljr--post-command-message "Renamed %s to %s." old-path new-path))
-           (t (cljr--post-command-message "Rename complete! %s files affected." changed-files-count)))
-          (when (and (> changed-files-count 0) (not cljr-warn-on-eval))
-            (cljr--warm-ast-cache)))
-        (if affected-buffers
-            (cljr--revisit-buffers affected-buffers new-path active-buffer)
-          (kill-buffer active-buffer)
-          (find-file new-path))))))
+        ;; Renaming a file rewrites references to it across the whole project,
+        ;; which can take a while, so run it asynchronously and finish up in the
+        ;; callback rather than freezing Emacs on a synchronous round-trip.
+        (message "Renaming %s..." old-path)
+        (cljr--call-middleware-async-collect
+         (cljr--create-msg "rename-file-or-dir"
+                           "old-path" nrepl-old-path
+                           "new-path" nrepl-new-path
+                           "print-right-margin" cljr-print-right-margin
+                           "print-miser-width" cljr-print-miser-width)
+         "touched"
+         (lambda (changed-files)
+           (let ((changed-files-count (length changed-files)))
+             (cond
+              ((null changed-files) (message "Rename complete! No files affected."))
+              ((= changed-files-count 1) (message "Renamed %s to %s." old-path new-path))
+              (t (message "Rename complete! %s files affected." changed-files-count)))
+             (when (and (> changed-files-count 0) (not cljr-warn-on-eval))
+               (cljr--warm-ast-cache)))
+           (if affected-buffers
+               (cljr--revisit-buffers affected-buffers new-path active-buffer)
+             (when (buffer-live-p active-buffer)
+               (kill-buffer active-buffer))
+             (find-file new-path))))))))
 
 ;;;###autoload
 (defun cljr-rename-file (new-path)
@@ -2606,6 +2612,46 @@ If it's present KEY indicates the key to extract from the response."
 
 (defun cljr--call-middleware-async (request &optional callback)
   (cider-nrepl-send-request request callback))
+
+(defconst cljr--async-request-timeout 120
+  "Seconds to wait for an async middleware request before giving up.
+A safety net so a hung request or dropped connection doesn't leave a
+command waiting forever; generous enough not to cut off a legitimately
+slow project-wide analysis.")
+
+(defun cljr--call-middleware-async-collect (request key callback)
+  "Send REQUEST to the middleware asynchronously and keep Emacs responsive.
+
+The response messages are accumulated; once the request is done the merged
+response is checked for a middleware error and then CALLBACK is called with
+the value of KEY (or the whole response when KEY is nil).  A middleware
+error is reported to the user rather than signaled out of the nREPL filter,
+and the request is abandoned with a message if it doesn't finish within
+`cljr--async-request-timeout'.  This is the non-blocking counterpart to
+`cljr--call-middleware-sync' for commands that just act on a single result."
+  (let ((accumulator (nrepl-dict))
+        (settled nil)
+        timer)
+    (setq timer (run-at-time cljr--async-request-timeout nil
+                             (lambda ()
+                               (unless settled
+                                 (setq settled t)
+                                 (message "clj-refactor: middleware request timed out")))))
+    (cljr--call-middleware-async
+     request
+     (lambda (response)
+       (setq accumulator (nrepl-dict-merge accumulator response))
+       (when (and (not settled)
+                  (member "done" (nrepl-dict-get response "status")))
+         (setq settled t)
+         (when (timerp timer) (cancel-timer timer))
+         (condition-case err
+             (progn
+               (cljr--maybe-rethrow-error accumulator)
+               (funcall callback (if key
+                                     (nrepl-dict-get accumulator key)
+                                   accumulator)))
+           (error (message "clj-refactor: %s" (error-message-string err)))))))))
 
 (defcustom cljr-artifact-cache-ttl 300
   "Number of seconds to cache middleware lookups whose results change rarely.
