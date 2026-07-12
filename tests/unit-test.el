@@ -813,3 +813,62 @@ str/"))))
     (expect (cljr--signature-variadic-p
              (list (cljr--test-keep 0 0 "a") (cljr--test-keep 1 1 "b")))
             :to-be nil)))
+
+(describe "cljr--count-lambda-list-params"
+  (it "counts params in a lambda list"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "[a b c]")
+      (goto-char (point-min))
+      (expect (cljr--count-lambda-list-params) :to-equal 3)))
+  (it "counts the rest marker as a param"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "[a & more]")
+      (goto-char (point-min))
+      (expect (cljr--count-lambda-list-params) :to-equal 3)))
+  (it "skips schema type annotations"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "[a :- s/Str b :- s/Int]")
+      (goto-char (point-min))
+      (expect (cljr--count-lambda-list-params) :to-equal 2))))
+
+(describe "cljr--call-site-arg-count"
+  (it "counts arguments at a call site"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(foo 1 2 3)")
+      (goto-char (point-min))
+      (forward-char 1)
+      (expect (cljr--call-site-arg-count) :to-equal 3)))
+  (it "returns 0 for a no-arg call"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(foo)")
+      (goto-char (point-min))
+      (forward-char 1)
+      (expect (cljr--call-site-arg-count) :to-equal 0))))
+
+(describe "cljr--choose-arity"
+  (it "returns the sole arity without prompting"
+    (expect (cljr--choose-arity '(("a" "b"))) :to-equal '("a" "b")))
+  (it "prompts and returns the chosen arity when there are several"
+    (spy-on 'completing-read :and-return-value "[x y]")
+    (expect (cljr--choose-arity '(("x") ("x" "y"))) :to-equal '("x" "y"))))
+
+(describe "cljr--update-function-signature (multi-arity)"
+  (it "reorders only the chosen arity's lambda list"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(defn multi\n  ([x] (multi x 0))\n  ([x y] (+ x y)))")
+      (goto-char (point-min))
+      (cljr--update-function-signature
+       (list (cljr--test-keep 0 1 "x")
+             (cljr--test-keep 1 0 "y")))
+      (expect (buffer-string) :to-equal
+              "(defn multi\n  ([x] (multi x 0))\n  ([y x] (+ x y)))")))
+  (it "adds a parameter to the chosen arity only"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(defn multi\n  ([x] x)\n  ([x y] (+ x y)))")
+      (goto-char (point-min))
+      (cljr--update-function-signature
+       (list (cljr--test-keep 0 0 "x")
+             (cljr--test-keep 1 1 "y")
+             (cljr--test-add 2 "z")))
+      (expect (buffer-string) :to-equal
+              "(defn multi\n  ([x] x)\n  ([x y z] (+ x y)))"))))

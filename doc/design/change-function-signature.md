@@ -1,8 +1,18 @@
 # Design: extending `cljr-change-function-signature`
 
-Status: **P1 implemented** (single-arity add/remove). P2 (multi-arity) still
-proposed. Captures the plan for making `cljr-change-function-signature` add and
-remove parameters, and handle multi-arity functions.
+Status: **P1 and P2 implemented.** `cljr-change-function-signature` now adds and
+removes parameters and handles multi-arity functions. Captures the original plan.
+
+P2 (multi-arity) took the "one selected arity per run" route from the open
+questions below: for a multi-arity function the command prompts for which arity
+to change, then only that arity's definition lambda list and the call sites whose
+argument count matches are updated (via `cljr--goto-arity-lambda-list` and
+call-site arg-count matching in the classifier). Call sites of other arities are
+left untouched; variadic and `apply`/`partial` sites still route to manual. To
+change several arities, run the command once per arity. Validated live against a
+real refactor-nrepl connection (reorder of a chosen arity: the matching lambda
+list and all matching-arity call sites, including an internal recursive call,
+changed; the other arity and its call sites did not).
 
 P1 shipped with the tagged `signature-changes` model (`:keep`/`:add`/`:remove`),
 the edit-buffer keys `a` (add) and `k`/`d` (mark for removal), placeholder

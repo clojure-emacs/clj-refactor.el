@@ -436,6 +436,17 @@
          (cljr--change-function-signature (list (cljr--plist-to-hash (cl-second cljr--test-occurrences)))
                                           cljr--remove-baz)))
 
+(Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar across mixed-arity call-sites"
+       (lambda ()
+         ;; Two calls: a 1-arg one (a different arity, must be left alone) and
+         ;; a 3-arg one (the arity being changed, must be swapped).
+         (cljr--change-function-signature
+          (list (cljr--plist-to-hash '(:line-beg 4 :line-end 4 :col-beg 5 :col-end 7
+                                       :name "core/tt" :file "core.clj" :match "(tt 1)"))
+                (cljr--plist-to-hash '(:line-beg 4 :line-end 4 :col-beg 12 :col-end 14
+                                       :name "core/tt" :file "core.clj" :match "(tt 1 2 3)")))
+          cljr--foo-bar-swapped)))
+
 (Given "I call the cljr--change-function-signature function directly with mockdata to swap foo and bar in a call-site on a defn line"
        (lambda ()
          ;; A call that happens to sit on a `(defn ...)' line must be treated
