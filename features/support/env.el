@@ -22,6 +22,9 @@
  ;; Used in cljr--maybe-eval-ns-form
  (defun cider-eval-ns-form (&rest _))
  (defun cljr--ensure-op-supported (op) t)
+ ;; The scenarios drive the appliers directly and assert the result, so
+ ;; keep the preview/confirm layer out of the way.
+ (setq cljr-preview-refactorings nil)
  (let ((tmp-dir(expand-file-name "tmp" clj-refactor-root-path)))
    (when (file-directory-p tmp-dir)
      (delete-directory tmp-dir t)))

@@ -346,6 +346,7 @@ signature)."
         (buffer (find-file-noselect file)))
     (when (and (null already) (listp cljr--opened-buffers))
       (push buffer cljr--opened-buffers))
+    (cljr--refactoring-snapshot file buffer (and already t))
     buffer))
 
 (defmacro cljr--with-opened-buffers (&rest body)
@@ -358,6 +359,210 @@ Buffers that were already being visited before BODY ran are left alone."
        (dolist (buffer cljr--opened-buffers)
          (when (buffer-live-p buffer)
            (kill-buffer buffer))))))
+
+;; ------ project-wide refactoring preview -------
+
+(defcustom cljr-preview-refactorings t
+  "If t, preview destructive project-wide refactorings before applying them.
+`cljr-rename-symbol' and `cljr-change-function-signature' rewrite files
+across the whole project.  When this is non-nil, their edits are gathered
+first and shown as a diff; nothing is written to disk until you confirm.
+Either way, `cljr-undo-last-refactoring' reverts the last one that was
+applied."
+  :type 'boolean
+  :safe #'booleanp)
+
+(defvar cljr--refactoring-active nil
+  "Description of the in-progress previewable refactoring, or nil.
+While non-nil, `cljr--save-buffer' defers writes and
+`cljr--find-file-noselect' snapshots each file it opens.")
+
+(defvar cljr--refactoring-files nil
+  "Hash-table for the active refactoring: file -> plist.
+The plist has `:buffer' (the visiting buffer), `:original' (its content
+before the refactoring) and `:was-open' (whether it was already being
+visited).")
+
+(defvar cljr--refactoring-opened nil
+  "Buffers opened during the active refactoring, to kill when it finishes.")
+
+(defvar cljr--last-refactoring nil
+  "Alist (file . original-content) of the last applied refactoring.
+Used by `cljr-undo-last-refactoring'.")
+
+(defconst cljr--refactoring-preview-buffer "*cljr-refactoring-preview*")
+
+(defun cljr--save-buffer ()
+  "Save the current buffer, unless a preview session wants to defer it.
+During a previewable refactoring the edits are left in the buffer and
+written only once the user confirms."
+  (if cljr--refactoring-active
+      (set-buffer-modified-p t)
+    (save-buffer)))
+
+(defun cljr--start-refactoring (description)
+  "Begin a previewable refactoring described by DESCRIPTION."
+  (setq cljr--refactoring-active description
+        cljr--refactoring-files (make-hash-table :test #'equal)
+        cljr--refactoring-opened nil))
+
+(defun cljr--refactoring-snapshot (file buffer already-open)
+  "Record BUFFER's current content as the pre-refactoring state of FILE.
+Also records whether the buffer already had unsaved changes, so aborting
+can restore that state rather than silently marking it saved."
+  (when (and cljr--refactoring-active
+             (not (gethash file cljr--refactoring-files)))
+    (puthash file (list :buffer buffer
+                        :original (with-current-buffer buffer
+                                    (buffer-substring-no-properties
+                                     (point-min) (point-max)))
+                        :was-open already-open
+                        :was-modified (buffer-modified-p buffer))
+             cljr--refactoring-files)
+    (unless already-open
+      (push buffer cljr--refactoring-opened))))
+
+(defun cljr--refactoring-changed-files ()
+  "Return an alist (file . plist) of files whose buffer content changed."
+  (let (changed)
+    (maphash (lambda (file rec)
+               (let ((current (with-current-buffer (plist-get rec :buffer)
+                                (buffer-substring-no-properties
+                                 (point-min) (point-max)))))
+                 (unless (string= current (plist-get rec :original))
+                   (push (cons file rec) changed))))
+             cljr--refactoring-files)
+    (nreverse changed)))
+
+(defun cljr--unified-diff (label original current)
+  "Return a unified diff between ORIGINAL and CURRENT, headed with LABEL.
+Falls back to a one-line summary when no `diff' program is available."
+  (let ((old (make-temp-file "cljr-old"))
+        (new (make-temp-file "cljr-new")))
+    (unwind-protect
+        (condition-case nil
+            (progn
+              (with-temp-file old (insert original))
+              (with-temp-file new (insert current))
+              (with-temp-buffer
+                (call-process diff-command nil t nil "-u"
+                              "--label" (concat "a/" label) old
+                              "--label" (concat "b/" label) new)
+                (buffer-string)))
+          (error (format "--- a/%s\n+++ b/%s\n(diff unavailable)\n" label label)))
+      (delete-file old)
+      (delete-file new))))
+
+(defun cljr--show-refactoring-preview (changed)
+  "Show a diff of the CHANGED files in the preview buffer."
+  (let ((buffer (get-buffer-create cljr--refactoring-preview-buffer))
+        (root (ignore-errors (file-name-as-directory (cljr--project-dir)))))
+    (with-current-buffer buffer
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (dolist (entry changed)
+          (let* ((file (car entry))
+                 (rec (cdr entry))
+                 (label (if root (string-remove-prefix root file) file)))
+            (insert (cljr--unified-diff
+                     label
+                     (plist-get rec :original)
+                     (with-current-buffer (plist-get rec :buffer)
+                       (buffer-substring-no-properties (point-min) (point-max)))))))
+        (diff-mode)
+        (goto-char (point-min))
+        (setq header-line-format
+              (format " %s - %d file(s).  Confirm in the minibuffer."
+                      cljr--refactoring-active (length changed)))))
+    (display-buffer buffer)))
+
+(defun cljr--apply-refactoring ()
+  "Write out the pending edits and remember them for undo.
+Only files whose content actually changed are saved, so a target buffer
+that had unrelated unsaved edits but wasn't touched isn't written out."
+  (let (snapshots)
+    (dolist (entry (cljr--refactoring-changed-files))
+      (with-current-buffer (plist-get (cdr entry) :buffer)
+        (push (cons (car entry) (plist-get (cdr entry) :original)) snapshots)
+        (save-buffer)))
+    (setq cljr--last-refactoring (nreverse snapshots)))
+  (cljr--finish-refactoring))
+
+(defun cljr--abort-refactoring ()
+  "Revert the pending edits without writing anything.
+Restores each changed buffer's original content and its original
+modified state, so a buffer that had unsaved edits before the
+refactoring keeps them (and stays marked modified)."
+  (dolist (entry (cljr--refactoring-changed-files))
+    (let ((rec (cdr entry)))
+      (with-current-buffer (plist-get rec :buffer)
+        (let ((pt (point))
+              (inhibit-read-only t))
+          (erase-buffer)
+          (insert (plist-get rec :original))
+          (goto-char (min pt (point-max)))
+          (set-buffer-modified-p (plist-get rec :was-modified))))))
+  (cljr--finish-refactoring))
+
+(defun cljr--finish-refactoring ()
+  "Tear down the active refactoring session."
+  (dolist (buffer cljr--refactoring-opened)
+    (when (buffer-live-p buffer)
+      (kill-buffer buffer)))
+  (when (get-buffer cljr--refactoring-preview-buffer)
+    (kill-buffer cljr--refactoring-preview-buffer))
+  (setq cljr--refactoring-active nil
+        cljr--refactoring-files nil
+        cljr--refactoring-opened nil))
+
+(defun cljr--run-previewable-refactoring (description thunk)
+  "Run THUNK, which performs the edits of a project-wide refactoring.
+When `cljr-preview-refactorings' is non-nil, gather the edits without
+saving, show them as a diff described by DESCRIPTION, and apply them only
+if the user confirms.  Return non-nil when the edits were applied."
+  (if (not cljr-preview-refactorings)
+      (progn (cljr--with-opened-buffers (funcall thunk)) t)
+    (unwind-protect
+        (progn
+          (cljr--start-refactoring description)
+          (funcall thunk)
+          (let ((changed (cljr--refactoring-changed-files)))
+            (cond
+             ((null changed)
+              (cljr--finish-refactoring)
+              (cljr--post-command-message "No changes to apply")
+              nil)
+             (t
+              (cljr--show-refactoring-preview changed)
+              (if (y-or-n-p (format "Apply %s to %d file(s)? "
+                                    description (length changed)))
+                  (progn (cljr--apply-refactoring) t)
+                (cljr--abort-refactoring)
+                nil)))))
+      (when cljr--refactoring-active
+        (cljr--abort-refactoring)))))
+
+;;;###autoload
+(defun cljr-undo-last-refactoring ()
+  "Revert every file changed by the last applied project-wide refactoring.
+This overwrites those files, so any edits made since the refactoring are
+lost; you're asked to confirm first."
+  (interactive)
+  (unless cljr--last-refactoring
+    (user-error "No refactoring to undo"))
+  (let ((count (length cljr--last-refactoring)))
+    (when (yes-or-no-p
+           (format "Revert %d file(s) to before the last refactoring? " count))
+      (dolist (entry cljr--last-refactoring)
+        (with-current-buffer (find-file-noselect (car entry))
+          (let ((pt (point))
+                (inhibit-read-only t))
+            (erase-buffer)
+            (insert (cdr entry))
+            (goto-char (min pt (point-max)))
+            (save-buffer))))
+      (setq cljr--last-refactoring nil)
+      (cljr--post-command-message "Reverted %d file(s)" count))))
 
 (define-key clj-refactor-map [remap paredit-raise-sexp] 'cljr-raise-sexp)
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-backward] 'cljr-splice-sexp-killing-backward)
@@ -422,6 +627,7 @@ Buffers that were already being visited before BODY ran are left alone."
     ("tl" . (clojure-thread-last-all "Thread last all" ?L ("code")))
     ("ua" . (clojure-unwind-all "Unwind all" ?U ("code")))
     ("up" . (cljr-update-project-dependencies "Update project dependencies" ?U ("project")))
+    ("ur" . (cljr-undo-last-refactoring "Undo last project-wide refactoring" ?z ("project")))
     ("uw" . (clojure-unwind "Unwind" ?w ("code")))
     ("ad" . (cljr-add-declaration "Add declaration" ?d ("toplevel-form")))
     ("hh" . (clj-refactor-menu "Menu of refactorings" ?h ("cljr")))
@@ -540,6 +746,7 @@ current session."
   [["Project"
     ("fu" "Find usages" cljr-find-usages)
     ("rs" "Rename symbol" cljr-rename-symbol)
+    ("ur" "Undo last refactoring" cljr-undo-last-refactoring)
     ("rf" "Rename file-or-dir" cljr-rename-file-or-dir)
     ("is" "Inline symbol" cljr-inline-symbol)
     ("pc" "Project clean" cljr-project-clean)
@@ -2913,21 +3120,23 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
           (paredit-backward))
         (when (re-search-forward (format "\\(.+/\\)?\\(%s\\)" name) search-limit t)
           (replace-match (format "\\1%s" new-name) t)))
-      (save-buffer))))
+      (cljr--save-buffer))))
 
 (defun cljr--rename-occurrences (occurrences new-name)
-  (cljr--with-opened-buffers
-    (dolist (symbol-meta occurrences)
-      (let* ((file (cljr--get-valid-filename symbol-meta))
-             (line-beg (gethash :line-beg symbol-meta))
-             (col-beg (gethash :col-beg symbol-meta))
-             (line-end (gethash :line-end symbol-meta))
-             (col-end (gethash :col-end symbol-meta))
-             (name (gethash :name symbol-meta))
-             (new-name* (if (stringp new-name)
-                            new-name
-                          (funcall new-name name))))
-        (cljr--rename-occurrence file line-beg col-beg line-end col-end name new-name*)))))
+  (cljr--run-previewable-refactoring
+   (format "Rename %d occurrence(s)" (length occurrences))
+   (lambda ()
+     (dolist (symbol-meta occurrences)
+       (let* ((file (cljr--get-valid-filename symbol-meta))
+              (line-beg (gethash :line-beg symbol-meta))
+              (col-beg (gethash :col-beg symbol-meta))
+              (line-end (gethash :line-end symbol-meta))
+              (col-end (gethash :col-end symbol-meta))
+              (name (gethash :name symbol-meta))
+              (new-name* (if (stringp new-name)
+                             new-name
+                           (funcall new-name name))))
+         (cljr--rename-occurrence file line-beg col-beg line-end col-end name new-name*))))))
 
 ;;;###autoload
 (defun cljr-rename-symbol (&optional new-name)
@@ -2949,10 +3158,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
            (occurrences (cljr--find-symbol-sync name ns))
            (new-name (or new-name (read-from-minibuffer "New name: "
                                                         (cljr--symbol-suffix symbol)))))
-      (cljr--rename-occurrences occurrences new-name)
-      (cljr--post-command-message "Renamed %s occurrences of %s" (length occurrences) name)
-      (when (and (> (length occurrences) 0) (not cljr-warn-on-eval))
-        (cljr--warm-ast-cache)))))
+      (when (cljr--rename-occurrences occurrences new-name)
+        (cljr--post-command-message "Renamed %s occurrences of %s" (length occurrences) name)
+        (when (and (> (length occurrences) 0) (not cljr-warn-on-eval))
+          (cljr--warm-ast-cache))))))
 
 (defun cljr--replace-refer-all-with-alias (ns publics-occurrences alias)
   (let ((ns-last-token (car (last (split-string ns "\\.")))))
@@ -4640,64 +4849,69 @@ Point is assumed to be at the function being called."
   ;;   :remove - :old-index :old-name
   ;; Indexing is from 0.  An entry with no `:op' is treated as `:keep'.
   ;; The OCCURRENCES are the same as those returned by `cljr--find-symbol'
-  (let ((*cljr--noninteractive* t))
-    (cljr--with-opened-buffers
-      (dolist (symbol-meta occurrences)
-        (let ((file (cljr--get-valid-filename symbol-meta))
-              (line-beg (gethash :line-beg symbol-meta))
-              (col-beg (gethash :col-beg symbol-meta))
-              (name (gethash :name symbol-meta))
-              (match (gethash :match symbol-meta)))
-          (with-current-buffer
-              (cljr--find-file-noselect file)
-            (goto-char (point-min))
-            (forward-line (1- line-beg))
-            (move-to-column (1- col-beg))
-            (cond
-             ((cljr--ignorable-occurrence-p) :do-nothing)
-             ;; Direct call site.
-             ((cljr--call-site-p name)
-              (cond
-               ;; Variadic functions can't be rewritten positionally (their
-               ;; call-site arg count varies), so leave them for review.
-               ((cljr--signature-variadic-p signature-changes)
-                (cljr--append-to-manual-intervention-buffer))
-               ;; A call to a different arity than the one being changed - the
-               ;; arg count doesn't match - is correct as is, so leave it.
-               ((/= (cljr--call-site-arg-count)
-                    (cljr--old-arity signature-changes))
-                :do-nothing)
-               ;; Removing a parameter is destructive - an argument might have
-               ;; side effects or be needed elsewhere - so never auto-delete
-               ;; it; route the call site to manual review.
-               ((cljr--signature-has-remove-p signature-changes)
-                (cljr--append-to-manual-intervention-buffer))
-               (t (cljr--update-call-site signature-changes))))
-             ;; `apply'/`partial' sites can only be handled for pure reorders;
-             ;; an added or removed arg would land in the wrong spot, so bail.
-             ((cljr--partial-call-site-p)
-              (if (or (cljr--signature-has-add-p signature-changes)
-                      (cljr--signature-has-remove-p signature-changes))
-                  (cljr--append-to-manual-intervention-buffer)
-                (cljr--update-partial-call-site signature-changes)))
-             ((cljr--apply-call-site-p)
-              (if (or (cljr--signature-has-add-p signature-changes)
-                      (cljr--signature-has-remove-p signature-changes))
-                  (cljr--append-to-manual-intervention-buffer)
-                (cljr--update-apply-call-site signature-changes)))
-             ;; The definition itself.  `cljr--defnp' is a loose match on the
-             ;; occurrence line, so it must stay last - a call that happens to
-             ;; sit on a `(defn ...)' line is a call site, handled above.
-             ((cljr--defnp match)
-              (cljr--update-function-signature signature-changes))
-             (t (cljr--append-to-manual-intervention-buffer)))
-            (save-buffer))))))
-  (unless (cljr--empty-buffer-p (get-buffer-create cljr--manual-intervention-buffer))
-    (pop-to-buffer cljr--manual-intervention-buffer)
-    (goto-char (point-min))
-    (insert "The following occurrence(s) couldn't be handled automatically:\n\n")
-    (grep-mode)
-    (setq-local compilation-search-path (list (cljr--project-dir)))))
+  (let* ((*cljr--noninteractive* t)
+         (applied
+          (cljr--run-previewable-refactoring
+           "Change function signature"
+           (lambda ()
+             (dolist (symbol-meta occurrences)
+               (let ((file (cljr--get-valid-filename symbol-meta))
+                     (line-beg (gethash :line-beg symbol-meta))
+                     (col-beg (gethash :col-beg symbol-meta))
+                     (name (gethash :name symbol-meta))
+                     (match (gethash :match symbol-meta)))
+                 (with-current-buffer
+                     (cljr--find-file-noselect file)
+                   (goto-char (point-min))
+                   (forward-line (1- line-beg))
+                   (move-to-column (1- col-beg))
+                   (cond
+                     ((cljr--ignorable-occurrence-p) :do-nothing)
+                     ;; Direct call site.
+                     ((cljr--call-site-p name)
+                      (cond
+                        ;; Variadic functions can't be rewritten positionally (their
+                        ;; call-site arg count varies), so leave them for review.
+                        ((cljr--signature-variadic-p signature-changes)
+                         (cljr--append-to-manual-intervention-buffer))
+                        ;; A call to a different arity than the one being changed - the
+                        ;; arg count doesn't match - is correct as is, so leave it.
+                        ((/= (cljr--call-site-arg-count)
+                             (cljr--old-arity signature-changes))
+                         :do-nothing)
+                        ;; Removing a parameter is destructive - an argument might have
+                        ;; side effects or be needed elsewhere - so never auto-delete
+                        ;; it; route the call site to manual review.
+                        ((cljr--signature-has-remove-p signature-changes)
+                         (cljr--append-to-manual-intervention-buffer))
+                        (t (cljr--update-call-site signature-changes))))
+                     ;; `apply'/`partial' sites can only be handled for pure reorders;
+                     ;; an added or removed arg would land in the wrong spot, so bail.
+                     ((cljr--partial-call-site-p)
+                      (if (or (cljr--signature-has-add-p signature-changes)
+                              (cljr--signature-has-remove-p signature-changes))
+                          (cljr--append-to-manual-intervention-buffer)
+                          (cljr--update-partial-call-site signature-changes)))
+                     ((cljr--apply-call-site-p)
+                      (if (or (cljr--signature-has-add-p signature-changes)
+                              (cljr--signature-has-remove-p signature-changes))
+                          (cljr--append-to-manual-intervention-buffer)
+                          (cljr--update-apply-call-site signature-changes)))
+                     ;; The definition itself.  `cljr--defnp' is a loose match on the
+                     ;; occurrence line, so it must stay last - a call that happens to
+                     ;; sit on a `(defn ...)' line is a call site, handled above.
+                     ((cljr--defnp match)
+                      (cljr--update-function-signature signature-changes))
+                     (t (cljr--append-to-manual-intervention-buffer)))
+                   (cljr--save-buffer))))))))
+    (when (and applied
+               (not (cljr--empty-buffer-p
+                     (get-buffer-create cljr--manual-intervention-buffer))))
+      (pop-to-buffer cljr--manual-intervention-buffer)
+      (goto-char (point-min))
+      (insert "The following occurrence(s) couldn't be handled automatically:\n\n")
+      (grep-mode)
+      (setq-local compilation-search-path (list (cljr--project-dir))))))
 
 (defun cljr--commit-signature-edit ()
   (interactive)
