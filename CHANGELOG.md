@@ -1,5 +1,9 @@
 # Changelog
 
+<!-- Entries are one line per item and section headings repeat for every release,
+     so the line-length and duplicate-heading rules don't fit this file. -->
+<!-- markdownlint-disable MD013 MD024 -->
+
 ## Unreleased
 
 - **(Breaking)** Use refactor-nrepl's namespaced op names (`refactor/find-symbol`, `refactor/clean-ns`, …) instead of the bare ones. refactor-nrepl treats the namespaced forms as canonical and plans to drop the bare names, and namespacing avoids op-name collisions with other middleware. This requires refactor-nrepl 3.13.0+ (the injected version is now 3.14.0).
@@ -64,39 +68,39 @@
 ## 3.11.2
 
 - [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.9.1/CHANGELOG.md#391).
-  - Fixes https://github.com/clojure-emacs/clj-refactor.el/issues/556
+  - Fixes <https://github.com/clojure-emacs/clj-refactor.el/issues/556>
 
 ## 3.11.1
 
-* [#555](https://github.com/clojure-emacs/clj-refactor.el/pull/555): expand default `cljr-magic-require-namespaces` aliases.
-* [#555](https://github.com/clojure-emacs/clj-refactor.el/pull/555): Handle an edge case for `cljr-slash`.
+- [#555](https://github.com/clojure-emacs/clj-refactor.el/pull/555): expand default `cljr-magic-require-namespaces` aliases.
+- [#555](https://github.com/clojure-emacs/clj-refactor.el/pull/555): Handle an edge case for `cljr-slash`.
 
 ## 3.11.0
 
-* [#554](https://github.com/clojure-emacs/clj-refactor.el/pull/554): Enable `cljr-slash-uses-suggest-libspec` by default.
+- [#554](https://github.com/clojure-emacs/clj-refactor.el/pull/554): Enable `cljr-slash-uses-suggest-libspec` by default.
 
 ## 3.10.0
 
-* [#552](https://github.com/clojure-emacs/clj-refactor.el/issues/552): support TRAMP connections.
+- [#552](https://github.com/clojure-emacs/clj-refactor.el/issues/552): support TRAMP connections.
 
 ## 3.9.4
 
-* Fix `cljr-version`.
+- Fix `cljr-version`.
 
 ## 3.9.3
 
-* Internal: avoid the use of deprecated Elisp functions.
+- Internal: avoid the use of deprecated Elisp functions.
 
 ## 3.9.2
 
-* [#523](https://github.com/clojure-emacs/clj-refactor.el/issues/523): Increase `js/` namespace detection accuracy for .cljc files.
-* [#517](https://github.com/clojure-emacs/clj-refactor.el/issues/517): Remove `pkg-info` dependency.
+- [#523](https://github.com/clojure-emacs/clj-refactor.el/issues/523): Increase `js/` namespace detection accuracy for .cljc files.
+- [#517](https://github.com/clojure-emacs/clj-refactor.el/issues/517): Remove `pkg-info` dependency.
 
 ## 3.9.1
 
-* [#430](https://github.com/clojure-emacs/clj-refactor.el/issues/430) `cljr-add-missing-libspec`: produce more friendly prompts.
-* `cljr-add-missing-libspec`: don't suggest members that are already interned into the current namespace.
-  * e.g. the class `Thread` or the var `+` are already interned by default in Clojure namespaces, so they are redundant to suggest or insert into the `ns` form.
+- [#430](https://github.com/clojure-emacs/clj-refactor.el/issues/430) `cljr-add-missing-libspec`: produce more friendly prompts.
+- `cljr-add-missing-libspec`: don't suggest members that are already interned into the current namespace.
+  - e.g. the class `Thread` or the var `+` are already interned by default in Clojure namespaces, so they are redundant to suggest or insert into the `ns` form.
 
 ## 3.9.0
 
@@ -127,33 +131,33 @@
 
 ## 3.5.6
 
-* [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.5/CHANGELOG.md#355).
+- [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.5/CHANGELOG.md#355).
 
 ## 3.5.5
 
-* [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.4/CHANGELOG.md#354).
+- [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.4/CHANGELOG.md#354).
 
 ## 3.5.4
 
-* [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.3/CHANGELOG.md#353).
+- [Upgrade refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.3/CHANGELOG.md#353).
 
 ## 3.5.3
 
-* Upgrade `cider`, `parseedn` and `inflections` dependencies.
+- Upgrade `cider`, `parseedn` and `inflections` dependencies.
 
 ## 3.5.2
 
-* Use refactor-nrepl [3.5.2](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.2/CHANGELOG.md#352).
+- Use refactor-nrepl [3.5.2](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.2/CHANGELOG.md#352).
 
 ## 3.5.1
 
-* Use refactor-nrepl [3.5.1](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.1/CHANGELOG.md#351).
+- Use refactor-nrepl [3.5.1](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.1/CHANGELOG.md#351).
 
 ## 3.5.0
 
-* Use refactor-nrepl [3.5.0](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.0/CHANGELOG.md#350).
-* Improve integration with Clojure 1.11's new `:as-alias` namespace directive.
-  * Closes [#515](https://github.com/clojure-emacs/clj-refactor.el/issues/515), [#516](https://github.com/clojure-emacs/clj-refactor.el/issues/516)
+- Use refactor-nrepl [3.5.0](https://github.com/clojure-emacs/refactor-nrepl/blob/v3.5.0/CHANGELOG.md#350).
+- Improve integration with Clojure 1.11's new `:as-alias` namespace directive.
+  - Closes [#515](https://github.com/clojure-emacs/clj-refactor.el/issues/515), [#516](https://github.com/clojure-emacs/clj-refactor.el/issues/516)
 
 ## 3.4.3
 
