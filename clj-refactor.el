@@ -1010,15 +1010,29 @@ with those of other middleware.")
   "Return refactor-nrepl op OP as its canonical namespaced name."
   (concat cljr--middleware-op-prefix op))
 
+(defun cljr--resolve-op (op)
+  "Resolve the bare refactor-nrepl OP name against the current connection.
+Prefer the canonical namespaced form (see `cljr--middleware-op'), but fall
+back to the bare name when only that is advertised - refactor-nrepl older
+than 3.13.0 doesn't know the namespaced ops.  When there's no connection to
+consult, or neither form is supported, return the namespaced form so error
+messages show the canonical name."
+  (let ((namespaced (cljr--middleware-op op)))
+    (cond ((not (cider-connected-p)) namespaced)
+          ((cider-nrepl-op-supported-p namespaced) namespaced)
+          ((cider-nrepl-op-supported-p op) op)
+          (t namespaced))))
+
 (defun cljr--create-msg (op &rest kvs)
   "Create a msg for the middleware for OP and optionally include the kv pairs KVS.
 
-OP is given as its bare refactor-nrepl name and is namespaced here (see
-`cljr--middleware-op').  All config settings are included in the created msg."
+OP is given as its bare refactor-nrepl name and is resolved to the form the
+connected middleware supports (see `cljr--resolve-op').  All config settings
+are included in the created msg."
   (cl-assert (cl-evenp (length kvs)) nil "Can't create msg to send to the middleware.\
   Received an uneven number of kv pairs: %s " kvs)
   (apply #'list
-         "op" (cljr--middleware-op op)
+         "op" (cljr--resolve-op op)
 
          "prefix-rewriting"
          (if cljr-favor-prefix-notation
@@ -1245,14 +1259,16 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-file-or-d
 
 (defun cljr--op-supported-p (op)
   "Is the refactor-nrepl OP (bare name) provided by the current middleware?
-OP is namespaced (see `cljr--middleware-op') so this checks for the
-canonical op, matching what `cljr--create-msg' actually sends."
+Checks the canonical namespaced form (see `cljr--middleware-op') as well as
+the bare one, so old middleware that only advertises the bare names counts
+as support too - matching the op resolution `cljr--create-msg' performs."
   ;; Guard on the connection first: `cider-nrepl-op-supported-p' resolves the
   ;; REPL with the `ensure' flag and signals `No linked CIDER sessions' when
   ;; nothing is connected.  We want a plain nil there, so the offline fallbacks
   ;; that gate on this predicate (`cljr-slash', `cljr-clean-ns', ...) can kick in.
   (and (cider-connected-p)
-       (cider-nrepl-op-supported-p (cljr--middleware-op op))))
+       (or (cider-nrepl-op-supported-p (cljr--middleware-op op))
+           (cider-nrepl-op-supported-p op))))
 
 (defun cljr--assert-middleware ()
   (unless (featurep 'cider)
@@ -3889,7 +3905,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
              (ns (or (nrepl-dict-get var-info "ns") (cider-current-ns)))
              (symbol-name (or (nrepl-dict-get var-info "name") symbol))
              (extract-definition-request (list
-                                          "op" (cljr--middleware-op "extract-definition")
+                                          "op" (cljr--resolve-op "extract-definition")
                                           "ns" ns
                                           "dir" dir
                                           "file" filename

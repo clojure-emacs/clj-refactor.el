@@ -424,7 +424,36 @@ str/"))))
 (describe "cljr--op-supported-p"
   (it "returns nil (rather than erroring) when no REPL is connected"
     (spy-on 'cider-connected-p :and-return-value nil)
-    (expect (cljr--op-supported-p "clean-ns") :to-be nil)))
+    (expect (cljr--op-supported-p "clean-ns") :to-be nil))
+  (it "counts middleware that only advertises the bare op names as support"
+    (spy-on 'cider-connected-p :and-return-value t)
+    (spy-on 'cider-nrepl-op-supported-p :and-call-fake
+            (lambda (op) (member op '("clean-ns"))))
+    (expect (cljr--op-supported-p "clean-ns") :to-be-truthy)))
+
+(describe "cljr--resolve-op"
+  ;; refactor-nrepl >= 3.13.0 advertises every op under both its bare name
+  ;; and the namespaced `refactor/' form; older versions only know the bare
+  ;; names.  We prefer the canonical namespaced form but must keep working
+  ;; against the old middleware.
+  (it "prefers the namespaced form when the middleware advertises it"
+    (spy-on 'cider-connected-p :and-return-value t)
+    (spy-on 'cider-nrepl-op-supported-p :and-call-fake
+            (lambda (op) (member op '("refactor/clean-ns" "clean-ns"))))
+    (expect (cljr--resolve-op "clean-ns") :to-equal "refactor/clean-ns"))
+  (it "falls back to the bare name on old middleware"
+    (spy-on 'cider-connected-p :and-return-value t)
+    (spy-on 'cider-nrepl-op-supported-p :and-call-fake
+            (lambda (op) (member op '("clean-ns"))))
+    (expect (cljr--resolve-op "clean-ns") :to-equal "clean-ns")
+    (expect (cadr (cljr--create-msg "clean-ns")) :to-equal "clean-ns"))
+  (it "returns the namespaced form when disconnected"
+    (spy-on 'cider-connected-p :and-return-value nil)
+    (expect (cljr--resolve-op "clean-ns") :to-equal "refactor/clean-ns"))
+  (it "returns the namespaced form when neither form is supported"
+    (spy-on 'cider-connected-p :and-return-value t)
+    (spy-on 'cider-nrepl-op-supported-p :and-return-value nil)
+    (expect (cljr--resolve-op "clean-ns") :to-equal "refactor/clean-ns")))
 
 (describe "cljr-clean-ns offline fallback"
   ;; Drive the real `cljr--op-supported-p' by faking a disconnected REPL,
