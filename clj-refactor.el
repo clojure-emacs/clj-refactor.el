@@ -7,7 +7,7 @@
 ;;         Lars Andersen <expez@expez.com>
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;;         Bozhidar Batsov <bozhidar@batsov.dev>
-;; Version: 3.12.0
+;; Version: 4.0.0-snapshot
 ;; Keywords: convenience, clojure, cider
 
 ;; Package-Requires: ((emacs "28.1") (yasnippet "0.6.1") (paredit "24") (clojure-mode "5.18.0") (cider "1.11.1") (parseedn "1.2.0") (transient "0.4.1") (spinner "1.7"))
@@ -3925,7 +3925,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
             (cljr--post-command-message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
     (cljr--indent-defun)))
 
-(defconst cljr-version "3.11.3"
+(defconst cljr-version "4.0.0-snapshot"
   "The current version of clj-refactor.")
 
 (defun cljr--pkg-version ()
