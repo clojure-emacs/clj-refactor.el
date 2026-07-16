@@ -6,6 +6,9 @@
 
 ## Unreleased
 
+## 4.0.0 (2026-07-16)
+
+- **(Breaking)** Require Emacs 28.1+.
 - **(Breaking)** Require CIDER 2.0+ (and drop the small compat shims for the pre-2.0 API names).
 - Use refactor-nrepl's namespaced op names (`refactor/find-symbol`, `refactor/clean-ns`, …) when the middleware advertises them (refactor-nrepl 3.13.0+, the injected version is now 3.14.0), falling back to the bare names on older versions. refactor-nrepl treats the namespaced forms as canonical and plans to drop the bare names, and namespacing avoids op-name collisions with other middleware.
 - Don't error out of `cider-connected-hook` when the refactor-nrepl middleware is missing: the connect-time version probe now degrades to the existing "out of sync" warning instead of aborting the startup checks with a cryptic error (visible with CIDER 2.0, whose senders reject unsupported ops client-side).

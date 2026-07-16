@@ -7,7 +7,7 @@
 ;;         Lars Andersen <expez@expez.com>
 ;;         Benedek Fazekas <benedek.fazekas@gmail.com>
 ;;         Bozhidar Batsov <bozhidar@batsov.dev>
-;; Version: 4.0.0-snapshot
+;; Version: 4.0.0
 ;; Keywords: convenience, clojure, cider
 
 ;; Package-Requires: ((emacs "28.1") (yasnippet "0.6.1") (paredit "24") (clojure-mode "5.18.0") (cider "2.0.0") (parseedn "1.2.0") (transient "0.4.1") (spinner "1.7"))
@@ -371,6 +371,7 @@ first and shown as a diff; nothing is written to disk until you confirm.
 Either way, `cljr-undo-last-refactoring' reverts the last one that was
 applied."
   :type 'boolean
+  :package-version '(clj-refactor . "4.0.0")
   :safe #'booleanp)
 
 (defvar cljr--refactoring-active nil
@@ -3920,7 +3921,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-inline-symbol"
             (cljr--post-command-message "No occurrences of '%s' found.  Deleted the definition." symbol)))))
     (cljr--indent-defun)))
 
-(defconst cljr-version "4.0.0-snapshot"
+(defconst cljr-version "4.0.0"
   "The current version of clj-refactor.")
 
 (defun cljr--pkg-version ()
