@@ -455,6 +455,15 @@ str/"))))
     (spy-on 'cider-nrepl-op-supported-p :and-return-value nil)
     (expect (cljr--resolve-op "clean-ns") :to-equal "refactor/clean-ns")))
 
+(describe "cljr--middleware-version"
+  (it "returns nil (rather than erroring) when the version probe fails"
+    ;; CIDER 2.0's senders signal a `user-error' client-side for unsupported
+    ;; ops; this probe runs from `cider-connected-hook', where an error would
+    ;; abort the startup checks - including the out-of-sync warning itself.
+    (spy-on 'cljr--call-middleware-sync :and-call-fake
+            (lambda (&rest _) (user-error "unsupported op")))
+    (expect (cljr--middleware-version) :to-be nil)))
+
 (describe "cljr-clean-ns offline fallback"
   ;; Drive the real `cljr--op-supported-p' by faking a disconnected REPL,
   ;; instead of stubbing the predicate the fallback hinges on.
