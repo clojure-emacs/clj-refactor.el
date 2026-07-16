@@ -6,7 +6,7 @@
 
 ## Unreleased
 
-- **(Breaking)** Use refactor-nrepl's namespaced op names (`refactor/find-symbol`, `refactor/clean-ns`, …) instead of the bare ones. refactor-nrepl treats the namespaced forms as canonical and plans to drop the bare names, and namespacing avoids op-name collisions with other middleware. This requires refactor-nrepl 3.13.0+ (the injected version is now 3.14.0).
+- Use refactor-nrepl's namespaced op names (`refactor/find-symbol`, `refactor/clean-ns`, …) when the middleware advertises them (refactor-nrepl 3.13.0+, the injected version is now 3.14.0), falling back to the bare names on older versions. refactor-nrepl treats the namespaced forms as canonical and plans to drop the bare names, and namespacing avoids op-name collisions with other middleware.
 - `cljr-rename-symbol`, `cljr-find-usages`, `cljr-inline-symbol` and `cljr-change-function-signature` now send an explicit `ignore-errors` value that matches `cljr-ignore-analyzer-errors`, instead of a nil value that was dropped on the wire. With the default (nil) this means the strict behavior the option documents actually takes effect - a project with an unanalyzable namespace now surfaces a warning rather than silently skipping it.
 - `cljr-slash` no longer sends the obsolete `language-context` parameter to the `suggest-libspecs` op (superseded by `buffer-language-context`/`input-language-context` in refactor-nrepl 3.7.0).
 
