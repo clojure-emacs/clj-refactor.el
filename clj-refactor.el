@@ -3958,7 +3958,17 @@ for avoiding a warning that would be irrelevant for this case."
   :package-version "3.0.0")
 
 (defun cljr--middleware-version ()
-  (cljr--call-middleware-sync (cljr--create-msg "version") "version"))
+  "Return the version of the connected refactor-nrepl, or nil.
+A failed probe returns nil (with the error reported as a message)
+instead of signaling: CIDER 2.0's senders reject unsupported ops
+client-side, and this probe runs from `cider-connected-hook' where an
+error would abort the rest of the startup checks - including the
+out-of-sync warning itself."
+  (condition-case err
+      (cljr--call-middleware-sync (cljr--create-msg "version") "version")
+    (error (message "clj-refactor: middleware version probe failed: %s"
+                    (error-message-string err))
+           nil)))
 
 (defun cljr--check-middleware-version ()
   "Check whether clj-refactor and nrepl-refactor versions are the same."
@@ -3984,7 +3994,7 @@ warning by customizing `cljr-suppress-no-project-warning'.)"))))
   (interactive)
   (message "clj-refactor %s, refactor-nrepl %s"
            (cljr--version)
-           (or (ignore-errors (cljr--middleware-version))
+           (or (cljr--middleware-version)
                "is unreachable")))
 
 ;;;###autoload
