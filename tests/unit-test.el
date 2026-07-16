@@ -485,7 +485,21 @@ str/"))))
       (insert "(ns foo\n  (:require [a.a :as a]))\n")
       (cljr-clean-ns)
       (expect 'cljr--clean-ns :not :to-have-been-called)
-      (expect 'cider-eval-ns-form :not :to-have-been-called))))
+      (expect 'cider-eval-ns-form :not :to-have-been-called)))
+  (it "sorts the ns form even under a non-default forward-sexp-function"
+    ;; clojure-ts-mode installs a tree-sitter-based `forward-sexp-function'
+    ;; that turns `clojure-sort-ns' into a silent no-op; `cljr--sort-ns'
+    ;; must force the default syntax-table-based movement.
+    (spy-on 'cljr--post-command-message)
+    (cljr--with-clojure-temp-file "foo.clj"
+      (insert "(ns foo\n  (:require [b.b :as b]\n            [a.a :as a]))\n")
+      (setq-local forward-sexp-function
+                  (lambda (&rest _) (error "tree-sitter movement stand-in")))
+      (cljr-clean-ns)
+      (expect (buffer-string) :to-equal "(ns foo
+  (:require [a.a :as a]
+            [b.b :as b]))
+"))))
 
 (describe "cljr--remove-tramp-prefix-from-msg"
   (it "Removes the tramp prefix from specifc nrepl message attributes"

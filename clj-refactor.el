@@ -1511,6 +1511,15 @@ word test in it and whether the file lives under the test/ directory."
   (remove-hook 'yas-after-exit-snippet-hook
                'cljr--maybe-eval-ns-form-and-remove-hook :local))
 
+(defun cljr--sort-ns ()
+  "Sort the ns form syntactically via `clojure-sort-ns'.
+`clojure-sort-ns' walks the form with `forward-sexp' assuming
+syntax-table-based movement; under clojure-ts-mode's tree-sitter-based
+`forward-sexp-function' the sort silently does nothing, so force the
+default movement here."
+  (let ((forward-sexp-function nil))
+    (clojure-sort-ns)))
+
 (defun cljr--maybe-sort-ns ()
   (when cljr-auto-sort-ns
     (if (and (cider-connected-p) (cljr--op-supported-p "clean-ns"))
@@ -1518,7 +1527,7 @@ word test in it and whether the file lives under the test/ directory."
       ;; Offline: sort the ns form syntactically via clojure-mode, quietly,
       ;; so this stays useful without a running REPL.
       (let ((inhibit-message t))
-        (ignore-errors (clojure-sort-ns))))))
+        (ignore-errors (cljr--sort-ns))))))
 
 (defun cljr--sort-and-remove-hook (&rest _)
   (cljr--maybe-sort-ns)
@@ -3388,7 +3397,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
       (progn
         (cider-eval-ns-form)
         (cljr--clean-ns))
-    (clojure-sort-ns)
+    (cljr--sort-ns)
     (cljr--post-command-message
      "Sorted the ns form (pruning unused libspecs needs the refactor-nrepl middleware).")))
 
