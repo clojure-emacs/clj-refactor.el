@@ -41,6 +41,13 @@ If you are an IDO user, you will get better completions by installing the [`ido-
 (add-hook 'clojure-mode-hook #'my-clojure-mode-hook)
 ```
 
+If you're using [clojure-ts-mode](https://github.com/clojure-emacs/clojure-ts-mode)
+(fully supported by CIDER these days), hook that mode as well (or instead):
+
+```emacs-lisp
+(add-hook 'clojure-ts-mode-hook #'my-clojure-mode-hook)
+```
+
 The more advanced refactorings require our nREPL middleware
 [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl). From
 version *2.2.0* onwards if `cider-jack-in` is used it is injected
