@@ -49,17 +49,24 @@ Apply the same module-by-module audit approach we've used in CIDER: behavior-
 preserving cleanups on focused branches, lean on built-ins, deprecate public
 names with `make-obsolete` rather than deleting them outright. Concretely:
 
-- Remove dead code and long-obsolete aliases (the 2.x-era threading/cycling
-  aliases that moved to clojure-mode years ago).
-- Drop defensive compat checks that the Emacs 28+ / hard-`cider`-dependency
-  baseline made unnecessary.
-- Make narrow, heavyweight dependencies (multiple-cursors, hydra, inflections)
-  soft/optional - each backs a single slice of functionality.
-- Fix the test story. The Cucumber/ecukes feature suite is no longer wired into
-  CI; the buttercup suite is the modern target and should grow to cover the
-  pure-structural commands (which need no REPL to test).
+- ~~Remove dead code and long-obsolete aliases (the 2.x-era threading/cycling
+  aliases that moved to clojure-mode years ago).~~ Done for 4.0.
+- ~~Drop defensive compat checks that the Emacs 28+ / hard-`cider`-dependency
+  baseline made unnecessary.~~ Done for 4.0.
+- ~~Make narrow, heavyweight dependencies (multiple-cursors, hydra, inflections)
+  soft/optional.~~ Done for 4.0 - they were dropped outright.
+- Grow the buttercup suite to cover the pure-structural commands (which need
+  no REPL to test). Both suites (buttercup and the ecukes feature suite) run
+  in CI these days; buttercup remains the target for new tests.
 - Split the single large source file along its existing logical seams, which
   also cleanly separates the AST-dependent commands from the rest.
+- Vet every command under `clojure-ts-mode`, now that CIDER treats it as a
+  first-class citizen. The commands delegate a lot to clojure-mode functions,
+  which mostly work in ts buffers but can fail silently where sexp movement
+  differs (the offline ns sort was one such case, fixed for 4.0).
+- Migrate the jack-in injection off the legacy `cider-jack-in-lein-plugins` /
+  `cider-add-to-alist` API when CIDER offers a modern replacement; the legacy
+  vars still work in CIDER 2.0 but won't live forever.
 
 ### Move high-impact, analysis-free features into CIDER
 
@@ -70,9 +77,8 @@ deprecate the clj-refactor copies. `cljr-slash`, `add-missing-libspec`, and
 `clean-ns` are the first targets - none of them need the AST index, so they can
 move without dragging the slow analyzer along.
 
-The idiosyncratic, dependency-heavy parts (yasnippet snippets, hydras,
-multiple-cursors integration) stay in clj-refactor.el. They don't belong in
-CIDER core.
+The idiosyncratic parts (e.g. the yasnippet-based ns/defn snippets) stay in
+clj-refactor.el. They don't belong in CIDER core.
 
 ### Make the analysis fast and robust
 
