@@ -569,7 +569,17 @@ lost; you're asked to confirm first."
 (define-key clj-refactor-map [remap paredit-raise-sexp] 'cljr-raise-sexp)
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-backward] 'cljr-splice-sexp-killing-backward)
 (define-key clj-refactor-map [remap paredit-splice-sexp-killing-forward] 'cljr-splice-sexp-killing-forward)
-(define-key clj-refactor-map (kbd "/") 'cljr-slash)
+(defvar cider-ns-magic-requires)
+
+(defun cljr--slash-binding (command)
+  "Return COMMAND, unless `/' should stay a plain `/'.
+That's when `cljr-magic-requires' is off, or CIDER's own magic requires
+\(`cider-ns-magic-requires') are on, which run after a plain `/'."
+  (and cljr-magic-requires
+       (not (bound-and-true-p cider-ns-magic-requires))
+       command))
+
+(define-key clj-refactor-map (kbd "/") '(menu-item "" cljr-slash :filter cljr--slash-binding))
 
 (defun cljr--vector-at-point-p ()
   (eq (char-after) ?\[))
