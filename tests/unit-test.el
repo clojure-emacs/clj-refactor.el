@@ -423,6 +423,35 @@ ex/"))))
             (cider-ns-magic-requires t))
         (expect (key-binding "/") :to-be 'self-insert-command)))))
 
+(describe "the ns form commands CIDER has taken over"
+  (it "are obsolete in favor of CIDER's"
+    (dolist (pair '((cljr-add-require-to-ns . cider-ns-add-require)
+                    (cljr-add-import-to-ns . cider-ns-add-import)
+                    (cljr-add-missing-libspec . cider-ns-add-missing)
+                    (cljr-clean-ns . cider-ns-clean)))
+      (expect (car (get (car pair) 'byte-obsolete-info)) :to-be (cdr pair)))
+    (expect (car (get 'cljr-slash 'byte-obsolete-info)) :to-match "cider-ns-magic-requires")))
+
+(describe "cljr--obsolete-notice"
+  :var (cljr--post-command-messages)
+  (before-each
+    (setq cljr--post-command-messages nil)
+    (put 'cljr-clean-ns 'command-execute-obsolete-warned nil))
+  (after-each
+    (put 'cljr-clean-ns 'command-execute-obsolete-warned nil))
+
+  (it "says what replaces the command, once"
+    (let ((this-command 'cljr-clean-ns))
+      (cljr--obsolete-notice 'cljr-clean-ns)
+      (cljr--obsolete-notice 'cljr-clean-ns))
+    (expect (length cljr--post-command-messages) :to-equal 1)
+    (expect (car cljr--post-command-messages) :to-match "use .cider-ns-clean. instead"))
+
+  (it "stays quiet when the command is called from Lisp"
+    (let ((this-command 'cljr-project-clean))
+      (cljr--obsolete-notice 'cljr-clean-ns))
+    (expect cljr--post-command-messages :to-be nil)))
+
 (describe "cljr-slash offline fallback"
   (it "inserts a require from the static table when the middleware is unavailable"
     (spy-on 'cljr--slash-suggest-op-available-p :and-return-value nil)
