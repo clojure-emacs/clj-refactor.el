@@ -400,6 +400,29 @@ ex/")))
   (:require [baz.example :as ex :refer [a b c] ]))
 ex/"))))
 
+(defvar cider-ns-magic-requires)
+
+(describe "the / binding"
+  (it "runs cljr-slash"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (clj-refactor-mode 1)
+      (let ((cljr-magic-requires t)
+            (cider-ns-magic-requires nil))
+        (expect (key-binding "/") :to-be 'cljr-slash))))
+
+  (it "is a plain / when cljr-magic-requires is off"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (clj-refactor-mode 1)
+      (let ((cljr-magic-requires nil))
+        (expect (key-binding "/") :to-be 'self-insert-command))))
+
+  (it "is a plain / when CIDER's magic requires are on"
+    (cljr--with-clojure-temp-file "foo.clj"
+      (clj-refactor-mode 1)
+      (let ((cljr-magic-requires t)
+            (cider-ns-magic-requires t))
+        (expect (key-binding "/") :to-be 'self-insert-command)))))
+
 (describe "cljr-slash offline fallback"
   (it "inserts a require from the static table when the middleware is unavailable"
     (spy-on 'cljr--slash-suggest-op-available-p :and-return-value nil)
