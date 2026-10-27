@@ -10,7 +10,7 @@
 ;; Version: 4.0.0
 ;; Keywords: convenience, clojure, cider
 
-;; Package-Requires: ((emacs "28.1") (yasnippet "0.6.1") (paredit "24") (clojure-mode "5.18.0") (cider "2.0.0") (parseedn "1.2.0") (transient "0.4.1") (spinner "1.7"))
+;; Package-Requires: ((emacs "28.1") (yasnippet "0.6.1") (paredit "24") (clojure-mode "5.18.0") (cider "2.1.0") (parseedn "1.2.0") (transient "0.4.1") (spinner "1.7"))
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License
@@ -115,7 +115,7 @@ If nil, the project clean functions are run without warning."
   :safe #'booleanp)
 
 (defcustom cljr-project-clean-functions
-  (list #'cljr-clean-ns)
+  (list #'cljr--clean-or-sort-ns)
   "List of functions called by `cljr-project-clean'.
 These are called on all .clj files in the project."
   :type '(repeat function)
@@ -1072,6 +1072,30 @@ are included in the created msg."
   (seq-map #'message cljr--post-command-messages)
   (setq cljr--post-command-messages nil))
 
+(defun cljr--obsolete-notice (command)
+  "Say what replaces COMMAND, the first time it runs as a command.
+Emacs says so itself, but the command's own messages would cover it, so
+this takes over Emacs's notice, which it only gives once a session."
+  (when (and (eq this-command command)
+             (not (get command 'command-execute-obsolete-warned)))
+    (put command 'command-execute-obsolete-warned t)
+    (let ((current (car (get command 'byte-obsolete-info))))
+      ;; Queued first, it's shown last, after the command's own messages
+      (cljr--post-command-message
+       "%s" (if (stringp current)
+                (format-message "`%s' is obsolete; %s" command current)
+              (format-message "`%s' is obsolete; use `%s' instead." command current))))))
+
+;; Not top-level `make-obsolete' forms, which the byte-compiler evaluates
+;; too, recording the replacements as symbols with positions in the
+;; Emacs that compiles them (e.g. the one installing the package).
+(dolist (obsolete '((cljr-add-require-to-ns . cider-ns-add-require)
+                    (cljr-add-import-to-ns . cider-ns-add-import)
+                    (cljr-add-missing-libspec . cider-ns-add-missing)
+                    (cljr-slash . "set `cider-ns-magic-requires' instead.")
+                    (cljr-clean-ns . cider-ns-clean)))
+  (make-obsolete (car obsolete) (cdr obsolete) "4.1.0"))
+
 (defun cljr-show-changelog ()
   "Show the changelog for `clj-refactor'.
 
@@ -1503,7 +1527,7 @@ word test in it and whether the file lives under the test/ directory."
   (when (and cljr-auto-clean-ns (cider-connected-p)
              (cljr--op-supported-p "clean-ns"))
     (let ((*cljr--noninteractive* t))
-      (cljr-clean-ns))))
+      (cljr--clean-or-sort-ns))))
 
 (defvar cljr--tmp-marker (make-marker))
 
@@ -1558,6 +1582,7 @@ With a prefix act on the cljs part of the ns declaration.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-require-to-ns"
   (interactive "P")
+  (cljr--obsolete-notice 'cljr-add-require-to-ns)
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":require" cljs?)
   (cljr--pop-tmp-marker-after-yasnippet)
@@ -1586,6 +1611,7 @@ With a prefix act on the cljs part of the ns declaration.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-import-to-ns"
   (interactive "P")
+  (cljr--obsolete-notice 'cljr-add-import-to-ns)
   (set-marker cljr--tmp-marker (point))
   (cljr--insert-in-ns ":import" cljs?)
   (cljr--pop-tmp-marker-after-yasnippet)
@@ -1769,10 +1795,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
                        (apply #'concat)
                        string-trim
                        insert)
-          (cljr-clean-ns))
+          (cljr--clean-or-sort-ns))
         (save-buffer))
       (cljr--update-ns-after-moving-fns ns (nreverse names))
-      (cljr-clean-ns)))
+      (cljr--clean-or-sort-ns)))
   (cljr--just-one-blank-line))
 
 (defun cljr--remove-references-of-target-ns (forms ns alias)
@@ -2470,6 +2496,7 @@ of the aliases listed in `cljr-magic-require-namespaces', or any alias
 used elsewhere in the project, will add the corresponding require statement
 to the ns form."
   (interactive)
+  (cljr--obsolete-notice 'cljr-slash)
   (insert "/")
   (when-let* ((alias-ref (and cljr-magic-requires
                               (not (cljr--in-map-destructuring?))
@@ -3379,6 +3406,16 @@ removed."
     (unless *cljr--noninteractive*
       (cljr--post-command-message "Namespace form cleaned!"))))
 
+(defun cljr--clean-or-sort-ns ()
+  "Clean the ns form with the middleware, or sort it without."
+  (if (cljr--op-supported-p "clean-ns")
+      (progn
+        (cider-eval-ns-form)
+        (cljr--clean-ns))
+    (cljr--sort-ns)
+    (cljr--post-command-message
+     "Sorted the ns form (pruning unused libspecs needs the refactor-nrepl middleware).")))
+
 ;;;###autoload
 (defun cljr-clean-ns ()
   "Clean the ns form for the current buffer.
@@ -3390,13 +3427,8 @@ analysis, so it is skipped.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-clean-ns"
   (interactive)
-  (if (cljr--op-supported-p "clean-ns")
-      (progn
-        (cider-eval-ns-form)
-        (cljr--clean-ns))
-    (cljr--sort-ns)
-    (cljr--post-command-message
-     "Sorted the ns form (pruning unused libspecs needs the refactor-nrepl middleware).")))
+  (cljr--obsolete-notice 'cljr-clean-ns)
+  (cljr--clean-or-sort-ns))
 
 (defun cljr--uses-completion-framework-p ()
   "Whether the user is using something richer than the stock `completing-read'."
@@ -3617,6 +3649,7 @@ common aliases still work offline and a missing library can be added (see
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-missing-libspec"
   (interactive)
+  (cljr--obsolete-notice 'cljr-add-missing-libspec)
   (let ((symbol (cider-symbol-at-point)))
     (if (cljr--op-supported-p "resolve-missing")
         (let ((candidates (cljr--call-middleware-to-resolve-missing symbol (cider-current-ns))))

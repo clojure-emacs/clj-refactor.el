@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- [#606](https://github.com/clojure-emacs/clj-refactor.el/pull/606): **(Breaking)** Require CIDER 2.1+.
+- [#606](https://github.com/clojure-emacs/clj-refactor.el/pull/606): Deprecate `cljr-add-require-to-ns`, `cljr-add-import-to-ns`, `cljr-add-missing-libspec`, `cljr-slash` and `cljr-clean-ns` in favor of CIDER 2.1's `cider-ns-add-require`, `cider-ns-add-import`, `cider-ns-add-missing`, `cider-ns-magic-requires` and `cider-ns-clean`. They keep working until refactor-nrepl drops the ops behind them.
 - [#606](https://github.com/clojure-emacs/clj-refactor.el/pull/606): Leave `/` to CIDER's magic requires when `cider-ns-magic-requires` is on, and a plain `/` when `cljr-magic-requires` is off.
 
 ## 4.0.0 (2026-07-16)
