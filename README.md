@@ -158,6 +158,25 @@ settings for the current session.
 See the wiki for a complete [list of available refactorings](https://github.com/clojure-emacs/clj-refactor.el/wiki),
 demonstrations and customization points.
 
+CIDER 2.1 has [its own commands](https://docs.cider.mx/cider/usage/ns_form.html)
+for editing the `ns` form, which don't need refactor-nrepl, so clj-refactor's
+versions are deprecated:
+
+clj-refactor               | CIDER
+---------------------------|------------------------
+`cljr-add-require-to-ns`   | `cider-ns-add-require`
+`cljr-add-import-to-ns`    | `cider-ns-add-import`
+`cljr-add-missing-libspec` | `cider-ns-add-missing`
+`cljr-slash`               | `cider-ns-magic-requires`
+`cljr-clean-ns`            | `cider-ns-clean`
+
+They still work (though `M-x` stops offering them, as with any obsolete
+command), but they'll go away in a future release, together with
+`cljr-auto-clean-ns`. CIDER never cleans the `ns` form on its own, but it can
+[on save](https://docs.cider.mx/cider/usage/ns_form.html#cleaning-the-ns-form).
+With `cider-ns-magic-requires` on, clj-refactor leaves `/` to CIDER's magic
+requires, which work once CIDER is connected.
+
 ## Changelog
 
 An extensive changelog is available [here](CHANGELOG.md).

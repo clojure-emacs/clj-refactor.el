@@ -585,7 +585,7 @@ Otherwise the previous scenario's occurrences count as duplicates."
 
 (And "^I disable cljr-clean-ns$"
      (lambda ()
-       (defun cljr-clean-ns ()(interactive))))
+       (defun cljr--clean-or-sort-ns ())))
 
 (When "^I add dependency artifact \"\\([^ ]+\\)\" with version \"\\([^\"]+\\)\"$"
   (lambda (artifact version)
