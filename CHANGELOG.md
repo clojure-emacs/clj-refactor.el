@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- [#606](https://github.com/clojure-emacs/clj-refactor.el/pull/606): Leave `/` to CIDER's magic requires when `cider-ns-magic-requires` is on, and a plain `/` when `cljr-magic-requires` is off.
+
 ## 4.0.0 (2026-07-16)
 
 - **(Breaking)** Require Emacs 28.1+.
