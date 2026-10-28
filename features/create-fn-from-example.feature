@@ -178,15 +178,15 @@ Feature: Create Function from Example
     """
 
   Scenario: Create function from example, map
-    When I insert "(map do-stuff items (:oxen bar))"
+    When I insert "(map do-stuff items (:boxes bar))"
     And I place the cursor after "do"
     And I press "C-! fe"
     Then I should see:
     """
-    (defn- do-stuff [item ox]
+    (defn- do-stuff [item box]
       )
 
-    (map do-stuff items (:oxen bar))
+    (map do-stuff items (:boxes bar))
     """
 
   Scenario: Create function from example, invalid fn name

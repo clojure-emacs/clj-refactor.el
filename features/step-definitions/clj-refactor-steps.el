@@ -534,9 +534,17 @@
            "({:line-beg 5 :line-end 5 :col-beg 13 :col-end 30 :file\"one.clj\" :name \"foo\"} {:line-beg 8 :line-end 8 :col-beg 15 :col-end 28 :file \"one.clj\" :name \"star*\"})")
           "two")))
 
+(defun reset-find-usages-state ()
+  "Reset what `cljr--find-symbol' resets before a search.
+Otherwise the previous scenario's occurrences count as duplicates."
+  (setq cljr--occurrence-count 0
+        cljr--num-syms -1
+        cljr--occurrence-ids '()))
+
 (Given "^I call find usages for \"\\(.*\\)\"$"
        (lambda (symbol-name)
          (cljr--setup-find-symbol-buffer symbol-name)
+         (reset-find-usages-state)
          (-map 'cljr--format-and-insert-symbol-occurrence
                (list '(dict "occurrence" "{:line-beg 3 :line-end 4 :col-beg 7 :col-end 9 :name \"foo\" :file \"tmp/src/example/two.clj\" :match \"(defn foo []\"}")
                      '(dict "occurrence" "{:line-beg 5 :line-end 5 :col-beg 15 :col-end 23 :name \"foo\" :file \"tmp/src/example/one.clj\" :match \"(str \\\"bar\\\" (two/foo) \\\"goo\\\"))\"}")
@@ -545,6 +553,7 @@
 (Given "^I call find usages for \"\\(.*\\)\" and the middleware gives me three matches"
        (lambda (symbol-name)
          (cljr--setup-find-symbol-buffer symbol-name)
+         (reset-find-usages-state)
          (-map 'cljr--format-and-insert-symbol-occurrence
                (list '(dict "occurrence" "{:line-beg 3 :line-end 4 :col-beg 7 :col-end 9 :name \"foo\" :file \"tmp/src/example/two.clj\" :match \"(defn foo []\"}")
                      '(dict "occurrence" "{:line-beg 3 :line-end 4 :col-beg 7 :col-end 9 :name \"foo\" :file \"tmp/src/example/two.clj\" :match \"(defn foo []\"}")

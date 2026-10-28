@@ -28,6 +28,9 @@
  (let ((tmp-dir(expand-file-name "tmp" clj-refactor-root-path)))
    (when (file-directory-p tmp-dir)
      (delete-directory tmp-dir t)))
+ ;; Off in batch Emacs, which would leave the region inactive in the
+ ;; scenarios that select one
+ (transient-mark-mode 1)
  (yas-global-mode 1)
  (cljr-add-keybindings-with-prefix "C-!")
  (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode))))
