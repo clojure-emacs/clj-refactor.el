@@ -18,6 +18,14 @@
 (require 'ert)
 (require 's)
 
+;; Eldev runs each step with `debug-on-error' on, to collect backtraces,
+;; and a failed `cl-assert' then just calls the debugger, which returns,
+;; so espuds' assertions never fail.  `ecukes-cli' has the same fix.
+(advice-add 'cl--assertion-failed :around
+            (lambda (assertion-failed &rest args)
+              (let ((debug-on-error nil))
+                (apply assertion-failed args))))
+
 (Setup
  ;; Used in cljr--maybe-eval-ns-form
  (defun cider-eval-ns-form (&rest _))
