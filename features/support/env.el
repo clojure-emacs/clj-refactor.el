@@ -18,6 +18,14 @@
 (require 'ert)
 (require 's)
 
+;; Eldev runs each step with `debug-on-error' on, to collect backtraces,
+;; and a failed `cl-assert' then just calls the debugger, which returns,
+;; so espuds' assertions never fail.  `ecukes-cli' has the same fix.
+(advice-add 'cl--assertion-failed :around
+            (lambda (assertion-failed &rest args)
+              (let ((debug-on-error nil))
+                (apply assertion-failed args))))
+
 (Setup
  ;; Used in cljr--maybe-eval-ns-form
  (defun cider-eval-ns-form (&rest _))
@@ -28,6 +36,9 @@
  (let ((tmp-dir(expand-file-name "tmp" clj-refactor-root-path)))
    (when (file-directory-p tmp-dir)
      (delete-directory tmp-dir t)))
+ ;; Off in batch Emacs, which would leave the region inactive in the
+ ;; scenarios that select one
+ (transient-mark-mode 1)
  (yas-global-mode 1)
  (cljr-add-keybindings-with-prefix "C-!")
  (add-hook 'clojure-mode-hook (lambda () (clj-refactor-mode))))
