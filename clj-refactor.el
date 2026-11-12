@@ -3181,6 +3181,9 @@ Translate it back to TRAMP notation if needed."
             (cljr--first-line match))))
 
 (defun cljr--format-and-insert-symbol-occurrence (occurrence-resp)
+  "Insert the occurrence in OCCURRENCE-RESP into the find usages buffer.
+Return the total number of occurrences once the search is finished, and
+nil until then."
   ;; The middleware sends either an occurrence or a final count, never
   ;; both in the same message.
   (cljr--maybe-rethrow-error occurrence-resp)
@@ -3188,7 +3191,8 @@ Translate it back to TRAMP notation if needed."
       (progn
         (setq cljr--num-syms count)
         (when (= cljr--occurrence-count cljr--num-syms)
-          (cljr--finalise-find-symbol-buffer cljr--num-syms)))
+          (cljr--finalise-find-symbol-buffer cljr--num-syms))
+        count)
     (when-let* ((occurrence-data (nrepl-dict-get occurrence-resp "occurrence")))
       (let* ((occurrence (parseedn-read-str occurrence-data))
              (occurrence-id (format "%s%s"
@@ -3200,13 +3204,30 @@ Translate it back to TRAMP notation if needed."
                 (cons occurrence-id cljr--occurrence-ids))
           (thread-last occurrence
                        cljr--format-symbol-occurrence
-                       cljr--insert-in-find-symbol-buffer))))))
+                       cljr--insert-in-find-symbol-buffer)))
+      nil)))
+
+(defun cljr--find-usages-handler (name spinner-buffer)
+  "Return the response handler for a find usages search for NAME.
+It stops the spinner in SPINNER-BUFFER once the search is over.  A
+middleware error is reported with `message' rather than signaled, as the
+handler runs in the nREPL process filter."
+  (lambda (response)
+    (condition-case err
+        (when-let* ((total (cljr--format-and-insert-symbol-occurrence response)))
+          (cljr--stop-spinner spinner-buffer)
+          ;; The results buffer only pops up with the first occurrence.
+          (when (zerop total)
+            (message "No occurrences of %s found" name)))
+      (error
+       (cljr--stop-spinner spinner-buffer)
+       (message "clj-refactor: %s" (error-message-string err))))))
 
 (defun cljr--finalise-find-symbol-buffer (total)
   (with-current-buffer "*cljr-find-usages*"
     (goto-char (point-max))
     (insert (format "\nFind symbol finished: %d occurrence%s found"
-                    total (if (> total 1) "s" "")))
+                    total (if (= total 1) "" "s")))
     ;; Place point on first occurrence
     (goto-char (point-min))
     (forward-line 2)))
@@ -3238,16 +3259,19 @@ Translate it back to TRAMP notation if needed."
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-find-usages"
   (interactive)
   (cljr--ensure-op-supported "find-symbol")
+  (unless (cider-symbol-at-point)
+    (user-error "No symbol at point"))
   (when (cljr--asts-y-or-n-p)
     (save-buffer)
     (let* ((cljr--find-symbol-buffer "*cljr-find-usages*")
            (symbol (cider-symbol-at-point))
            (var-info (cljr--var-info symbol))
            (ns (nrepl-dict-get var-info "ns"))
-           (symbol-name (nrepl-dict-get var-info "name")))
-      (cljr--setup-find-symbol-buffer (or symbol-name symbol))
-      (cljr--find-symbol (or symbol-name symbol) ns
-                         #'cljr--format-and-insert-symbol-occurrence))))
+           (name (or (nrepl-dict-get var-info "name") symbol)))
+      (cljr--setup-find-symbol-buffer name)
+      (cider-spinner-start (current-buffer))
+      (cljr--find-symbol name ns
+                         (cljr--find-usages-handler name (current-buffer))))))
 
 (defun cljr--rename-occurrence (file line-beg col-beg line-end col-end name new-name)
   (save-excursion

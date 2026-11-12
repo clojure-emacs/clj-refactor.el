@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- [#608](https://github.com/clojure-emacs/clj-refactor.el/pull/608): `cljr-find-usages` now shows a mode-line spinner while searching, reports middleware errors in the echo area instead of signaling them from the nREPL process filter, and says so when nothing was found.
+
 ## 4.1.0 (2026-11-10)
 
 - [#606](https://github.com/clojure-emacs/clj-refactor.el/pull/606): Deprecate `cljr-add-require-to-ns`, `cljr-add-import-to-ns`, `cljr-add-missing-libspec`, `cljr-slash` and `cljr-clean-ns` in favor of CIDER 2.1's `cider-ns-add-require`, `cider-ns-add-import`, `cider-ns-add-missing`, `cider-ns-magic-requires` and `cider-ns-clean`. They keep working until refactor-nrepl drops the ops behind them.
