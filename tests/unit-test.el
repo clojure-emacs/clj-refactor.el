@@ -1129,3 +1129,26 @@ str/"))))
     (cljr--find-symbol-occurrences "x" "ns" #'ignore)
     (expect 'cider-spinner-start :to-have-been-called)
     (expect 'cljr--stop-spinner :to-have-been-called)))
+
+(describe "cljr--find-usages-handler"
+  (before-each
+    (spy-on 'cljr--stop-spinner)
+    (spy-on 'message))
+  (after-each
+    (when (get-buffer "*cljr-find-usages*")
+      (kill-buffer "*cljr-find-usages*")))
+  (it "reports a middleware error instead of signaling it"
+    (funcall (cljr--find-usages-handler "foo" (current-buffer))
+             (nrepl-dict "error" "boom" "status" '("done")))
+    (expect 'cljr--stop-spinner :to-have-been-called)
+    (expect 'message :to-have-been-called-with "clj-refactor: %s" "boom"))
+  (it "says so when nothing was found"
+    (with-temp-buffer
+      (setq cljr--occurrence-count 0)
+      (get-buffer-create "*cljr-find-usages*")
+      (funcall (cljr--find-usages-handler "foo" (current-buffer))
+               (nrepl-dict "count" 0)))
+    (expect 'cljr--stop-spinner :to-have-been-called)
+    (expect 'message :to-have-been-called-with "No occurrences of %s found" "foo")
+    (with-current-buffer "*cljr-find-usages*"
+      (expect (buffer-string) :to-match "0 occurrences found"))))
