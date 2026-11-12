@@ -195,7 +195,11 @@ the command carries on looking for the given symbol in those
 namespaces which can be analyzed.
 
 If nil, `cljr-find-usages'  `cljr-inline-symbol' `cljr-rename-symbol'
-won't run if there is a broken namespace in the project."
+won't run if there is a broken namespace in the project.
+
+Either way, the namespace of the buffer the command is invoked from
+has to be analyzable, as that's where the symbol at point is resolved.
+If it isn't, make sure it loads cleanly (e.g. with `cider-load-buffer')."
   :type 'boolean
   :safe #'booleanp)
 
