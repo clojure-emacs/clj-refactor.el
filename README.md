@@ -130,7 +130,8 @@ a lot of head-scratching:
 - They **don't support ClojureScript** (`.cljs`), and only analyze the `:clj`
   branch of `.cljc` files.
 - The **first invocation can be slow** on a large project, since it may need to
-  load much of it.
+  load much of it. With a refactor-nrepl newer than 3.16.0 you can stop a search that's
+  taking too long with `cider-interrupt` (`C-c C-b`), like an evaluation.
 - **Macro-generated code** is only approximated, so occurrences that appear only
   after macroexpansion may be missed.
 
