@@ -3135,6 +3135,24 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
       (setq cljr--occurrence-ids '()))
     (cljr--call-middleware-async find-symbol-request callback)))
 
+(defun cljr--skipped-files (response)
+  "Return the files the search that ended with RESPONSE had to skip.
+With `cljr-ignore-analyzer-errors' the middleware carries on past files it
+can't analyze, and lists them in its final message.  Each one is a hash
+table with a :file and an :error."
+  (when-let* ((skipped (nrepl-dict-get response "skipped")))
+    (append (parseedn-read-str skipped) nil)))
+
+(defun cljr--skipped-files-summary (skipped)
+  "Describe the SKIPPED files, as returned by `cljr--skipped-files'."
+  (format "%d file%s couldn't be analyzed and %s skipped: %s"
+          (length skipped)
+          (if (= (length skipped) 1) "" "s")
+          (if (= (length skipped) 1) "was" "were")
+          (mapconcat (lambda (file)
+                       (cljr--project-relative-path (cljr--get-valid-filename file)))
+                     skipped ", ")))
+
 (defun cljr--find-symbol-occurrences (symbol ns callback)
   "Asynchronously find occurrences of SYMBOL in NS, keeping Emacs responsive.
 
@@ -3144,7 +3162,8 @@ search finishes, call CALLBACK with the full list.  CALLBACK is run in the
 command loop rather than the nREPL process filter, so it may prompt or pop
 up buffers safely.  A middleware error is reported to the user, and the
 search is abandoned with a message if `count' never arrives within
-`cljr-middleware-timeout'.  This is the collecting counterpart to
+`cljr-middleware-timeout'.  The user is told about any files the search
+had to skip, as their occurrences are missing from the list.  This is the collecting counterpart to
 `cljr--find-symbol', which streams occurrences to a per-message callback."
   (let ((occurrences '())
         (seen '())
@@ -3170,11 +3189,20 @@ search is abandoned with a message if `count' never arrives within
                ;; nREPL `done' status in case it ever finishes without one.
                (if (or (nrepl-dict-get response "count")
                        (member "done" (nrepl-dict-get response "status")))
-                   (let ((result (nreverse occurrences)))
+                   (let ((result (nreverse occurrences))
+                         (skipped (when-let* ((files (cljr--skipped-files response)))
+                                    (cljr--skipped-files-summary files))))
                      (setq settled t)
                      (when (timerp timer) (cancel-timer timer))
                      (cljr--stop-spinner spinner-buffer)
-                     (run-at-time 0 nil (lambda () (funcall callback result))))
+                     (run-at-time 0 nil
+                                  (lambda ()
+                                    ;; Queued first, it's shown last, after
+                                    ;; whatever the callback has to say.
+                                    (when skipped
+                                      (cljr--post-command-message
+                                       "%s" skipped))
+                                    (funcall callback result))))
                  (when-let* ((data (nrepl-dict-get response "occurrence")))
                    (let* ((occurrence (parseedn-read-str data))
                           (id (format "%s:%s:%s"
@@ -3226,7 +3254,8 @@ nil until then."
       (progn
         (setq cljr--num-syms count)
         (when (= cljr--occurrence-count cljr--num-syms)
-          (cljr--finalise-find-symbol-buffer cljr--num-syms))
+          (cljr--finalise-find-symbol-buffer
+           cljr--num-syms (cljr--skipped-files occurrence-resp)))
         count)
     (when-let* ((occurrence-data (nrepl-dict-get occurrence-resp "occurrence")))
       (let* ((occurrence (parseedn-read-str occurrence-data))
@@ -3267,16 +3296,29 @@ a message if it doesn't finish within `cljr-middleware-timeout'."
               (funcall settle)
               ;; The results buffer only pops up with the first occurrence.
               (when (zerop total)
-                (message "No occurrences of %s found" name)))
+                (if-let* ((skipped (cljr--skipped-files response)))
+                    (message "No occurrences of %s found, but %s"
+                             name (cljr--skipped-files-summary skipped))
+                  (message "No occurrences of %s found" name))))
           (error
            (funcall settle)
            (message "clj-refactor: %s" (error-message-string err))))))))
 
-(defun cljr--finalise-find-symbol-buffer (total)
+(defun cljr--finalise-find-symbol-buffer (total &optional skipped)
+  "Add the footer to the find usages buffer, once all TOTAL occurrences are in.
+SKIPPED are the files the search couldn't analyze, as returned by
+`cljr--skipped-files'."
   (with-current-buffer "*cljr-find-usages*"
     (goto-char (point-max))
     (insert (format "\nFind symbol finished: %d occurrence%s found"
                     total (if (= total 1) "" "s")))
+    (when skipped
+      (insert (format "\n\n%d file%s couldn't be analyzed, so any occurrences there are missing:\n"
+                      (length skipped) (if (= (length skipped) 1) "" "s")))
+      (dolist (file skipped)
+        (insert (format "  %s (%s)\n"
+                        (cljr--project-relative-path (cljr--get-valid-filename file))
+                        (cljr--first-line (gethash :error file))))))
     ;; Place point on first occurrence
     (goto-char (point-min))
     (forward-line 2)))

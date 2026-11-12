@@ -1145,6 +1145,27 @@ str/"))))
       (cljr--find-symbol-occurrences "x" "ns" (lambda (occs) (setq result occs done t)))
       (with-timeout (2) (while (not done) (sit-for 0.02)))
       (expect (length result) :to-equal 1)))
+  (it "tells the user about the files the search had to skip"
+    (spy-on 'cljr--find-symbol :and-call-fake
+            (lambda (_symbol _ns cb)
+              (funcall cb (nrepl-dict "count" 0
+                                      "skipped" "({:file \"a.clj\" :error \"boom\"} {:file \"b.clj\" :error \"bang\"})"))))
+    (spy-on 'cljr--project-relative-path :and-call-fake #'identity)
+    (let ((cljr--post-command-messages nil)
+          done)
+      (cljr--find-symbol-occurrences "x" "ns" (lambda (_occs) (setq done t)))
+      (with-timeout (2) (while (not done) (sit-for 0.02)))
+      (expect cljr--post-command-messages
+              :to-equal '("2 files couldn't be analyzed and were skipped: a.clj, b.clj"))))
+  (it "has nothing to add when no file was skipped"
+    (spy-on 'cljr--find-symbol :and-call-fake
+            (lambda (_symbol _ns cb)
+              (funcall cb (nrepl-dict "count" 0 "skipped" "()"))))
+    (let ((cljr--post-command-messages nil)
+          done)
+      (cljr--find-symbol-occurrences "x" "ns" (lambda (_occs) (setq done t)))
+      (with-timeout (2) (while (not done) (sit-for 0.02)))
+      (expect cljr--post-command-messages :to-be nil)))
   (it "reports a middleware error and doesn't run the callback"
     (spy-on 'cljr--find-symbol :and-call-fake
             (lambda (_symbol _ns cb)
@@ -1234,4 +1255,20 @@ str/"))))
     (expect 'cljr--stop-spinner :to-have-been-called)
     (expect 'message :to-have-been-called-with "No occurrences of %s found" "foo")
     (with-current-buffer "*cljr-find-usages*"
-      (expect (buffer-string) :to-match "0 occurrences found"))))
+      (expect (buffer-string) :to-match "0 occurrences found")))
+  (it "lists the files the search had to skip"
+    (spy-on 'cljr--get-valid-filename :and-call-fake
+            (lambda (file) (gethash :file file)))
+    (spy-on 'cljr--project-relative-path :and-call-fake #'identity)
+    (with-temp-buffer
+      (setq cljr--occurrence-count 0)
+      (get-buffer-create "*cljr-find-usages*")
+      (funcall (cljr--find-usages-handler "foo" (current-buffer))
+               (nrepl-dict "count" 0
+                           "skipped" "({:file \"a.clj\" :error \"boom\"})")))
+    (expect 'message :to-have-been-called-with
+            "No occurrences of %s found, but %s" "foo"
+            "1 file couldn't be analyzed and was skipped: a.clj")
+    (with-current-buffer "*cljr-find-usages*"
+      (expect (buffer-string) :to-match "1 file couldn't be analyzed")
+      (expect (buffer-string) :to-match "a.clj (boom)"))))
