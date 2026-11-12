@@ -6,6 +6,7 @@
 
 ## Unreleased
 
+- [#611](https://github.com/clojure-emacs/clj-refactor.el/pull/611): With `cljr-ignore-analyzer-errors` on, `cljr-find-usages`, `cljr-rename-symbol` and `cljr-change-function-signature` now say which files couldn't be analyzed and were skipped (needs a refactor-nrepl newer than 3.16.0).
 - [#610](https://github.com/clojure-emacs/clj-refactor.el/pull/610): Add `cljr-middleware-timeout` and give up on an unresponsive middleware after 2 minutes instead of 10; synchronous requests, which could wait forever, are bound by it as well.
 - [#610](https://github.com/clojure-emacs/clj-refactor.el/pull/610): Say so in the echo area when a blocking middleware request takes longer than a second, and show a spinner while `cljr-hotload-dependency` is working.
 
