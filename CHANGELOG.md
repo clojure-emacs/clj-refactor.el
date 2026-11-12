@@ -6,6 +6,7 @@
 
 ## Unreleased
 
+- Inject refactor-nrepl [3.16.0](https://github.com/clojure-emacs/refactor-nrepl/releases/tag/v3.16.0), which reports a namespace that fails to load as an error instead of leaving `cljr-rename-symbol` and `cljr-find-usages` hanging, and makes them honor `cljr-middleware-ignored-paths`.
 - [#609](https://github.com/clojure-emacs/clj-refactor.el/pull/609): `cljr-find-usages` now gives up with a message if the middleware doesn't respond within 10 minutes, like the other asynchronous commands.
 - [#608](https://github.com/clojure-emacs/clj-refactor.el/pull/608): `cljr-find-usages` now shows a mode-line spinner while searching, reports middleware errors in the echo area instead of signaling them from the nREPL process filter, and says so when nothing was found.
 - [#608](https://github.com/clojure-emacs/clj-refactor.el/pull/608): `cljr-rename-symbol` now refuses to run without a symbol at point, rejects an empty or unchanged new name, and says so when the symbol has no occurrences instead of reporting "Renamed 0 occurrences".
