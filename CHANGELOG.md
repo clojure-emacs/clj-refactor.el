@@ -7,6 +7,7 @@
 ## Unreleased
 
 - [#PRNUM](https://github.com/clojure-emacs/clj-refactor.el/pull/PRNUM): Add `cljr-middleware-timeout` and give up on an unresponsive middleware after 2 minutes instead of 10; synchronous requests, which could wait forever, are bound by it as well.
+- [#PRNUM](https://github.com/clojure-emacs/clj-refactor.el/pull/PRNUM): Say so in the echo area when a blocking middleware request takes longer than a second, and show a spinner while `cljr-hotload-dependency` is working.
 
 ## 4.2.0 (2026-11-12)
 
