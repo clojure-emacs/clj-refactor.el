@@ -1072,7 +1072,35 @@ str/"))))
     (let ((calls 0))
       (cljr--call-middleware-async-collect
        (cljr--create-msg "x") "touched" (lambda (_v) (setq calls (1+ calls))))
-      (expect calls :to-equal 0))))
+      (expect calls :to-equal 0)))
+  (it "gives up after `cljr-middleware-timeout' seconds"
+    (spy-on 'cljr--call-middleware-async)
+    (spy-on 'cljr--stop-spinner)
+    (spy-on 'message)
+    (let ((cljr-middleware-timeout 0.01))
+      (cljr--call-middleware-async-collect (cljr--create-msg "x") "touched" #'ignore)
+      (sleep-for 0.05)
+      (expect 'cljr--stop-spinner :to-have-been-called)
+      (expect (apply #'format (spy-calls-args-for 'message 0))
+              :to-match "timed out after 0.01 seconds")))
+  (it "waits indefinitely when the timeout is disabled"
+    (spy-on 'cljr--call-middleware-async)
+    (spy-on 'run-at-time)
+    (let ((cljr-middleware-timeout nil))
+      (cljr--call-middleware-async-collect (cljr--create-msg "x") "touched" #'ignore)
+      (expect 'run-at-time :not :to-have-been-called))))
+
+(describe "cljr--call-middleware-sync"
+  (it "bounds the request with `cljr-middleware-timeout'"
+    (let ((cljr-middleware-timeout 7)
+          seen)
+      (spy-on 'cider-nrepl-sync-request :and-call-fake
+              (lambda (_request)
+                (setq seen nrepl-sync-request-timeout)
+                (nrepl-dict "version" "1")))
+      (expect (cljr--call-middleware-sync (cljr--create-msg "version") "version")
+              :to-equal "1")
+      (expect seen :to-equal 7))))
 
 (describe "cljr--find-symbol-occurrences"
   (before-each
@@ -1173,11 +1201,12 @@ str/"))))
     (expect 'cljr--stop-spinner :to-have-been-called)
     (expect 'message :to-have-been-called-with "clj-refactor: %s" "boom"))
   (it "gives up when the search doesn't finish in time"
-    (let* ((cljr--async-request-timeout 0.01)
+    (let* ((cljr-middleware-timeout 0.01)
            (handler (cljr--find-usages-handler "foo" (current-buffer))))
       (sleep-for 0.05)
       (expect 'cljr--stop-spinner :to-have-been-called)
-      (expect 'message :to-have-been-called-with "clj-refactor: finding usages timed out")
+      (expect (apply #'format (spy-calls-args-for 'message 0))
+              :to-match "finding usages timed out after 0.01 seconds")
       ;; A late response is ignored.
       (funcall handler (nrepl-dict "error" "boom" "status" '("done")))
       (expect 'message :to-have-been-called-times 1)))

@@ -301,6 +301,15 @@ added params), `:removed' and `:rest'.")
   "Runs after each time the AST is loaded."
   :type 'hook)
 
+(defcustom cljr-middleware-timeout 120
+  "Seconds to wait for the middleware to answer a request before giving up.
+A safety net, so that a hung request or a dropped connection doesn't leave
+a command waiting forever.  Raise it if analyzing your project legitimately
+takes longer, or set it to nil to wait indefinitely."
+  :type '(choice (integer :tag "Seconds")
+                 (const :tag "Wait indefinitely" nil))
+  :package-version '(clj-refactor . "4.3.0"))
+
 (defcustom cljr-middleware-ignored-paths nil
   "List of (Java style) regexes to paths that should be ignored by the middleware."
   :type '(repeat string)
@@ -2672,8 +2681,11 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
 (defun cljr--call-middleware-sync (request &optional key)
   "Call the middleware with REQUEST.
 
-If it's present KEY indicates the key to extract from the response."
-  (let* ((nrepl-sync-request-timeout (if cljr-warn-on-eval nil 25))
+If it's present KEY indicates the key to extract from the response.
+
+The request is abandoned with an error after `cljr-middleware-timeout'
+seconds."
+  (let* ((nrepl-sync-request-timeout cljr-middleware-timeout)
          (response (thread-first request cider-nrepl-sync-request cljr--maybe-rethrow-error)))
     (if key
         (nrepl-dict-get response key)
@@ -2682,12 +2694,16 @@ If it's present KEY indicates the key to extract from the response."
 (defun cljr--call-middleware-async (request &optional callback)
   (cider-nrepl-send-request request callback))
 
-(defconst cljr--async-request-timeout 600
-  "Seconds to wait for an async middleware request before giving up.
-A safety net so a hung request or dropped connection doesn't leave a
-command waiting forever, not a deadline: it is deliberately generous (10
-minutes) so it never cuts off a legitimately slow project-wide analysis
-on a large project or a cold cache.")
+(defun cljr--start-request-timer (what on-timeout)
+  "Give up on a middleware request after `cljr-middleware-timeout' seconds.
+Call ON-TIMEOUT then, and tell the user that WHAT timed out.  Return the
+timer, or nil when the timeout is disabled."
+  (when cljr-middleware-timeout
+    (run-at-time cljr-middleware-timeout nil
+                 (lambda ()
+                   (when (funcall on-timeout)
+                     (message "clj-refactor: %s timed out after %s seconds (see `cljr-middleware-timeout')"
+                              what cljr-middleware-timeout))))))
 
 (defun cljr--stop-spinner (buffer)
   "Stop any mode-line spinner running in BUFFER."
@@ -2704,7 +2720,7 @@ response is checked for a middleware error and then CALLBACK is called with
 the value of KEY (or the whole response when KEY is nil).  A middleware
 error is reported to the user rather than signaled out of the nREPL filter,
 and the request is abandoned with a message if it doesn't finish within
-`cljr--async-request-timeout'.  A mode-line spinner runs in the calling
+`cljr-middleware-timeout'.  A mode-line spinner runs in the calling
 buffer meanwhile.  This is the non-blocking counterpart to
 `cljr--call-middleware-sync' for commands that just act on a single result."
   (let ((accumulator (nrepl-dict))
@@ -2712,12 +2728,13 @@ buffer meanwhile.  This is the non-blocking counterpart to
         (spinner-buffer (current-buffer))
         timer)
     (cider-spinner-start spinner-buffer)
-    (setq timer (run-at-time cljr--async-request-timeout nil
-                             (lambda ()
-                               (unless settled
-                                 (setq settled t)
-                                 (cljr--stop-spinner spinner-buffer)
-                                 (message "clj-refactor: middleware request timed out")))))
+    (setq timer (cljr--start-request-timer
+                 (format "the %s request" (cadr (member "op" request)))
+                 (lambda ()
+                   (unless settled
+                     (setq settled t)
+                     (cljr--stop-spinner spinner-buffer)
+                     t))))
     (cljr--call-middleware-async
      request
      (lambda (response)
@@ -3114,7 +3131,7 @@ search finishes, call CALLBACK with the full list.  CALLBACK is run in the
 command loop rather than the nREPL process filter, so it may prompt or pop
 up buffers safely.  A middleware error is reported to the user, and the
 search is abandoned with a message if `count' never arrives within
-`cljr--async-request-timeout'.  This is the collecting counterpart to
+`cljr-middleware-timeout'.  This is the collecting counterpart to
 `cljr--find-symbol', which streams occurrences to a per-message callback."
   (let ((occurrences '())
         (seen '())
@@ -3122,12 +3139,13 @@ search is abandoned with a message if `count' never arrives within
         (spinner-buffer (current-buffer))
         timer)
     (cider-spinner-start spinner-buffer)
-    (setq timer (run-at-time cljr--async-request-timeout nil
-                             (lambda ()
-                               (unless settled
-                                 (setq settled t)
-                                 (cljr--stop-spinner spinner-buffer)
-                                 (message "clj-refactor: finding occurrences timed out")))))
+    (setq timer (cljr--start-request-timer
+                 "finding occurrences"
+                 (lambda ()
+                   (unless settled
+                     (setq settled t)
+                     (cljr--stop-spinner spinner-buffer)
+                     t))))
     (cljr--find-symbol
      symbol ns
      (lambda (response)
@@ -3216,18 +3234,19 @@ nil until then."
 It stops the spinner in SPINNER-BUFFER once the search is over.  A
 middleware error is reported with `message' rather than signaled, as the
 handler runs in the nREPL process filter.  The search is abandoned with
-a message if it doesn't finish within `cljr--async-request-timeout'."
+a message if it doesn't finish within `cljr-middleware-timeout'."
   (let* ((settled nil)
          (timer nil)
          (settle (lambda ()
                    (setq settled t)
                    (when (timerp timer) (cancel-timer timer))
                    (cljr--stop-spinner spinner-buffer))))
-    (setq timer (run-at-time cljr--async-request-timeout nil
-                             (lambda ()
-                               (unless settled
-                                 (funcall settle)
-                                 (message "clj-refactor: finding usages timed out")))))
+    (setq timer (cljr--start-request-timer
+                 "finding usages"
+                 (lambda ()
+                   (unless settled
+                     (funcall settle)
+                     t))))
     (lambda (response)
       (unless settled
         (condition-case err
