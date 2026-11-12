@@ -3430,7 +3430,9 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
       ;; Finding every occurrence analyses the whole project, which can be
       ;; slow, so do it asynchronously and rename in the callback rather than
       ;; freezing Emacs on a synchronous round-trip.
-      (unless *cljr--noninteractive* (message "Finding occurrences of %s..." name))
+      (unless *cljr--noninteractive*
+        (message "Finding occurrences of %s... (%s to interrupt)" name
+                 (substitute-command-keys "\\[cider-interrupt]")))
       (cljr--find-symbol-occurrences
        name ns
        (lambda (occurrences)
@@ -3733,6 +3735,11 @@ itself might be `nil'."
   (replace-regexp-in-string "%" "%%" msg))
 
 (defun cljr--maybe-rethrow-error (response)
+  "Signal an error if the middleware's RESPONSE is one, else return it.
+A request that was interrupted (e.g. with `cider-interrupt') counts as
+one: whatever came back before that is incomplete."
+  (when (member "interrupted" (nrepl-dict-get response "status"))
+    (user-error "Interrupted"))
   (if-let* ((err (cljr--get-error-value response)))
       (error (cljr--format-escape err))
     response))

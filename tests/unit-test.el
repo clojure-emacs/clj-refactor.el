@@ -1073,6 +1073,17 @@ str/"))))
       (cljr--call-middleware-async-collect
        (cljr--create-msg "x") "touched" (lambda (_v) (setq calls (1+ calls))))
       (expect calls :to-equal 0)))
+  (it "doesn't deliver anything when the request is interrupted"
+    (spy-on 'message)
+    (spy-on 'cljr--call-middleware-async :and-call-fake
+            (lambda (_request cb)
+              (funcall cb (nrepl-dict "touched" '("a.clj")))
+              (funcall cb (nrepl-dict "status" '("interrupted" "done")))))
+    (let ((calls 0))
+      (cljr--call-middleware-async-collect
+       (cljr--create-msg "x") "touched" (lambda (_v) (setq calls (1+ calls))))
+      (expect calls :to-equal 0)
+      (expect 'message :to-have-been-called-with "clj-refactor: %s" "Interrupted")))
   (it "gives up after `cljr-middleware-timeout' seconds"
     (spy-on 'cljr--call-middleware-async)
     (spy-on 'cljr--stop-spinner)
@@ -1172,6 +1183,17 @@ str/"))))
       (cljr--find-symbol-occurrences "x" "ns" (lambda (_occs) (setq done t)))
       (with-timeout (2) (while (not done) (sit-for 0.02)))
       (expect cljr--post-command-messages :to-be nil)))
+  (it "drops what it has collected when the search is interrupted"
+    (spy-on 'message)
+    (spy-on 'cljr--find-symbol :and-call-fake
+            (lambda (_symbol _ns cb)
+              (funcall cb (nrepl-dict "occurrence" "{:file \"a.clj\" :line-beg 1 :col-beg 1 :name \"x\"}"))
+              (funcall cb (nrepl-dict "status" '("interrupted" "done")))))
+    (let (called)
+      (cljr--find-symbol-occurrences "x" "ns" (lambda (_occs) (setq called t)))
+      (sit-for 0.05)
+      (expect called :to-be nil)
+      (expect 'message :to-have-been-called-with "clj-refactor: %s" "Interrupted")))
   (it "reports a middleware error and doesn't run the callback"
     (spy-on 'cljr--find-symbol :and-call-fake
             (lambda (_symbol _ns cb)
