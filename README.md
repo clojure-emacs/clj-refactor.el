@@ -136,7 +136,10 @@ a lot of head-scratching:
 
 If a namespace can't be analyzed, set `cljr-ignore-analyzer-errors` to `t` so
 these commands skip it instead of aborting (best reserved for read-only commands
-like find usages). See refactor-nrepl's
+like find usages). That can't help with the namespace you invoke the command
+from, though - it has to load cleanly (try `cider-load-buffer`), since that's
+where the symbol at point gets resolved. A common culprit is a top-level form
+that only works with state you've built up in the REPL. See refactor-nrepl's
 [Limitations of the AST-based analysis](https://github.com/clojure-emacs/refactor-nrepl#limitations-of-the-ast-based-analysis)
 for the full picture and tuning options.
 
