@@ -1109,7 +1109,10 @@ str/"))))
     (let ((cljr--sync-progress-delay 0.01))
       (spy-on 'cider-nrepl-sync-request :and-call-fake
               (lambda (_request)
-                (sleep-for 0.05)
+                ;; Wait for the timer rather than a fixed while: slow machines.
+                (with-timeout (5)
+                  (while (zerop (spy-calls-count 'message))
+                    (sleep-for 0.01)))
                 (nrepl-dict "version" "1")))
       (cljr--call-middleware-sync (cljr--create-msg "version") "version")
       (expect (apply #'format (spy-calls-args-for 'message 0))
