@@ -1091,6 +1091,8 @@ str/"))))
       (expect 'run-at-time :not :to-have-been-called))))
 
 (describe "cljr--call-middleware-sync"
+  (before-each
+    (spy-on 'message))
   (it "bounds the request with `cljr-middleware-timeout'"
     (let ((cljr-middleware-timeout 7)
           seen)
@@ -1100,7 +1102,20 @@ str/"))))
                 (nrepl-dict "version" "1")))
       (expect (cljr--call-middleware-sync (cljr--create-msg "version") "version")
               :to-equal "1")
-      (expect seen :to-equal 7))))
+      (expect seen :to-equal 7)
+      ;; Fast requests stay quiet.
+      (expect 'message :not :to-have-been-called)))
+  (it "says it's waiting when the request takes a while"
+    (let ((cljr--sync-progress-delay 0.01))
+      (spy-on 'cider-nrepl-sync-request :and-call-fake
+              (lambda (_request)
+                (sleep-for 0.05)
+                (nrepl-dict "version" "1")))
+      (cljr--call-middleware-sync (cljr--create-msg "version") "version")
+      (expect (apply #'format (spy-calls-args-for 'message 0))
+              :to-match "Waiting for refactor-nrepl (refactor/version)")
+      ;; ... and clears the echo area afterwards.
+      (expect 'message :to-have-been-called-with nil))))
 
 (describe "cljr--find-symbol-occurrences"
   (before-each

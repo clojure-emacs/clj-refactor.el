@@ -2678,15 +2678,28 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-sort-project-dep
         (indent-region (point-min) (point-max))
         (save-buffer)))))
 
+(defconst cljr--sync-progress-delay 1
+  "Seconds a synchronous middleware request runs before saying so.")
+
 (defun cljr--call-middleware-sync (request &optional key)
   "Call the middleware with REQUEST.
 
 If it's present KEY indicates the key to extract from the response.
 
-The request is abandoned with an error after `cljr-middleware-timeout'
-seconds."
+Emacs is blocked until the response arrives, so a request that's taking a
+while says so in the echo area.  It is abandoned with an error after
+`cljr-middleware-timeout' seconds."
   (let* ((nrepl-sync-request-timeout cljr-middleware-timeout)
-         (response (thread-first request cider-nrepl-sync-request cljr--maybe-rethrow-error)))
+         (announced nil)
+         (timer (run-at-time cljr--sync-progress-delay nil
+                             (lambda ()
+                               (setq announced t)
+                               (message "Waiting for refactor-nrepl (%s)... (C-g to abort)"
+                                        (cadr (member "op" request))))))
+         (response (unwind-protect
+                       (thread-first request cider-nrepl-sync-request cljr--maybe-rethrow-error)
+                     (cancel-timer timer)
+                     (when announced (message nil)))))
     (if key
         (nrepl-dict-get response key)
       response)))
@@ -3783,8 +3796,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-hotload-dependen
   (let ((dependency-vector (or (cljr--dependency-at-point)
                                (cljr--prompt-user-for "Dependency vector: "))))
     (cljr--assert-dependency-vector dependency-vector)
-    (cljr--call-middleware-async
+    ;; Hotloading may have to download the dependency first.
+    (cljr--call-middleware-async-collect
      (cljr--create-msg "hotload-dependency" "coordinates" dependency-vector)
+     nil
      #'cljr--hotload-dependency-callback)))
 
 (defun cljr--defn-str (&optional public)
