@@ -3211,17 +3211,30 @@ nil until then."
   "Return the response handler for a find usages search for NAME.
 It stops the spinner in SPINNER-BUFFER once the search is over.  A
 middleware error is reported with `message' rather than signaled, as the
-handler runs in the nREPL process filter."
-  (lambda (response)
-    (condition-case err
-        (when-let* ((total (cljr--format-and-insert-symbol-occurrence response)))
-          (cljr--stop-spinner spinner-buffer)
-          ;; The results buffer only pops up with the first occurrence.
-          (when (zerop total)
-            (message "No occurrences of %s found" name)))
-      (error
-       (cljr--stop-spinner spinner-buffer)
-       (message "clj-refactor: %s" (error-message-string err))))))
+handler runs in the nREPL process filter.  The search is abandoned with
+a message if it doesn't finish within `cljr--async-request-timeout'."
+  (let* ((settled nil)
+         (timer nil)
+         (settle (lambda ()
+                   (setq settled t)
+                   (when (timerp timer) (cancel-timer timer))
+                   (cljr--stop-spinner spinner-buffer))))
+    (setq timer (run-at-time cljr--async-request-timeout nil
+                             (lambda ()
+                               (unless settled
+                                 (funcall settle)
+                                 (message "clj-refactor: finding usages timed out")))))
+    (lambda (response)
+      (unless settled
+        (condition-case err
+            (when-let* ((total (cljr--format-and-insert-symbol-occurrence response)))
+              (funcall settle)
+              ;; The results buffer only pops up with the first occurrence.
+              (when (zerop total)
+                (message "No occurrences of %s found" name)))
+          (error
+           (funcall settle)
+           (message "clj-refactor: %s" (error-message-string err))))))))
 
 (defun cljr--finalise-find-symbol-buffer (total)
   (with-current-buffer "*cljr-find-usages*"
