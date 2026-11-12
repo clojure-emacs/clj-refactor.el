@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+- [#PRNUM](https://github.com/clojure-emacs/clj-refactor.el/pull/PRNUM): Add `cljr-middleware-timeout` and give up on an unresponsive middleware after 2 minutes instead of 10; synchronous requests, which could wait forever, are bound by it as well.
+
 ## 4.2.0 (2026-11-12)
 
 - Inject refactor-nrepl [3.16.0](https://github.com/clojure-emacs/refactor-nrepl/releases/tag/v3.16.0), which reports a namespace that fails to load as an error instead of leaving `cljr-rename-symbol` and `cljr-find-usages` hanging, and makes them honor `cljr-middleware-ignored-paths`.
