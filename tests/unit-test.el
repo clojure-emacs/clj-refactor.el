@@ -1172,6 +1172,15 @@ str/"))))
              (nrepl-dict "error" "boom" "status" '("done")))
     (expect 'cljr--stop-spinner :to-have-been-called)
     (expect 'message :to-have-been-called-with "clj-refactor: %s" "boom"))
+  (it "gives up when the search doesn't finish in time"
+    (let* ((cljr--async-request-timeout 0.01)
+           (handler (cljr--find-usages-handler "foo" (current-buffer))))
+      (sleep-for 0.05)
+      (expect 'cljr--stop-spinner :to-have-been-called)
+      (expect 'message :to-have-been-called-with "clj-refactor: finding usages timed out")
+      ;; A late response is ignored.
+      (funcall handler (nrepl-dict "error" "boom" "status" '("done")))
+      (expect 'message :to-have-been-called-times 1)))
   (it "says so when nothing was found"
     (with-temp-buffer
       (setq cljr--occurrence-count 0)
