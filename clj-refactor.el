@@ -3321,6 +3321,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
   (when (buffer-narrowed-p)
     (error "Cannot rename symbols while narrowing is in effect"))
   (cljr--ensure-op-supported "find-symbol")
+  (unless (cider-symbol-at-point)
+    (user-error "No symbol at point"))
   (when (cljr--asts-y-or-n-p)
     (save-buffer)
     (let* ((symbol (cider-symbol-at-point))
@@ -3330,6 +3332,10 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
            (name (or symbol-name symbol))
            (new-name (or new-name (read-from-minibuffer "New name: "
                                                         (cljr--symbol-suffix symbol)))))
+      (when (string-blank-p new-name)
+        (user-error "The new name can't be empty"))
+      (when (string= new-name (cljr--symbol-suffix symbol))
+        (user-error "The new name is the same as the old one"))
       ;; Finding every occurrence analyses the whole project, which can be
       ;; slow, so do it asynchronously and rename in the callback rather than
       ;; freezing Emacs on a synchronous round-trip.
@@ -3337,10 +3343,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-rename-symbol"
       (cljr--find-symbol-occurrences
        name ns
        (lambda (occurrences)
-         (when (cljr--rename-occurrences occurrences new-name)
+         (cond
+          ((null occurrences)
+           (message "No occurrences of %s found" name))
+          ((cljr--rename-occurrences occurrences new-name)
            (cljr--post-command-message "Renamed %s occurrences of %s" (length occurrences) name)
-           (when (and (> (length occurrences) 0) (not cljr-warn-on-eval))
-             (cljr--warm-ast-cache))))))))
+           (unless cljr-warn-on-eval
+             (cljr--warm-ast-cache)))))))))
 
 (defun cljr--replace-refer-all-with-alias (ns publics-occurrences alias)
   (let ((ns-last-token (car (last (split-string ns "\\.")))))

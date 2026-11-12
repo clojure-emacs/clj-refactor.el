@@ -1130,6 +1130,36 @@ str/"))))
     (expect 'cider-spinner-start :to-have-been-called)
     (expect 'cljr--stop-spinner :to-have-been-called)))
 
+(describe "cljr-rename-symbol"
+  (before-each
+    (spy-on 'cljr--ensure-op-supported)
+    (spy-on 'cljr--asts-y-or-n-p :and-return-value t)
+    (spy-on 'save-buffer)
+    (spy-on 'cljr--var-info :and-return-value (nrepl-dict))
+    (spy-on 'cljr--find-symbol-occurrences)
+    (spy-on 'cljr--rename-occurrences))
+  (it "refuses to run without a symbol at point"
+    (spy-on 'cider-symbol-at-point :and-return-value nil)
+    (expect (cljr-rename-symbol "bar") :to-throw 'user-error)
+    (expect 'cljr--find-symbol-occurrences :not :to-have-been-called))
+  (it "rejects an empty new name"
+    (spy-on 'cider-symbol-at-point :and-return-value "two/foo")
+    (expect (cljr-rename-symbol " ") :to-throw 'user-error)
+    (expect 'cljr--find-symbol-occurrences :not :to-have-been-called))
+  (it "rejects a new name that doesn't change anything"
+    (spy-on 'cider-symbol-at-point :and-return-value "two/foo")
+    (expect (cljr-rename-symbol "foo") :to-throw 'user-error)
+    (expect 'cljr--find-symbol-occurrences :not :to-have-been-called))
+  (it "says so when the symbol has no occurrences"
+    (spy-on 'cider-symbol-at-point :and-return-value "two/foo")
+    (spy-on 'cljr--find-symbol-occurrences :and-call-fake
+            (lambda (_symbol _ns cb) (funcall cb nil)))
+    (spy-on 'message)
+    (let ((*cljr--noninteractive* t))
+      (cljr-rename-symbol "bar"))
+    (expect 'cljr--rename-occurrences :not :to-have-been-called)
+    (expect 'message :to-have-been-called-with "No occurrences of %s found" "two/foo")))
+
 (describe "cljr--find-usages-handler"
   (before-each
     (spy-on 'cljr--stop-spinner)

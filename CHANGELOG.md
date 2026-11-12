@@ -7,6 +7,7 @@
 ## Unreleased
 
 - [#608](https://github.com/clojure-emacs/clj-refactor.el/pull/608): `cljr-find-usages` now shows a mode-line spinner while searching, reports middleware errors in the echo area instead of signaling them from the nREPL process filter, and says so when nothing was found.
+- [#608](https://github.com/clojure-emacs/clj-refactor.el/pull/608): `cljr-rename-symbol` now refuses to run without a symbol at point, rejects an empty or unchanged new name, and says so when the symbol has no occurrences instead of reporting "Renamed 0 occurrences".
 
 ## 4.1.0 (2026-11-10)
 
