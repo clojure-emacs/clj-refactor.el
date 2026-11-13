@@ -24,7 +24,7 @@
   (list (cljr-test-param-keep 0 0 "foo")
         (cljr-test-param-keep 1 1 "bar")
         (cljr-test-param-keep 2 2 "baz")
-        (cljr-test-param-add 3 "qux" "nil")))
+        (cljr-test-param-add 3 "qux")))
 
 (defun cljr-test-remove-baz ()
   (list (cljr-test-param-keep 0 0 "foo")

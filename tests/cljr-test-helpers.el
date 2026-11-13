@@ -24,10 +24,8 @@
 (require 'clojure-mode)
 (require 'clj-refactor)
 
-(defvar cljr-test-prefix "C-!"
-  "The prefix the refactoring commands are bound under in the specs.")
-
-(cljr-add-keybindings-with-prefix cljr-test-prefix)
+;; The prefix the refactoring commands are bound under in the specs.
+(cljr-add-keybindings-with-prefix "C-!")
 
 ;; The specs are about what the refactorings do to the code.  Their
 ;; asking for permission first is for the specs about that to turn on.
@@ -93,13 +91,11 @@ See `cljr-test-with-buffer'."
      ,@body
      (cljr-test-buffer-string)))
 
-(defun cljr-test-goto (text &optional after)
-  "Move point to before the first occurrence of TEXT in the buffer.
-With AFTER non-nil, move after it instead."
+(defun cljr-test-goto (text)
+  "Move point to before the first occurrence of TEXT in the buffer."
   (goto-char (point-min))
   (search-forward text)
-  (unless after
-    (goto-char (match-beginning 0))))
+  (goto-char (match-beginning 0)))
 
 (defun cljr-test-select (from to)
   "Make the region what's between the texts FROM and TO."
@@ -328,14 +324,12 @@ DEFAULT is what the call sites pass for it, \"nil\" if not given."
 ANSWER is what the op puts under its key: as a rule a string of EDN."
   (spy-on 'cljr--call-middleware-sync :and-return-value answer))
 
-(defun cljr-test-middleware-request (&optional key)
-  "Return the first request sent to the middleware in this spec.
-With KEY, a string, return what the request has under it."
-  (let ((request (car (spy-calls-args-for 'cljr--call-middleware-sync 0))))
-    (if key
-        (cl-loop for (name value) on request by #'cddr
-                 when (equal name key) return value)
-      request)))
+(defun cljr-test-middleware-request (key)
+  "Return what the first request sent to the middleware has under KEY.
+KEY is a string."
+  (cl-loop for (name value) on (car (spy-calls-args-for 'cljr--call-middleware-sync 0))
+           by #'cddr
+           when (equal name key) return value))
 
 (defun cljr-test-without-middleware ()
   "Stand in for a REPL that has every op, for the current spec.

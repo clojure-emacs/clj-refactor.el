@@ -3,22 +3,21 @@
 (require 'buttercup)
 (require 'cljr-test-helpers)
 
-(defvar cljr-test-used-locals ""
-  "What the middleware says the locals the promoted function uses are.")
-
-(defmacro cljr-test-promote (content &rest answers)
+(defun cljr-test-promote (content &rest answers)
   "Promote the function at the `|' in CONTENT; return the buffer's text.
 ANSWERS are what the command's prompts are answered with."
   (declare (indent 1))
-  `(cljr-test-refactor ,content
-     (cljr-test-call #'cljr-promote-function ,@answers)))
+  (cljr-test-refactor content
+    (apply #'cljr-test-call #'cljr-promote-function answers)))
+
+(defun cljr-test-used-locals (locals)
+  "Have the middleware find that the function uses LOCALS, in this spec."
+  (spy-on 'cljr--call-middleware-to-find-used-locals :and-return-value locals))
 
 (describe "cljr-promote-function"
   (before-each
     (cljr-test-without-middleware)
-    (setq cljr-test-used-locals "")
-    (spy-on 'cljr--call-middleware-to-find-used-locals
-            :and-call-fake (lambda (&rest _) cljr-test-used-locals)))
+    (cljr-test-used-locals ""))
 
   (describe "on a fn"
     (it "makes it a private top-level function with the name asked for"
@@ -63,7 +62,7 @@ ANSWERS are what the command's prompts are answered with."
           (map-indexed vector cells)))"))
 
     (it "passes the locals the fn closes over as leading arguments"
-      (setq cljr-test-used-locals "foo bar")
+      (cljr-test-used-locals "foo bar")
       (expect (cljr-test-promote "(let [foo 1
       bar 2]
   (map (fn| [n] (+ foo bar n)) [1 2 3]))"
@@ -77,7 +76,7 @@ ANSWERS are what the command's prompts are answered with."
   (map (partial foobar-adder foo bar) [1 2 3]))"))
 
     (it "makes the locals the only parameters of a fn that takes none"
-      (setq cljr-test-used-locals "foo")
+      (cljr-test-used-locals "foo")
       (expect (cljr-test-promote "(let [foo 1]
   (repeatedly (fn [] (|inc foo))))"
                 "next-foo")

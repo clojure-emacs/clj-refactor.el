@@ -99,7 +99,7 @@
 
   (it "makes the keys work in a Clojure buffer"
     (expect (cljr-test-refactor "(defn add [a b]\n  |(+ a b))"
-              (cljr-test-keys (concat cljr-test-prefix " cp")))
+              (cljr-test-keys "C-! cp"))
             :to-equal "(defn- add [a b]\n  (+ a b))")))
 
 (describe "cljr-add-keybindings-with-modifier"
