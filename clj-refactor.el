@@ -2957,7 +2957,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-project-depe
 (defun cljr-update-project-dependency (&optional version)
   "Update the version of the dependency at point."
   (interactive)
-  (cljr--ensure-op-supported "artifact-list")
+  (unless version
+    (cljr--ensure-op-supported "artifact-list"))
   (unless (cljr--looking-at-dependency-p)
     (user-error "Place cursor in front of dependency to update"))
   (save-excursion
