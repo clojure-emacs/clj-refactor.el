@@ -85,15 +85,25 @@
         [cljs.string :refer :all]
         [cljs-time.core :as t])]))"))
 
-  (it "fails when the buffer has no ns form"
-    (cljr-test-with-buffer "|(defn f [])"
-      (expect (cljr-add-require-to-ns nil) :to-throw 'error)
-      (expect (cljr-test-buffer-string) :to-equal "(defn f [])")))
+  (it "fails when the buffer has no ns form, leaving point alone"
+    (cljr-test-with-buffer "(defn f [|])"
+      (expect (cljr-add-require-to-ns nil) :to-throw 'user-error)
+      (expect (cljr-test-buffer-string t) :to-equal "(defn f [|])")))
 
-  (it "fails when asked for a cljs branch the ns form doesn't have"
-    (cljr-test-with-buffer "|(ns cljr.core)\n"
-      (expect (cljr-add-require-to-ns t) :to-throw 'error)
-      (expect (cljr-test-buffer-string) :to-equal "(ns cljr.core)\n"))))
+  (it "fails when asked for a cljs branch the ns form doesn't have, leaving point alone"
+    (cljr-test-with-buffer "(ns cljr.core)\n\n(s/join |xs)"
+      (expect (cljr-add-require-to-ns t) :to-throw 'user-error)
+      (expect (cljr-test-buffer-string t)
+              :to-equal "(ns cljr.core)\n\n(s/join |xs)")))
+
+  (it "leaves a snippet that's waiting in another buffer its way back"
+    (cljr-test-with-buffer "(ns cljr.core)\n(s/join |xs)"
+      (cljr-add-require-to-ns nil)
+      (let ((waiting (marker-position cljr--tmp-marker)))
+        (with-temp-buffer
+          (expect (cljr-add-require-to-ns nil) :to-throw 'user-error))
+        (expect (marker-buffer cljr--tmp-marker) :to-be (current-buffer))
+        (expect (marker-position cljr--tmp-marker) :to-equal waiting)))))
 
 (describe "cljr-add-use-to-ns"
   (it "adds a require that refers everything"
