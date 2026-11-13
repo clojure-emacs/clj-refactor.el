@@ -640,6 +640,7 @@ That's when `cljr-magic-requires' is off, or CIDER's own magic requires
     ("ml" . (clojure-move-to-let "Move to let" ?m ("code")))
     ("pc" . (cljr-project-clean "Project clean" ?c ("project")))
     ("pf" . (cljr-promote-function "Promote function" ?p ("code" "toplevel-form")))
+    ("rd" . (cljr-reify-to-defrecord "Reify to defrecord" ?R ("toplevel-form")))
     ("rf" . (cljr-rename-file-or-dir "Rename file-or-dir" ?r ("project" "toplevel-form")))
     ("rl" . (cljr-remove-let "Remove let" ?r ("code")))
     ("rm" . (cljr-require-macro "Add to or extend the require-macros form" ?M ("ns")))
