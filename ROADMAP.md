@@ -55,9 +55,9 @@ names with `make-obsolete` rather than deleting them outright. Concretely:
   baseline made unnecessary.~~ Done for 4.0.
 - ~~Make narrow, heavyweight dependencies (multiple-cursors, hydra, inflections)
   soft/optional.~~ Done for 4.0 - they were dropped outright.
-- Grow the buttercup suite to cover the pure-structural commands (which need
-  no REPL to test). Both suites (buttercup and the ecukes feature suite) run
-  in CI these days; buttercup remains the target for new tests.
+- ~~Grow the buttercup suite to cover the pure-structural commands (which need
+  no REPL to test).~~ Done: the ecukes feature suite was ported to buttercup,
+  which is the only suite now.
 - Split the single large source file along its existing logical seams, which
   also cleanly separates the AST-dependent commands from the rest.
 - Vet every command under `clojure-ts-mode`, now that CIDER treats it as a

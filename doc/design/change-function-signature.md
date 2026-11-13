@@ -158,8 +158,8 @@ Phase 2 should land only after phase 1 (add/remove for single-arity) is solid.
 - **buttercup** for the pure pieces: the tagged `signature-changes` builder,
   arglist-string parsing (incl. multi-arity), and the definition-update logic
   on in-buffer text.
-- **ecukes** with the mocked middleware for the edit-buffer + apply flow, the
-  way the existing change-signature scenarios work.
+- **buttercup** again, with the middleware's answers mocked, for the
+  edit-buffer + apply flow (`tests/change-function-signature-test.el`).
 - **Manual, against a real project** for the call-site rewriting - this is the
   part that cannot be trusted from unit tests alone.
 
