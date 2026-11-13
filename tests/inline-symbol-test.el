@@ -36,8 +36,6 @@ with the test project in place."
      (cljr--inline-symbol ,definition (list ,@occurrences))))
 
 (describe "cljr--inline-symbol"
-  ;; The blank line that followed a removed def stays behind, also at
-  ;; the top of the file.
   (it "replaces the uses of a def with its value and removes the def"
     (expect (cljr-test-inline "(def my-constant 123)
 
@@ -54,8 +52,7 @@ with the test project in place."
               (cljr-test-in-file :line-beg 5 :line-end 5 :col-beg 26 :col-end 38
                                  :name "refactor-nrepl.test/my-constant"
                                  :match "(println my-constant my-constant another-val)))"))
-            :to-equal "
-(defn my-function []
+            :to-equal "(defn my-function []
   (let [another-val 321]
     (println 123 123 another-val)))
 "))
@@ -131,8 +128,7 @@ with the test project in place."
               (cljr-test-in-file :line-beg 6 :line-end 6 :col-beg 6 :col-end 13
                                  :name "refactor-nrepl.foo/my-inc"
                                  :match "(map my-inc (range 10))"))
-            :to-equal "
-(+ (+ 1 (- 17 4)) 55)
+            :to-equal "(+ (+ 1 (- 17 4)) 55)
 
 (map (fn [n]
   (+ 1 n)) (range 10))
@@ -149,8 +145,7 @@ with the test project in place."
               (cljr-test-in-file :line-beg 3 :line-end 3 :col-beg 2 :col-end 26
                                  :name "refactor-nrepl.foo/trim-lower"
                                  :match "(trim-lower a-string)"))
-            :to-equal "
-((comp str/lower-case str/trim) a-string)
+            :to-equal "((comp str/lower-case str/trim) a-string)
 "))
 
   (it "saves the file"
@@ -168,7 +163,7 @@ with the test project in place."
                                 :match "(inc answer)")))
       (expect (buffer-modified-p) :to-be nil)
       (expect (cljr-test-file-string cljr-test-inline-file 'on-disk)
-              :to-equal "\n(inc 42)\n"))))
+              :to-equal "(inc 42)\n"))))
 
 (describe "cljr-inline-symbol"
   (before-each
