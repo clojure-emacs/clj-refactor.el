@@ -3980,8 +3980,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-stubs"
                 (join-line)))
           (cljr--eliminate-let))
         (cljr--indent-defun))
-      (when (looking-at-p "\s*\n")
-        (cljr--just-one-blank-line))
+      (cond
+       ;; Nothing for a blank line to separate at the top of the file.
+       ((bobp) (skip-chars-forward " \t\n")
+        (delete-region (point-min) (point)))
+       ((looking-at-p "\s*\n")
+        (cljr--just-one-blank-line)))
       (cljr--save-buffer))))
 
 (defun cljr--sort-occurrences (occurrences)
