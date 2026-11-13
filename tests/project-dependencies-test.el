@@ -124,6 +124,12 @@ Clojure 1.9.0, and nothing gets hotloaded."
       (expect (looking-at-p (regexp-quote "[org.clojure/clojure \"1.9.1\"]"))
               :to-be-truthy)))
 
+  (it "doesn't need the middleware when it's given the version"
+    (cljr-test-with-build-file 'lein
+      (cljr-test-goto "[org.clojure/clojure")
+      (cljr-update-project-dependency "1.9.1"))
+    (expect 'cljr--ensure-op-supported :not :to-have-been-called))
+
   (it "asks the middleware for the versions when it isn't given one"
     (spy-on 'cljr--get-versions-from-middleware :and-return-value '("1.10.3" "1.9.1"))
     (expect (cljr-test-with-build-file 'lein
