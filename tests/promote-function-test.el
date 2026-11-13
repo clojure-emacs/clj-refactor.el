@@ -178,10 +178,7 @@ ANSWERS are what the command's prompts are answered with."
 
 (map stringify (range 10))"))
 
-    ;; Pending: today it stops halfway with a scan-error.  Once the
-    ;; literal is a fn, the command goes on from where point was instead
-    ;; of from the start of the fn.
-    (xit "goes all the way with a prefix argument when point is inside the literal"
+    (it "goes all the way with a prefix argument when point is inside the literal"
       (expect (cljr-test-refactor "(map #(|str %) (range 10))"
                 (cljr-test-keys "C-u C-! pf" "x RET" "stringify RET"))
               :to-equal "(defn- stringify
@@ -201,6 +198,11 @@ ANSWERS are what the command's prompts are answered with."
 (map inc |(range 10))"))
     (cljr-test-with-buffer "(map inc (range 10))\n|"
       (expect (cljr-promote-function nil)
-              :to-throw 'error '("Not inside a s-expression")))))
+              :to-throw 'user-error '("Not inside a s-expression"))))
+
+  (it "complains the same way in a form at the very start of the buffer"
+    (cljr-test-with-buffer "(map inc |(range 10))"
+      (expect (cljr-promote-function nil)
+              :to-throw 'user-error))))
 
 ;;; promote-function-test.el ends here

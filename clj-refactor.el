@@ -990,12 +990,12 @@ if the point is currently placed at the opening parentheses of an anonymous func
   (cond
    ((looking-at "(fn \\(\\_<[^ ]+\\_>[[:space:]\n]+\\)?\\[")
     (point))
-   ((save-excursion (backward-char) (looking-at "#("))
+   ((and (eq (char-before) ?#) (eq (char-after) ?\())
     (1- (point)))))
 
 (defun cljr--goto-fn-definition ()
   (if (zerop (car (paredit-current-parse-state)))
-      (error "Not inside a s-expression")
+      (user-error "Not inside a s-expression")
     (let* ((pt-orig (point))
            (search-bound (cljr--point-after 'cljr--goto-toplevel))
            found-fn-p)
@@ -1008,7 +1008,7 @@ if the point is currently placed at the opening parentheses of an anonymous func
                 (when (looking-back "#" 1)
                   (backward-char))))
           (when (<= (point) search-bound)
-            (error "Can't find definition of anonymous function")))))))
+            (user-error "Can't find definition of anonymous function")))))))
 
 (defun cljr--remove-tramp-prefix-from-msg (entry)
   (let* ((k (car entry))
@@ -3103,10 +3103,13 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-promote-function
      (t (cljr--goto-fn-definition)))
     ;; Now promote it.
     (if (looking-at "#(")
-        (clojure-promote-fn-literal)
-      (cljr--promote-to-defn)))
-  (when promote-to-defn
-    (cljr--promote-to-defn)))
+        (let ((start (point)))
+          (clojure-promote-fn-literal)
+          (when promote-to-defn
+            ;; The fn is where the literal was, wherever point ended up.
+            (goto-char start)
+            (cljr--promote-to-defn)))
+      (cljr--promote-to-defn))))
 
 (defun cljr--insert-in-find-symbol-buffer (occurrence)
   (save-excursion
