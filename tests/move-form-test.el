@@ -303,9 +303,7 @@
   (really-do-it x))
 ")))
 
-  ;; Pending: what the target gets today is an empty (:require ), as
-  ;; there's nothing left to require once its own libspec is dropped.
-  (xit "requires nothing in the target when the target was all the form needed"
+  (it "requires nothing in the target when the target was all the form needed"
     (cljr-test-with-move-project
       (cljr-test-visit "src/cljr/src.clj" "(ns cljr.src
   (:require [cljr.target :as t]))
@@ -351,9 +349,7 @@
   (+ a b))
 ")))
 
-  ;; Pending: today the form is gone from the buffer by the time the
-  ;; command runs into the end of it, and never makes it to the target.
-  (xit "moves the last form of a file that doesn't end in a newline"
+  (it "moves the last form of a file that doesn't end in a newline"
     (cljr-test-with-move-project
       (cljr-test-visit "src/cljr/src.clj" "(ns cljr.src)
 

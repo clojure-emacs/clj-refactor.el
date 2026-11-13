@@ -1779,7 +1779,8 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
                   (prog1 (clojure-delete-and-extract-sexp)
                     (join-line)
                     (join-line)
-                    (delete-char 1))))
+                    (unless (eobp)
+                      (delete-char 1)))))
          (forms (cljr--cleanup-whitespace forms))
          (requires (cl-rest (cljr--get-ns-statements-as-list ":require"))))
     (let (ns names target-ns-alias
@@ -1802,12 +1803,12 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-move-form"
         (goto-char (point-max))
         (cljr--insert-with-proper-whitespace
          (cljr--remove-references-of-target-ns forms ns target-ns-alias))
-        (when requires
+        ;; The target has no use for a libspec of itself.
+        (when-let* ((requires (seq-remove (lambda (it)
+                                            (string-match-p (format target-ns-regexp-template ns) it))
+                                          requires)))
           (cljr--insert-in-ns ":require")
-          (thread-last (seq-remove (lambda (it) (string-match-p (format target-ns-regexp-template ns) it)) requires)
-                       (apply #'concat)
-                       string-trim
-                       insert)
+          (insert (string-trim (apply #'concat requires)))
           (cljr--clean-or-sort-ns))
         (save-buffer))
       (cljr--update-ns-after-moving-fns ns (nreverse names))
