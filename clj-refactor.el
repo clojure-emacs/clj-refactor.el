@@ -1350,7 +1350,7 @@ Please, install (or update) refactor-nrepl %s and restart the REPL"
   (goto-char (point-min))
   (if (re-search-forward clojure-namespace-regexp nil t)
       (cljr--goto-toplevel)
-    (error "No namespace declaration found")))
+    (user-error "No namespace declaration found")))
 
 (defun cljr--goto-closest-ns ()
   "Go to the closest namespace defining form.
@@ -1371,8 +1371,8 @@ no namespace form above point, return the first one in the buffer."
       (save-excursion
         (paredit-backward-up)
         (unless (looking-back "#\?@?" 3)
-          (error "No cljs branch found")))
-    (error "No cljs branch found")))
+          (user-error "No cljs branch found")))
+    (user-error "No cljs branch found")))
 
 (defun cljr--insert-in-ns (type &optional cljs?)
   "Insert another clause into the TYPE clause of the ns statement.
@@ -1587,6 +1587,26 @@ default movement here."
   (add-hook 'yas-after-exit-snippet-hook
             'cljr--maybe-eval-ns-form-and-remove-hook nil :local))
 
+(defun cljr--add-to-ns (type snippet &optional cljs?)
+  "Expand SNIPPET in the TYPE clause of the ns form.
+TYPE is :require, :import etc.  If CLJS? is non-nil, act on the cljs
+part of the ns declaration.  Point goes back to where it was once the
+snippet is done, or right away if there's no place for the snippet."
+  ;; The marker all buffers share may be waiting on a snippet elsewhere,
+  ;; so it's left alone until there's a snippet to expand here.
+  (let ((origin (point-marker)))
+    (condition-case err
+        (cljr--insert-in-ns type cljs?)
+      (error
+       (goto-char origin)
+       (set-marker origin nil)
+       (signal (car err) (cdr err))))
+    (set-marker cljr--tmp-marker origin)
+    (set-marker origin nil))
+  (cljr--pop-tmp-marker-after-yasnippet)
+  (cljr--add-yas-ns-updated-hook)
+  (yas-expand-snippet snippet))
+
 ;;;###autoload
 (defun cljr-add-require-to-ns (cljs?)
   "Add a require statement to the ns form in current buffer.
@@ -1596,11 +1616,7 @@ With a prefix act on the cljs part of the ns declaration.
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-require-to-ns"
   (interactive "P")
   (cljr--obsolete-notice 'cljr-add-require-to-ns)
-  (set-marker cljr--tmp-marker (point))
-  (cljr--insert-in-ns ":require" cljs?)
-  (cljr--pop-tmp-marker-after-yasnippet)
-  (cljr--add-yas-ns-updated-hook)
-  (yas-expand-snippet cljr--add-require-snippet))
+  (cljr--add-to-ns ":require" cljr--add-require-snippet cljs?))
 
 ;;;###autoload
 (defun cljr-add-use-to-ns (cljs?)
@@ -1610,11 +1626,7 @@ With a prefix act on the cljs part of the ns declaration.
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-use-to-ns"
   (interactive "P")
-  (set-marker cljr--tmp-marker (point))
-  (cljr--insert-in-ns ":require" cljs?)
-  (cljr--pop-tmp-marker-after-yasnippet)
-  (cljr--add-yas-ns-updated-hook)
-  (yas-expand-snippet cljr--add-use-snippet))
+  (cljr--add-to-ns ":require" cljr--add-use-snippet cljs?))
 
 ;;;###autoload
 (defun cljr-add-import-to-ns (&optional cljs?)
@@ -1625,11 +1637,7 @@ With a prefix act on the cljs part of the ns declaration.
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-import-to-ns"
   (interactive "P")
   (cljr--obsolete-notice 'cljr-add-import-to-ns)
-  (set-marker cljr--tmp-marker (point))
-  (cljr--insert-in-ns ":import" cljs?)
-  (cljr--pop-tmp-marker-after-yasnippet)
-  (cljr--add-yas-ns-updated-hook)
-  (yas-expand-snippet "$1"))
+  (cljr--add-to-ns ":import" "$1" cljs?))
 
 (defun cljr--extract-refer-all-namespaces ()
   "Returns a list of all the namespaces that are required with :refer :all"
@@ -1668,11 +1676,7 @@ See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-add-import-to-ns
 
 See: https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-require-macro"
   (interactive)
-  (set-marker cljr--tmp-marker (point))
-  (cljr--insert-in-ns ":require-macros")
-  (cljr--pop-tmp-marker-after-yasnippet)
-  (cljr--add-yas-ns-updated-hook)
-  (yas-expand-snippet cljr--add-require-snippet))
+  (cljr--add-to-ns ":require-macros" cljr--add-require-snippet))
 
 ;;;###autoload
 (defun cljr-stop-referring ()
