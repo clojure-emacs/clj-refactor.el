@@ -56,9 +56,7 @@ That's the file the test files of the specs are taken to test."
 
 ")))
 
-  ;; Pending: today there are two spaces after :require, as the one that
-  ;; goes before the tested namespace is there without it too.
-  (xit "only requires clojure.test when there's no namespace to test"
+  (it "only requires clojure.test when there's no namespace to test"
     (cljr-test-with-source-file
       (cljr-test-visit "test/cljr/other_test.clj")
       (expect (cljr-test-buffer-string) :to-equal "(ns cljr.other-test
