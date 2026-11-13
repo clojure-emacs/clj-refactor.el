@@ -4,6 +4,7 @@
 (require 'clj-refactor)
 (require 'buttercup)
 (require 'cl-lib)
+(require 'cljr-test-helpers)
 
 ;; NOTE: please remember, without an `it` block, your tests will not be run!
 ;; You can learn about Buttercup's syntax here:
@@ -798,39 +799,15 @@ str/"))))
 
 ;; ---- change-function-signature: tagged (add/remove) model ----
 
-(defun cljr--test-keep (old new name &optional new-name)
-  (let ((h (make-hash-table)))
-    (puthash :op :keep h)
-    (puthash :old-index old h)
-    (puthash :new-index new h)
-    (puthash :old-name name h)
-    (puthash :new-name (or new-name name) h)
-    h))
-
-(defun cljr--test-add (new name &optional default)
-  (let ((h (make-hash-table)))
-    (puthash :op :add h)
-    (puthash :new-index new h)
-    (puthash :new-name name h)
-    (puthash :default (or default "nil") h)
-    h))
-
-(defun cljr--test-remove (old name)
-  (let ((h (make-hash-table)))
-    (puthash :op :remove h)
-    (puthash :old-index old h)
-    (puthash :old-name name h)
-    h))
-
 (describe "cljr--update-function-signature (tagged model)"
   (it "adds a parameter at the end of the definition"
     (cljr--with-clojure-temp-file "foo.clj"
       (insert "(defn tt [foo bar]\n  (println foo bar))")
       (goto-char (point-min))
       (cljr--update-function-signature
-       (list (cljr--test-keep 0 0 "foo")
-             (cljr--test-keep 1 1 "bar")
-             (cljr--test-add 2 "qux")))
+       (list (cljr-test-param-keep 0 0 "foo")
+             (cljr-test-param-keep 1 1 "bar")
+             (cljr-test-param-add 2 "qux")))
       (expect (buffer-string) :to-equal
               "(defn tt [foo bar qux]\n  (println foo bar))")))
   (it "adds a parameter at the front of the definition"
@@ -838,9 +815,9 @@ str/"))))
       (insert "(defn tt [foo bar]\n  (println foo bar))")
       (goto-char (point-min))
       (cljr--update-function-signature
-       (list (cljr--test-add 0 "x")
-             (cljr--test-keep 0 1 "foo")
-             (cljr--test-keep 1 2 "bar")))
+       (list (cljr-test-param-add 0 "x")
+             (cljr-test-param-keep 0 1 "foo")
+             (cljr-test-param-keep 1 2 "bar")))
       (expect (buffer-string) :to-equal
               "(defn tt [x foo bar]\n  (println foo bar))")))
   (it "removes a parameter from the definition"
@@ -848,9 +825,9 @@ str/"))))
       (insert "(defn tt [foo bar baz]\n  (println foo baz))")
       (goto-char (point-min))
       (cljr--update-function-signature
-       (list (cljr--test-keep 0 0 "foo")
-             (cljr--test-remove 1 "bar")
-             (cljr--test-keep 2 1 "baz")))
+       (list (cljr-test-param-keep 0 0 "foo")
+             (cljr-test-param-remove 1 "bar")
+             (cljr-test-param-keep 2 1 "baz")))
       (expect (buffer-string) :to-equal
               "(defn tt [foo baz]\n  (println foo baz))"))))
 
@@ -861,9 +838,9 @@ str/"))))
       (goto-char (point-min))
       (forward-char 1)
       (cljr--update-call-site
-       (list (cljr--test-keep 0 0 "foo")
-             (cljr--test-keep 1 1 "bar")
-             (cljr--test-add 2 "qux" "nil")))
+       (list (cljr-test-param-keep 0 0 "foo")
+             (cljr-test-param-keep 1 1 "bar")
+             (cljr-test-param-add 2 "qux" "nil")))
       (expect (buffer-string) :to-equal "(tt 1 2 nil)")))
   (it "inserts the placeholder for an added leading parameter"
     (cljr--with-clojure-temp-file "foo.clj"
@@ -871,9 +848,9 @@ str/"))))
       (goto-char (point-min))
       (forward-char 1)
       (cljr--update-call-site
-       (list (cljr--test-add 0 "x" "nil")
-             (cljr--test-keep 0 1 "foo")
-             (cljr--test-keep 1 2 "bar")))
+       (list (cljr-test-param-add 0 "x" "nil")
+             (cljr-test-param-keep 0 1 "foo")
+             (cljr-test-param-keep 1 2 "bar")))
       (expect (buffer-string) :to-equal "(tt nil 1 2)"))))
 
 (describe "cljr--signature helpers"
@@ -882,15 +859,15 @@ str/"))))
       (puthash :old-index 0 tagless)
       (expect (cljr--change-op tagless) :to-be :keep)))
   (it "detects adds and removes"
-    (let ((cs (list (cljr--test-keep 0 0 "foo")
-                    (cljr--test-add 1 "bar")
-                    (cljr--test-remove 2 "baz"))))
+    (let ((cs (list (cljr-test-param-keep 0 0 "foo")
+                    (cljr-test-param-add 1 "bar")
+                    (cljr-test-param-remove 2 "baz"))))
       (expect (cljr--signature-has-add-p cs) :to-be-truthy)
       (expect (cljr--signature-has-remove-p cs) :to-be-truthy)
       (expect (cljr--old-arity cs) :to-equal 2)))
   (it "treats a pure rename as no structural change"
     (expect (cljr--signature-structurally-changed-p
-             (list (cljr--test-keep 0 0 "foo" "renamed")))
+             (list (cljr-test-param-keep 0 0 "foo" "renamed")))
             :to-be nil)))
 
 (describe "cljr--parse-arglists"
@@ -909,13 +886,13 @@ str/"))))
 (describe "cljr--signature-variadic-p"
   (it "detects a rest parameter"
     (expect (cljr--signature-variadic-p
-             (list (cljr--test-keep 0 0 "a")
-                   (cljr--test-keep 1 1 "&")
-                   (cljr--test-keep 2 2 "more")))
+             (list (cljr-test-param-keep 0 0 "a")
+                   (cljr-test-param-keep 1 1 "&")
+                   (cljr-test-param-keep 2 2 "more")))
             :to-be-truthy))
   (it "is nil for a fixed-arity signature"
     (expect (cljr--signature-variadic-p
-             (list (cljr--test-keep 0 0 "a") (cljr--test-keep 1 1 "b")))
+             (list (cljr-test-param-keep 0 0 "a") (cljr-test-param-keep 1 1 "b")))
             :to-be nil)))
 
 (describe "cljr--count-lambda-list-params"
@@ -962,8 +939,8 @@ str/"))))
       (insert "(defn multi\n  ([x] (multi x 0))\n  ([x y] (+ x y)))")
       (goto-char (point-min))
       (cljr--update-function-signature
-       (list (cljr--test-keep 0 1 "x")
-             (cljr--test-keep 1 0 "y")))
+       (list (cljr-test-param-keep 0 1 "x")
+             (cljr-test-param-keep 1 0 "y")))
       (expect (buffer-string) :to-equal
               "(defn multi\n  ([x] (multi x 0))\n  ([y x] (+ x y)))")))
   (it "adds a parameter to the chosen arity only"
@@ -971,9 +948,9 @@ str/"))))
       (insert "(defn multi\n  ([x] x)\n  ([x y] (+ x y)))")
       (goto-char (point-min))
       (cljr--update-function-signature
-       (list (cljr--test-keep 0 0 "x")
-             (cljr--test-keep 1 1 "y")
-             (cljr--test-add 2 "z")))
+       (list (cljr-test-param-keep 0 0 "x")
+             (cljr-test-param-keep 1 1 "y")
+             (cljr-test-param-add 2 "z")))
       (expect (buffer-string) :to-equal
               "(defn multi\n  ([x] x)\n  ([x y z] (+ x y)))"))))
 

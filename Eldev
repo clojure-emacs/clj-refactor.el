@@ -8,7 +8,8 @@
 
 (eldev-use-plugin 'autoloads)
 
-;; (eldev-add-extra-dependencies 'test 'a)
+;; The specs share helpers: tests/cljr-test-helpers.el.
+(eldev-add-loading-roots 'test "tests")
 
 ;; CIDER cannot be compiled otherwise.
 (setf eldev-build-load-before-byte-compiling t)

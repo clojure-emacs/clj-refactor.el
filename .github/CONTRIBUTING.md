@@ -35,8 +35,23 @@ To help us, please, follow these guidelines:
 1. Install [Eldev][7].
 1. Run tests with `make test`.
 
+The tests are [Buttercup][8] specs, in `tests/`. A spec for a command sets up a
+buffer, runs the command and compares what's left, using the helpers in
+`tests/cljr-test-helpers.el` (the `|` marks point):
+
+```emacs-lisp
+(it "pulls the let out of the form it's in"
+  (expect (cljr-test-refactor "(inc (let [a 1]\n       |a))"
+            (cljr-expand-let))
+          :to-equal "(let [a 1]\n  (inc a))"))
+```
+
+`tests/let-test.el` is a good one to copy from. Run a single file with
+`eldev test tests/let-test.el`.
+
 [1]: https://github.com/clojure-emacs/clj-refactor.el/issues
 [7]: https://github.com/emacs-eldev/eldev
+[8]: https://github.com/jorgenschaefer/emacs-buttercup
 [2]: http://gun.io/blog/how-to-github-fork-branch-and-pull-request
 [3]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
 [4]: https://help.github.com/articles/using-pull-requests
