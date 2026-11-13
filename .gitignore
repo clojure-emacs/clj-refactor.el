@@ -1,6 +1,4 @@
 elpa
-tmp
-.ecukes-failing-scenarios
 clj-refactor.elc
 /.eldev
 /clj-refactor-autoloads.el
