@@ -45,12 +45,12 @@ The messages the renaming leaves for after the command stay in BODY."
   (before-each
     (cljr-test-without-middleware)
     (spy-on 'cljr--warm-ast-cache)
-    (spy-on 'message))
+    (spy-on 'message)
+    (spy-on 'cljr--var-info :and-return-value
+            (nrepl-dict "ns" "example.two" "name" "foo")))
 
   (it "renames the definition of a symbol and its uses in other files"
     (cljr-test-find-occurrences #'cljr-test-occurrences-of-foo)
-    (spy-on 'cljr--var-info :and-return-value
-            (nrepl-dict "ns" "example.two" "name" "foo"))
     (cljr-test-with-rename-project
       (cljr-test-goto "two/foo")
       (cljr-rename-symbol "baz")
@@ -108,8 +108,6 @@ The messages the renaming leaves for after the command stay in BODY."
 
   (it "saves the files it changes and closes those it had to open"
     (cljr-test-find-occurrences #'cljr-test-occurrences-of-foo)
-    (spy-on 'cljr--var-info :and-return-value
-            (nrepl-dict "ns" "example.two" "name" "foo"))
     (cljr-test-with-rename-project
       (cljr-test-goto "two/foo")
       (cljr-rename-symbol "baz")
@@ -121,8 +119,6 @@ The messages the renaming leaves for after the command stay in BODY."
 
   (it "asks for the new name, starting from the current one"
     (cljr-test-find-occurrences #'cljr-test-occurrences-of-foo)
-    (spy-on 'cljr--var-info :and-return-value
-            (nrepl-dict "ns" "example.two" "name" "foo"))
     (cljr-test-with-rename-project
       (cljr-test-goto "two/foo")
       (cljr-test-call #'cljr-rename-symbol "-bar")
@@ -133,8 +129,6 @@ The messages the renaming leaves for after the command stay in BODY."
 
   (it "shows what it's about to change and asks before changing it"
     (cljr-test-find-occurrences #'cljr-test-occurrences-of-foo)
-    (spy-on 'cljr--var-info :and-return-value
-            (nrepl-dict "ns" "example.two" "name" "foo"))
     (spy-on 'y-or-n-p :and-return-value nil)
     (cljr-test-with-rename-project
       (cljr-test-goto "two/foo")
