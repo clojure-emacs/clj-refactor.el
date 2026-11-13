@@ -1450,8 +1450,8 @@ If CLJS? is T we insert in the cljs part of the ns declaration."
   (save-excursion
     (let* ((ns (clojure-find-ns))
            (source-ns (cljr--find-source-ns-of-test-ns ns (buffer-file-name))))
-      (cljr--insert-in-ns ":require")
       (when source-ns
+        (cljr--insert-in-ns ":require")
         (insert "[" source-ns " :as "
                 cljr-clojure-test-namespace-under-test-alias "]"))
       (cljr--insert-in-ns ":require")
