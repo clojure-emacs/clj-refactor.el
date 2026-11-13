@@ -66,6 +66,18 @@
 (defn create-runner []
   (Runner.))"))
 
+  (it "is bound to rd under the prefix"
+    (expect (cljr-test-refactor "(defn create-runner []
+  (reify Runnable
+    (run [this] |:running)))"
+              (cljr-test-keys "C-! rd" "Runner RET"))
+            :to-equal "(defrecord Runner []
+  Runnable
+  (run [this] :running))
+
+(defn create-runner []
+  (Runner.))"))
+
   (it "works with point on the reify itself"
     (expect (cljr-test-refactor "(defn create-runner []
   |(reify Runnable
